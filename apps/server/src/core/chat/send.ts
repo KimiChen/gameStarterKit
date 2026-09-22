@@ -5,7 +5,8 @@
  * 桶基础设施失败 → CHAT_UNAVAILABLE（fail-closed，⛔ 不放行）。推送不在本文件（端点用 pushToRealm / pushToUsers）。
  */
 import { randomUUID } from "node:crypto";
-import { CHAT_TEXT_MAX, type IChatMessagePush, type IChatSendReq } from "@game/shared/protocol/lobbyRpc/domains/chat";
+import { CHAT_TEXT_MAX } from "@game/shared/protocol/lobbyRpc/checks/chat";
+import type { IChatMessagePush, IChatSendReq } from "@game/shared/protocol/lobbyRpc/domains/chat";
 import {
   CHAT_REALM_CAPACITY, CHAT_REALM_REFILL_PER_S, CHAT_SEND_CAPACITY, CHAT_SEND_REFILL_PER_S,
 } from "../infra/config";

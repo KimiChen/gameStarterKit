@@ -14,10 +14,10 @@ export interface ReqUserQuitGuild extends Service<'Base'> {
  */
 export interface ReqUserFieldValUpdate extends Service<'Base'> {
     uId: int
-    data: PbUserFieldMap[]
+    data: UserFieldUpdate[]
 }
 
-interface PbUserFieldMap {
+interface UserFieldUpdate {
     field: string
     val: string
 }

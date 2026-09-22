@@ -1,0 +1,45 @@
+{
+  "domain": "shop",
+  "contractVersion": 5,
+  "errorCodes": ["INSUFFICIENT_BALANCE", "GRANTING", "ORDER_MISMATCH"],
+  "types": {
+    "IPurchaseResult": {
+      "kind": "external",
+      "from": "../economy",
+      "check": { "fn": "validatePurchaseResult", "from": "../economy" }
+    },
+    "IShopPurchaseReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "sku", "kind": "string", "minLength": 1, "maxLength": 64 }
+      ]
+    },
+    "IShopQueryOpReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "opId", "kind": "string", "minLength": 1, "maxLength": 128 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "ShopPurchase",
+      "route": "shop.purchase",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "shop",
+      "request": { "kind": "ref", "ref": "IShopPurchaseReq" },
+      "response": { "kind": "ref", "ref": "IPurchaseResult" }
+    },
+    {
+      "name": "ShopQueryOp",
+      "route": "shop.queryOp",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "shop",
+      "request": { "kind": "ref", "ref": "IShopQueryOpReq" },
+      "response": { "kind": "ref", "ref": "IPurchaseResult" }
+    }
+  ]
+}

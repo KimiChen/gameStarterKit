@@ -31,6 +31,27 @@ export function boolField(value: PlainRecord, key: string): boolean {
     return value[key] as boolean;
 }
 
+/**
+ * 非对象字段位置的布尔闸（数组元素等）。与 `boolField` 同一错误码，但路径取自调用点——
+ * `boolField` 的路径恒为 `payload.<key>`（对象字段位置的历史约定），数组下标位置上用它会把
+ * 报错指到不存在的字段上。
+ */
+export function boolAt(value: unknown, path: string): boolean {
+    if (typeof value !== "boolean") throw new WireValidationError("RPC_BOOLEAN", path);
+    return value;
+}
+
+/**
+ * 有界数组闸（生成物用；原 `http.arrayAt` 是模块私有）。`code` 让域可以声明自己的规模错误码
+ * （如 `RPC_MAILS` / `SLG_TILES_SIZE`），缺省与 `arrayAt` 一致为 `WIRE_ARRAY`。
+ */
+export function boundedArray(value: unknown, path: string, min: number, max: number, code = "WIRE_ARRAY"): unknown[] {
+    if (!Array.isArray(value) || value.length < min || value.length > max) {
+        throw new WireValidationError(code, path);
+    }
+    return value as unknown[];
+}
+
 /** 推送 data 的 record 闸（原 push.ts 私有 pushRecord 逐字迁出）。 */
 export function pushRecord(input: unknown, path: string): PlainRecord {
     if (!isPlainRecord(input)) throw new WireValidationError("PUSH_OBJECT", path);

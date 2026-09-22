@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { listArchived, readManifest } from './ModuleLibrary'
+import { readSchemaLobbyApis } from '../generator/SchemaLobbyProtocol'
 
 interface CatalogEntry {
     moduleName: string
@@ -268,11 +269,29 @@ function discoverProtocolActions(
     files: string[],
     tests: string[],
 ): ProtocolAction[] {
-    return files
-        .filter((filePath) => /(?:C2S|S2S)\.ts$/.test(filePath))
+    const schemaActions = readSchemaLobbyApis(projectRoot)
+        .filter((api) => api.ownerModule === moduleName && !api.pending)
+        .map((api) => {
+            const actionPath = path.join(moduleRoot, 'action', `Action${api.name}.ts`)
+            const action = fs.existsSync(actionPath) ? relative(actionPath) : undefined
+            const context = action ? actionContext(actionPath, moduleRoot) : emptyActionContext()
+            return {
+                direction: 'C2S' as const,
+                route: `${moduleName}/${api.name}`,
+                request: api.requestType,
+                ...(action ? { action } : {}),
+                ...context,
+                tests,
+                readme: owningReadme(actionPath),
+                framework: frameworkDocs(context),
+                verify: `pnpm verify:module -- ${moduleName}`,
+            }
+        })
+
+    const s2sActions = files
+        .filter((filePath) => filePath.endsWith('S2S.ts'))
         .flatMap((relativeProtocolPath) => {
             const protocolPath = path.join(projectRoot, relativeProtocolPath)
-            const direction: ProtocolAction['direction'] = relativeProtocolPath.endsWith('C2S.ts') ? 'C2S' : 'S2S'
             const requests = [...fs.readFileSync(protocolPath, 'utf8').matchAll(/export\s+interface\s+Req(\w+)/g)].map(
                 (match) => match[1],
             )
@@ -281,7 +300,7 @@ function discoverProtocolActions(
                 const action = fs.existsSync(actionPath) ? relative(actionPath) : undefined
                 const context = action ? actionContext(actionPath, moduleRoot) : emptyActionContext()
                 return {
-                    direction,
+                    direction: 'S2S' as const,
                     route: `${moduleName}/${request}`,
                     request: `Req${request}`,
                     ...(action ? { action } : {}),
@@ -293,7 +312,8 @@ function discoverProtocolActions(
                 }
             })
         })
-        .sort((left, right) => left.route.localeCompare(right.route))
+
+    return [...schemaActions, ...s2sActions].sort((left, right) => left.route.localeCompare(right.route))
 }
 
 function actionContext(sourcePath: string, moduleRoot: string) {

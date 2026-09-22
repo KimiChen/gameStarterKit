@@ -275,42 +275,12 @@
     {
       "name": "arena",
       "source": "src/modules/arena/ArenaModule.ts",
-      "systems": {
-        "nativeLobby": [
-          {
-            "moduleName": "arena",
-            "source": "src/modules/arena/ArenaModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "arena-native-lobby-routes",
-              "app": "service",
-              "register": "(registry, services) =>\n                    new ArenaNativeLobbyRoutes(services.identities, new ArenaNativeLobbyStore()).register(registry)"
-            }
-          }
-        ]
-      }
+      "systems": {}
     },
     {
       "name": "arenaShop",
       "source": "src/modules/arenaShop/ArenaShopModule.ts",
-      "systems": {
-        "nativeLobby": [
-          {
-            "moduleName": "arenaShop",
-            "source": "src/modules/arenaShop/ArenaShopModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "arena-shop-native-lobby-routes",
-              "app": "service",
-              "after": [
-                "arena-native-lobby-routes",
-                "shop-native-lobby-routes"
-              ],
-              "register": "(registry, services) =>\n                    new ArenaShopNativeLobbyRoutes(services.identities, new ArenaShopNativeLobbyStore()).register(\n                        registry,\n                    )"
-            }
-          }
-        ]
-      }
+      "systems": {}
     },
     {
       "name": "attr",
@@ -555,18 +525,6 @@
               ]
             }
           }
-        ],
-        "nativeLobby": [
-          {
-            "moduleName": "guild",
-            "source": "src/modules/guild/GuildModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "guild-native-lobby-routes",
-              "app": "service",
-              "register": "(registry, services) =>\n                    new GuildNativeLobbyRoutes(\n                        services.identities,\n                        new GuildNativeLobbyStore({\n                            registerCharacter: services.registerCharacter,\n                            pushToUser: services.pushToUser,\n                        }),\n                    ).register(registry)"
-            }
-          }
         ]
       }
     },
@@ -574,15 +532,18 @@
       "name": "income",
       "source": "src/modules/income/IncomeModule.ts",
       "systems": {
-        "nativeLobby": [
+        "nativeLobbyAuth": [
           {
             "moduleName": "income",
             "source": "src/modules/income/IncomeModule.ts",
             "contribution": {
-              "kind": "route",
-              "name": "income-native-lobby-routes",
+              "kind": "handler",
+              "name": "income-native-lobby-auth",
               "app": "service",
-              "register": "(registry, services) => {\n                    const store = new IncomeNativeLobbyStore()\n                    // 登录侧：首次原子初始化账户；已有账户只在这里算好离线暂存，领取前不入账。\n                    services.onAuthenticated((uid, internalUid, sId) => store.parkOffline(internalUid, uid, sId))\n                    new IncomeNativeLobbyRoutes(services.identities, store).register(registry)\n                }"
+              "after": [
+                "user-native-lobby-auth"
+              ],
+              "onAuthenticated": "async (_uid, internalUid, sId) => {\n                    await IncomeNativeLobbyAuth.onAuthenticated(internalUid, sId)\n                }"
             }
           }
         ]
@@ -646,18 +607,6 @@
               "phase": "runtime-ready",
               "scope": "server",
               "run": "() => GlobalMailDispatcher.init()"
-            }
-          }
-        ],
-        "nativeLobby": [
-          {
-            "moduleName": "mail",
-            "source": "src/modules/mail/MailModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "mail-native-lobby-routes",
-              "app": "service",
-              "register": "(registry, services) =>\n                    new MailNativeLobbyRoutes(\n                        services.identities,\n                        new MailNativeLobbyStore(services.pushToUser),\n                    ).register(registry)"
             }
           }
         ],
@@ -832,34 +781,22 @@
     {
       "name": "redeem",
       "source": "src/modules/redeem/RedeemModule.ts",
-      "systems": {
-        "nativeLobby": [
-          {
-            "moduleName": "redeem",
-            "source": "src/modules/redeem/RedeemModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "redeem-native-lobby-routes",
-              "app": "service",
-              "register": "(registry, services) =>\n                    new RedeemNativeLobbyRoutes(services.identities, new RedeemNativeLobbyStore()).register(registry)"
-            }
-          }
-        ]
-      }
+      "systems": {}
     },
     {
       "name": "room",
       "source": "src/modules/room/RoomModule.ts",
       "systems": {
-        "nativeLobby": [
+        "startup": [
           {
             "moduleName": "room",
             "source": "src/modules/room/RoomModule.ts",
             "contribution": {
-              "kind": "route",
-              "name": "room-native-lobby-routes",
+              "name": "assert-room-gameplay-catalog",
               "app": "service",
-              "register": "(registry, services) =>\n                    new RoomNativeLobbyRoutes(services.identities, new RoomNativeLobbyStore()).register(registry)"
+              "phase": "configuration-loaded",
+              "scope": "process",
+              "run": "assertInviteProfilesDeclared"
             }
           }
         ]
@@ -905,59 +842,17 @@
     {
       "name": "shop",
       "source": "src/modules/shop/ShopModule.ts",
-      "systems": {
-        "nativeLobby": [
-          {
-            "moduleName": "shop",
-            "source": "src/modules/shop/ShopModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "shop-native-lobby-routes",
-              "app": "service",
-              "register": "(registry, services) =>\n                    new ShopNativeLobbyRoutes(services.identities, new ShopNativeLobbyStore()).register(registry)"
-            }
-          }
-        ]
-      }
+      "systems": {}
     },
     {
       "name": "slg",
       "source": "src/modules/slg/SlgModule.ts",
-      "systems": {
-        "nativeLobby": [
-          {
-            "moduleName": "slg",
-            "source": "src/modules/slg/SlgModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "slg-native-lobby-routes",
-              "app": "service",
-              "after": [
-                "shop-native-lobby-routes"
-              ],
-              "register": "(registry, services) =>\n                    new SlgNativeLobbyRoutes(services.identities, new SlgNativeLobbyStore()).register(registry)"
-            }
-          }
-        ]
-      }
+      "systems": {}
     },
     {
       "name": "snakeCosmetic",
       "source": "src/modules/snakeCosmetic/SnakeCosmeticModule.ts",
-      "systems": {
-        "nativeLobby": [
-          {
-            "moduleName": "snakeCosmetic",
-            "source": "src/modules/snakeCosmetic/SnakeCosmeticModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "snakeCosmetic-native-lobby-routes",
-              "app": "service",
-              "register": "(registry, services) =>\n                    new SnakeCosmeticNativeLobbyRoutes(\n                        services.identities,\n                        new SnakeCosmeticNativeLobbyStore(),\n                    ).register(registry)"
-            }
-          }
-        ]
-      }
+      "systems": {}
     },
     {
       "name": "task",
@@ -1117,15 +1012,16 @@
             }
           }
         ],
-        "nativeLobby": [
+        "nativeLobbyAuth": [
           {
             "moduleName": "user",
             "source": "src/modules/user/UserModule.ts",
             "contribution": {
-              "kind": "route",
-              "name": "user-native-lobby-routes",
+              "kind": "handler",
+              "name": "user-native-lobby-auth",
               "app": "service",
-              "register": "(registry, services) => {\n                    const users = new NativeLobbyUserStore(services.registerCharacter)\n                    services.onAuthenticated((uid, _internalUid, sId) => users.ensure(uid, sId))\n                    // 会话结束的离线收尾。旧实现挂在 `SessionMgr` 的断线回调上，该链已随 P6 删除；\n                    // 现在由原生 Lobby 在「当前连接被释放」时回调，语义等价且不会晚到覆盖新会话。\n                    services.onReleased(async ({ internalUid }) => {\n                        const user = await User.load(internalUid)\n                        if (user) await UserSessionLifecycle.leave(user)\n                    })\n                    new UserNativeLobbyRoutes(services.identities, users).register(registry)\n                }"
+              "onAuthenticated": "async (uid, internalUid, sId, services) => {\n                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`\n                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。\n                    await NativeLobbyUserEnter.enter(internalUid, sId)\n                    await new NativeLobbyUserStore(services.registerCharacter).ensure(uid, sId)\n                }",
+              "onReleased": "async ({ internalUid }) => {\n                    const user = await User.load(internalUid)\n                    if (user) await UserSessionLifecycle.leave(user)\n                }"
             }
           }
         ]
@@ -1810,122 +1706,29 @@
         }
       }
     ],
-    "nativeLobby": [
+    "nativeLobbyAuth": [
       {
-        "moduleName": "arena",
-        "source": "src/modules/arena/ArenaModule.ts",
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
         "contribution": {
-          "kind": "route",
-          "name": "arena-native-lobby-routes",
+          "kind": "handler",
+          "name": "user-native-lobby-auth",
           "app": "service",
-          "register": "(registry, services) =>\n                    new ArenaNativeLobbyRoutes(services.identities, new ArenaNativeLobbyStore()).register(registry)"
-        }
-      },
-      {
-        "moduleName": "guild",
-        "source": "src/modules/guild/GuildModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "guild-native-lobby-routes",
-          "app": "service",
-          "register": "(registry, services) =>\n                    new GuildNativeLobbyRoutes(\n                        services.identities,\n                        new GuildNativeLobbyStore({\n                            registerCharacter: services.registerCharacter,\n                            pushToUser: services.pushToUser,\n                        }),\n                    ).register(registry)"
+          "onAuthenticated": "async (uid, internalUid, sId, services) => {\n                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`\n                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。\n                    await NativeLobbyUserEnter.enter(internalUid, sId)\n                    await new NativeLobbyUserStore(services.registerCharacter).ensure(uid, sId)\n                }",
+          "onReleased": "async ({ internalUid }) => {\n                    const user = await User.load(internalUid)\n                    if (user) await UserSessionLifecycle.leave(user)\n                }"
         }
       },
       {
         "moduleName": "income",
         "source": "src/modules/income/IncomeModule.ts",
         "contribution": {
-          "kind": "route",
-          "name": "income-native-lobby-routes",
-          "app": "service",
-          "register": "(registry, services) => {\n                    const store = new IncomeNativeLobbyStore()\n                    // 登录侧：首次原子初始化账户；已有账户只在这里算好离线暂存，领取前不入账。\n                    services.onAuthenticated((uid, internalUid, sId) => store.parkOffline(internalUid, uid, sId))\n                    new IncomeNativeLobbyRoutes(services.identities, store).register(registry)\n                }"
-        }
-      },
-      {
-        "moduleName": "mail",
-        "source": "src/modules/mail/MailModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "mail-native-lobby-routes",
-          "app": "service",
-          "register": "(registry, services) =>\n                    new MailNativeLobbyRoutes(\n                        services.identities,\n                        new MailNativeLobbyStore(services.pushToUser),\n                    ).register(registry)"
-        }
-      },
-      {
-        "moduleName": "redeem",
-        "source": "src/modules/redeem/RedeemModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "redeem-native-lobby-routes",
-          "app": "service",
-          "register": "(registry, services) =>\n                    new RedeemNativeLobbyRoutes(services.identities, new RedeemNativeLobbyStore()).register(registry)"
-        }
-      },
-      {
-        "moduleName": "room",
-        "source": "src/modules/room/RoomModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "room-native-lobby-routes",
-          "app": "service",
-          "register": "(registry, services) =>\n                    new RoomNativeLobbyRoutes(services.identities, new RoomNativeLobbyStore()).register(registry)"
-        }
-      },
-      {
-        "moduleName": "shop",
-        "source": "src/modules/shop/ShopModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "shop-native-lobby-routes",
-          "app": "service",
-          "register": "(registry, services) =>\n                    new ShopNativeLobbyRoutes(services.identities, new ShopNativeLobbyStore()).register(registry)"
-        }
-      },
-      {
-        "moduleName": "arenaShop",
-        "source": "src/modules/arenaShop/ArenaShopModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "arena-shop-native-lobby-routes",
+          "kind": "handler",
+          "name": "income-native-lobby-auth",
           "app": "service",
           "after": [
-            "arena-native-lobby-routes",
-            "shop-native-lobby-routes"
+            "user-native-lobby-auth"
           ],
-          "register": "(registry, services) =>\n                    new ArenaShopNativeLobbyRoutes(services.identities, new ArenaShopNativeLobbyStore()).register(\n                        registry,\n                    )"
-        }
-      },
-      {
-        "moduleName": "slg",
-        "source": "src/modules/slg/SlgModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "slg-native-lobby-routes",
-          "app": "service",
-          "after": [
-            "shop-native-lobby-routes"
-          ],
-          "register": "(registry, services) =>\n                    new SlgNativeLobbyRoutes(services.identities, new SlgNativeLobbyStore()).register(registry)"
-        }
-      },
-      {
-        "moduleName": "snakeCosmetic",
-        "source": "src/modules/snakeCosmetic/SnakeCosmeticModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "snakeCosmetic-native-lobby-routes",
-          "app": "service",
-          "register": "(registry, services) =>\n                    new SnakeCosmeticNativeLobbyRoutes(\n                        services.identities,\n                        new SnakeCosmeticNativeLobbyStore(),\n                    ).register(registry)"
-        }
-      },
-      {
-        "moduleName": "user",
-        "source": "src/modules/user/UserModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "user-native-lobby-routes",
-          "app": "service",
-          "register": "(registry, services) => {\n                    const users = new NativeLobbyUserStore(services.registerCharacter)\n                    services.onAuthenticated((uid, _internalUid, sId) => users.ensure(uid, sId))\n                    // 会话结束的离线收尾。旧实现挂在 `SessionMgr` 的断线回调上，该链已随 P6 删除；\n                    // 现在由原生 Lobby 在「当前连接被释放」时回调，语义等价且不会晚到覆盖新会话。\n                    services.onReleased(async ({ internalUid }) => {\n                        const user = await User.load(internalUid)\n                        if (user) await UserSessionLifecycle.leave(user)\n                    })\n                    new UserNativeLobbyRoutes(services.identities, users).register(registry)\n                }"
+          "onAuthenticated": "async (_uid, internalUid, sId) => {\n                    await IncomeNativeLobbyAuth.onAuthenticated(internalUid, sId)\n                }"
         }
       }
     ],
@@ -1962,6 +1765,17 @@
           "phase": "persistence-ready",
           "scope": "process",
           "run": "() => GmConfigCatalog.loadAllConfig()"
+        }
+      },
+      {
+        "moduleName": "room",
+        "source": "src/modules/room/RoomModule.ts",
+        "contribution": {
+          "name": "assert-room-gameplay-catalog",
+          "app": "service",
+          "phase": "configuration-loaded",
+          "scope": "process",
+          "run": "assertInviteProfilesDeclared"
         }
       },
       {

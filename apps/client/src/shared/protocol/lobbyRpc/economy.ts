@@ -9,6 +9,8 @@
  */
 import { KIT_EFFECT_KINDS } from "../../kits/catalog.generated";
 import { KIT_EFFECT_KIND_PREFIX, type KitEffectSpec } from "../../kits/catalogTypes";
+import { assertExactKeys, boundedString, finiteInteger, WireValidationError } from "../http";
+import { rpcRecord } from "./primitives";
 
 /** kit 登记的 effect kind 表（`kit:<kitId>:<name>` → 规格）；缺省 = 生成物 KIT_EFFECT_KINDS。 */
 export type KitEffectKinds = Readonly<Record<string, KitEffectSpec>>;
@@ -383,4 +385,35 @@ export interface IPurchaseResult {
     /** 扣费后余额（分） */
     balance: number;
     granted?: IGrant[];
+}
+
+/**
+ * `IPurchaseResult` 的 wire validator（真源）。
+ *
+ * 三条路由共用同一形状与同一实现：`shop.purchase` / `shop.queryOp` 的响应，以及
+ * `mail.claimAttach` 的响应（schema 侧三处都 `check` 引用本函数，⛔ 没有第二份实现）。
+ *
+ * `granted` 的每一项交给 `validateGrant` —— grant 形状的真源在那里；规模上限用
+ * `EFFECT_MAX_GRANTS`，与 effect 侧同源。
+ */
+export function validatePurchaseResult(input: unknown, path = "response"): IPurchaseResult {
+    const value = rpcRecord(input, path);
+    assertExactKeys(value, ["opId", "status", "balance"], ["granted"], path);
+    if (value.status !== "done" && value.status !== "granting" && value.status !== "dead") {
+        throw new WireValidationError("RPC_PURCHASE_STATUS", `${path}.status`);
+    }
+    const grantedValue = value.granted;
+    let granted: IGrant[] | undefined;
+    if (grantedValue !== undefined) {
+        if (!Array.isArray(grantedValue) || grantedValue.length > EFFECT_MAX_GRANTS) {
+            throw new WireValidationError("RPC_GRANTS", `${path}.granted`);
+        }
+        granted = grantedValue.map((item, i) => validateGrant(item, `${path}.granted[${i}]`));
+    }
+    const base = {
+        opId: boundedString(value.opId, `${path}.opId`, 1, 128),
+        status: value.status as IPurchaseResult["status"],
+        balance: finiteInteger(value.balance, `${path}.balance`, 0),
+    };
+    return granted === undefined ? base : { ...base, granted };
 }

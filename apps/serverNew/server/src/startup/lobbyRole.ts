@@ -21,7 +21,9 @@ export type WorkerRole = 'MASTER' | 'WORKER' | 'TASK_WORKER' | 'USER_TASK_WORKER
 
 /** 角色分配结果；`undefined` 表示本进程不参与原生入口（未配置时才是合法结果）。 */
 export type NativeLobbyRoleAssignment =
-    { readonly role: 'listen' } | { readonly role: 'forward'; readonly forwardPush: LobbyPushForwarder; readonly forwardSync: LobbySyncForwarder } | undefined
+    | { readonly role: 'listen' }
+    | { readonly role: 'forward'; readonly forwardPush: LobbyPushForwarder; readonly forwardSync: LobbySyncForwarder }
+    | undefined
 
 export function workerRole(runtime: RuntimeServerLike): WorkerRole {
     const workerId = runtime.worker_id

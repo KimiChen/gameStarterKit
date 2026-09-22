@@ -77,6 +77,8 @@ class StubWebPlatform {
         this.contract = contract
         this.sessions = new Map()
         this.verifyCalls = 0
+        this.lastVerifyPayload = undefined
+        this.lastVerifyResponse = undefined
         this.registerCalls = 0
         this.origin = ''
         this.server = undefined
@@ -111,11 +113,13 @@ class StubWebPlatform {
         if (request.method === verify.method && request.url === verify.path) {
             this.verifyCalls += 1
             const payload = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+            this.lastVerifyPayload = payload
             const session = this.sessions.get(`${payload.serverId}:${payload.accessToken}`)
             const answer =
                 session && session.valid === true
                     ? { valid: true, userId: session.userId, issuedAtMs: 1000 }
                     : { valid: false, reason: (session && session.reason) || 'NOT_FOUND' }
+            this.lastVerifyResponse = answer
             return this.reply(response, answer)
         }
         const register = this.contract.WebPlatformHttpContractMap.RegisterCharacter
@@ -299,8 +303,8 @@ function createHarness(fixture) {
          * income 域的路由名常量。
          *
          * ⚠ 不能像上面三个那样从 façade 取：`lobbyRpc/index.ts` 是**手工维护的稳定 façade**，注释已写明
-         * 新增域不再登记进去（`⛔ 本文件与 envelope/push 不再登记`）。生产代码取新域也是直接 import
-         * `domains/<域>`（`IncomeNativeLobbyRoutes` 就是这么写的），这里照同一份路径取。
+         * 新增域不再登记进去（`⛔ 本文件与 envelope/push 不再登记`）。生产代码与本夹具都直接从
+         * 生成的 `domains/<域>` 读取该域常量。
          */
         IncomeRpc: require(path.join(SERVER_ROOT, 'generated/lobby-contract/protocol/lobbyRpc/domains/income'))
             .IncomeRpc,
@@ -494,7 +498,10 @@ function createHarness(fixture) {
                     client.send({ v: h.V, kind: 'auth', token, sId: h.SID })
                     const frame = await client.next(4000)
                     if (frame.kind === 'auth.ok') return client
-                    lastError = `认证未通过：${JSON.stringify(frame)}`
+                    lastError =
+                        `认证未通过：${JSON.stringify(frame)}；` +
+                        `身份服务实际收到=${JSON.stringify(h.platform.lastVerifyPayload)}；` +
+                        `身份服务返回=${JSON.stringify(h.platform.lastVerifyResponse)}`
                 } finally {
                     client.close()
                 }

@@ -43,7 +43,14 @@ export class NativeLobbyProcessRoutes {
  * 将来若有 handler 依赖它们，会 fail-closed 而不是静默放行。
  */
 function forwardedContext(identity: LobbyRouteIdentity): LobbyConnectionContext {
-    return { uid: identity.uid, sId: identity.sId, sessionEpoch: '', connectionId: '', ip: '' }
+    return {
+        uid: identity.uid,
+        sId: identity.sId,
+        internalUid: identity.internalUid,
+        sessionEpoch: '',
+        connectionId: '',
+        ip: '',
+    }
 }
 
 /** 进程级单例：与 `RouteAction.processRouter` 一样，进程装配阶段安装一次。 */

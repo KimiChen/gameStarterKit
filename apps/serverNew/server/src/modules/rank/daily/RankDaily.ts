@@ -3,12 +3,12 @@ import { RankDefine } from '../rules/RankDefine'
 import { timestamp } from '@arthropoda/game-engine'
 import { RankAccess } from '../persistence/RankAccess'
 import { RankDailyBean } from '../bean/RankDailyBean'
-import { PbRankDailyInfo } from '../RankC2S'
 import { RankGuildRef } from '../ref/RankGuildRef'
 import { UserBaseRef } from '../../user/ref/UserBaseRef'
 import { UserProfileFormatter } from '../../user/action/UserProfileFormatter'
 import { UtilTime } from '@arthropoda/game-engine'
 import { ServerAvailabilityRules } from '../../serverSettings/runtime/ServerAvailabilityRules'
+import { RankDailyView } from './RankDailyView'
 
 export class RankDaily {
     /**
@@ -134,8 +134,8 @@ export class RankDaily {
         return true
     }
 
-    static async getDailyInfoPb(sId: int, type: int, rankType: string) {
-        const pbItem: PbRankDailyInfo = {
+    static async getDailyInfoView(sId: int, type: int, rankType: string) {
+        const dailyView: RankDailyView = {
             id: type,
             rankType: rankType,
             memberId: '',
@@ -151,27 +151,26 @@ export class RankDaily {
             return null
         }
         for (const [id, refBase] of list) {
-            pbItem.memberId = id.toString()
-            pbItem.score = refBase.score
+            dailyView.memberId = id.toString()
+            dailyView.score = refBase.score
             if (RankDefine.CONF.get(rankType)?.subInfo) {
                 const infoKey = RankAccess.formatRankInfoKey(rankType, sId, today)
                 const itemId = (await diffRank.getRedis().hGet(infoKey, id.toString())) as string
-                pbItem.itemId = itemId
+                dailyView.itemId = itemId
             }
             let uId
             if (refBase instanceof RankGuildRef) {
                 uId = refBase.leaderId
-                // pbItem.setGuildInfo(UtilProtobuf.pbFromObject(refBase, CommonGuildInfo.class))
             } else {
                 uId = id
             }
             const user = await UserBaseRef.load(uId)
             if (user) {
-                pbItem.userInfo = UserProfileFormatter.format(user).toModData() as any
+                dailyView.userInfo = UserProfileFormatter.format(user).toModData() as any
             }
             break
         }
-        return pbItem
+        return dailyView
     }
 
     static async getRankKeySuffix(sId: int) {

@@ -12,7 +12,9 @@ import {
     KICK_CLOSE_CODE,
     LOBBY_TRANSPORT_VERSION,
     UserRpc,
+    ALL_LOBBY_RPC_TYPES,
 } from '../../../generated/lobby-contract/protocol/lobbyRpc'
+import { NativeLobbyPendingRoutes } from '../../../src/runtime/lobby/NativeLobbyPendingRoutes'
 import { LobbyAuthRejection } from '@arthropoda/game-engine'
 
 describe('native Lobby shared wire and identity boundary', () => {
@@ -216,61 +218,49 @@ describe('native Lobby shared wire and identity boundary', () => {
     })
 
     it('does not permit a partial module registry to masquerade as a runnable native Lobby', () => {
+        // 既没有生成的 Action 解析、也没有模块贡献 ⇒ 声明面里的本项目路由全是「无主」，
+        // 必须 fail-closed（`unowned missing`），而不是「看起来能启动」。
         const routes = new NativeLobbyRouteRegistry(routeRegistryOptions())
+        assert.throws(() => routes.assertComplete(), /unowned missing=.*arena\.board/)
         routes.register('user.getInfo', async () => ({ user: {} }))
-        assert.throws(() => routes.assertComplete(), /missing=.*arena\.board/)
+        assert.throws(() => routes.assertComplete(), /unowned missing=.*arena\.board/)
         assert.throws(() => routes.register('user.getInfo', async () => ({})), /duplicate native Lobby route/)
     })
 
-    it('discovers native Lobby routes only through their owning module contributions', () => {
-        const routes = new NativeLobbyRouteRegistry(routeRegistryOptions())
-        const handlers: Array<(uid: string, internalUid: number, sId: number) => Promise<void>> = []
-        for (const entry of GameModuleCatalog.systems.nativeLobby.entries) {
-            entry.contribution.register(routes, {
-                identities: { resolve: async () => 1001 },
-                registerCharacter: async () => undefined,
-                pushToUser: async () => false,
-                onAuthenticated: (handler) => handlers.push(handler),
-                onReleased: () => undefined,
-            })
+    it('serves every schema-owned route from the generated Action registry instead of module contributions', () => {
+        // 目标形态（施工单 BF4）：路由归属由 schema + 生成的 Actions 决定，业务模块
+        // **不再**贡献原生 Lobby 路由。所以这里钉两条：
+        //  ① `nativeLobby` 贡献表里不许再有「逐条注册路由」的模块项；
+        //  ② 只要接上可信身份解析，shared 声明面的本项目路由全部可路由（含幂等写路由）。
+        assert.deepEqual(
+            GameModuleCatalog.systems.nativeLobby.entries.map((entry) => entry.contribution.name),
+            [],
+            '模块不得再手工注册原生 Lobby 路由（路由由生成的 Actions 提供）',
+        )
+        const routes = new NativeLobbyRouteRegistry(generatedRouteRegistryOptions())
+        for (const type of ALL_LOBBY_RPC_TYPES) {
+            const ownedByThisProject = !Object.prototype.hasOwnProperty.call(NativeLobbyPendingRoutes, type)
+            assert.equal(routes.has(type), ownedByThisProject, `${type} 的可路由性与 schema 归属不一致`)
         }
-        assert.equal(routes.has('user.getInfo'), true)
-        assert.equal(routes.has('guild.join'), true)
-        assert.equal(routes.has('mail.list'), true)
-        assert.equal(routes.has('arena.board'), true)
-        assert.equal(routes.has('arenaShop.buyBoost'), true)
-        assert.equal(routes.has('slg.mapTiles'), true)
-        assert.equal(routes.has('slg.marchRecall'), true)
-        assert.equal(routes.has('snakeCosmetic.getSnapshot'), true)
-        assert.equal(routes.has('snakeCosmetic.equip'), true)
-        assert.equal(routes.has('snakeCosmetic.unlock'), true)
         /**
          * 登录钩子（`onAuthenticated`）的贡献者**必须点名**，⛔ 不许用魔数：新增一个「登录时改玩家
-         * 状态」的钩子是有副作用的决定（会在每条 RPC 之前重跑），多一个都要有人明确同意。
+         * 状态」的钩子是有副作用的决定（会在每条认证前重跑），多一个都要有人明确同意。
          * 当前两个：`user.ensure`（建档）+ `income.parkOffline`（离线收益暂存）。
          */
         const authHookOwners = ['income', 'user']
-        const contributing = new Set(GameModuleCatalog.systems.nativeLobby.entries.map((entry) => entry.moduleName))
+        const contributing = new Set(GameModuleCatalog.systems.nativeLobbyAuth.entries.map((entry) => entry.moduleName))
         for (const owner of authHookOwners) {
-            assert.equal(contributing.has(owner), true, `清单里的 ${owner} 未贡献原生 Lobby 路由（清单已陈旧）`)
+            assert.equal(contributing.has(owner), true, `清单里的 ${owner} 未贡献会话钩子（清单已陈旧）`)
         }
-        assert.equal(handlers.length, authHookOwners.length)
-        // 模块贡献必须覆盖 shared 全集，否则启动期 assertComplete 会拒绝启动。
+        assert.deepEqual([...contributing].sort(), authHookOwners)
+        // schema 归属 + 生成 Action 必须覆盖本项目全部路由，否则启动期 assertComplete 会拒绝启动。
         assert.doesNotThrow(() => routes.assertComplete())
     })
 
     it('refuses to run idempotent-write routes without the generic idempotency gate', async () => {
-        // 路由全集齐全、但没接通用幂等闸：必须拒绝启动，而不是让重试重复扣费。
-        const ungated = new NativeLobbyRouteRegistry()
-        for (const entry of GameModuleCatalog.systems.nativeLobby.entries) {
-            entry.contribution.register(ungated, {
-                identities: { resolve: async () => 1001 },
-                registerCharacter: async () => undefined,
-                pushToUser: async () => false,
-                onAuthenticated: () => undefined,
-                onReleased: () => undefined,
-            })
-        }
+        // 路由全集齐全（可信身份解析已接上）、但没接通用幂等闸：必须拒绝启动，
+        // 而不是让重试重复扣费。
+        const ungated = new NativeLobbyRouteRegistry({ resolveInternalUid: async () => 1001 })
         assert.throws(() => ungated.assertComplete(), /idempotency gate/)
         await assert.rejects(
             () => ungated.execute('arena.capture', context(), { clientReqId: 'req-1', tile: 0 }),
@@ -319,6 +309,16 @@ describe('native Lobby shared wire and identity boundary', () => {
 function routeRegistryOptions() {
     const codec = new NativeLobbyContractCodec()
     return { validateResponse: (route: string, response: unknown) => codec.validateResponse(route, response) }
+}
+
+/**
+ * 与生产装配同形：出站契约校验 + 可信内部 uid 解析。
+ *
+ * 只给 `validateResponse` 的注册表在 schema-owned 路由上会被判成「既没注册、也没登记归属」——
+ * 那是**期望**行为（启动期必须 fail-closed），所以测「部分注册表不许冒充可运行」要用这一份。
+ */
+function generatedRouteRegistryOptions() {
+    return { ...routeRegistryOptions(), resolveInternalUid: async () => 1001 }
 }
 
 function context() {

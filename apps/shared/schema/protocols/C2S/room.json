@@ -1,0 +1,67 @@
+{
+  "domain": "room",
+  "contractVersion": 5,
+  "errorCodes": [
+    "ROOM_CODE_UNAVAILABLE",
+    "ROOM_FULL",
+    "ROOM_START_IN_PROGRESS",
+    "ROOM_QUOTA_EXCEEDED",
+    "ROOM_SERVICE_UNAVAILABLE",
+    "ROOM_RESULT_UNKNOWN"
+  ],
+  "types": {
+    "IRoomPrepareCreateReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "mode", "kind": "string", "check": { "fn": "validateRoomId", "from": "../checks/room" } },
+        { "name": "modeVersion", "kind": "integer", "min": 1, "max": 1000000 },
+        { "name": "profile", "kind": "string", "check": { "fn": "validateRoomId", "from": "../checks/room" } }
+      ]
+    },
+    "IRoomPrepareCreateRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "creationTicket", "kind": "string", "check": { "fn": "validateRoomTicket", "from": "../checks/room" } },
+        { "name": "expiresAt", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IRoomResolveReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "code", "kind": "string", "check": { "fn": "validateRoomCode", "from": "../checks/room" } }
+      ]
+    },
+    "IRoomResolveRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "roomId", "kind": "string", "minLength": 1, "maxLength": 128 },
+        { "name": "mode", "kind": "string", "check": { "fn": "validateRoomId", "from": "../checks/room" } },
+        { "name": "modeVersion", "kind": "integer", "min": 1, "max": 1000000 },
+        { "name": "profile", "kind": "string", "check": { "fn": "validateRoomId", "from": "../checks/room" } },
+        { "name": "joinTicket", "kind": "string", "check": { "fn": "validateRoomTicket", "from": "../checks/room" } },
+        { "name": "expiresAt", "kind": "integer", "min": 0 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "RoomPrepareCreate",
+      "route": "room.prepareCreate",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "room",
+      "request": { "kind": "ref", "ref": "IRoomPrepareCreateReq" },
+      "response": { "kind": "ref", "ref": "IRoomPrepareCreateRes" }
+    },
+    {
+      "name": "RoomResolve",
+      "route": "room.resolve",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "room",
+      "request": { "kind": "ref", "ref": "IRoomResolveReq" },
+      "response": { "kind": "ref", "ref": "IRoomResolveRes" }
+    }
+  ]
+}

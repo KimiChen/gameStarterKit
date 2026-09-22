@@ -11,8 +11,12 @@ const check = process.argv.includes('--check')
 // 纳入消费面只是让新框架复用同一份真源，禁止在 serverNew 再维护第二份皮肤目录。
 // `gameplays/catalog.generated.ts` 是 `room.prepareCreate` 的玩法目录校验真源（mode/modeVersion/profiles）；
 // 私房目录同样只能有一份，⛔ 不要在 serverNew 抄一份 mode 清单。
+// `protocol/lobbyRpc/checks/arenaShop.ts` 是**非生成**的 shared 业务常量（`ARENA_SHOP_BOOST_COST`），
+// 三端共用同一份。它不被任何 `domains/*.ts` import（生成物只引用 `check` 钩子，常量是纯导出），
+// 所以从 `lobbyRpc/index.ts` 追不到它 ⇒ 必须在这里显式列为消费面入口，⛔ 不要在 serverNew 抄第二份。
 const entries = [
     'protocol/lobbyRpc/index.ts',
+    'protocol/lobbyRpc/checks/arenaShop.ts',
     'generated/webplatform/index.ts',
     'gameplays/snake/cosmetics.ts',
     'gameplays/catalog.generated.ts',

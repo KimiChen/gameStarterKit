@@ -14,6 +14,11 @@ import { writeProcessRouteTrace } from './writeProcessRouteTrace'
  */
 export function installNativeLobbyProcessRouter(runtime: RuntimeServerLike, pipeTimeoutMs: number): void {
     RouteAction.processRouter = async (call, bindId) => {
+        // `RouteAction` 同时服务原生 Lobby 的对象调用与 `MessageHelper` 的进程内 LocalAction。
+        // 后者没有可信外部 uid，也不应借「routed-lobby-route」绕过它自己的调度语义：例如认证
+        // 成功后的 `user.lobbyEnter` 必须在持有连接的 worker 里完成，才能继续同一条登录链。
+        if (call.responseTransport !== 'object') return false
+
         // `user-task` 管道已经把这次 LocalAction 投递到按 uid 选出的 USER_TASK_WORKER。
         // 该进程再按 ActionUser 的 bindId 转去普通 task worker，不但违背用户任务所有权，
         // 还会因 LocalAction 没有对象 response transport 被 fail-closed。user task worker 是这类
@@ -57,11 +62,9 @@ function buildRoutedRequest(call: ApiCall, bindId: number): ProcessPipeRequest |
     const sid = call.messageHead.serverId ?? 0
     // 本地队列占位路由（`default/Default`）没有业务语义，就地执行即可。
     if (call.getApiName() === 'default/Default') return undefined
-    if (call.responseTransport !== 'object') {
-        // 旧二进制协议调用已随 P6 删除。出现非对象传输的跨进程调用，说明还有 legacy 入口没清干净；
-        // 必须响亮失败，而不是退回「目标 worker 用协议表重建 call」的过渡分支。
-        throw new Error(`routed call without object transport: ${call.getApiName()}`)
-    }
+    // 非对象调用是本地 Action，调用方必须保持就地执行（见 router 顶层的短路）。这里再留一层
+    // 防御，避免将来复用本函数时把内部 Action 错编码成原生 Lobby 管道请求。
+    if (call.responseTransport !== 'object') return undefined
     const externalUid = (call as ObjectActionCall<unknown, unknown>).externalUid
     if (!externalUid) {
         throw new Error(`routed object route without a trusted external uid: ${call.getApiName()}`)

@@ -1,0 +1,101 @@
+{
+  "domain": "guild",
+  "contractVersion": 5,
+  "errorCodes": [],
+  "types": {
+    "IGuildEvent": {
+      "kind": "object",
+      "fields": [
+        { "name": "seq", "kind": "integer", "min": 1 },
+        { "name": "kind", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "data", "kind": "json", "required": false },
+        { "name": "at", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IGuildJoinReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "guildId", "kind": "integer", "min": 1, "max": 999999999 }
+      ]
+    },
+    "IGuildJoinRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "ok", "kind": "boolean" },
+        { "name": "seq", "kind": "integer", "min": 1 }
+      ]
+    },
+    "IGuildLeaveReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 }
+      ]
+    },
+    "IGuildLeaveRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "ok", "kind": "boolean" }
+      ]
+    },
+    "IGuildGetEventsReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "sinceSeq", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IGuildGetEventsRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "events",
+          "kind": "array",
+          "items": { "kind": "ref", "ref": "IGuildEvent" },
+          "maxItems": 1000,
+          "sizeCode": "RPC_EVENTS"
+        },
+        { "name": "latestSeq", "kind": "integer", "min": 0 },
+        { "name": "guildId", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IGuildEventPush": {
+      "kind": "object",
+      "fields": [
+        { "name": "seq", "kind": "integer", "min": 0 },
+        { "name": "guildId", "kind": "integer", "min": 0 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "GuildJoin",
+      "route": "guild.join",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "guild",
+      "request": { "kind": "ref", "ref": "IGuildJoinReq" },
+      "response": { "kind": "ref", "ref": "IGuildJoinRes" }
+    },
+    {
+      "name": "GuildLeave",
+      "route": "guild.leave",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "guild",
+      "request": { "kind": "ref", "ref": "IGuildLeaveReq" },
+      "response": { "kind": "ref", "ref": "IGuildLeaveRes" }
+    },
+    {
+      "name": "GuildGetEvents",
+      "route": "guild.getEvents",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "guild",
+      "request": { "kind": "ref", "ref": "IGuildGetEventsReq" },
+      "response": { "kind": "ref", "ref": "IGuildGetEventsRes" }
+    }
+  ],
+  "pushes": [
+    { "key": "GuildEvent", "type": "guild.event", "data": { "kind": "ref", "ref": "IGuildEventPush" } }
+  ]
+}

@@ -16,7 +16,7 @@ import {
 } from './SnakeSkinBusinessCatalog'
 
 /** Redis 里的权威衣柜记录；`version` 不属于它（只做客户端刷新去重）。 */
-interface StoredSnakeCosmeticProfile {
+export interface StoredSnakeCosmeticProfile {
     equippedSkinId: number
     ownedSkinIds: number[]
     fragmentBalances: Record<string, number>
@@ -29,9 +29,40 @@ interface StoredSnakeCosmeticProfile {
  * 写路径先落 Redis 再返回，失败不会回报成功。
  */
 export class SnakeCosmeticNativeLobbyStore {
-    private static readonly profilesKey = 'nativeLobby:snakeCosmetic:profiles:v1'
-    /** `version` 只用于客户端刷新去重，按契约不进 Redis、不做并发控制。 */
-    private readonly versions = new Map<string, number>()
+    /**
+     * 衣柜的存储契约：key / field / 序列化。
+     *
+     * 生产写路径（`write`）与测试夹具（`test/runtime/protocol/native-lobby-routes.test.ts` 的
+     * `seedWardrobe`）共用这一份定义。⛔ 不要在测试里另抄一份键名与字段形状：store 改形状时夹具会
+     * 静默落后，而症状是 `read()` 抛 `USER_DATA_LOST`，看上去像业务坏了而不是夹具陈旧。
+     *
+     * ⚠ 契约必须落在**类静态成员**上而不是模块级的对象字面量：兼容基线
+     * （`scripts/structure-baseline/source-contract.js` 的 `collectRedisKeys`）只认
+     * `PropertyDeclaration` / `VariableDeclaration` / 赋值表达式，对象字面量里的属性会被漏掉，
+     * 于是这个键悄悄从 `compatibility.redisKeys` 里消失、后续改值也不再触发门禁。
+     */
+    static readonly profilesKey = 'nativeLobby:snakeCosmetic:profiles:v1'
+
+    static userField(uid: string, sId: number): string {
+        return `${sId}:${uid}`
+    }
+
+    static serialize(profile: StoredSnakeCosmeticProfile): string {
+        return JSON.stringify({
+            equippedSkinId: profile.equippedSkinId,
+            ownedSkinIds: [...profile.ownedSkinIds].sort((a, b) => a - b),
+            fragmentBalances: profile.fragmentBalances,
+        })
+    }
+
+    /**
+     * `version` 只用于客户端刷新去重，按契约不进 Redis、不做并发控制。
+     *
+     * ⚠ 必须是**静态**：路由统一由生成的 Action 承载后，每次请求都会 `new` 一个 store，
+     * 实例字段会让 version 每次归零，「重复调用返回首次结果」直接破功。旧实现靠
+     * 「一个路由装配只 new 一次 store」隐式拿到进程级生命周期，迁移后必须显式表达。
+     */
+    private static readonly versions = new Map<string, number>()
 
     async snapshot(uid: string, sId: number): Promise<ISnakeCosmeticSnapshotRes> {
         const profile = await this.read(uid, sId)
@@ -88,7 +119,7 @@ export class SnakeCosmeticNativeLobbyStore {
 
     private snapshotOf(uid: string, sId: number, profile: StoredSnakeCosmeticProfile): ISnakeCosmeticProfile {
         return {
-            version: this.versions.get(versionKey(sId, uid)) ?? 0,
+            version: SnakeCosmeticNativeLobbyStore.versions.get(versionKey(sId, uid)) ?? 0,
             equippedSkinId: profile.equippedSkinId,
             ownedSkinIds: [...profile.ownedSkinIds].sort((a, b) => a - b),
             fragmentBalances: { ...profile.fragmentBalances },
@@ -97,14 +128,15 @@ export class SnakeCosmeticNativeLobbyStore {
 
     private bump(uid: string, sId: number, profile: StoredSnakeCosmeticProfile): ISnakeCosmeticProfile {
         const key = versionKey(sId, uid)
-        this.versions.set(key, (this.versions.get(key) ?? 0) + 1)
+        const versions = SnakeCosmeticNativeLobbyStore.versions
+        versions.set(key, (versions.get(key) ?? 0) + 1)
         return this.snapshotOf(uid, sId, profile)
     }
 
     private async read(uid: string, sId: number): Promise<StoredSnakeCosmeticProfile> {
         const raw = await RedisInstance.getCenterRedis().hGet(
             SnakeCosmeticNativeLobbyStore.profilesKey,
-            userField(uid, sId),
+            SnakeCosmeticNativeLobbyStore.userField(uid, sId),
         )
         if (raw === null || raw === undefined) return defaultProfile()
         let parsed: unknown
@@ -122,12 +154,8 @@ export class SnakeCosmeticNativeLobbyStore {
     private write(uid: string, sId: number, profile: StoredSnakeCosmeticProfile): Promise<unknown> {
         return RedisInstance.getCenterRedis().hSet(
             SnakeCosmeticNativeLobbyStore.profilesKey,
-            userField(uid, sId),
-            JSON.stringify({
-                equippedSkinId: profile.equippedSkinId,
-                ownedSkinIds: [...profile.ownedSkinIds].sort((a, b) => a - b),
-                fragmentBalances: profile.fragmentBalances,
-            }),
+            SnakeCosmeticNativeLobbyStore.userField(uid, sId),
+            SnakeCosmeticNativeLobbyStore.serialize(profile),
         )
     }
 }
@@ -141,10 +169,6 @@ function assertWritesEnabled(): void {
 }
 
 function versionKey(sId: number, uid: string): string {
-    return `${sId}:${uid}`
-}
-
-function userField(uid: string, sId: number): string {
     return `${sId}:${uid}`
 }
 

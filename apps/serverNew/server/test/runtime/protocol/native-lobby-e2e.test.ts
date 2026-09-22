@@ -16,6 +16,7 @@ import {
 } from '../../../generated/lobby-contract/protocol/lobbyRpc'
 import { nativeLobbyProcessRoutes } from '../../../src/runtime/lobby/NativeLobbyProcessRoutes'
 import { ShopNativeLobbyStore } from '../../../src/modules/shop/lobby/ShopNativeLobbyStore'
+import { User } from '../../../src/modules/user/bean/User'
 import { startConfiguredNativeLobby, type NativeLobbyRuntime } from '../../../src/startup/NativeLobbyRuntime'
 import { installFakeCenterRedis, type FakeCenterRedis } from '../../support/FakeCenterRedis'
 
@@ -215,6 +216,7 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
     let savedSave: typeof RedisService.save
     let savedProcessRouter: typeof RouteAction.processRouter
     let savedPlatformIdMap: Record<string, number>
+    let savedUserLoadOnlyRead: unknown
 
     before(async () => {
         const noop = () => undefined
@@ -253,7 +255,10 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
         RedisService.save = async () => undefined
         savedProcessRouter = RouteAction.processRouter
         RouteAction.processRouter = undefined
-        redis = installFakeCenterRedis()
+        const userBean = User as unknown as { loadOnlyRead: unknown }
+        savedUserLoadOnlyRead = userBean.loadOnlyRead
+        userBean.loadOnlyRead = async () => undefined
+        redis = installFakeCenterRedis({ player: true })
 
         platform = new FakeWebPlatform()
         await platform.start()
@@ -283,6 +288,7 @@ describe('native Lobby end-to-end over a real WebSocket', () => {
         }
         RedisService.save = savedSave
         RouteAction.processRouter = savedProcessRouter
+        ;(User as unknown as { loadOnlyRead: unknown }).loadOnlyRead = savedUserLoadOnlyRead
         RouteAction.callGroups.clear()
         PlatformLineInfo.register(savedPlatformIdMap)
         for (const [name, value] of Object.entries(savedGlobals)) {

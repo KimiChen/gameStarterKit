@@ -1,12 +1,12 @@
-# scripts/packages/arenaShop.lock —— 已安装插件 arenaShop@1.0.1 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/arenaShop.lock —— 已安装插件 arenaShop@1.0.3 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"arenaShop","version":"1.0.1","kinds":["client"],"constantName":null,"domains":["arenaShop"],"fguiPackages":[],"requires":{"pluginApiVersion":null,"kits":{"arena":{"board":1}}}}
-# source {"kind":"tree","filesLockSha256":"eb2d26292a9a6bcf972de155d8ed9ae951ee6a1516eade7757b6f361197cc86c","forkedFrom":{"kind":"package","filesLockSha256":"0a16eb407ff23103a2da774b5aab0487dca08fed6d35a8a59e88fd7036911be7"}}
+# manifest {"id":"arenaShop","version":"1.0.3","kinds":["client"],"constantName":null,"domains":["arenaShop"],"fguiPackages":[],"requires":{"pluginApiVersion":null,"kits":{"arena":{"board":1}}}}
+# source {"kind":"tree","filesLockSha256":"81eb2a1a22428fd3e2f097e18cf0ccafda6e64fce3a2f46c465fdbc9f54315c4","forkedFrom":{"kind":"package","filesLockSha256":"0a16eb407ff23103a2da774b5aab0487dca08fed6d35a8a59e88fd7036911be7"}}
 apps/Cocos/assets/src/plugins/arenaShop.meta 3df5f7df8d1c7f60eb6f51336c655cc32868631244352ef4ef119efc862f18e1
 apps/Cocos/assets/src/plugins/arenaShop/index.ts 0fea43a570bd1bc1e438e0107f9dfa2051b63e2b7f49dc09bd08f00b59a151ea
 apps/Cocos/assets/src/plugins/arenaShop/index.ts.meta 34acc47cb6bfab43e1552cbff45067767b4e6a9d574a0afec96546f90b12ec12
 apps/Cocos/assets/src/plugins/arenaShop/logic.meta a44d1081251e807a0f31bee5c1d1e6ad4ff726f22d783f303ff01ee509f592cb
-apps/Cocos/assets/src/plugins/arenaShop/logic/ArenaShopLogic.ts 5717aae38454c7556ac969d323654f5b5f779820251330a1e0b9d35906f3b85d
+apps/Cocos/assets/src/plugins/arenaShop/logic/ArenaShopLogic.ts 93d25a9ba7b13eb8069053be7cdc299781aab77c2aa72f6fde64098d608cd37c
 apps/Cocos/assets/src/plugins/arenaShop/logic/ArenaShopLogic.ts.meta 133c32b4407ee3d5000d2681138e0349f433cea2e5a2d67160511214afa660ca
 apps/Cocos/assets/src/plugins/arenaShop/logic/arenaShopRuntime.ts 669765515aa24d2b1f6f87a3242f58a016159c5bad0ef58725054c30dbd4b0f4
 apps/Cocos/assets/src/plugins/arenaShop/logic/arenaShopRuntime.ts.meta 2620c9459d8d953b6c33d3f193b041230aaff73cbbc1e1de99486824e355ced2
@@ -16,15 +16,15 @@ apps/Cocos/assets/src/plugins/arenaShop/view/ArenaShopView.ts.meta 2e63bee7e0aa2
 apps/Cocos/assets/src/plugins/arenaShop/view/ArenaShopView.view.json 45e36008f63b4e028b567c5c2f893785c7118c88693c1f03b96f6f9d04c13520
 apps/Cocos/assets/src/plugins/arenaShop/view/ArenaShopView.view.json.meta 66d9a4960a73f0d87dd259a7f8a9879f4a72134fc044443138991be71667941e
 apps/client/src/plugins/arenaShop/index.ts 0fea43a570bd1bc1e438e0107f9dfa2051b63e2b7f49dc09bd08f00b59a151ea
-apps/client/src/plugins/arenaShop/logic/ArenaShopLogic.ts 5717aae38454c7556ac969d323654f5b5f779820251330a1e0b9d35906f3b85d
+apps/client/src/plugins/arenaShop/logic/ArenaShopLogic.ts 93d25a9ba7b13eb8069053be7cdc299781aab77c2aa72f6fde64098d608cd37c
 apps/client/src/plugins/arenaShop/logic/arenaShopRuntime.ts 669765515aa24d2b1f6f87a3242f58a016159c5bad0ef58725054c30dbd4b0f4
 apps/client/src/plugins/arenaShop/view/ArenaShopView.ts 4ef6db5677a616379644f214721e8f0a662596224b080e465819180879b5cb26
 apps/client/src/plugins/arenaShop/view/ArenaShopView.view.json 45e36008f63b4e028b567c5c2f893785c7118c88693c1f03b96f6f9d04c13520
-apps/client/test/arenaShop-logic.test.ts f80e2ae30d120afacac547500a67e2e52620744236044012b3f2ff5b9c35adf7
+apps/client/test/arenaShop-logic.test.ts 7c89203575ce4204b87b189f64047fcc7cda3e9d7b5e9a6501f699ae39ae98e2
 apps/plugins/arenaShop/README.md 9bc1cd426ac77050a28c3996dbd3ac277e4a61adbc2d6b06dfda083d4a0860af
-apps/plugins/arenaShop/plugin.json bbee6a63daa42186957b63328a2843f643d2b5c650d5424c6111dfb656235026
-apps/server/src/core/arenaShop/buy.ts 0bc905b9747a7f588b4e6eb22145c9176f9e3b366d6e5b3330c181248e3a9abd
+apps/plugins/arenaShop/plugin.json 3a11c2e8cd7454ebb7cc834e7a0d1e2bcf3bf5038f6b8d25e5033f98be884529
+apps/server/src/core/arenaShop/buy.ts 6e5c9372f616b8bdea4d2be3c36c83e0b3e320e973d36614df2fba6ffe10c9f6
 apps/server/src/websocket/arenaShop/buyBoost.ts f3015544af210a981de9487bfd93c152045b05f83f947ad86a060d6e8df2d672
-apps/server/test/arenaShop-buy.test.ts 64c19cbd136869de788dfd13b887a76ad9411f4de4918a409f3bcd72787ab44f
+apps/server/test/arenaShop-buy.test.ts 8d87762ed30dbab39bf5dbaf6af27d34abbc275caba4fd03e85a4f8bdb61dd53
 apps/server/test/lobbyRpcVectors/arenaShop.ts 4f2b53fb0e2b9c8c075deb094335eeaff37efc8ce48de6542e73c49ecadc1152
-apps/shared/src/protocol/lobbyRpc/domains/arenaShop.ts 2cb9597e5558094b464d70a16a03a8a63c95c86fa2fbd523cc96d5b93c63dd73
+apps/shared/schema/protocols/C2S/arenaShop.json 3b398e2ef4ecf37843d68ed907a1992d535f27d17a2cbde8e8ed381ee8bcd819

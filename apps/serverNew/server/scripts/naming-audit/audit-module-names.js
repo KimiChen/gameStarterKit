@@ -29,16 +29,8 @@ const compatibilityAllowlist = new Map([
         { names: ['GiftDefine'], reason: 'management HTTP still shares the established gift constants entry' },
     ],
     [
-        'src/modules/friend/FriendC2S.ts',
-        { names: ['FriendInfo'], reason: 'C2S protocol type identity is retained for generated client compatibility' },
-    ],
-    [
         'src/modules/guild/GuildS2S.ts',
         { names: ['ReqGuildResetGift'], reason: 'single S2S protocol request remains in its stable route source file' },
-    ],
-    [
-        'src/modules/survey/SurveyS2S.ts',
-        { names: ['ReqSurveyBack'], reason: 'single S2S protocol request remains in its stable route source file' },
     ],
     [
         'src/modules/mail/language/LanguageDefine.ts',
@@ -51,14 +43,6 @@ const compatibilityAllowlist = new Map([
     [
         'src/modules/pay/bean/TqInfoItem.ts',
         { names: ['TqInfoItem'], reason: 'persisted Bean and protobuf identity must retain its established name' },
-    ],
-    [
-        'src/modules/reddot/RedDotC2S.ts',
-        { names: ['ReqRedDotRead'], reason: 'single C2S protocol request remains in its stable route source file' },
-    ],
-    [
-        'src/modules/scene/SceneC2S.ts',
-        { names: ['PbEventOtherInfo'], reason: 'protobuf event payload identity is retained for client compatibility' },
     ],
     [
         'src/modules/serverSettings/runtime/SystemInfoDefine.ts',

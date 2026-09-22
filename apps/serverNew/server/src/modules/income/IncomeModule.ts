@@ -1,24 +1,23 @@
 import { defineGameModule } from '../../startup/GameModule'
-import { IncomeNativeLobbyRoutes } from './lobby/IncomeNativeLobbyRoutes'
-import { IncomeNativeLobbyStore } from './lobby/IncomeNativeLobbyStore'
+import { IncomeNativeLobbyAuth } from './lobby/IncomeNativeLobbyAuth'
 
 /**
- * income 模块：铜币收益的 wire 面 + 会话钩子。
+ * income 模块：铜币收益的规则与登录侧离线暂存入口。
  *
- * 规则、账本与账户都归本模块；认证成功时原子初始化新账户，并把已有账户的离线收益暂存。
+ * 路由面（`income.getPending` / `income.settleOnline` / `income.claimOffline`）全部由
+ * `apps/shared/schema/protocols/C2S/income.json` 声明并生成 Action，本模块**不**贡献任何
+ * 原生 Lobby 路由；这里只登记「认证成功后把离线暂存派发成一次 Action」这一条会话钩子。
  */
 export const IncomeModule = defineGameModule({
     name: 'income',
-    nativeLobby: {
-        routes: [
+    nativeLobbyAuth: {
+        handlers: [
             {
-                name: 'income-native-lobby-routes',
+                name: 'income-native-lobby-auth',
                 app: 'service',
-                register: (registry, services) => {
-                    const store = new IncomeNativeLobbyStore()
-                    // 登录侧：首次原子初始化账户；已有账户只在这里算好离线暂存，领取前不入账。
-                    services.onAuthenticated((uid, internalUid, sId) => store.parkOffline(internalUid, uid, sId))
-                    new IncomeNativeLobbyRoutes(services.identities, store).register(registry)
+                after: ['user-native-lobby-auth'],
+                onAuthenticated: async (_uid, internalUid, sId) => {
+                    await IncomeNativeLobbyAuth.onAuthenticated(internalUid, sId)
                 },
             },
         ],

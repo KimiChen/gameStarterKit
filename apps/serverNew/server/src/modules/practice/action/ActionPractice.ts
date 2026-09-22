@@ -17,9 +17,9 @@ import { EquipInventoryStore } from '../../equip/inventory/EquipInventoryStore'
 import { Award } from '../../props/award/Award'
 import { AwardBox } from '../../props/award/AwardBox'
 import { Props } from '../../props/inventory/Props'
-import { ResPracticeEnterPractice } from '../PracticeC2S'
 import { EquipPracticeBean } from '../bean/EquipPracticeBean'
 import { PracticeBean } from '../bean/PracticeBean'
+import { PracticeAwardResult } from './PracticeAwardResult'
 
 export class ActionPractice extends GameAction {
     /** @var int 按照品质检起 */
@@ -227,7 +227,7 @@ export class ActionPractice extends GameAction {
         user: User,
         practiceItem: PracticeBean,
         awardItems: Array<IConfPracticeLittleMonsterAward2>,
-        res?: ResPracticeEnterPractice,
+        res?: PracticeAwardResult,
     ) {
         for (const awardItem of awardItems) {
             const item = new PropBean({ propId: awardItem.propId, num: awardItem.num })

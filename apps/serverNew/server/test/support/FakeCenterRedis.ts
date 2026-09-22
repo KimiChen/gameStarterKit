@@ -445,10 +445,31 @@ function decodeRecord(raw: string): StoredIdemRecord | null {
     }
 }
 
+export interface FakeRedisInstallOptions {
+    /**
+     * 同时把**玩家档 Redis**（`userRedis`）与区服 Redis（`serverRedis`）指向同一个假体。
+     *
+     * 走 `User` Bean 的路径（`UserHash.getRedis()` → `RedisInstance.getUserRedis()`）必须有它，
+     * 否则 `User.load` 会在 `undefined.hGetAll` 上抛 TypeError。只装中心 Redis 的夹具在
+     * 「认证成功后的 Action 会加载 User Bean」这类链路上跑不通 —— 那是夹具缺口，
+     * ⛔ 不要为了绕开它在生产代码里吞掉玩家档 Redis 的缺失。
+     */
+    readonly player?: boolean
+}
+
 /** 安装假体并关闭引擎调试开关（锁会读该全局，未定义时会抛错）。 */
-export function installFakeCenterRedis(): FakeCenterRedis {
+export function installFakeCenterRedis(options?: FakeRedisInstallOptions): FakeCenterRedis {
     const fake = new FakeCenterRedis()
-    ;(RealRedisInstance as unknown as { centerRedis: unknown }).centerRedis = fake
+    const instance = RealRedisInstance as unknown as {
+        centerRedis: unknown
+        userRedis?: unknown
+        serverRedis?: unknown
+    }
+    instance.centerRedis = fake
+    if (options?.player === true) {
+        instance.userRedis = fake
+        instance.serverRedis = fake
+    }
     ;(globalThis as unknown as { ADJUST_OPEN: boolean }).ADJUST_OPEN = false
     return fake
 }

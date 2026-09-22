@@ -12,8 +12,8 @@ import { UserServerSnapshot } from '../../user/action/UserServerSnapshot'
 import { UserInfoOnlyNetBean } from '../../../../generated/protocol/server/C2S/mod/user/UserInfoOnlyNetBean'
 import { RankAwardSelection } from '../rules/RankAwardSelection'
 import { GameRandom } from '../../../runtime/random/GameRandom'
-import { PbMissionBossItem } from '../MissionC2S'
 import { MissionItem } from '../bean/MissionItem'
+import { MissionBossView } from './MissionBossView'
 
 export class ActionMission extends GameAction {
     /**
@@ -62,7 +62,7 @@ export class ActionMission extends GameAction {
         return item
     }
 
-    static async formatBossPb(sceneId: string, cId: int, type: int, roomId: int): Promise<PbMissionBossItem> {
+    static async formatBossView(sceneId: string, cId: int, type: int, roomId: int): Promise<MissionBossView> {
         let cache: SceneCache | undefined
         if (type == ActionMission.TYPE_KUI_COW) {
             cache = (await SceneCache.load(sceneId, ModuleOpenType.SYS_KUICOW.toString())) ?? undefined
@@ -87,7 +87,7 @@ export class ActionMission extends GameAction {
             }
         }
 
-        const pbBossItem: PbMissionBossItem = {
+        const bossView: MissionBossView = {
             id: mapId,
             hp: bossBlood,
             owner: ownerInfo,
@@ -96,7 +96,7 @@ export class ActionMission extends GameAction {
             roomId: roomId,
         }
 
-        return pbBossItem
+        return bossView
     }
 
     /**
@@ -106,7 +106,7 @@ export class ActionMission extends GameAction {
      * @returns
      */
     static async getPersonnelBoss(user: User, type: int) {
-        const list: PbMissionBossItem[] = []
+        const list: MissionBossView[] = []
         for (const [, item] of C.mission(type).more) {
             // 获取当前地图房间记录
             // room = Scene.getMissionRoom(user, type, item.mapId)
@@ -114,7 +114,7 @@ export class ActionMission extends GameAction {
             const cId = item.mapId
             const roomId = 1
             // 生成下发Boss数据
-            list.push(await this.formatBossPb(sceenId, cId, type, roomId))
+            list.push(await this.formatBossView(sceenId, cId, type, roomId))
         }
 
         return list
@@ -145,8 +145,8 @@ export class ActionMission extends GameAction {
         const roomId = 1
 
         // 下发Boos数据
-        const pbBoss = await this.formatBossPb(sceneId, hServer.currKuiCowLv, ActionMission.TYPE_KUI_COW, roomId)
-        return [pbBoss]
+        const bossView = await this.formatBossView(sceneId, hServer.currKuiCowLv, ActionMission.TYPE_KUI_COW, roomId)
+        return [bossView]
     }
 
     /**

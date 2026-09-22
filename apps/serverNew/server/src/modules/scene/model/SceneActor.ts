@@ -131,9 +131,6 @@ export class SceneActor {
 
     /** 装备-神通CD */
     public magicCd: int = 0
-    /** @var PbFashionWearItem[] $fashionWear 装备-穿戴列表 */
-    //public array $fashionWear = [];
-
     /** 修炼-斩心魔关卡*/
     public heartDemonChapter: int = 0
 

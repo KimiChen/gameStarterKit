@@ -6,7 +6,7 @@
  * 错误分支只按 RpcError.code 分派（本域 / 框架经济码 / 客户端本地码），⛔ 不解析错误文案。
  */
 import { type ArenaTileView, type IArenaTile, describeBoard, formatTile } from "../../../kits/arena/api/board/index";
-import { ARENA_SHOP_BOOST_COST } from "../../../shared/protocol/lobbyRpc/domains/arenaShop";
+import { ARENA_SHOP_BOOST_COST } from "../../../shared/protocol/lobbyRpc/checks/arenaShop";
 import type { ArenaShopRuntime } from "./arenaShopRuntime";
 
 export type ArenaShopNoticeKind = "idle" | "success" | "error";

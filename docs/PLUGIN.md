@@ -42,7 +42,7 @@
 | 层 | 插件能否自持 | 落点 |
 | --- | --- | --- |
 | gameplay module（实时玩法：manifest/state/wire + 三端模块） | ✅ 可消费 | `apps/shared/schema/gameplays/<id>/`、`apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`（导出 `register<Constant>GameMode`，`codegen:gameplays` 生成 `modes/catalog.generated.ts` 收录）、`apps/client/src/gameplay/modes/<id>/`、`logic/rooms/<id>/`、`view/rooms/<id>/`、`net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`（wire 向量 sidecar，`codegen:gameplays` 汇入 `index.generated.ts`）、`apps/Cocos/assets/resources/plugins/<id>/` |
-| plugin（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `apps/plugins/<id>/plugin.json`、`apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`（自有键经 `kPluginUser`/`kPluginShared`）；每个 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`（`codegen:plugins` 生成向量登记表收录）；FGUI 包：`apps/art/fairygui/assets/<Pkg>/` + `resources/ui/<Pkg>.bin`/图集 |
+| plugin（大厅页面 + RPC domain + View + 路由 + 菜单） | ✅ 可消费 | `apps/plugins/<id>/plugin.json`、`apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`（自有键经 `kPluginUser`/`kPluginShared`）；每个 domain：`apps/shared/schema/protocols/C2S/<d>.json`（**声明真源**，⛔ 包内不带 `lobbyRpc/domains/<d>.ts`——自 BF2 起那是 `codegen:plugins` 的生成物、登记在 `scripts/protected-paths.json` 的 `generatedWriterOwned`，由 postinstall 的 codegen 重建）、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`（`codegen:plugins` 生成向量登记表收录）；FGUI 包：`apps/art/fairygui/assets/<Pkg>/` + `resources/ui/<Pkg>.bin`/图集 |
 | 入口（菜单 contribution） | ✅ 可消费 | plugin.json 的 `menu`：只有身份（entryId/label/labelKey/icon/launch），launch 可为 `gameplay` 或 `route`；位置见 §6 |
 | profile 声明（选用已有的房型策略组合） | ✅ 可消费 | manifest 的 `profiles` 一行 |
 | state fragment 声明（选用已有的公共状态片段） | ✅ 可消费 | state.json 的 `fragments` 一行 |
@@ -137,7 +137,7 @@
 | --- | --- |
 | 共有 | `apps/plugins/<id>/`（plugin.json / README.md / gameplay 单源，§5.5）、`apps/server/test/<id>-*.test.ts`、`apps/server/test/int/<id>-*.test.ts`、`apps/client/test/<id>-*.test.ts`（前缀后**必须**紧跟 `-` 或 `.`，⛔ 不是裸 startsWith：`tally` 不拥有 `tallyBoard-*`、`red` 不拥有 `redis-*`；2026-09-05 收紧，PLUGIN-REGISTRY §1-4） |
 | gameplay | `apps/shared/src/gameplays/<id>/`、`apps/server/src/rooms/modes/<id>/`、`apps/client/src/gameplay/modes/<id>/`、`apps/client/src/logic/rooms/<id>/`、`apps/client/src/view/rooms/<id>/`、`apps/client/src/net/rooms/<Constant>Room.ts`、`apps/server/test/wire-vectors/<id>.ts`、`apps/Cocos/assets/resources/plugins/<id>/` |
-| plugin | `apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/src/protocol/lobbyRpc/domains/<d>.ts`、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；plugin.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/plugins/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
+| plugin | `apps/client/src/plugins/<id>/`、`apps/server/src/core/<id>/`；每个声明的 domain：`apps/shared/schema/protocols/C2S/<d>.json`（声明真源；`lobbyRpc/domains/<d>.ts` 是生成物，⛔ 不在推导集内）、`apps/server/src/websocket/<d>/`、`apps/server/test/lobbyRpcVectors/<d>.ts`；plugin.json 的 viewDirs/logicDir 必须 ⊆ `apps/client/src/plugins/<id>/**` 或 `apps/client/src/{view,logic}/**/<id>` |
 | fguiPackages | `apps/art/fairygui/assets/<Pkg>/`、`apps/Cocos/assets/resources/ui/<Pkg>.bin`、`<Pkg>_atlas*` |
 | 镜像 / `.meta` | 由真源推导：`apps/client/src/X` 可写 ⇒ `apps/Cocos/assets/src/X` 与 `X.meta` 可写；插件专属目录的目录 `.meta` 可写，共享祖先目录（如 `view/rooms.meta`）⛔ 不随包 |
 

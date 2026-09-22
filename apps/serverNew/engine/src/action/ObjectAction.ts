@@ -33,13 +33,30 @@ export interface ObjectActionHandler<Req, Res> {
 }
 
 /**
- * 为不经过 RootBean diff 的原生 store 登记已提交数据差异。只能在 ObjectAction 的有效
- * 上下文中调用；没有对象调用时静默忽略，避免后台代码伪造某个客户端的同步。
+ * 为不经过 RootBean diff 的显式 store 登记已提交数据差异。
+ *
+ * ⛔ 只能在**对象调用**上下文里调用，且**不再静默忽略**：
+ *  - 没有调用上下文（cron / 模块初始化 / http 控制器等后台路径）⇒ 直接抛错。
+ *  - 有上下文但不是对象出口（本地 Action、内部动作）⇒ 也抛错。
+ *
+ * 理由：这两种情况下变更既进不了 `reply.sync`，也不会被主动 sync 带走，静默忽略的后果是
+ * 「数据已经提交、客户端永远不知道」，而且没有任何痕迹可查。要在后台改显式 store，
+ * 就把它放进一个 Action（或用显式同步投递），⛔ 不要靠这个函数伪造某个客户端的同步。
  */
 export function recordObjectActionSync(mods: unknown): void {
-    if (!ContextEngine.isValid) return
-    const call = ContextEngine.currentCtxEngine!.ctxLogic.call
-    if (!call || call.responseTransport !== 'object') return
+    const call = ContextEngine.isValid ? ContextEngine.currentCtxEngine!.ctxLogic.call : undefined
+    if (!call) {
+        throw new Error(
+            'recordObjectActionSync requires an object action call context: ' +
+                '显式 store 的变更只能在对象路由内登记；后台写路径必须复用 Action 或走显式同步投递。',
+        )
+    }
+    if (call.responseTransport !== 'object') {
+        throw new Error(
+            `recordObjectActionSync requires an object transport call, got ${String(call.responseTransport)}: ` +
+                '非对象出口的变更进不了 reply.sync，必须改为在对象路由内执行或显式投递。',
+        )
+    }
     call.appendSyncChange(call.uId, mods)
 }
 

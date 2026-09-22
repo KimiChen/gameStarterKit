@@ -1,0 +1,41 @@
+{
+  "domain": "arenaShop",
+  "contractVersion": 6,
+  "errorCodes": ["ARENA_SHOP_TILE_NOT_OWNED"],
+  "types": {
+    "IArenaShopBuyBoostReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        {
+          "name": "tile",
+          "kind": "integer",
+          "check": { "fn": "validateTileIndex", "from": "../../../kits/arena/api/board/index" }
+        }
+      ]
+    },
+    "IArenaShopBuyBoostRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "tile",
+          "kind": "integer",
+          "check": { "fn": "validateTileIndex", "from": "../../../kits/arena/api/board/index" }
+        },
+        { "name": "power", "kind": "integer", "check": { "fn": "validateArenaPower", "from": "../checks/arena" } },
+        { "name": "balance", "kind": "integer", "min": 0, "nullable": true }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "ArenaShopBuyBoost",
+      "route": "arenaShop.buyBoost",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "arenaShop",
+      "request": { "kind": "ref", "ref": "IArenaShopBuyBoostReq" },
+      "response": { "kind": "ref", "ref": "IArenaShopBuyBoostRes" }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { ARENA_BOOST_POWER } from '../../../../generated/lobby-contract/kits/arena/api/board/index'
 import { RedisInstance } from '@arthropoda/game-engine'
+import { ARENA_SHOP_BOOST_COST } from '../../../../generated/lobby-contract/protocol/lobbyRpc/checks/arenaShop'
 import {
-    ARENA_SHOP_BOOST_COST,
     type IArenaShopBuyBoostReq,
     type IArenaShopBuyBoostRes,
 } from '../../../../generated/lobby-contract/protocol/lobbyRpc/domains/arenaShop'

@@ -18,7 +18,12 @@ export class DifferCache {
 
 /** 获取当前的DifferCache */
 export let getDifferCache = function (newIfNull: boolean = false): DifferCache | undefined {
-    if (APP_TYPE == E_APP_TYPE.API) {
+    // 进程根本没跑过 `EngineInitHelper.initBase`（单测、一次性工具脚本）时 `APP_TYPE` 这个
+    // global 不存在，读它会抛 ReferenceError —— 那会把「没有上下文缓存」伪装成框架崩溃。
+    // 这种进程本来就没有服务端上下文，直接按「无缓存」返回。
+    // ⚠ 只放行「整个进程未初始化」：真正的运行进程一定先 `initBase`，若它缺 `initContextFactory`
+    // 就说明同步缓存漏注入，必须继续抛错（静默丢同步比崩溃更糟）。
+    if (typeof APP_TYPE === 'undefined' || APP_TYPE == E_APP_TYPE.API) {
         return
     }
     throw new Error('waiting inject')

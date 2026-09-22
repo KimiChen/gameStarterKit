@@ -6,7 +6,7 @@
  * 这是 allowlist，⛔ 不是「protected-paths.json 挡一下」的 denylist（PLUGIN-REVIEW F03/F04）。
  *
  * 推导集与仓库既有的 per-id 目录约定同构（gameplay-codegen / plugin-codegen 发现的正是这些目录）；
- * 扁平目录（net/rooms、lobbyRpc/domains、websocket）按精确文件名归属；测试目录按 `<id>-*` / `<id>.*`
+ * 扁平目录（net/rooms、websocket）按精确文件名归属；测试目录按 `<id>-*` / `<id>.*`
  * 前缀归属——前缀后**必须**紧跟分隔符（`-` 或 `.`），⛔ 不是裸 startsWith：否则 `tally` 会吞掉
  * `tallyBoard-*.test.ts`、`red` 会拥有 `redis-route.test.ts`（PLUGIN-REGISTRY §1-4）。
  * 镜像（apps/Cocos/assets/src/**）与 `.meta` 由对应真源路径的归属推导，⛔ 不单独声明。
@@ -41,7 +41,7 @@ export interface PluginIdentity {
   readonly constantName: string | null;
   /** kit：自带玩法清单（每个 mode 各推一组玩法规则）；插件恒为空。 */
   readonly modes: readonly PackageMode[];
-  /** 可声明的 Lobby RPC 域（`domains/<d>.ts` / `websocket/<d>/` / 向量 sidecar）。 */
+  /** 可声明的 Lobby RPC 域（`schema/protocols/C2S/<d>.json` 声明真源 / `websocket/<d>/` 端点 / 向量 sidecar）。 */
   readonly domains: readonly string[];
   /** 声明的 FGUI 包名（ART 源目录 + resources/ui 发布物）。 */
   readonly fguiPackages: readonly string[];
@@ -154,9 +154,15 @@ export const HARD_EXCLUDED_FILES: readonly string[] = [
   "apps/Cocos/assets/scene.scene",
 ];
 
-/** 域 descriptor 是硬排除目录 protocol/ 下唯一允许的插件落点：按 (domain) 精确放行。 */
-function domainDescriptorPath(domain: string): string {
-  return `apps/shared/src/protocol/lobbyRpc/domains/${domain}.ts`;
+/**
+ * 包声明的域在**声明真源**里的落点：`apps/shared/schema/protocols/C2S/<域>.json`。
+ * ⚠ 包**不再**拥有 `apps/shared/src/protocol/lobbyRpc/domains/<域>.ts` —— 自 BF2 起它是
+ * `codegen:plugins` 的生成物、登记在 `scripts/protected-paths.json` 的 `generatedWriterOwned` 里；
+ * 包只能写 schema 真源，descriptor 由 postinstall 的 codegen 重新生成（docs/PLUGIN.md §1）。
+ * ⛔ 不要把这条改回 descriptor：生成物的字节由生成器拥有，锁里记它的哈希必然每次 codegen 后即陈旧。
+ */
+export function domainSchemaPath(domain: string): string {
+  return `apps/shared/schema/protocols/C2S/${domain}.json`;
 }
 
 function assertSegment(value: string, pattern: RegExp, label: string): void {
@@ -310,7 +316,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
   {
     for (const domain of identity.domains) {
       rules.push(
-        { kind: "file", path: domainDescriptorPath(domain), reason: `Lobby RPC 域 descriptor（${domain}）` },
+        { kind: "file", path: domainSchemaPath(domain), reason: `Lobby RPC 域声明真源（${domain}）` },
         { kind: "dir", path: `apps/server/src/websocket/${domain}`, reason: `Lobby RPC 端点（${domain}.<method>）` },
         { kind: "file", path: `apps/server/test/lobbyRpcVectors/${domain}.ts`, reason: `RPC 向量 sidecar（${domain}）` },
       );
@@ -358,13 +364,10 @@ export function normalizePackagePath(raw: string): string {
   return segments.join("/");
 }
 
-/** 硬排除判定（先于 allowlist；域 descriptor 是 protocol/ 下的唯一例外，由调用方按 allowlist 放行）。 */
-export function hardExclusionReason(relative: string, rules: readonly OwnershipRule[]): string | null {
+/** 硬排除判定（先于 allowlist；`apps/shared/src/protocol/**` 整棵树无例外——域的声明真源在 `schema/protocols/`）。 */
+export function hardExclusionReason(relative: string): string | null {
   const segments = relative.split("/");
   if (segments.includes("node_modules") || segments.includes(".git")) return "node_modules/.git 段永不可写";
-  if (rules.some((rule) => rule.kind === "file" && rule.path === relative && relative.startsWith("apps/shared/src/protocol/lobbyRpc/domains/"))) {
-    return null;
-  }
   for (const dir of HARD_EXCLUDED_DIRS) {
     if (relative === dir || relative.startsWith(`${dir}/`)) return `硬排除目录 ${dir}`;
   }
@@ -453,7 +456,7 @@ export function classifyPath(
   protectedPaths: readonly string[],
 ): PathVerdict {
   const relative = normalizePackagePath(rawRelative);
-  const hard = hardExclusionReason(relative, rules);
+  const hard = hardExclusionReason(relative);
   if (hard) return { allowed: false, reason: hard };
   const { source, meta, mirror } = sourceOf(relative);
   if (mirror && !source.startsWith(`${CLIENT_SRC}/`)) return { allowed: false, reason: "镜像路径无对应客户端真源" };

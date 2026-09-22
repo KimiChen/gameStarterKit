@@ -16,6 +16,7 @@ export const gameModuleSystems = [
     'startup',
     'errorCodes',
     'nativeLobby',
+    'nativeLobbyAuth',
 ] as const
 
 export const gameModuleApps = ['service', 'management', 'all'] as const
@@ -142,8 +143,23 @@ export interface NativeLobbyRouteContribution extends OrderedContribution {
     readonly register: (registry: NativeLobbyRouteRegistry, services: NativeLobbyRouteServices) => void
 }
 
+export interface NativeLobbyAuthContribution extends OrderedContribution {
+    readonly onAuthenticated?: (
+        uid: string,
+        internalUid: number,
+        sId: number,
+        services: NativeLobbyRouteServices,
+    ) => Promise<void> | void
+    readonly onReleased?: (
+        identity: { readonly uid: string; readonly internalUid: number; readonly sId: number },
+        services: NativeLobbyRouteServices,
+    ) => Promise<void> | void
+}
+
 export interface GameModule {
     readonly name: string
+    /** The module's native Lobby surface is entirely owned by schema-generated Actions. */
+    readonly schemaOnly?: true
     readonly configuration?: ConfigurationContribution
     readonly protocol?: ProtocolContribution
     readonly actions?: ActionContribution
@@ -154,6 +170,7 @@ export interface GameModule {
     readonly startup?: readonly StartupContribution[]
     readonly errorCodes?: ErrorCodeContribution
     readonly nativeLobby?: { readonly routes: readonly NativeLobbyRouteContribution[] }
+    readonly nativeLobbyAuth?: { readonly handlers: readonly NativeLobbyAuthContribution[] }
 }
 
 export interface GameModuleRegistryEntry {

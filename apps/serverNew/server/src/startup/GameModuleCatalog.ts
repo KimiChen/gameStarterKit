@@ -17,6 +17,7 @@ import type {
     StartupContribution,
     TelemetryProviderContribution,
     NativeLobbyRouteContribution,
+    NativeLobbyAuthContribution,
 } from './GameModule'
 
 type SystemContributionMap = {
@@ -30,6 +31,7 @@ type SystemContributionMap = {
     startup: StartupContribution
     errorCodes: OrderedContribution & { readonly namePrefixes: readonly string[] }
     nativeLobby: NativeLobbyRouteContribution
+    nativeLobbyAuth: NativeLobbyAuthContribution
 }
 
 type AnyContribution = SystemContributionMap[GameModuleSystem]
@@ -71,7 +73,7 @@ export function validateGameModules(registry: readonly GameModuleRegistryEntry[]
         if (entry.module.name !== entry.moduleName) {
             throw new Error(`game module name mismatch: ${entry.moduleName}, descriptor=${entry.module.name}`)
         }
-        if (collectModuleEntries(entry).length === 0) {
+        if (collectModuleEntries(entry).length === 0 && entry.module.schemaOnly !== true) {
             throw new Error(`game module has no contributions: ${entry.moduleName}`)
         }
     }
@@ -93,6 +95,7 @@ function buildSystems(registry: readonly GameModuleRegistryEntry[]) {
         startup: systemCatalog(entries, 'startup'),
         errorCodes: systemCatalog(entries, 'errorCodes'),
         nativeLobby: systemCatalog(entries, 'nativeLobby'),
+        nativeLobbyAuth: systemCatalog(entries, 'nativeLobbyAuth'),
     })
 }
 
@@ -134,6 +137,7 @@ function collectModuleEntries(entry: GameModuleRegistryEntry): AnyRegistered[] {
             },
         ])
     }
+    add('nativeLobbyAuth', module.nativeLobbyAuth?.handlers)
     return result
 }
 

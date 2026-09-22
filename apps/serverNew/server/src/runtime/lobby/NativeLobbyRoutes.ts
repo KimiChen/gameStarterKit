@@ -32,9 +32,6 @@ export interface NativeLobbyRouteAssemblyOptions {
  */
 export function assembleNativeLobbyRoutes(options: NativeLobbyRouteAssemblyOptions): NativeLobbyRouteAssembly {
     const wire = new NativeLobbyContractCodec()
-    const routes = new NativeLobbyRouteRegistry({
-        validateResponse: (route, response) => wire.validateResponse(route, response),
-    })
     const authenticatedHandlers: Array<(uid: string, internalUid: number, sId: number) => Promise<void>> = []
     const releasedHandlers: Array<(identity: NativeLobbyReleasedIdentity) => Promise<void>> = []
     const services: NativeLobbyRouteServices = {
@@ -44,9 +41,27 @@ export function assembleNativeLobbyRoutes(options: NativeLobbyRouteAssemblyOptio
         onAuthenticated: (handler) => authenticatedHandlers.push(handler),
         onReleased: (handler) => releasedHandlers.push(handler),
     }
+    const routes = new NativeLobbyRouteRegistry({
+        validateResponse: (route, response) => wire.validateResponse(route, response),
+        resolveInternalUid: (uid, sId) => options.identities.resolve(uid, sId),
+        actionServices: services,
+    })
     for (const entry of GameModuleCatalog.systems.nativeLobby.entries) {
         if (entry.contribution.app === 'service' || entry.contribution.app === 'all') {
             entry.contribution.register(routes, services)
+        }
+    }
+    for (const entry of GameModuleCatalog.systems.nativeLobbyAuth.entries) {
+        if (entry.contribution.app !== 'service' && entry.contribution.app !== 'all') continue
+        if (entry.contribution.onAuthenticated) {
+            authenticatedHandlers.push(async (uid, internalUid, sId) => {
+                await entry.contribution.onAuthenticated!(uid, internalUid, sId, services)
+            })
+        }
+        if (entry.contribution.onReleased) {
+            releasedHandlers.push(async (identity) => {
+                await entry.contribution.onReleased!(identity, services)
+            })
         }
     }
     return {

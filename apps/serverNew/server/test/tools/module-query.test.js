@@ -15,7 +15,7 @@ describe('module query', () => {
                 'scripts/tsconfig.json',
                 'scripts/modules/ListModules.ts',
                 '--action',
-                'gong/GongSkillUp',
+                'income/IncomeClaimOffline',
                 '--json',
             ],
             { cwd: projectRoot, encoding: 'utf8' },
@@ -23,19 +23,15 @@ describe('module query', () => {
 
         assert.strictEqual(result.status, 0, result.stderr)
         const action = JSON.parse(result.stdout)
-        assert.strictEqual(action.route, 'gong/GongSkillUp')
-        assert.strictEqual(action.action, 'src/modules/gong/action/ActionGongSkillUp.ts')
-        assert.ok(action.directDependencies.includes('src/modules/gong/action/GongProgression.ts'))
-        assert.ok(action.dependencies.includes('src/modules/gong/action/GongProgression.ts'))
-        assert.ok(action.configTables.includes('gong_sorcery'))
-        assert.deepStrictEqual(action.tests, ['test/modules/gong/behavior.test.js'])
+        assert.strictEqual(action.route, 'income/IncomeClaimOffline')
+        assert.strictEqual(action.request, 'IIncomeClaimOfflineReq')
+        assert.strictEqual(action.action, 'src/modules/income/action/ActionIncomeClaimOffline.ts')
+        assert.ok(action.directDependencies.includes('src/modules/user/action/CopperIncome.ts'))
+        assert.ok(action.dependencies.includes('src/modules/user/action/CopperIncome.ts'))
+        assert.deepStrictEqual(action.tests, ['test/modules/income/copper-income.test.ts'])
         assert.strictEqual(action.readme, 'README.md')
-        assert.deepStrictEqual(action.framework, [
-            'engine/docs/development.md#Action 和本地调用',
-            'engine/docs/development.md#Redis Bean 和 Ref',
-            'engine/docs/development.md#Change 和持久化',
-        ])
-        assert.strictEqual(action.verify, 'pnpm verify:module -- gong')
+        assert.deepStrictEqual(action.framework, ['engine/docs/development.md#Action 和本地调用'])
+        assert.strictEqual(action.verify, 'pnpm verify:module -- income')
         assert.deepStrictEqual(action.unresolvedImports, [])
     })
 })

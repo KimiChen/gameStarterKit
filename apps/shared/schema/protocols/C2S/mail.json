@@ -1,0 +1,100 @@
+{
+  "domain": "mail",
+  "contractVersion": 5,
+  "errorCodes": [],
+  "types": {
+    "IPurchaseResult": {
+      "kind": "external",
+      "from": "../economy",
+      "check": { "fn": "validatePurchaseResult", "from": "../economy" }
+    },
+    "IMailSummary": {
+      "kind": "object",
+      "fields": [
+        { "name": "mailId", "kind": "integer", "min": 1 },
+        { "name": "title", "kind": "string", "minLength": 0, "maxLength": 256 },
+        { "name": "body", "kind": "string", "minLength": 0, "maxLength": 65536 },
+        { "name": "hasAttach", "kind": "boolean" },
+        { "name": "read", "kind": "boolean" },
+        { "name": "claimed", "kind": "boolean" },
+        { "name": "createdAt", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IMailListReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "before", "kind": "integer", "min": 1, "required": false },
+        { "name": "limit", "kind": "integer", "min": 1, "max": 50, "required": false }
+      ]
+    },
+    "IMailListRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "mails",
+          "kind": "array",
+          "items": { "kind": "ref", "ref": "IMailSummary" },
+          "maxItems": 50,
+          "sizeCode": "RPC_MAILS"
+        }
+      ]
+    },
+    "IMailClaimAttachReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "mailId", "kind": "integer", "min": 1 }
+      ]
+    },
+    "IMailMarkReadReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "mailId", "kind": "integer", "min": 1 }
+      ]
+    },
+    "IMailMarkReadRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "ok", "kind": "boolean" }
+      ]
+    },
+    "IMailNewPush": {
+      "kind": "object",
+      "fields": [
+        { "name": "mailId", "kind": "integer", "min": 1 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "MailList",
+      "route": "mail.list",
+      "serviceType": "Mail",
+      "mode": "query",
+      "ownerModule": "mail",
+      "request": { "kind": "ref", "ref": "IMailListReq" },
+      "response": { "kind": "ref", "ref": "IMailListRes" }
+    },
+    {
+      "name": "MailClaimAttach",
+      "route": "mail.claimAttach",
+      "serviceType": "Mail",
+      "mode": "idempotent-write",
+      "ownerModule": "mail",
+      "request": { "kind": "ref", "ref": "IMailClaimAttachReq" },
+      "response": { "kind": "ref", "ref": "IPurchaseResult" }
+    },
+    {
+      "name": "MailMarkRead",
+      "route": "mail.markRead",
+      "serviceType": "Mail",
+      "mode": "natural-write",
+      "ownerModule": "mail",
+      "request": { "kind": "ref", "ref": "IMailMarkReadReq" },
+      "response": { "kind": "ref", "ref": "IMailMarkReadRes" }
+    }
+  ],
+  "pushes": [
+    { "key": "MailNew", "type": "mail.new", "data": { "kind": "ref", "ref": "IMailNewPush" } }
+  ]
+}

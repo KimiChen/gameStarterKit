@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import net from 'node:net'
 import { nativeLobbyProcessRoutes } from '../../src/runtime/lobby/NativeLobbyProcessRoutes'
 import {
+    committedSyncTargets,
     initializeServiceRuntime,
     nativeLobbyRuntime,
     rollbackServiceRuntimeStart,
@@ -15,10 +16,11 @@ import {
  * 路由表可能已装载，而重试会被 `'service runtime already initialized'` 提前挡住，
  * 真正的失败原因永远看不到。
  *
- * 三种失败模式各覆盖一条分支：
+ * 四种失败模式各覆盖一条分支：
  * - 监听 + 配置被拒（尚未装载路由）；
  * - 监听 + 端口被占（**已经装载路由**，回滚必须卸载）；
- * - 转发 + 配置不完整（转发分支）；
+ * - 转发 + 配置不完整（转发分支，环境校验）；
+ * - 转发 + 转发出口不成对（转发分支，角色守卫）；
  * - 配置了原生入口却没有角色（在客户端网关建立之前的校验分支）。
  */
 
@@ -163,6 +165,28 @@ describe('service runtime native Lobby bring-up', () => {
         // 只给一半变量：`hasNativeLobbyEnvironment` 判为「已配置」，装配必须直接报错，
         // ⛔ 不能因为配置不全就悄悄不装载路由——那会让该 worker 上的转发请求全部落到
         // 「目标进程未装载原生 Lobby 路由」或者更糟的静默执行。
+        // 两个转发出口必须成对给出，否则会先撞上角色守卫，测不到环境完整性这条分支。
+        applyEnvironment({ NATIVE_LOBBY_HOST: '127.0.0.1' })
+
+        await assert.rejects(
+            () =>
+                initializeServiceRuntime({
+                    directNetwork: false,
+                    runSchedulers: false,
+                    nativeLobby: {
+                        role: 'forward',
+                        forwardPush: async () => false,
+                        forwardSync: async () => false,
+                    },
+                }),
+            /native Lobby configuration is incomplete: missing/,
+        )
+        assertRuntimeUninitialized()
+    })
+
+    it('refuses a forwarding role that was not given both cross-process transports', async () => {
+        // 只给推送、没有同步出口时不允许启动：漏配的转发 worker 表现为「调用方本地一切正常、
+        // 其它在线用户永远看不到变更」，比启动即失败难查得多。
         applyEnvironment({ NATIVE_LOBBY_HOST: '127.0.0.1' })
 
         await assert.rejects(
@@ -172,7 +196,7 @@ describe('service runtime native Lobby bring-up', () => {
                     runSchedulers: false,
                     nativeLobby: { role: 'forward', forwardPush: async () => false },
                 }),
-            /native Lobby configuration is incomplete: missing/,
+            /native Lobby forward role requires cross-process push and sync transports/,
         )
         assertRuntimeUninitialized()
     })
@@ -192,5 +216,43 @@ describe('service runtime native Lobby bring-up', () => {
             () => initializeServiceRuntime({ directNetwork: false, runSchedulers: false }),
             /native Lobby is configured but this process has no Lobby role assigned/,
         )
+    })
+})
+
+/**
+ * 提交后变更的投递面。
+ *
+ * `reply.sync` 与主动 sync 是同一份数据的两个出口，同时命中请求者就是「一次变更推两遍」：
+ * 客户端会把版本推进两次，并覆盖掉正在编辑的本地状态。这条边界必须可断言，不能只靠读代码。
+ */
+describe('committed sync delivery targets', () => {
+    it('keeps the requesting user on reply.sync only', () => {
+        const targets = committedSyncTargets(
+            { 42: { versions: { user: 3 } }, 7: { versions: { user: 4 } } },
+            {
+                responseTransport: 'object',
+                uId: 42,
+            },
+        )
+        assert.deepEqual(targets, [{ internalUid: 7, sync: { mods: { versions: { user: 4 } } } }])
+    })
+
+    it('delivers every changed user when the change has no object caller', () => {
+        // 后台 Action / cron / 内部动作没有请求者，也就没有 reply.sync 这条出口。
+        assert.deepEqual(committedSyncTargets({ 7: { versions: { user: 1 } } }, undefined), [
+            { internalUid: 7, sync: { mods: { versions: { user: 1 } } } },
+        ])
+        // 旧二进制出口（legacy）的响应不进 reply.sync，因此不能按 uId 跳过。
+        assert.deepEqual(
+            committedSyncTargets({ 7: { versions: { user: 1 } } }, { responseTransport: 'legacy', uId: 7 }),
+            [{ internalUid: 7, sync: { mods: { versions: { user: 1 } } } }],
+        )
+    })
+
+    it('drops entries that are not internal uids', () => {
+        const malformed = { 0: {}, NaN: {}, '-3': {}, 9: { versions: {} } } as unknown as { [key: number]: unknown }
+        assert.deepEqual(committedSyncTargets(malformed, undefined), [
+            { internalUid: 9, sync: { mods: { versions: {} } } },
+        ])
     })
 })

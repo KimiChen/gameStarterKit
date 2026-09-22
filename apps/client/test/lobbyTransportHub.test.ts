@@ -98,7 +98,6 @@ test("LobbyTransportHub：非法配置被拒，且拒绝后当前通道与配置
   for (const input of rejected) {
     assert.throws(
       () => hub.configure(input),
-      undefined,
       `必须拒绝非法配置：${JSON.stringify(input)}`,
     );
     // 一次坏配置不得把默认旧通道换掉，也不得留下半个配置（否则客户端会连到不存在的端点）。

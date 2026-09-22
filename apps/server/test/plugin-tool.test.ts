@@ -70,7 +70,7 @@ test("allowlist：plugin 插件的推导集覆盖 plugin/domain/客户端/FGUI/�
   for (const relative of [
     "apps/plugins/chamber/plugin.json",
     "apps/plugins/chamber/plugin.json",
-    "apps/shared/src/protocol/lobbyRpc/domains/chamber.ts",
+    "apps/shared/schema/protocols/C2S/chamber.json",
     "apps/server/src/websocket/chamber/peek.ts",
     "apps/server/src/core/chamber/keys.ts",
     "apps/server/test/lobbyRpcVectors/chamber.ts",
@@ -289,7 +289,8 @@ function authorTree(root: string, version: string, id = "chamber"): void {
     owners: [{ id, logicDir: `apps/client/src/plugins/${id}/logic` }],
     routes: [{ id, view: Constant }], menu: [],
   }, null, 2)}\n`);
-  write(root, `apps/shared/src/protocol/lobbyRpc/domains/${id}.ts`, "export default {} as never;\n");
+  // 域的声明真源是 schema（descriptor 由 codegen 生成，⛔ 不随包）——夹具只给真源。
+  write(root, `apps/shared/schema/protocols/C2S/${id}.json`, `${JSON.stringify({ schemaVersion: 1, domain: id, apis: [] }, null, 2)}\n`);
   write(root, `apps/server/src/websocket/${id}/peek.ts`, "export default {} as never;\n");
   write(root, `apps/server/src/core/${id}/keys.ts`, `export const k${Constant}Seq = 1;\n`);
   write(root, `apps/server/test/lobbyRpcVectors/${id}.ts`, "export default {};\n");
@@ -348,7 +349,7 @@ test("pack：采集所有权推导集 + 镜像 + .meta，写出确定性 zip 与
     for (const expected of [
       "apps/plugins/chamber/plugin.json",
       "apps/plugins/chamber/plugin.json",
-      "apps/shared/src/protocol/lobbyRpc/domains/chamber.ts",
+      "apps/shared/schema/protocols/C2S/chamber.json",
       "apps/server/test/lobbyRpcVectors/chamber.ts",
       "apps/client/src/plugins/chamber/view/ChamberView.ts",
       "apps/Cocos/assets/src/plugins/chamber/view/ChamberView.ts",
@@ -699,7 +700,7 @@ test("PLUGIN-REGISTRY §1-3：reinstall-from-tree 的身份变化闸与 git 跟�
   const { author, target } = makeFixture("1.0.0");
   try {
     // 目标树里 chamberGuild 是别人已提交的域（前缀合规，所以推导集能覆盖它），chamber 是插件。
-    write(target, "apps/shared/src/protocol/lobbyRpc/domains/chamberGuild.ts", "export default {} as never;\n");
+    write(target, "apps/shared/schema/protocols/C2S/chamberGuild.json", "{\n  \"schemaVersion\": 1,\n  \"domain\": \"chamberGuild\",\n  \"apis\": []\n}\n");
     write(target, "apps/server/src/websocket/chamberGuild/join.ts", "export default {} as never;\n");
     write(target, "apps/server/test/lobbyRpcVectors/chamberGuild.ts", "export default {};\n");
     gitInit(target);
@@ -719,7 +720,7 @@ test("PLUGIN-REGISTRY §1-3：reinstall-from-tree 的身份变化闸与 git 跟�
     assert.throws(() => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false }), /身份与已安装锁不同[\s\S]*domains: chamber → chamber,chamberGuild/u);
     assert.throws(
       () => reinstallFromTree({ root: target, id: "chamber", git: true, postinstall: false, allowIdentityChange: true }),
-      /已被 git 跟踪却不在已安装锁里[\s\S]*websocket\/chamberGuild\/join\.ts[\s\S]*lobbyRpcVectors\/chamberGuild\.ts[\s\S]*domains\/chamberGuild\.ts/u,
+      /已被 git 跟踪却不在已安装锁里[\s\S]*websocket\/chamberGuild\/join\.ts[\s\S]*lobbyRpcVectors\/chamberGuild\.ts[\s\S]*schema\/protocols\/C2S\/chamberGuild\.json/u,
     );
     assert.equal(readInstalledLock(target, "chamber")?.manifest.version, "1.0.0", "被拒时锁不动");
     // check 也点名树上 plugin.json 与锁的身份漂移。
@@ -848,11 +849,11 @@ test("PLUGIN-REGISTRY §1-2：升级删掉域 / View / kind 时 postinstall 以�
     packPlugin({ root: author, id: "chamber", outFile: v1 });
     installPlugin({ root: target, source: v1, git: false, postinstall: false });
 
-    // v2：去掉 chamber 域（descriptor / 端点 / 向量都不在包里）、View 改名 ChamberView → ChamberPanelView。
+    // v2：去掉 chamber 域（声明真源 / 端点 / 向量都不在包里）、View 改名 ChamberView → ChamberPanelView。
     const manifestFile = path.join(author, "apps/plugins/chamber/plugin.json");
     fs.writeFileSync(manifestFile, fs.readFileSync(manifestFile, "utf8").replace('"1.0.0"', '"1.1.0"').replace('"domains": [\n    "chamber"\n  ]', '"domains": []'));
     assert.deepEqual(JSON.parse(fs.readFileSync(manifestFile, "utf8")).domains, [], "fixture 自检：domains 已清空");
-    for (const relative of ["apps/shared/src/protocol/lobbyRpc/domains/chamber.ts", "apps/server/src/websocket/chamber/peek.ts", "apps/server/test/lobbyRpcVectors/chamber.ts"]) {
+    for (const relative of ["apps/shared/schema/protocols/C2S/chamber.json", "apps/server/src/websocket/chamber/peek.ts", "apps/server/test/lobbyRpcVectors/chamber.ts"]) {
       fs.rmSync(path.join(author, relative));
     }
     const pluginFile = path.join(author, "apps/plugins/chamber/plugin.json");
@@ -1232,7 +1233,7 @@ test("加固 §1-3 / §1-2：reinstall-from-tree 不替作者删仍在磁盘的�
     );
     assert.equal(fs.existsSync(path.join(target, "apps/server/src/websocket/chamber/peek.ts")), true);
     // 作者自己删掉域文件后：成功路径的删除面含域；失败路径（codegen 抛错）回滚到操作前（含索引）。
-    for (const relative of ["apps/shared/src/protocol/lobbyRpc/domains/chamber.ts", "apps/server/src/websocket/chamber/peek.ts", "apps/server/test/lobbyRpcVectors/chamber.ts"]) {
+    for (const relative of ["apps/shared/schema/protocols/C2S/chamber.json", "apps/server/src/websocket/chamber/peek.ts", "apps/server/test/lobbyRpcVectors/chamber.ts"]) {
       fs.rmSync(path.join(target, relative));
     }
     const porcelainBefore = gitPorcelain(target);
@@ -1563,7 +1564,7 @@ function kitTree(root: string, version: string, id = "kfix", overrides: Record<s
   write(root, `apps/kits/${id}/sql/001-init.sql`, `CREATE TABLE IF NOT EXISTS k_${id.toLowerCase()}_board (server_id SMALLINT UNSIGNED NOT NULL, tile INT UNSIGNED NOT NULL, PRIMARY KEY (server_id, tile));\n`);
   write(root, `apps/kits/${id}/gameplays/${modeId}/manifest.json`, `${JSON.stringify({ schemaVersion: 1, id: modeId, constantName: ModeConstant, modeVersion: 1, maxPlayers: 2, profiles: ["default"] })}\n`);
   write(root, `apps/kits/${id}/gameplays/${modeId}/state.json`, `${JSON.stringify({ schemaVersion: 1, root: `${ModeConstant}RoomState`, types: [] })}\n`);
-  write(root, `apps/shared/src/protocol/lobbyRpc/domains/${id}.ts`, "export default {} as never;\n");
+  write(root, `apps/shared/schema/protocols/C2S/${id}.json`, `${JSON.stringify({ schemaVersion: 1, domain: id, apis: [] }, null, 2)}\n`);
   write(root, `apps/server/src/websocket/${id}/peek.ts`, "export default {} as never;\n");
   write(root, `apps/server/test/lobbyRpcVectors/${id}.ts`, "export default {};\n");
   write(root, `apps/shared/src/kits/${id}/api/board/index.ts`, "export const BOARD_API = 2;\n");
@@ -1617,7 +1618,7 @@ test("kit（docs/KIT.md §2/§3）：所有权推导 = kits/ 命名空间 + 逐 
     "apps/client/src/kits/kfix/index.ts", "apps/Cocos/assets/src/kits/kfix/index.ts", "apps/Cocos/assets/src/kits/kfix.meta",
     "apps/shared/src/gameplays/kfixArena/wire.ts", "apps/server/src/rooms/modes/kfixArena/index.ts", "apps/client/src/net/rooms/KfixArenaRoom.ts",
     "apps/client/src/view/rooms/kfixArena/KfixArenaView.ts", "apps/server/test/wire-vectors/kfixArena.ts",
-    "apps/shared/src/protocol/lobbyRpc/domains/kfixAdmin.ts", "apps/server/src/websocket/kfixAdmin/x.ts", "apps/server/test/lobbyRpcVectors/kfix.ts",
+    "apps/shared/schema/protocols/C2S/kfixAdmin.json", "apps/server/src/websocket/kfixAdmin/x.ts", "apps/server/test/lobbyRpcVectors/kfix.ts",
     "apps/server/test/kfix-a.test.ts", "apps/server/test/kfixArena-b.test.ts", "apps/server/test/int/kfix-c.test.ts", "apps/client/test/kfixArena-d.test.ts",
     "apps/Cocos/assets/resources/kits/kfix/x.bin",
   ]) assert.ok(ok(relative), `kit 应放行：${relative}`);

@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const { execFileSync } = require('child_process')
 const {
     captureCompatibilityBaseline,
     defaultBaselinePath,
@@ -22,5 +23,14 @@ if (args.includes('--preserve-core')) {
 }
 fs.mkdirSync(path.dirname(outputPath), { recursive: true })
 fs.writeFileSync(outputPath, `${JSON.stringify(baseline, null, 2)}\n`)
+
+// `JSON.stringify` 会把单元素数组摊成多行，而 `pnpm format:check` 跑的是 prettier —— 不格式化的话
+// 每次刷新基线都会让格式门禁变红（实测 `collectionTypes: ["PropItem"]` 就会被折叠）。
+// 与 `scripts/errorcode/checkErrorCodes.ts` 对基线产物的处理保持一致。
+execFileSync('pnpm', ['exec', 'prettier', '--ignore-path', '/dev/null', '--write', outputPath], {
+    cwd: path.resolve(__dirname, '../..'),
+    stdio: 'ignore',
+})
+
 console.log(`compatibility baseline written: ${outputPath}`)
 console.log(JSON.stringify(baseline.counts))

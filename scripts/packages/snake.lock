@@ -1,7 +1,7 @@
-# scripts/packages/snake.lock —— 已安装插件 snake@1.2.2 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/snake.lock —— 已安装插件 snake@1.2.3 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"snake","version":"1.2.2","kinds":["client","gameplay"],"constantName":"Snake","domains":["snakeCosmetic"],"fguiPackages":[]}
-# source {"kind":"tree","filesLockSha256":"91f746409bb4bc0b9b5080e8e71298fd68806573b7724170bd39a49bcd5e9ffe","forkedFrom":{"kind":"package","filesLockSha256":"ee8abb67f3736bbe97566edabf6497d72c9b2609a6a45be0cd954fb5323eeddb"}}
+# manifest {"id":"snake","version":"1.2.3","kinds":["client","gameplay"],"constantName":"Snake","domains":["snakeCosmetic"],"fguiPackages":[]}
+# source {"kind":"tree","filesLockSha256":"1d94f2ecbdefffc63a4b152a4f9da6e54e51f54e55b8c4a7b8ae37159ee9bbd5","forkedFrom":{"kind":"package","filesLockSha256":"ee8abb67f3736bbe97566edabf6497d72c9b2609a6a45be0cd954fb5323eeddb"}}
 apps/Cocos/assets/resources/plugins/snake.meta 85e68ed472c0da45ebea35950a476a5cb976516eccd675d2b181ce83f3dbf63d
 apps/Cocos/assets/resources/plugins/snake/previews.meta fd3ada6b751ad55808b6099d569bb617669c68b1a6bb8928f44fa6c245d355a2
 apps/Cocos/assets/resources/plugins/snake/previews/snake_skin_101_preview.png 4feb052ee2474e59e5da9e038eed03801ff47ff4d017a90b2ec0491aba3ba3c0
@@ -200,7 +200,7 @@ apps/client/test/snake-wardrobe-logic.test.ts cb49b54fcefa2eb8724be8cb739da61be0
 apps/plugins/snake/README.md 0200facb2f2e3edc552b552c2d585f3bc37141e4916da75718c0eea6f991a98b
 apps/plugins/snake/gameplay/manifest.json 311e776e01d511c93611c38705cb4e150123db099b561b0a8047cf577463653d
 apps/plugins/snake/gameplay/state.json f8637eb1265c04f2f21ca3836505edbeb2c7e3e765385227de2e7619a7cf57bc
-apps/plugins/snake/plugin.json a99476ea58686c76368a4f87bf8d01d72a7d0ed675bfe1be506163ede1e335b1
+apps/plugins/snake/plugin.json 045ee44b7ba35f6075a4f1e884da6d6d1d5753c227c4acf45461b30daa4b13cf
 apps/server/src/rooms/modes/snake/ai.ts 6c0eb0d0632fdc6e4233206cba61612f556720898f9c1fd162136ea9b8eb497e
 apps/server/src/rooms/modes/snake/cosmeticProfile.ts 2da39ebc80f91e1992ae34132297c2be9851bf6beb248952fda6eda569017cc9
 apps/server/src/rooms/modes/snake/cosmeticRpc.ts 4a25f84fdcfab9294ab6e2c6b43bea402500ccd5bf1b281876f425bab141cb95
@@ -226,9 +226,9 @@ apps/server/test/snake-rules.test.ts 9aae5ed62de77fd329d38424d1d791c2e1c4d5c2aa3
 apps/server/test/snake-run-rewards.test.ts 2d354c27bf0d08f8c63a1943d80026e735b5afd76ac953988b8830e09cd15b4f
 apps/server/test/snake-world.test.ts 7393db387608a0ca481bcc1284083eef04a8d23c1016fa297c8308d4c9652070
 apps/server/test/wire-vectors/snake.ts 551db6d9787a74cd983c47f38973cad262218a230144e2e02a8c51ab90bf89ac
+apps/shared/schema/protocols/C2S/snakeCosmetic.json 80ad41fea67d3f0abe915367b2ddb5fce6ed2ea03c2249d12af28a95eb6318f0
 apps/shared/src/gameplays/snake/cosmetics.ts 24e95f4279e4cea82ed64e4e65bf2611be8bbc0695ea3695702ce239385f6cd7
 apps/shared/src/gameplays/snake/progression.ts a0c26bcc8fb8c57f999673bf834bb550712640a2d183025a5a7704f4caa258ea
 apps/shared/src/gameplays/snake/ruleset.ts 5c2d5fa333299dba34efc1607247cffea5cc5f9824e26e8a98eaf9ce1067b287
 apps/shared/src/gameplays/snake/snakeSkinCatalogData.ts bcfd222c41dd649dff6c4423438f3d4526015dffd8da3ab83cead9b18086c3d6
 apps/shared/src/gameplays/snake/wire.ts 55d1bf3b68e6c7c57732a9ef9ea98e769a382f198efe47f4bf67ac803a6397ad
-apps/shared/src/protocol/lobbyRpc/domains/snakeCosmetic.ts 17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908

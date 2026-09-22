@@ -1,0 +1,117 @@
+{
+  "domain": "user",
+  "contractVersion": 5,
+  "errorCodes": [],
+  "types": {
+    "IUserView": {
+      "kind": "object",
+      "fields": [
+        { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128 },
+        { "name": "star", "kind": "integer", "min": 0 },
+        { "name": "maxRound", "kind": "integer", "min": 0 },
+        { "name": "wins", "kind": "integer", "min": 0 },
+        { "name": "losses", "kind": "integer", "min": 0 },
+        { "name": "stamina", "kind": "integer", "min": 0 },
+        { "name": "lastStaminaRecoverAt", "kind": "integer", "min": 0 },
+        { "name": "musicOn", "kind": "boolean" },
+        { "name": "sfxOn", "kind": "boolean" },
+        { "name": "guildId", "kind": "integer", "min": 0 },
+        { "name": "ver", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IPublicUserView": {
+      "kind": "object",
+      "fields": [
+        { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128, "readonly": true },
+        { "name": "nickname", "kind": "string", "minLength": 0, "maxLength": 128, "readonly": true },
+        { "name": "avatarId", "kind": "integer", "min": -1, "readonly": true },
+        { "name": "province", "kind": "string", "minLength": 0, "maxLength": 64, "readonly": true },
+        { "name": "star", "kind": "integer", "min": 0, "readonly": true },
+        { "name": "maxRound", "kind": "integer", "min": 0, "readonly": true },
+        { "name": "wins", "kind": "integer", "min": 0, "readonly": true },
+        { "name": "losses", "kind": "integer", "min": 0, "readonly": true }
+      ]
+    },
+    "IGetUserIdReq": { "kind": "object", "fields": [] },
+    "IGetUserIdRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128 }
+      ]
+    },
+    "IGetInfoReq": { "kind": "object", "fields": [] },
+    "IGetInfoRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "user", "kind": "ref", "ref": "IUserView" }
+      ]
+    },
+    "IGetProfileReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128 }
+      ]
+    },
+    "IGetProfileRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "profile", "kind": "ref", "ref": "IPublicUserView", "nullable": true }
+      ]
+    },
+    "IUpdateProfileReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "nickname", "kind": "string", "minLength": 0, "maxLength": 24, "required": false },
+        { "name": "avatarId", "kind": "integer", "min": -1, "max": 999, "required": false },
+        { "name": "province", "kind": "string", "minLength": 0, "maxLength": 16, "required": false },
+        { "name": "musicOn", "kind": "boolean", "required": false },
+        { "name": "sfxOn", "kind": "boolean", "required": false }
+      ]
+    },
+    "IUpdateProfileRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "ok", "kind": "boolean" }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "UserGetUserId",
+      "route": "user.getUserId",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "user",
+      "request": { "kind": "ref", "ref": "IGetUserIdReq" },
+      "response": { "kind": "ref", "ref": "IGetUserIdRes" }
+    },
+    {
+      "name": "UserGetInfo",
+      "route": "user.getInfo",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "user",
+      "request": { "kind": "ref", "ref": "IGetInfoReq" },
+      "response": { "kind": "ref", "ref": "IGetInfoRes" }
+    },
+    {
+      "name": "UserGetProfile",
+      "route": "user.getProfile",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "user",
+      "request": { "kind": "ref", "ref": "IGetProfileReq" },
+      "response": { "kind": "ref", "ref": "IGetProfileRes" }
+    },
+    {
+      "name": "UserUpdateProfile",
+      "route": "user.updateProfile",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "user",
+      "request": { "kind": "ref", "ref": "IUpdateProfileReq" },
+      "response": { "kind": "ref", "ref": "IUpdateProfileRes" }
+    }
+  ]
+}

@@ -143,6 +143,9 @@ export class NativeLobbyTransport {
       );
     if (this.slot)
       throw new Error("[NativeLobbyTransport] 已有大厅连接，请先 leave()");
+    // A new owned session may belong to another uid or zone. Never leak the
+    // previous session's module snapshots into the new session.
+    lobbyDataSync.reset();
     const endpoint = this.endpoint;
     const generation = ++this.generation;
     this.publish({
@@ -255,6 +258,7 @@ export class NativeLobbyTransport {
 
   async leave(): Promise<void> {
     if (this.slot) this.closeSlot(this.slot, "voluntary");
+    lobbyDataSync.reset();
   }
 
   rpc<T extends LobbyRpcType>(type: T, payload: RpcReq<T>): Promise<RpcRes<T>> {

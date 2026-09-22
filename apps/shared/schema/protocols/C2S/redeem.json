@@ -1,0 +1,47 @@
+{
+  "domain": "redeem",
+  "contractVersion": 5,
+  "errorCodes": ["REDEEM_CODE_INVALID", "REDEEM_CODE_USED"],
+  "types": {
+    "IRedeemReward": {
+      "kind": "object",
+      "fields": [
+        { "name": "kind", "kind": "enum", "members": ["coins"], "enumCode": "REDEEM_REWARD_KIND" },
+        { "name": "amount", "kind": "integer", "min": 1 }
+      ]
+    },
+    "IRedeemClaimReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        {
+          "name": "code",
+          "kind": "string",
+          "minLength": 4,
+          "maxLength": 32,
+          "pattern": "^[A-Z0-9]{4,32}$",
+          "patternCode": "REDEEM_CODE"
+        }
+      ]
+    },
+    "IRedeemClaimRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "code", "kind": "string", "minLength": 4, "maxLength": 32 },
+        { "name": "reward", "kind": "ref", "ref": "IRedeemReward" },
+        { "name": "balance", "kind": "integer", "min": 0 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "RedeemClaim",
+      "route": "redeem.claim",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "redeem",
+      "request": { "kind": "ref", "ref": "IRedeemClaimReq" },
+      "response": { "kind": "ref", "ref": "IRedeemClaimRes" }
+    }
+  ]
+}

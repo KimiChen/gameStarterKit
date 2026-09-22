@@ -13,6 +13,26 @@ import { TelemetryEventFormatter } from '../../../src/telemetry/TelemetryEventFo
 import { TelemetryPropertiesRegistry } from '../../../src/telemetry/TelemetryPropertiesRegistry'
 
 describe('Telemetry contract', () => {
+    /**
+     * 本套件改的是**进程级 global**，而整套 TS 测试跑在同一个进程里（`test/run-tests.js`
+     * 把各套件的 TS 文件合并成一次 mocha 运行）。⛔ 不还原 `APP_TYPE` 会污染后面所有套件：
+     * engine 的 `getDifferCache` 靠「`APP_TYPE` 未定义」判定「本进程没有服务端上下文」，
+     * 一旦被置成 SERVICE 又没有注入 contextFactory，它会按设计抛 `waiting inject`，
+     * 于是 runtime 那批用例会以 `waiting inject` 全红——看起来像业务坏了，其实是这里漏了收尾。
+     */
+    const savedGlobals: Record<string, unknown> = {}
+
+    before(() => {
+        for (const name of ['PLATFORM', 'APP_TYPE', 'C']) savedGlobals[name] = (globalThis as any)[name]
+    })
+
+    after(() => {
+        for (const [name, value] of Object.entries(savedGlobals)) {
+            if (value === undefined) delete (globalThis as any)[name]
+            else (globalThis as any)[name] = value
+        }
+    })
+
     beforeEach(() => {
         ;(globalThis as any).PLATFORM = 'bearjoy'
         ;(globalThis as any).APP_TYPE = E_APP_TYPE.SERVICE

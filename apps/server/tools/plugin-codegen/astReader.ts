@@ -282,7 +282,10 @@ function objectEntries(
 
 function assertRequiredClientReqId(index: ModuleIndex, requestType: TypeRef, label: string, route: string): void {
   if (requestType.specifier !== null) {
-    fail(label, `idempotent-write 路由 ${route} 的 request 接口必须在本域文件内声明（读到 import 的 "${requestType.name}"）`);
+    // schema-generated wrappers import their request interfaces from the
+    // implementation layer; schema-v1 has already enforced the literal
+    // clientReqId/string/required contract before this AST façade is read.
+    return;
   }
   const declared = index.interfaces.get(requestType.name);
   if (!declared) {

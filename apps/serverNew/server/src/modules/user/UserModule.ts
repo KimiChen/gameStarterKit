@@ -6,7 +6,7 @@ import { PowerScoreRules } from './rules/PowerScoreRules'
 import { UserTelemetryProperties } from './telemetry/UserTelemetryProperties'
 import { SsoController } from './http/SsoController'
 import { UserEnterTelemetryHandler, UserLoginActionLogHandler } from './event/UserActionEventHandlers'
-import { UserNativeLobbyRoutes } from './lobby/UserNativeLobbyRoutes'
+import { NativeLobbyUserEnter } from './lobby/NativeLobbyUserEnter'
 import { NativeLobbyUserStore } from './lobby/NativeLobbyUserStore'
 
 export const UserModule = defineGameModule({
@@ -53,21 +53,20 @@ export const UserModule = defineGameModule({
         ],
     },
     errorCodes: { namePrefixes: ['User', 'Sign', 'Magic'] },
-    nativeLobby: {
-        routes: [
+    nativeLobbyAuth: {
+        handlers: [
             {
-                name: 'user-native-lobby-routes',
+                name: 'user-native-lobby-auth',
                 app: 'service',
-                register: (registry, services) => {
-                    const users = new NativeLobbyUserStore(services.registerCharacter)
-                    services.onAuthenticated((uid, _internalUid, sId) => users.ensure(uid, sId))
-                    // 会话结束的离线收尾。旧实现挂在 `SessionMgr` 的断线回调上，该链已随 P6 删除；
-                    // 现在由原生 Lobby 在「当前连接被释放」时回调，语义等价且不会晚到覆盖新会话。
-                    services.onReleased(async ({ internalUid }) => {
-                        const user = await User.load(internalUid)
-                        if (user) await UserSessionLifecycle.leave(user)
-                    })
-                    new UserNativeLobbyRoutes(services.identities, users).register(registry)
+                onAuthenticated: async (uid, internalUid, sId, services) => {
+                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`
+                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。
+                    await NativeLobbyUserEnter.enter(internalUid, sId)
+                    await new NativeLobbyUserStore(services.registerCharacter).ensure(uid, sId)
+                },
+                onReleased: async ({ internalUid }) => {
+                    const user = await User.load(internalUid)
+                    if (user) await UserSessionLifecycle.leave(user)
                 },
             },
         ],

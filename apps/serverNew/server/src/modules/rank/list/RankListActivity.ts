@@ -4,11 +4,11 @@ import { ActivityScheduleResolver } from '../../activity/scheduling/ActivitySche
 import { ActivitySchedule } from '../../activity/scheduling/ActivitySchedule'
 import { ActivityRank } from '../../activity/rank/ActivityRank'
 import { User } from '../../user/bean/User'
-import { RankItem, ResRankGetRank } from '../RankC2S'
 import { RankGuildRef } from '../ref/RankGuildRef'
 import { RankUserRef } from '../ref/RankUserRef'
 import { RankMemberDefine } from '../rules/RankMemberDefine'
 import { RankListSystem } from './RankListSystem'
+import { RankListItemView, RankListView } from './RankListView'
 
 /**
  * 活动排行榜
@@ -73,8 +73,8 @@ export class RankListActivity extends RankListSystem {
         return (this.activityOpenInfo.cross_id ?? 0) > 0
     }
 
-    async formatList(rankList: Map<MemberType, RankRefBase>, response: ResRankGetRank) {
-        let l: RankItem[]
+    async formatList(rankList: Map<MemberType, RankRefBase>, response: RankListView) {
+        let l: RankListItemView[]
         switch (this.memberType) {
             case RankMemberDefine.GUILD:
                 l = await this.formatListGuildItem(rankList as Map<MemberType, RankGuildRef>)

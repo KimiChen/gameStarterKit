@@ -17630,6 +17630,7 @@
           "relativePath": "/activity",
           "version": 1,
           "name": "activity",
+          "deleted": true,
           "pushs": {},
           "msgs": {
             "PbConfInfo": {
@@ -18027,6 +18028,7 @@
           "relativePath": "/chat",
           "version": 1,
           "name": "chat",
+          "deleted": true,
           "pushs": {
             "ChatForbid": {
               "version": 2,
@@ -18930,6 +18932,7 @@
           "relativePath": "/equip",
           "version": 1,
           "name": "equip",
+          "deleted": true,
           "pushs": {},
           "msgs": {
             "DissolveSet": {
@@ -19452,6 +19455,7 @@
           "relativePath": "/friend",
           "version": 1,
           "name": "friend",
+          "deleted": true,
           "pushs": {
             "FriendUpdate": {
               "version": 3,
@@ -19599,6 +19603,7 @@
           "relativePath": "/gong",
           "version": 1,
           "name": "gong",
+          "deleted": true,
           "pushs": {},
           "msgs": {}
         },
@@ -20192,6 +20197,7 @@
           "relativePath": "/guild",
           "version": 1,
           "name": "guild",
+          "deleted": true,
           "pushs": {
             "InviteToGuild": {
               "version": 8,
@@ -20438,6 +20444,7 @@
           "relativePath": "/mail",
           "version": 1,
           "name": "mail",
+          "deleted": true,
           "pushs": {},
           "msgs": {}
         },
@@ -20616,6 +20623,7 @@
           "relativePath": "/mission",
           "version": 1,
           "name": "mission",
+          "deleted": true,
           "pushs": {
             "MissionUpdatePush": {
               "version": 2,
@@ -20820,6 +20828,7 @@
           "relativePath": "/pay",
           "version": 1,
           "name": "pay",
+          "deleted": true,
           "pushs": {},
           "msgs": {}
         },
@@ -21334,6 +21343,7 @@
           "relativePath": "/practice",
           "version": 1,
           "name": "practice",
+          "deleted": true,
           "pushs": {},
           "msgs": {
             "killedAward": {
@@ -21448,6 +21458,7 @@
           "relativePath": "/props",
           "version": 1,
           "name": "props",
+          "deleted": true,
           "pushs": {},
           "msgs": {}
         },
@@ -21691,6 +21702,7 @@
           "relativePath": "/rank",
           "version": 1,
           "name": "rank",
+          "deleted": true,
           "pushs": {},
           "msgs": {
             "RankItem": {
@@ -21947,6 +21959,7 @@
           "relativePath": "/reddot",
           "version": 1,
           "name": "reddot",
+          "deleted": true,
           "pushs": {},
           "msgs": {}
         },
@@ -22860,6 +22873,7 @@
           "relativePath": "/user",
           "version": 1,
           "name": "user",
+          "deleted": true,
           "pushs": {},
           "msgs": {
             "AttrAddItem": {
@@ -23026,6 +23040,7 @@
           "relativePath": "/weapon",
           "version": 1,
           "name": "weapon",
+          "deleted": true,
           "pushs": {},
           "msgs": {}
         },
@@ -23722,6 +23737,7 @@
           "relativePath": "/scene",
           "version": 1,
           "name": "scene",
+          "deleted": true,
           "pushs": {
             "SceneJoinMessage": {
               "version": 7,
@@ -25209,6 +25225,7 @@
           "relativePath": "/ads",
           "version": 1,
           "name": "ads",
+          "deleted": true,
           "pushs": {},
           "msgs": {
             "AdsEntry": {
@@ -25406,6 +25423,7 @@
           "relativePath": "/title",
           "version": 1,
           "name": "title",
+          "deleted": true,
           "pushs": {},
           "msgs": {
             "TitleEntry": {
@@ -25483,7 +25501,8 @@
                     "typeImport": "",
                     "hasQuestionToken": false
                   }
-                }
+                },
+                "deleted": true
               }
             },
             "ActivityStageTask": {
@@ -25573,8 +25592,8 @@
               }
             }
           },
-          "md5": "9ff89c0be29c1fdd703b559d26f67aca",
-          "mtime": 1784175068402,
+          "md5": "7d6d3165435a29d4199d14f19428ca3f",
+          "mtime": 1790047412276,
           "sourcePath": "src/modules/activity/ActivityS2S.ts",
           "relativePath": "/activity",
           "version": 1,
@@ -25817,6 +25836,7 @@
           "relativePath": "/friend",
           "version": 1,
           "name": "friend",
+          "deleted": true,
           "pushs": {},
           "msgs": {}
         },
@@ -26439,7 +26459,7 @@
                     "typeImport": "",
                     "hasQuestionToken": false,
                     "collectionTypes": [
-                      "PbUserFieldMap"
+                      "UserFieldUpdate"
                     ]
                   }
                 }
@@ -26473,8 +26493,8 @@
               }
             }
           },
-          "md5": "a45bed8ce7898bab77bc7acc65910b80",
-          "mtime": 1784175068327,
+          "md5": "874b4b7c84568a337c649439a30576ba",
+          "mtime": 1790047745617,
           "sourcePath": "src/modules/user/UserS2S.ts",
           "relativePath": "/user",
           "version": 1,
@@ -26497,6 +26517,31 @@
                 },
                 "val": {
                   "id": 2,
+                  "name": "val",
+                  "type": "string",
+                  "comment": "",
+                  "typeImport": "",
+                  "hasQuestionToken": false
+                }
+              },
+              "deleted": true
+            },
+            "UserFieldUpdate": {
+              "version": 102,
+              "name": "UserFieldUpdate",
+              "comment": "",
+              "package": "user/",
+              "properties": {
+                "field": {
+                  "id": 100,
+                  "name": "field",
+                  "type": "string",
+                  "comment": "",
+                  "typeImport": "",
+                  "hasQuestionToken": false
+                },
+                "val": {
+                  "id": 101,
                   "name": "val",
                   "type": "string",
                   "comment": "",

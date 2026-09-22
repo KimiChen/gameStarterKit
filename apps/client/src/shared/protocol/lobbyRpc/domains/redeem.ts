@@ -1,72 +1,69 @@
-/**
- * redeem 域 ws-RPC 契约——「兑换码」插件（plugins/redeem）自带的域文件。
- * 这是 docs/PLUGIN.md §3「插件只能消费不能定义」判据的端到端实证：本文件只使用
- * 框架已有的 defineDomain / primitives / http 助手，不新增任何框架级概念。
- *
- * 执行模式：Claim=idempotent-write（同一 clientReqId 重放返回首次结果；不同 clientReqId
- * 重复兑换同一码由服务端 Lua 原子拒绝 REDEEM_CODE_USED）。
- * 文件顶层保持可静态读取形态（约束见 ../defineDomain.ts 抬头）。
- */
-import { assertExactKeys, boundedString, finiteInteger, type RuntimeValidator, WireValidationError } from "../../http";
+/** AUTO-GENERATED from apps/shared/schema/protocols/C2S/*.json. Do not edit. */
+/** Source: apps/shared/schema/protocols/C2S/redeem.json; validators are generated, complex leaf checks stay in ../checks/. */
+import { WireValidationError, assertExactKeys, boundedString, finiteInteger, type RuntimeValidator } from "../../http";
+import { rpcRecord } from "../primitives";
 import { defineLobbyRpcDomain, defineRpcIdempotentWrite } from "../defineDomain";
-import { requiredId, rpcRecord } from "../primitives";
 
 /** redeem 域路由名 */
 export const RedeemRpc = {
-    /** 兑换一个码：成功返回奖励与兑换后的余额 */
     Claim: "redeem.claim",
 } as const;
 
-/** 兑换码奖励（首版只有金币；扩展奖励种类时在此域递增 contractVersion） */
-export interface IRedeemReward {
-    kind: "coins";
-    amount: number;
-}
-
 export interface IRedeemClaimReq {
-    /** 幂等 id（09·I2） */
-    clientReqId: string;
-    /** 兑换码：4～32 位大写字母/数字（客户端先 toUpperCase 再发；服务端按原样校验） */
-    code: string;
+    clientReqId: string
+    code: string
 }
+
+export interface IRedeemReward {
+    kind: "coins"
+    amount: number
+}
+
 export interface IRedeemClaimRes {
-    /** 回显规范化后的码 */
-    code: string;
-    reward: IRedeemReward;
-    /** 兑换后该玩家在本 feature 钱包内的金币余额（⛔ 不是经济系统主钱包，见 docs/redeem/README.md） */
-    balance: number;
+    code: string
+    reward: IRedeemReward
+    balance: number
 }
 
-/** 路由名 → { req, res } */
-export interface RedeemRpcMap {
-    [RedeemRpc.Claim]: { req: IRedeemClaimReq; res: IRedeemClaimRes };
+function parseIRedeemClaimReq(input: unknown, path: string): IRedeemClaimReq {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, ["clientReqId", "code"], [], path)
+    const out: IRedeemClaimReq = {
+        clientReqId: boundedString(value.clientReqId, `${path}.clientReqId`, 1, 64),
+        code: ((v) => { const parsed = boundedString(v, `${path}.code`, 4, 32); if (!/^[A-Z0-9]{4,32}$/u.test(parsed)) throw new WireValidationError("REDEEM_CODE", `${path}.code`); return parsed; })(value.code),
+    }
+    return out
 }
 
-export const validateRedeemClaimReq: RuntimeValidator<IRedeemClaimReq> = (input) => {
-    const value = rpcRecord(input);
-    assertExactKeys(value, ["clientReqId", "code"], [], "payload");
-    const code = boundedString(value.code, "payload.code", 4, 32);
-    if (!/^[A-Z0-9]{4,32}$/u.test(code)) throw new WireValidationError("REDEEM_CODE", "payload.code");
-    return { clientReqId: requiredId(value, "clientReqId"), code };
-};
+function parseIRedeemReward(input: unknown, path: string): IRedeemReward {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, ["kind", "amount"], [], path)
+    const out: IRedeemReward = {
+        kind: ((v) => { if (v !== "coins") throw new WireValidationError("REDEEM_REWARD_KIND", `${path}.kind`); return v as "coins"; })(value.kind),
+        amount: finiteInteger(value.amount, `${path}.amount`, 1, Number.MAX_SAFE_INTEGER),
+    }
+    return out
+}
 
-export const validateRedeemClaimRes: RuntimeValidator<IRedeemClaimRes> = (input) => {
-    const value = rpcRecord(input, "response");
-    assertExactKeys(value, ["code", "reward", "balance"], [], "response");
-    const reward = rpcRecord(value.reward, "response.reward");
-    assertExactKeys(reward, ["kind", "amount"], [], "response.reward");
-    if (reward.kind !== "coins") throw new WireValidationError("REDEEM_REWARD_KIND", "response.reward.kind");
-    return {
-        code: boundedString(value.code, "response.code", 4, 32),
-        reward: { kind: "coins", amount: finiteInteger(reward.amount, "response.reward.amount", 1) },
-        balance: finiteInteger(value.balance, "response.balance", 0),
-    };
-};
+function parseIRedeemClaimRes(input: unknown, path: string): IRedeemClaimRes {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, ["code", "reward", "balance"], [], path)
+    const out: IRedeemClaimRes = {
+        code: boundedString(value.code, `${path}.code`, 4, 32),
+        reward: parseIRedeemReward(value.reward, `${path}.reward`),
+        balance: finiteInteger(value.balance, `${path}.balance`, 0, Number.MAX_SAFE_INTEGER),
+    }
+    return out
+}
+
+export const validateRedeemClaimReq: RuntimeValidator<IRedeemClaimReq> = (input) => parseIRedeemClaimReq(input, "payload")
+
+export const validateRedeemClaimRes: RuntimeValidator<IRedeemClaimRes> = (input) => parseIRedeemClaimRes(input, "response")
 
 export default defineLobbyRpcDomain({
     domain: "redeem",
-    contractVersion: 1,
-    errorCodes: ["REDEEM_CODE_INVALID", "REDEEM_CODE_USED"],
+    contractVersion: 5,
+    errorCodes: ["REDEEM_CODE_INVALID","REDEEM_CODE_USED"],
     pushes: [],
     routes: [
         defineRpcIdempotentWrite(RedeemRpc.Claim, { request: validateRedeemClaimReq, response: validateRedeemClaimRes }),

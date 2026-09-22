@@ -3,8 +3,6 @@ import { ReqActivityOpenReload } from '../ActivityS2S'
 import { ActivityRefresh } from '../refresh/ActivityRefresh'
 import { GameAction } from '../../../runtime/action/GameAction'
 import { QueuedLocalAction } from '../../../runtime/action/QueuedLocalAction'
-import { ActionActivityNotifyClientTimeVer } from './ActionActivityNotifyClientTimeVer'
-import { timestamp } from '@arthropoda/game-engine'
 import { LocalAction } from '../../../runtime/action/LocalAction'
 import { ActionActivityNotifyProcessTimeVer } from './ActionActivityNotifyProcessTimeVer'
 import { ActionActivityStageTask } from './ActionActivityStageTask'
@@ -29,9 +27,6 @@ export class ActionActivityOpenReload extends GameAction {
 
         if (changedSids.length > 0) {
             LocalAction.broadcast(ActionActivityNotifyProcessTimeVer, {})
-        }
-        for (const sId of changedSids) {
-            await QueuedLocalAction.rpc(ActionActivityNotifyClientTimeVer, { sId: sId }, 0, sId, timestamp() + 2)
         }
     }
 }

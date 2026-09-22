@@ -14,6 +14,7 @@ import {
 import { installNativeLobbyProcessRouter } from '../../../src/startup/installNativeLobbyProcessRouter'
 import type { RuntimeServerLike } from '../../../src/startup/runtimeTypes'
 import { installFakeCenterRedis, type FakeCenterRedis } from '../../support/FakeCenterRedis'
+import { lobbyOutcomeData } from '../../support/lobbyOutcome'
 
 /**
  * 单进程与多进程的**同一组协议用例行为一致**（P5 验收）。
@@ -91,7 +92,7 @@ interface ProtocolCase {
 }
 
 function createWorld(mode: Mode): World {
-    return createWorldOn(installFakeCenterRedis(), mode)
+    return createWorldOn(installFakeCenterRedis({ player: true }), mode)
 }
 
 /**
@@ -153,7 +154,7 @@ async function executeLocally(world: World, uid: string, route: LobbyRpcType, pa
         ip: '127.0.0.1',
     }
     try {
-        return { ok: true, res: await world.assembly.routes.execute(route, context, payload) }
+        return { ok: true, res: lobbyOutcomeData(await world.assembly.routes.execute(route, context, payload)) }
     } catch (error) {
         return { ok: false, ...failureOf(error) }
     }
@@ -234,7 +235,7 @@ async function executeForwarded(world: World, uid: string, route: LobbyRpcType, 
             target,
             async () => ({
                 ok: true as const,
-                res: await world.assembly.routes.execute(route, context, payload),
+                res: lobbyOutcomeData(await world.assembly.routes.execute(route, context, payload)),
             }),
             (request) => world.forwards.push(request),
         )
@@ -253,16 +254,18 @@ function invoke(world: World, uid: string, route: LobbyRpcType, payload: unknown
 async function observe(world: World, uid: string, route: LobbyRpcType, payload: unknown): Promise<any> {
     await authenticate(world, uid)
     world.connectionSeq += 1
-    return world.assembly.routes.execute(
-        route,
-        {
-            uid,
-            sId: SID,
-            sessionEpoch: `epoch-${uid}-${world.connectionSeq}`,
-            connectionId: `fd-${uid}`,
-            ip: '127.0.0.1',
-        },
-        payload,
+    return lobbyOutcomeData(
+        await world.assembly.routes.execute(
+            route,
+            {
+                uid,
+                sId: SID,
+                sessionEpoch: `epoch-${uid}-${world.connectionSeq}`,
+                connectionId: `fd-${uid}`,
+                ip: '127.0.0.1',
+            },
+            payload,
+        ),
     )
 }
 
@@ -662,7 +665,8 @@ describe('native Lobby single-process vs multi-process parity', () => {
                 invokeLayer: 1,
             },
         )
-        assert.deepEqual(forwarded, { ok: true, res: { ok: true } })
+        // 管道里带的是未解包的传输层结果：`kind` 让源进程把 `sync` 回放到本次调用上。
+        assert.deepEqual(forwarded, { ok: true, res: { kind: 'lobby-route-outcome', data: { ok: true } } })
 
         assert.equal(seen.length, 2)
         // 可信身份必须一致——handler 的鉴权判据全部落在这两个字段上。
@@ -690,7 +694,7 @@ describe('native Lobby single-process vs multi-process parity', () => {
      * 请求根本没经过监听进程的闸。所以这里必须走**真实的生产路由器**，而不是在测试里复刻它。
      */
     it('enters the generic idempotency gate exactly once across the process hop', async () => {
-        const redis = installFakeCenterRedis()
+        const redis = installFakeCenterRedis({ player: true })
         // 两个进程：装配彼此独立，但中心 Redis 共享——闸被进两次的观测面就在这里。
         // 出站记录各记一份，才能证明副作用落在**目标进程**那一个出口上。
         const listener = createWorldOn(redis, 'single')
@@ -710,7 +714,9 @@ describe('native Lobby single-process vs multi-process parity', () => {
         await withProcessRouter(
             target,
             async () => {
-                const res = (await listener.assembly.routes.execute('guild.join', context, payload)) as {
+                const res = lobbyOutcomeData(
+                    await listener.assembly.routes.execute('guild.join', context, payload),
+                ) as {
                     ok: boolean
                     seq: number
                 }
@@ -724,7 +730,9 @@ describe('native Lobby single-process vs multi-process parity', () => {
                 assert.deepEqual(listener.pushes, [], '监听进程不该自己产生领域推送')
 
                 // 同 clientReqId 重放：必须由**监听进程**的闸短路，不得再跨一次进程、也不得再落一次副作用。
-                const replay = (await listener.assembly.routes.execute('guild.join', context, payload)) as {
+                const replay = lobbyOutcomeData(
+                    await listener.assembly.routes.execute('guild.join', context, payload),
+                ) as {
                     ok: boolean
                     seq: number
                 }

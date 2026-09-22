@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import {
+    Call,
     ContextEngine,
     GameError,
+    MessageHelper,
     RedisService,
     RouteAction,
     executeForwardedRoute,
@@ -11,6 +13,7 @@ import { UserRpc, type LobbyRpcType } from '../../generated/lobby-contract/proto
 import { NativeLobbyProcessRoutes, nativeLobbyProcessRoutes } from '../../src/runtime/lobby/NativeLobbyProcessRoutes'
 import { NativeLobbyRouteRegistry } from '../../src/runtime/lobby/NativeLobbyRouteRegistry'
 import { installForwardedNativeLobbyRoutes } from '../../src/startup/NativeLobbyRuntime'
+import { installNativeLobbyProcessRouter } from '../../src/startup/installNativeLobbyProcessRouter'
 import {
     handleProcessPipeRequest,
     isProcessPipeRequest,
@@ -125,6 +128,45 @@ describe('native Lobby process pipe', () => {
         assert.equal(isProcessPipeRequest(null), false)
     })
 
+    it('keeps a bindable internal LocalAction on the current worker', async () => {
+        const savedRouter = RouteAction.processRouter
+        const forwarded: unknown[] = []
+        const runtime = {
+            worker_id: 0,
+            setting: { worker_num: 1, task_worker_num: 1 },
+            requestMessage: async (message: unknown) => {
+                forwarded.push(message)
+                throw new Error('internal LocalAction must not enter the Lobby pipe')
+            },
+        }
+        installNativeLobbyProcessRouter(runtime as never, 5000)
+        try {
+            let executed = false
+            const result = await MessageHelper.syncDoAction(
+                INTERNAL_UID,
+                SID,
+                new Call('user.lobbyEnter', {}),
+                class {
+                    async getBindId() {
+                        return BIND_ID
+                    }
+                    async actionBefore() {
+                        return
+                    }
+                    async doAction() {
+                        executed = true
+                    }
+                },
+            )
+            assert.equal(result.isSucc, true)
+            assert.equal(executed, true)
+            assert.deepEqual(forwarded, [])
+        } finally {
+            RouteAction.processRouter = savedRouter
+            RouteAction.callGroups.clear()
+        }
+    })
+
     it('keeps string error codes and never promotes a numeric code to a string code', () => {
         assert.deepEqual(normalizeProcessPipeFailure({ code: 'ROOM_FULL', msg: '房间已满' }), {
             code: 'ROOM_FULL',
@@ -204,10 +246,14 @@ describe('native Lobby process pipe', () => {
         })
 
         const { deps, record } = makeDeps(routes)
-        assert.deepEqual(await handleProcessPipeRequest(deps, routedMessage(UserRpc.GetInfo, BIND_ID, TRACE_ID)), {
-            ok: true,
-            res: { value: 7 },
-        })
+        const pipeResult = (await handleProcessPipeRequest(
+            deps,
+            routedMessage(UserRpc.GetInfo, BIND_ID, TRACE_ID),
+        )) as { ok: boolean; res: unknown }
+        assert.equal(pipeResult.ok, true)
+        // 管道里必须是**未解包**的传输层结果：`applyRoutedOutcome` 靠 `kind` 认出 outcome 并把 `sync`
+        // 回放到源调用上。在这里解包＝跨进程边界静默丢同步。
+        assert.deepEqual(pipeResult.res, { kind: 'lobby-route-outcome', data: { value: 7 } })
 
         assert.equal(getBindIdCalls, 0, '目标 worker 不得用 getBindId 重算 bindId')
         assert.equal(observed.parentGroupName, `bind:${BIND_ID}`)
@@ -325,8 +371,9 @@ describe('native Lobby process pipe', () => {
             handleProcessPipeRequest(deps, routedMessage(UserRpc.GetInfo, BIND_ID, TRACE_ID)),
             handleProcessPipeRequest(deps, routedMessage(UserRpc.GetInfo, BIND_ID, TRACE_ID + 1)),
         ])
-        assert.deepEqual(first, { ok: true, res: { ok: true } })
-        assert.deepEqual(second, { ok: true, res: { ok: true } })
+        // 管道里带的是未解包的传输层结果（`kind` 用于让源进程回放 `sync`）。
+        assert.deepEqual(first, { ok: true, res: { kind: 'lobby-route-outcome', data: { ok: true } } })
+        assert.deepEqual(second, { ok: true, res: { kind: 'lobby-route-outcome', data: { ok: true } } })
         assert.equal(maxActive, 1)
         assert.equal(RouteAction.callGroups.size, 0)
     })
@@ -362,7 +409,10 @@ describe('native Lobby process pipe', () => {
         })
 
         gate.resolve()
-        assert.deepEqual(await holding, { ok: true, res: { uid: EXTERNAL_UID } })
+        assert.deepEqual(await holding, {
+            ok: true,
+            res: { kind: 'lobby-route-outcome', data: { uid: EXTERNAL_UID } },
+        })
         assert.equal(RouteAction.callGroups.size, 0)
     })
 

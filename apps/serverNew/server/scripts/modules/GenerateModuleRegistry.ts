@@ -85,7 +85,8 @@ function parseModule(filePath: string, moduleName: string, exportName: string): 
     }
     const sourcePath = relative(filePath)
     const systems = parseSystems(parsed, moduleName, sourcePath)
-    if (Object.keys(systems).length === 0) throw new Error(`${sourcePath} has no contributions`)
+    if (Object.keys(systems).length === 0 && parsed.schemaOnly !== true)
+        throw new Error(`${sourcePath} has no contributions`)
     return { name: moduleName, source: sourcePath, systems }
 }
 
@@ -96,7 +97,7 @@ function parseSystems(descriptor: Record<string, JsonValue>, moduleName: string,
         ;(result[system] ??= []).push({ moduleName, source, contribution })
     }
     for (const [system, value] of Object.entries(descriptor)) {
-        if (system === 'name') continue
+        if (system === 'name' || system === 'schemaOnly') continue
         if (system === 'cron' || system === 'startup') {
             for (const contribution of asObjectArray(value, `${source}:${system}`)) add(system, contribution)
             continue

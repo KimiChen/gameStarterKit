@@ -1,7 +1,7 @@
 import { UserOnlineMgr, timestamp } from '@arthropoda/game-engine'
 import { ServerUserModel } from '../../../../generated/persistence/ServerUserModel'
 import { User } from '../bean/User'
-import { syncOnlineTime } from '../action/ActionUserSync'
+import { UserOnlineTime } from '../action/UserOnlineTime'
 import { UserEvent } from '../action/UserEvent'
 import { CopperIncome } from '../action/CopperIncome'
 
@@ -15,7 +15,7 @@ import { CopperIncome } from '../action/CopperIncome'
  */
 export class UserSessionLifecycle {
     static async leave(user: User) {
-        syncOnlineTime(user)
+        UserOnlineTime.sync(user)
         CopperIncome.markOffline(user, timestamp())
         await ServerUserModel.update(
             { userId: String(user.id) },

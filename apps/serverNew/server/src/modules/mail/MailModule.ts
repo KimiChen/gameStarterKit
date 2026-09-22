@@ -2,8 +2,6 @@ import { defineGameModule } from '../../startup/GameModule'
 import { MailAttachTask } from './action/MailAttachTask'
 import { GlobalMailDispatcher } from './delivery/GlobalMailDispatcher'
 import { cleanupExpiredMail, handleGmMailTiming, handleGmMailType } from './scheduling/MailCronTasks'
-import { MailNativeLobbyRoutes } from './lobby/MailNativeLobbyRoutes'
-import { MailNativeLobbyStore } from './lobby/MailNativeLobbyStore'
 
 export const MailModule = defineGameModule({
     name: 'mail',
@@ -39,18 +37,5 @@ export const MailModule = defineGameModule({
             run: () => GlobalMailDispatcher.init(),
         },
     ],
-    nativeLobby: {
-        routes: [
-            {
-                name: 'mail-native-lobby-routes',
-                app: 'service',
-                register: (registry, services) =>
-                    new MailNativeLobbyRoutes(
-                        services.identities,
-                        new MailNativeLobbyStore(services.pushToUser),
-                    ).register(registry),
-            },
-        ],
-    },
     errorCodes: { namePrefixes: ['Mail'] },
 })

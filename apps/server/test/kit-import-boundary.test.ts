@@ -10,7 +10,8 @@
  *      落进 kit 命名空间只许 `apps/server/src/kits/<kit>/api/**` 与 `@game/shared/kits/<kit>/api/**`，且 kit ∈ plugin.json.requires.kits；
  *    - kit 自己的域端点 / 模式代码可用本 kit 任何模块；⛔ 别的 kit（v0 无 kit-on-kit）。
  * ③ K1 · shared 侧（`apps/shared/src/**`，生成物除外）：`apps/shared/src/kits/<a>/**` ⛔ 落进别的 kit；域描述符 `protocol/lobbyRpc/domains/<d>.ts`
- *    按域归属判（插件的域只许声明 kit 的 `api/**`，kit 的域只许本 kit）；玩法 wire `gameplays/<modeId>/**` 按模式归属判；其余框架 shared 文件
+ *    与其非生成校验器 `protocol/lobbyRpc/checks/<d>.ts` **同属主**、按域归属判（插件的域只许声明 kit 的 `api/**`，kit 的域只许本 kit）；
+ *    玩法 wire `gameplays/<modeId>/**` 按模式归属判；其余框架 shared 文件
  *    ⛔ 依赖任何 kit 目录（框架只放行 `kits/catalog*` 生成目录）。
  * ④ K1 · `.conn` 禁令：kit / 插件服务端代码 ⛔ 触碰 KitTx.conn（`tx.conn`、`tx["conn"]`、解构 `{ conn }`），用 TypeScript AST 扫，⛔ 裸正则
  *    （注释与字符串字面量不算命中）。
@@ -39,6 +40,12 @@ const SHARED_SRC = "apps/shared/src/";
 const SHARED_KITS_NS = "apps/shared/src/kits/";
 const SHARED_BARE = "@game/shared/";
 const SHARED_DOMAINS_DIR = "apps/shared/src/protocol/lobbyRpc/domains/";
+/**
+ * 域的**非生成**校验器目录（`checks/<域>.ts`，BF2）：与域 descriptor **同属主**——schema 生成的 descriptor
+ * 只渲染 `check` 钩子的调用，校验逻辑本体住在这里（`../checks/<域>`、`../economy`、kit 的 api 面）。
+ * ⛔ 不把 `checks/` 当框架文件：那会让 arena / slg 这类「用本 kit api 面校验自己域」的既有形态集体变红。
+ */
+const SHARED_DOMAIN_CHECKS_DIR = "apps/shared/src/protocol/lobbyRpc/checks/";
 const SHARED_GAMEPLAYS_DIR = "apps/shared/src/gameplays/";
 
 /** 递归收集 .ts；`*.generated.ts` 由 writer 拥有（MF9 的 kits/<id>/contributions.generated.ts 会静态 import 插件模块），⛔ 不进扫描面。 */
@@ -201,8 +208,9 @@ export function judgeServerImport(owner: ServerPackage, kitIds: ReadonlySet<stri
 export function sharedOwnerOf(packages: readonly ServerPackage[], kitIds: ReadonlySet<string>, file: string): ServerPackage | null {
   const kitId = kitOf(file, SHARED_KITS_NS, kitIds);
   if (kitId !== null) return packages.find((pkg) => pkg.cls === "kit" && pkg.id === kitId) ?? null;
-  if (file.startsWith(SHARED_DOMAINS_DIR)) {
-    const domain = file.slice(SHARED_DOMAINS_DIR.length).replace(/\.ts$/u, "");
+  for (const dir of [SHARED_DOMAINS_DIR, SHARED_DOMAIN_CHECKS_DIR]) {
+    if (!file.startsWith(dir)) continue;
+    const domain = file.slice(dir.length).replace(/\.ts$/u, "");
     return packages.find((pkg) => pkg.domains.includes(domain)) ?? null;
   }
   if (file.startsWith(SHARED_GAMEPLAYS_DIR)) {
@@ -364,10 +372,11 @@ test("K1 服务端：插件 / kit 的域端点与模式代码零越界（arenaSh
   assert.deepEqual(scan.violations, []);
 });
 
-test("K1 shared：kit 目录 / 域描述符 / 玩法 wire / 框架文件对 kit 目录的引用零越界", () => {
+test("K1 shared：kit 目录 / 域描述符与 checks / 玩法 wire / 框架文件对 kit 目录的引用零越界", () => {
   const scan = scanSharedKitBoundary(REPO_ROOT);
   assert.ok(scan.files.length >= 30, `shared 文件过少（${scan.files.length}）`);
   assert.ok(scan.files.includes("apps/shared/src/protocol/lobbyRpc/domains/arenaShop.ts"), "样本插件域在扫描面");
+  assert.ok(scan.files.includes("apps/shared/src/protocol/lobbyRpc/checks/arena.ts"), "域的非生成校验器在扫描面");
   assert.deepEqual(scan.violations, []);
 });
 
@@ -401,6 +410,11 @@ test("K1 判定自测：api 面 / 本 kit / 框架放行；内部模块、未声
   assert.equal(judgeSharedImport(user, kits, "apps/shared/src/protocol/lobbyRpc/domains/arena.ts", "apps/shared/src/kits/arena/anything"), null, "kit 自己的域用本 kit 任何模块");
   assert.match(judgeSharedImport(user, kits, "apps/shared/src/protocol/lobbyRpc/domains/arena.ts", "apps/shared/src/kits/slg/api/x/index") ?? "", /kit-on-kit/u);
   assert.match(judgeSharedImport(user, kits, "apps/shared/src/protocol/lobbyRpc/domains/user.ts", "apps/shared/src/kits/arena/api/board/index") ?? "", /框架 shared 文件不得依赖 kit/u);
+  // `checks/<域>.ts` 与域 descriptor 同属主（BF2）：插件的域只许 api 面，kit 自己的域放行，非域文件仍拒。
+  assert.equal(judgeSharedImport(user, kits, "apps/shared/src/protocol/lobbyRpc/checks/arenaShop.ts", "apps/shared/src/kits/arena/api/board/index"), null);
+  assert.match(judgeSharedImport(user, kits, "apps/shared/src/protocol/lobbyRpc/checks/arenaShop.ts", "apps/shared/src/kits/arena/service") ?? "", /api 面/u);
+  assert.equal(judgeSharedImport(user, kits, "apps/shared/src/protocol/lobbyRpc/checks/arena.ts", "apps/shared/src/kits/arena/api/board/index"), null, "kit 自己的域用本 kit 任何模块");
+  assert.match(judgeSharedImport(user, kits, "apps/shared/src/protocol/lobbyRpc/checks/user.ts", "apps/shared/src/kits/arena/api/board/index") ?? "", /框架 shared 文件不得依赖 kit/u);
   assert.match(judgeSharedImport(user, kits, "apps/shared/src/kits/arena/api/board/index.ts", "apps/shared/src/kits/slg/x") ?? "", /kit-on-kit/u);
   assert.equal(judgeSharedImport(user, kits, "apps/shared/src/kits/arena/api/board/index.ts", "apps/shared/src/protocol/http"), null);
   assert.equal(judgeSharedImport(user, kits, "apps/shared/src/gameplays/arenaCapture/wire.ts", "apps/shared/src/kits/arena/api/board/index"), null, "kit 模式的 wire 归 kit");

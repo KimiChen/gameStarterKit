@@ -8,10 +8,10 @@ import { RedisInstance } from '@arthropoda/game-engine'
 import { DiffRank } from '@arthropoda/game-engine'
 import { RankRefBase } from '@arthropoda/game-engine'
 import { timestamp } from '@arthropoda/game-engine'
-import { RankItem, RankSelf, ResRankGetRank } from '../RankC2S'
 import { UserProfileFormatter } from '../../user/action/UserProfileFormatter'
 import { RankAccess } from '../persistence/RankAccess'
 import { MemberType } from '@arthropoda/game-engine'
+import { RankListItemView, RankListView, RankSelfView } from './RankListView'
 
 /**
  * 排行榜
@@ -113,9 +113,9 @@ export class RankListSystem {
      * @param response
      * @returns
      */
-    public async formatList(rankList: Map<MemberType, RankRefBase>, response: ResRankGetRank) {
+    public async formatList(rankList: Map<MemberType, RankRefBase>, response: RankListView) {
         const rankRef = RankDefine.CONF.get(this.rankType)?.rankRef ?? RankRefBase
-        let l: RankItem[] = []
+        let l: RankListItemView[] = []
         if (rankRef instanceof RankGuildRef) {
             l = await this.formatListGuildItem(rankList as Map<MemberType, RankGuildRef>)
         } else {
@@ -131,7 +131,7 @@ export class RankListSystem {
      * @returns
      */
     async formatListGuildItem(rankList: Map<MemberType, RankGuildRef>) {
-        const result: RankItem[] = []
+        const result: RankListItemView[] = []
         if (!rankList) {
             return result
         }
@@ -143,7 +143,7 @@ export class RankListSystem {
         const leaders = await UserBaseRef.loadAll(leaderIds)
 
         for (const [, rankData] of rankList) {
-            const pbItem: RankItem = {
+            const item: RankListItemView = {
                 uId: rankData.leaderId,
                 rank: rankData.rank, //排名
                 score: Int(rankData.score), //分数
@@ -153,9 +153,9 @@ export class RankListSystem {
             }
             const leaderUser = leaders.get(rankData.leaderId)
             if (leaderUser) {
-                pbItem.userInfo = UserProfileFormatter.format(leaderUser).toModData() as any
+                item.userInfo = UserProfileFormatter.format(leaderUser).toModData() as any
             }
-            result.push(pbItem)
+            result.push(item)
         }
         return result
     }
@@ -166,7 +166,7 @@ export class RankListSystem {
      * @returns
      */
     async formatListUserItem(rankList: Map<MemberType, RankUserRef>) {
-        const result: RankItem[] = []
+        const result: RankListItemView[] = []
         if (!rankList) {
             return result
         }
@@ -178,7 +178,7 @@ export class RankListSystem {
             subInfos = await RedisInstance.getServerRedis().hmGet(infoKey, uIds)
         }
         for (const [id, rankData] of rankList) {
-            const pbItem: RankItem = {
+            const item: RankListItemView = {
                 uId: Int(id),
                 rank: rankData.rank, //排名
                 score: Int(rankData.score), //分数
@@ -188,12 +188,12 @@ export class RankListSystem {
             }
             const user = users.get(rankData.id)
             if (user) {
-                pbItem.userInfo = UserProfileFormatter.format(user).toModData() as any
+                item.userInfo = UserProfileFormatter.format(user).toModData() as any
             }
             if (subInfos) {
-                pbItem.ext = subInfos[rankData.id] ?? ''
+                item.ext = subInfos[rankData.id] ?? ''
             }
-            result.push(pbItem)
+            result.push(item)
         }
         return result
     }
@@ -204,12 +204,12 @@ export class RankListSystem {
      * @returns
      */
     async formatListServerItem(rankList: Map<MemberType, RankUserRef>) {
-        const result: RankItem[] = []
+        const result: RankListItemView[] = []
         if (!rankList) {
             return result
         }
         for (const [id, rankData] of rankList) {
-            const pbItem: RankItem = {
+            const item: RankListItemView = {
                 uId: Int(id),
                 rank: rankData.rank,
                 score: Int(rankData.score),
@@ -217,7 +217,7 @@ export class RankListSystem {
                 acAward: false,
                 ext: '',
             }
-            result.push(pbItem)
+            result.push(item)
         }
         return result
     }
@@ -239,7 +239,7 @@ export class RankListSystem {
             const infoKey = RankAccess.formatRankInfoKey(this.rankType, this.user.sId, ...this.params)
             ext = (await RedisInstance.getServerRedis().hGet(infoKey, this.selfId.toString())) ?? ''
         }
-        const rankSelf: RankSelf = {
+        const rankSelf: RankSelfView = {
             rank: rank,
             score: Int(selfData.score),
             ext: ext,

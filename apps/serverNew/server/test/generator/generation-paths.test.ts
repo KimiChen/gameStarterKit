@@ -29,7 +29,7 @@ describe('GenerationPaths', () => {
 
     afterEach(() => fs.rmSync(projectRoot, { recursive: true, force: true }))
 
-    it('discovers only module-owned Bean and runtime protocol sources', () => {
+    it('discovers module-owned Bean sources and runtime-only C2S protocol sources', () => {
         write('src/modules/user/bean/Profile.ts', 'export class Profile {}')
         write('src/modules/guild/ref/GuildRef.ts', 'export class GuildRef {}')
         write('src/bean/user/Profile.ts', 'export class LegacyProfile {}')
@@ -38,14 +38,26 @@ describe('GenerationPaths', () => {
         write('src/modules/user/UserC2S.ts', 'export interface ReqEnter {}')
         write('src/protocols/C2S/user.ts', 'export interface ReqLegacyEnter {}')
         write('src/protocols/C2S/base.ts', 'export interface ReqLogin {}')
+        write('src/runtime/protocol/C2S/base.ts', 'export interface ReqLogin {}')
+        write('src/modules/guild/GuildS2S.ts', 'export interface ReqGuildS2S {}')
 
         assert.deepStrictEqual(
             paths.discoverBeanSources().map((source) => source.logicalPath),
             ['/refView/GuildRef', '/user/Profile'],
         )
+
+        // BF3：C2S 协议真源是 `apps/shared/schema/protocols/`，业务模块的 `XxxC2S.ts` 不再参与生成
+        // —— 否则同一路由会同时有 schema 与旧 TS 两套声明。这里 fixture 里的 `src/modules/user/UserC2S.ts`
+        // 必须**不**出现在发现结果里，发现面只剩 `src/runtime/protocol/C2S/` 这组框架级锚点。
         assert.deepStrictEqual(
             paths.discoverProtocolSources('C2S').map((source) => [source.packageName, source.moduleOwned]),
-            [['user', true]],
+            [['base', false]],
+        )
+
+        // S2S 不受影响：它没有 schema 真源，仍然由业务模块的 `XxxS2S.ts` 提供。
+        assert.deepStrictEqual(
+            paths.discoverProtocolSources('S2S').map((source) => [source.packageName, source.moduleOwned]),
+            [['guild', true]],
         )
     })
 

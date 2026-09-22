@@ -1,5 +1,27 @@
 # 框架开发
 
+## 新增业务 API 的固定动线
+
+一条 Lobby API 只需要四步，⛔ 不需要新增 Route 文件、Store 或启动注册代码。
+
+1. **schema 声明**：在 `apps/shared/schema/protocols/C2S/<域>.json` 里加 route 与请求/响应类型
+   （schema v1：语言即数据）。改了类型或字段要同批递增该域的 `contractVersion`。
+2. **生成**：`pnpm generate`（`gen:lobby-contract` → 生成器 → `gen:modules` → `gen:error-codes`）。
+   产出 Req/Res、validator、`serviceProto`、`Actions`，以及 `generated/lobby-contract/` 下的域产物。
+   ⛔ `generated/` 全是产物，不得手改；`generated/records/record.json` 原地推进，⛔ 不得删除重建。
+3. **Action**：在 `src/modules/<模块>/action/Action<域><动作>.ts` 里继承 `ActionUser`，只做业务规则。
+   协议真源是 schema，⛔ 不要再往 `src/modules/*/*C2S.ts` 手写协议声明 —— 生成器已不发现它们
+   （只保留 `src/runtime/protocol/C2S/` 这组框架级兼容锚点，由 `proto.json5` 与兼容基线钉住）。
+4. **Bean**：在 `User`（或对应模块 Bean）上加字段。默认 `SaveType.All` 即同时落 Redis 与上网；
+   只服务服务端时序的内部字段用 `@OnlyRedis`（`SaveType.ForRedis`），它们**不会**出现在同步载荷里。
+
+提交与同步都由框架自动完成：`RedisTask` 落盘 → `ModSync` 组装变更 → `SyncReceiptTask` 把差异
+登记到当前请求的 `reply.sync`，并投递给其他在线用户。⛔ 不要在 Action 里手工推变更、手工写
+Redis，或自己拼一份增量数据。
+
+结构门禁：`pnpm test:suite -- structure`（schema/shared registry/生成物三方一致、手工路由不得
+复活、普通 Action 不得直接 `import RedisInstance`、`@OnlyRedis` 字段不得上网）。
+
 ## Redis Bean 和 Ref
 
 - 业务通过 engine 公开入口使用 `Hash`、`UserHash`、`HashJson`、`DiffArray`、`DiffMap` 和装饰器，不依赖 differ 深层文件。

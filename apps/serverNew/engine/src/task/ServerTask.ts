@@ -30,6 +30,8 @@ export class ServerTask {
 
     initAttachTasks() {
         // 先完成 Redis 提交，NetTask 再发送成功响应。
+        // ⚠ `SyncReceiptTask` 的**变更冻结**发生在 `onBeforeCommit`（早于 RedisTask 落盘），
+        // 这里排在其后只决定「提交后投递」那一半落在落盘之后，两者不是同一件事。
         this.attachTasks.push(new RedisTask())
         this.attachTasks.push(new SyncReceiptTask(this))
         this.netTask = new NetTask(this)
@@ -61,6 +63,11 @@ export class ServerTask {
                 //例如邮件业务为了规范写法和提升批量发送效率, 在等常规业务结束统一处理,此时需要等待该业务结束再清理bean缓存
                 for (const attach of this.actionAttachTasks) {
                     await attach.onDoAction(res)
+                }
+                // 落盘之前先把 Bean diff 冻结下来：`RedisTask` 保存时会逐个 Bean 走 `Hash.save()`
+                // → `initDiff()` 清空字段级变更，之后任何任务都再也读不到「这次改了什么」。
+                for (const attach of this.attachTasks) {
+                    await attach.onBeforeCommit?.()
                 }
                 for (const attach of this.attachTasks) {
                     await attach.onActionSuccess(res)

@@ -1,7 +1,7 @@
-# scripts/packages/redeem.lock —— 已安装插件 redeem@1.0.9 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/redeem.lock —— 已安装插件 redeem@1.0.10 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"id":"redeem","version":"1.0.9","kinds":["client"],"constantName":null,"domains":["redeem"],"fguiPackages":[]}
-# source {"kind":"tree","filesLockSha256":"1190a57b2e9c5fa04bb220036bb603df487b975ea64fbc1330b60b2f0568c03b","forkedFrom":null}
+# manifest {"id":"redeem","version":"1.0.10","kinds":["client"],"constantName":null,"domains":["redeem"],"fguiPackages":[]}
+# source {"kind":"tree","filesLockSha256":"c360a642804eaf689bb19b27435fc0350390e42877437b9e65c2dc6c2d357d96","forkedFrom":null}
 apps/Cocos/assets/src/plugins/redeem.meta 639172d3ae01bb4b2390beb1f10e5b847d28238a601c5521f4610d27ac66a6b4
 apps/Cocos/assets/src/plugins/redeem/index.ts 7418a31154e52bde7c09aab2f697dfca420271bea97f54f40f7ef89829b49e5b
 apps/Cocos/assets/src/plugins/redeem/index.ts.meta 7d02df934e31940ab85a30f8f5482ef445342604bc3723753a40c75e2950da24
@@ -22,11 +22,11 @@ apps/client/src/plugins/redeem/view/RedeemView.ts af3c3c47a5428b9f5bb3eec2e85a26
 apps/client/src/plugins/redeem/view/RedeemView.view.json 9fe9023a25e9216827328104c7dcd2bf28a7afeaf7c69901924935d6c7f4790d
 apps/client/test/redeem-logic.test.ts ac95b5e2e931856480e3242e05dda2e0b9695266b64828980305f8b28b6bad62
 apps/plugins/redeem/README.md 836b011e42f2df340e059489bf7cc45280f6a2e725c57806f2f2d0a6e650cb17
-apps/plugins/redeem/plugin.json 3d87eb6256c94299460bafb50241a85e51ce331a7d0b8af107fcea111fe73274
+apps/plugins/redeem/plugin.json 1f0d60be0f6f2ca5ffbff65f1672b94bfed7a2411f7f1919317ceeae0075f973
 apps/server/src/core/redeem/claim.ts 6020b88ba76db80579ed0a94d18b4d0e68e87199367977b6e30d68b39830fc81
 apps/server/src/core/redeem/codes.ts 492a7aeddb96f3d3473b59bebf172e9e63267781167718671c111d612ef7211a
 apps/server/src/core/redeem/store.ts c051cf5849f2d27c23c7d658ebe7b371c504b2dd640bec568647a060a8dae79b
 apps/server/src/websocket/redeem/claim.ts 5f292f9c1d6e23ec23a97d5aaaf35acb9fba8ad78af2d3d8f15095b0fd999113
 apps/server/test/lobbyRpcVectors/redeem.ts f104ae472d2dd8bcf1d6bab12377fa0fed628502a401865000b84dbaec62d0a4
 apps/server/test/redeem-claim.test.ts 4302ccf91b75ea30bce5045ef2f16d07e24171d39658c0d3959a94f64e48a55f
-apps/shared/src/protocol/lobbyRpc/domains/redeem.ts e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514
+apps/shared/schema/protocols/C2S/redeem.json 6a91eda8003968a858fef58a6cea82e86360dedd46e3a9e9e934278eed09332e

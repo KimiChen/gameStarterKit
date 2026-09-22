@@ -14,6 +14,7 @@ import path from "node:path";
 import {
   classifyPath,
   deriveOwnership,
+  domainSchemaPath,
   kitDir,
   mirrorPathOf,
   normalizePackagePath,
@@ -213,7 +214,8 @@ export function validatePackage(pkg: PluginPackage, root: string): ValidatedPack
     identity = identityOf(manifest, gameplay);
   }
   for (const domain of manifest.domains) {
-    for (const required of [`apps/shared/src/protocol/lobbyRpc/domains/${domain}.ts`, `apps/server/test/lobbyRpcVectors/${domain}.ts`]) {
+    // 声明真源（schema）随包，descriptor 由 postinstall 的 codegen 生成 ⇒ 包内不应带 descriptor。
+    for (const required of [domainSchemaPath(domain), `apps/server/test/lobbyRpcVectors/${domain}.ts`]) {
       if (!files.has(required)) fail(`声明了 domain "${domain}" 但包内缺少 ${required}`);
     }
   }

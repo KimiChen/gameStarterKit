@@ -1,0 +1,70 @@
+{
+  "domain": "income",
+  "contractVersion": 7,
+  "errorCodes": [],
+  "types": {
+    "IIncomeGetPendingReq": { "kind": "object", "fields": [] },
+    "IIncomeGetPendingRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "level", "kind": "integer", "min": 0 },
+        { "name": "intervalSeconds", "kind": "integer", "min": 1 },
+        { "name": "perInterval", "kind": "integer", "min": 0 },
+        { "name": "offlineSeconds", "kind": "integer", "min": 0 },
+        { "name": "offlineCopper", "kind": "integer", "min": 0 },
+        { "name": "copper", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IIncomeSettleOnlineReq": { "kind": "object", "fields": [] },
+    "IIncomeSettleOnlineRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "copper", "kind": "integer", "min": 0 },
+        { "name": "balance", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IIncomeClaimOfflineReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 }
+      ]
+    },
+    "IIncomeClaimOfflineRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "copper", "kind": "integer", "min": 0 },
+        { "name": "offlineSeconds", "kind": "integer", "min": 0 },
+        { "name": "balance", "kind": "integer", "min": 0 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "IncomeGetPending",
+      "route": "income.getPending",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "income",
+      "request": { "kind": "ref", "ref": "IIncomeGetPendingReq" },
+      "response": { "kind": "ref", "ref": "IIncomeGetPendingRes" }
+    },
+    {
+      "name": "IncomeSettleOnline",
+      "route": "income.settleOnline",
+      "serviceType": "Base",
+      "mode": "natural-write",
+      "ownerModule": "income",
+      "request": { "kind": "ref", "ref": "IIncomeSettleOnlineReq" },
+      "response": { "kind": "ref", "ref": "IIncomeSettleOnlineRes" }
+    },
+    {
+      "name": "IncomeClaimOffline",
+      "route": "income.claimOffline",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "income",
+      "request": { "kind": "ref", "ref": "IIncomeClaimOfflineReq" },
+      "response": { "kind": "ref", "ref": "IIncomeClaimOfflineRes" }
+    }
+  ]
+}

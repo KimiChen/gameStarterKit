@@ -98,23 +98,36 @@ export class NativeLobbyAuthProvider implements LobbyAuthProvider {
         const accountKey = `${input.sId}:${verified.userId}`
         const latest = this.latestIssuedAt.get(accountKey)
         if (latest !== undefined && verified.issuedAtMs < latest) throw new Error('stale session epoch')
-        const internalUid = await this.identities.resolve(verified.userId, input.sId)
-        await this.onAuthenticated?.(verified.userId, internalUid, input.sId)
-        const sessionEpoch = `${verified.issuedAtMs}:${tokenDigest(input.token)}`
-        const current = this.tokens.get(sessionEpoch)
-        if (current && (current.uid !== verified.userId || current.token !== input.token)) {
-            throw new Error('ambiguous session epoch')
+        let stage = 'resolve internal uid'
+        try {
+            const internalUid = await this.identities.resolve(verified.userId, input.sId)
+            stage = 'initialize authenticated player state'
+            await this.onAuthenticated?.(verified.userId, internalUid, input.sId)
+            const sessionEpoch = `${verified.issuedAtMs}:${tokenDigest(input.token)}`
+            const current = this.tokens.get(sessionEpoch)
+            if (current && (current.uid !== verified.userId || current.token !== input.token)) {
+                throw new Error('ambiguous session epoch')
+            }
+            if (!current)
+                this.tokens.set(sessionEpoch, {
+                    token: input.token,
+                    uid: verified.userId,
+                    issuedAtMs: verified.issuedAtMs,
+                    references: 0,
+                })
+            this.latestIssuedAt.set(accountKey, verified.issuedAtMs)
+            // 内部角色 ID 随身份一起回传：会话结束时的业务离线收尾需要它，engine 只透传不解释。
+            return { uid: verified.userId, sId: input.sId, sessionEpoch, internalUid }
+        } catch (error) {
+            // LobbyServer 必须向 wire 隐藏内部错误（统一返回 AUTH_REQUIRED），但服务端不能把根因
+            // 一并吞掉：多进程下 uid 映射、首次建档和认证后的 Action 都在这里发生。只记录可信
+            // uid/sid 与阶段，绝不记录外部 token。
+            Log.error(
+                `native Lobby authentication bootstrap failed: stage=${stage} uid=${verified.userId} sid=${input.sId}`,
+                error,
+            )
+            throw error
         }
-        if (!current)
-            this.tokens.set(sessionEpoch, {
-                token: input.token,
-                uid: verified.userId,
-                issuedAtMs: verified.issuedAtMs,
-                references: 0,
-            })
-        this.latestIssuedAt.set(accountKey, verified.issuedAtMs)
-        // 内部角色 ID 随身份一起回传：会话结束时的业务离线收尾需要它，engine 只透传不解释。
-        return { uid: verified.userId, sId: input.sId, sessionEpoch, internalUid }
     }
 
     async validateActive(context: LobbyConnectionContext): Promise<LobbyWireBusinessError | null> {

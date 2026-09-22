@@ -74,6 +74,7 @@
       { "path": "apps/client/src/gameplay/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/server/src/rooms/modes/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/shared/src/protocol/lobbyRpc/registry.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
+      { "path": "apps/shared/src/protocol/lobbyRpc/domains/**", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
       { "path": "apps/client/src/generated/**", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
       { "path": "docs/plugins.generated.md", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },
       { "path": "apps/server/test/lobbyRpcVectors/index.generated.ts", "writer": "npm --workspace @game/server run codegen:plugins", "autoHeader": true },

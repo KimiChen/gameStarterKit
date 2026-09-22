@@ -32,7 +32,7 @@ describe('compiled test cache', () => {
     it('signs every file that the selected TypeScript project compiles', () => {
         const inputs = compilationInputs('test/tsconfig.json')
         assert.ok(
-            inputs.some((filePath) => filePath.endsWith('/src/modules/practice/action/ActionPracticeNpcBreakUp.ts')),
+            inputs.some((filePath) => filePath.endsWith('/src/modules/income/action/ActionIncomeClaimOffline.ts')),
         )
         assert.ok(inputs.some((filePath) => filePath.endsWith('/test/modules/adjust/aiCodeContext.test.ts')))
         assert.ok(inputs.some((filePath) => filePath.endsWith('/engine/src/event/EventSystem.ts')))

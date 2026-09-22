@@ -26,6 +26,7 @@
 - 外置 runtime ESM 必须使用带 `webpackIgnore` 的原生变量 `import()`；否则 NCC 会改写成 bundle 内 lazy context，生产包将无法加载独立的 runtime 文件。
 - 排查 `bindId` 路由时可临时设 `ALLOY_PROCESS_ROUTE_TRACE=1`；trace 只输出 API 名、bindId 和源/目标 worker，不得扩展为输出用户或请求业务数据。trace 打在 `requestMessage` **之前**，它证明的是「发起了转发」而不是「已经送达」——拿它当跨进程证据时必须同时有对端的行为观测（对端真的执行了、客户端真的收到了），否则「请求根本没送达」也是绿的。
 - 跨进程转发只传已解析对象：字符串路由、业务 payload、可信身份（字符串 uid、内部 uid、`sId`）、源 worker 首次解析的 `bindId` 与 traceId。禁止把客户端原始帧或数字协议号交给目标 worker 重放，目标 worker 也不得重算 `bindId`。
+- `RouteAction.processRouter` 只转发 `responseTransport === 'object'` 的原生 Lobby 调用；`MessageHelper` 发起的 LocalAction（包括认证后的建档与离线收益暂存）必须留在当前 worker，⛔ 不得编码成 `routed-lobby-route` 或以「非对象 transport」为由拒绝。
 - 客户端入口**只有**原生 Lobby；旧二进制网关（`ClientServer` + PB 编解码）已随 P6 删除。多进程下 `CP.service.clientPort` 仍被 alloy-core 绑定，因此该端口上的连接会被显式关闭（1008）而不是静默丢弃帧；⛔ 不要为「让端口安静」恢复旧的帧解析路径。
 - 原生 Lobby 的监听进程与转发 worker 必须共用同一份路由组装和进程级执行点；只有持有连接的一端能写 wire 消息，其余 worker 的推送与踢人必须转交监听进程，关闭时卸载进程级路由表。
 - worker 意外退出（崩溃 / OOM / SIGKILL）由 alloy-core 自动重拉：同一槽位重新 fork，`generation` +1，`restartCount` +1；重拉走的是**同一套** `onWorkerStart` → `initializeWorker`，所以调度器所有权（`taskWorkerNum > 0` 时归 `workerNum` 那个槽位）也会被重新获取。重启预算是 10s 窗口内最多 5 次，超出即判 crash loop 并**停掉整个 runtime**，因此排查时不要靠反复杀进程复现。崩溃的可观测出口只有主控的 `onWorkerError`：worker 自己的 `onWorkerExit` 只在优雅 drain 时才跑，硬杀根本轮不到它，而 alloy-core 内部的 `context.log` 不落服务进程 stdout —— ⛔ 删掉 `onWorkerError` 会让「崩了又被重拉」在日志里完全无声。
@@ -51,7 +52,7 @@
 - ⚠ **但「不动 `apps/server`」不等于「`apps/server` 下的路径一律不许改」**，两者别混：`apps/server/test/lobbyRpcVectors/<域>.ts` 是**codegen 契约要求的**（`tools/plugin-codegen/lib.ts` 的 `readVectorSidecars` 做双向对齐：每个 domain 必须有同名 sidecar，缺则 `codegen:plugins` 直接失败；域删了还要同批删 sidecar）。新增域必须同批提供最小合法 request/response 向量并重跑 `codegen:plugins`，其产物 `lobbyRpcVectors/index.generated.ts` 由生成器独占，⛔ 不手改。判据：`node --import tsx tools/plugin-codegen/cli.ts --check` 报 `generated plugin artifacts are fresh`。区分标准是**这条路径属于谁的所有权**：codegen/契约面（向量 sidecar、`tools/plugin-codegen/**`）必须跟着改；旧通道的**业务端点与测试套件**不碰。
 - `pnpm verify:module -- <module>` 的 `test:module` 一步要求 `test/modules/<module>/` 存在。只有原生 Lobby handler、没有业务模块测试目录的模块（`arena` / `arenaShop` / `redeem` / `slg` / `income` 等）在这一步必然报 `module has no tests`——这是既有形态，它们的覆盖在 `test/runtime/protocol/native-lobby-routes.test.ts`；⛔ 不要为凑门禁建空测试目录。
 
-- 模块协议源必须位于模块根部 `<Module>C2S.ts` / `<Module>S2S.ts`；每个 `Req<Name>` 必须先有 `action/Action<Name>.ts`，再运行生成器登记路由。
+- **C2S 协议真源是 `apps/shared/schema/protocols/C2S/<域>.json`**；业务模块不得保留 `<Module>C2S.ts`，即使只是借用旧 Req/Res/Pb DTO 也要迁为模块内部具名参数或 View 类型。生成器的 `discoverProtocolSources` 只在 S2S 方向扫模块目录，⛔ 不要把新协议写回模块根部 —— 否则同一路由会同时有 schema 与旧 TS 两套声明。`<Module>S2S.ts` 不受影响：S2S 没有 schema 真源，仍由模块根部文件提供。schema 里每条 `Req` 都必须先有 `src/modules/<模块>/action/Action<域><动作>.ts`，再运行 `pnpm generate` 登记路由。
 - 协议与 Bean 兼容记录只存在于 `generated/records/`；正式 `record.json` 缺失时从 Git 恢复，禁止创建空记录或恢复 `resources/`。
 - 记录模型变更（例如 P6 移除旧数字协议号）只能**就地迁移**：用 `scripts/generator/migrate/` 下的迁移脚本改写 `record.json`，脚本必须自证 `beans` 段与 `modVersion` 逐字节未变。⛔ 禁止删除整份记录、从空记录重新生成，或手改记录绕过生成器。
 - 生成链只产出仍有消费者的产物：`generated/protocol/server/**`（`serviceProto.ts` / `actions.ts` / `mod/**`）与 `generated/records/**`。PB 专属产物（`pb.js`、客户端 `typings/pb/**`）与其生成器已删除；`serviceProto` 只有字符串路由、`type` 与 `serviceType`，不含数字协议号或内联 schema。
@@ -66,6 +67,8 @@
 - Bean 只能在所属 Action 上下文内修改；异步业务必须等待完成，不能让上下文失效后继续写 Bean。
 - 业务事件必须显式携带其归属实体；事件处理器不得从全局 `Ctx` 反查玩家或请求数据，因为事件可由不同 Action 或延后阶段发布。
 - Bean 集合不是原生集合；修改前核对引擎 API，`DiffArray` 按下标读取只能用 `.at(i)`，禁止按原生数组的 `indexOf` 语义推断。
+- **新增业务 API 的固定动线是 schema → generate → Action → Bean**（逐步说明见 `engine/docs/development.md`）：在 `apps/shared/schema/protocols/C2S/<域>.json` 声明 → `pnpm generate` → 写 `src/modules/<模块>/action/Action<域><动作>.ts` → 字段加在所属 Bean 上。⛔ 不需要新增 Route 文件、Store 或启动注册代码；`generated/**` 一律是产物，不得手改。
+- 普通业务 Action **禁止直接 `import RedisInstance`**：Bean setter 由上下文收集变更、随 `RedisTask` 统一提交，手摸 Redis 会绕过提交点与 `ModSync` 同步面。**显式 Store 例外的判据是「这段原子性用单玩家 Bean 表达不了」**（显式事务存储 / 计数器分配 / 跨玩家共享聚合），且必须按**模块目录**登记在 `test/structure-baseline/framework-gates.test.ts` 的 `ALLOWED` 里并写明理由；该清单同时校验陈旧条目（对应目录已不再直接使用 `RedisInstance` 就必须同批删掉），⛔ 不要为了变绿往里加条目。原生 Lobby 的独立 Store（`NativeLobbyUserStore` 一类）同属这一例外，成功写入后必须在同一 `ObjectAction` 上调 `recordObjectActionSync()` 登记公开视图与版本（见「运行约束」）。
 
 ## 测试约束
 
@@ -78,7 +81,7 @@
 - 关闭日志中的 `DisconnectsClientError: Disconnects client`（未处理拒绝，每次关闭打印数条）是**既有基线**：`RedisCache.disconnect`、`RedisInstance.clear`、`EngineInitHelper.stopInfrastructure` 与 P6 前备份逐字节一致，与协议链无关。排查启动或协议问题时不要把它当成回归；修它属于独立的引擎关闭健壮性任务。
 - 日常改模块先运行 `pnpm verify:module -- <module>`；提交前运行 `pnpm check`。前者只校验模块索引与目标测试，后者执行完整静态检查、生成物检查和 engine 契约。
 - 全局协议、Bean、错误码、数据库和生成产物兼容性只由统一兼容基线维护；模块测试不得重复硬编码路由和字段编号，保留所属业务的可读契约和行为验证。
-- 重取兼容基线用 `pnpm update:compatibility-baseline`，但它**无选择性**（会把同批所有漂移一起吸收），且写出的 JSON **不满足 prettier**：必须先 `pnpm test:compatibility` 拿到漂移清单并逐项确认「只多出预期的合法新增」，重取后紧跟 `pnpm exec prettier --write test/structure-baseline/compatibility-baseline.json`，否则 `pnpm check` 会红在 `format:check`。重取前后用 JSON 语义比对确认「除预期条目外逐字节等价」，不要用行数或字节数判断。
+- 重取兼容基线用 `pnpm update:compatibility-baseline`，但它**无选择性**（会把同批所有漂移一起吸收）：必须先 `pnpm test:compatibility` 拿到漂移清单并逐项确认「只多出预期的合法新增」。重取前后用 JSON 语义比对确认「除预期条目外逐字节等价」，不要用行数或字节数判断。脚本自身会跑一次 prettier（与 `scripts/errorcode/checkErrorCodes.ts` 对基线产物的处理一致），所以 `pnpm check` 的 `format:check` 不会再因为「`JSON.stringify` 把单元素数组摊成多行」而红；`--preserve-core` 同样可用。
 - 状态变更测试同时验证响应、实际状态和消耗/奖励；生命周期能力还需验证真实入口能触发，不能仅凭辅助函数测试通过判定业务已接通。
 - 调用顺序必须以真实调用记录验证；禁止用源码字符串位置、正则或文件快照代替业务行为测试。
 - 编译型测试缓存的签名必须覆盖实际 TypeScript 编译范围及 Bean 兼容记录；不能只缩小签名而保留全量编译。

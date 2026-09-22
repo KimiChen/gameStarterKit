@@ -7,16 +7,16 @@ import type { IPurchaseResult } from "./economy";
 import { validateArenaBoardReq, validateArenaBoardRes, validateArenaCaptureReq, validateArenaCaptureRes, type IArenaBoardReq, type IArenaBoardRes, type IArenaCaptureReq, type IArenaCaptureRes } from "./domains/arena";
 import { validateArenaShopBuyBoostReq, validateArenaShopBuyBoostRes, type IArenaShopBuyBoostReq, type IArenaShopBuyBoostRes } from "./domains/arenaShop";
 import { validateChatMessagePush, validateChatSendReq, validateChatSendRes, type IChatMessagePush, type IChatSendReq, type IChatSendRes } from "./domains/chat";
-import { validateEventsRes, validateGuildEventPush, validateGuildEventsReq, validateGuildJoinReq, validateGuildLeaveReq, validateGuildLeaveRes, validateJoinRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
+import { validateGuildEventPush, validateGuildGetEventsReq, validateGuildGetEventsRes, validateGuildJoinReq, validateGuildJoinRes, validateGuildLeaveReq, validateGuildLeaveRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
 import { validateIncomeClaimOfflineReq, validateIncomeClaimOfflineRes, validateIncomeGetPendingReq, validateIncomeGetPendingRes, validateIncomeSettleOnlineReq, validateIncomeSettleOnlineRes, type IIncomeClaimOfflineReq, type IIncomeClaimOfflineRes, type IIncomeGetPendingReq, type IIncomeGetPendingRes, type IIncomeSettleOnlineReq, type IIncomeSettleOnlineRes } from "./domains/income";
-import { validateMailClaimAttachRes, validateMailClaimReq, validateMailListReq, validateMailListRes, validateMailMarkReadRes, validateMailMarkReq, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
-import { validatePartyAcceptReq, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyLeaveReq, validatePartyLeaveRes, validatePartySeqRes, validatePartyTransferLeaderReq, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
+import { validateMailClaimAttachReq, validateMailClaimAttachRes, validateMailListReq, validateMailListRes, validateMailMarkReadReq, validateMailMarkReadRes, validateMailNewPush, type IMailClaimAttachReq, type IMailListReq, type IMailListRes, type IMailMarkReadReq, type IMailMarkReadRes, type IMailNewPush } from "./domains/mail";
+import { validatePartyAcceptReq, validatePartyAcceptRes, validatePartyCreateReq, validatePartyCreateRes, validatePartyDeclineReq, validatePartyDeclineRes, validatePartyEventPush, validatePartyGetEventsReq, validatePartyGetEventsRes, validatePartyGetReq, validatePartyGetRes, validatePartyInviteReq, validatePartyInviteRes, validatePartyInvitedPush, validatePartyKickReq, validatePartyKickRes, validatePartyLeaveReq, validatePartyLeaveRes, validatePartyTransferLeaderReq, validatePartyTransferLeaderRes, type IPartyAcceptReq, type IPartyAcceptRes, type IPartyCreateReq, type IPartyCreateRes, type IPartyDeclineReq, type IPartyDeclineRes, type IPartyEventPush, type IPartyGetEventsReq, type IPartyGetEventsRes, type IPartyGetReq, type IPartyGetRes, type IPartyInviteReq, type IPartyInviteRes, type IPartyInvitedPush, type IPartyKickReq, type IPartyLeaveReq, type IPartyLeaveRes, type IPartyTransferLeaderReq } from "./domains/party";
 import { validateRedeemClaimReq, validateRedeemClaimRes, type IRedeemClaimReq, type IRedeemClaimRes } from "./domains/redeem";
-import { validatePrepareCreateReq, validatePrepareCreateRes, validateResolveReq, validateResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
-import { validatePurchaseResult, validateShopPurchaseReq, validateShopQueryReq, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
+import { validateRoomPrepareCreateReq, validateRoomPrepareCreateRes, validateRoomResolveReq, validateRoomResolveRes, type IRoomPrepareCreateReq, type IRoomPrepareCreateRes, type IRoomResolveReq, type IRoomResolveRes } from "./domains/room";
+import { validateShopPurchaseReq, validateShopPurchaseRes, validateShopQueryOpReq, validateShopQueryOpRes, type IShopPurchaseReq, type IShopQueryOpReq } from "./domains/shop";
 import { validateSlgMapTilesReq, validateSlgMapTilesRes, validateSlgMarchDispatchReq, validateSlgMarchDispatchRes, validateSlgMarchRecallReq, validateSlgMarchRecallRes, validateSlgTileCaptureReq, validateSlgTileCaptureRes, type ISlgMapTilesReq, type ISlgMapTilesRes, type ISlgMarchDispatchReq, type ISlgMarchDispatchRes, type ISlgMarchRecallReq, type ISlgMarchRecallRes, type ISlgTileCaptureReq, type ISlgTileCaptureRes } from "./domains/slg";
-import { validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticProfileRes, validateSnakeCosmeticSkinReq, validateSnakeCosmeticSnapshotRes, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq, type ISnakeCosmeticSnapshotRes } from "./domains/snakeCosmetic";
-import { validateGetInfoReq, validateGetInfoRes, validateGetProfileReq, validateGetUserIdReq, validateGetUserIdRes, validateProfileRes, validateUpdateProfileReq, validateUpdateRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
+import { validateSnakeCosmeticEquipReq, validateSnakeCosmeticEquipRes, validateSnakeCosmeticGetSnapshotReq, validateSnakeCosmeticGetSnapshotRes, validateSnakeCosmeticUnlockReq, validateSnakeCosmeticUnlockRes, type ISnakeCosmeticGetSnapshotReq, type ISnakeCosmeticProfileRes, type ISnakeCosmeticSkinReq, type ISnakeCosmeticSnapshotRes } from "./domains/snakeCosmetic";
+import { validateUserGetInfoReq, validateUserGetInfoRes, validateUserGetProfileReq, validateUserGetProfileRes, validateUserGetUserIdReq, validateUserGetUserIdRes, validateUserUpdateProfileReq, validateUserUpdateProfileRes, type IGetInfoReq, type IGetInfoRes, type IGetProfileReq, type IGetProfileRes, type IGetUserIdReq, type IGetUserIdRes, type IUpdateProfileReq, type IUpdateProfileRes } from "./domains/user";
 import { validateWorldEnterReq, validateWorldEnterRes, validateWorldResolveTransferReq, validateWorldResolveTransferRes, validateWorldTransferPush, type IWorldEnterReq, type IWorldEnterRes, type IWorldResolveTransferReq, type IWorldResolveTransferRes, type IWorldTransferPush } from "./domains/world";
 
 /** 领域全集（生成器删除保护锚 + 向量 sidecar 的域集合闸）。 */
@@ -252,20 +252,20 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
 
 /** 域契约身份（codegen 闸：domains/<域>.ts 的 sha256 变化必须伴随 contractVersion 递增；⛔ 不进 wire）。 */
 export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {
-    arena: { contractVersion: 1, digest: "b0df3a7d9b48719d53c095f3b1e89347416133dc2c3ae57aff6603f1cbe54a09" },
-    arenaShop: { contractVersion: 2, digest: "2cb9597e5558094b464d70a16a03a8a63c95c86fa2fbd523cc96d5b93c63dd73" },
-    chat: { contractVersion: 1, digest: "3e34b7840131614c0c9c05c6858ffaf76187e14dc71df1e5703ddad63b4dbc96" },
-    guild: { contractVersion: 1, digest: "4a996a135ffd900eb39c0b83697ee03d4d4587829da88ce537f363d56ceb4bde" },
-    income: { contractVersion: 2, digest: "b0f293d7efe6ca2b3f4576a439dcb55bcde50d3ec7ce4250db6fa8ad9af8a8d9" },
-    mail: { contractVersion: 1, digest: "d6401c80a558ce24849ad9c038bd34e2adc09bd9b006abef773cbecf409b7ab4" },
-    party: { contractVersion: 1, digest: "1313ed88614cdb6ddb96ed5e8bf05c2ac0caddbd06239cae4c2de51e6c36748e" },
-    redeem: { contractVersion: 1, digest: "e7e74dc98acf6cfb1d5bfd0261930d6bbc5bb07e2efa79dec0e91be485596514" },
-    room: { contractVersion: 1, digest: "8655531a80f2ffc6a941247c2c2ef00ad44dfb3842b722741556430bf2c12ff2" },
-    shop: { contractVersion: 1, digest: "80f5bc9c74300aecd0bf2caf8dea93506657c5e9a4d64e91931760e8c06544cf" },
-    slg: { contractVersion: 2, digest: "077ecba95687aa0a4130f51eba2cda7d4a2548e6e347154d3f153fdcc641bca5" },
-    snakeCosmetic: { contractVersion: 3, digest: "17949949b68946f630d82e9b6f4703dc87b44866e90bf08865eab91bb974e908" },
-    user: { contractVersion: 1, digest: "ce1f3ff0528a15836c188d111ddbe29bfb8c97c4f68d69c3e77a9432fe157a28" },
-    world: { contractVersion: 2, digest: "7c4ff662fa6d14043befc590e30741ceb7d514b2ac1ebc27da309c418701af21" },
+    arena: { contractVersion: 5, digest: "aab6f8c8965ef6963420504a6990e5bda3a888d92bdfec06ee6b981d1d7469cb" },
+    arenaShop: { contractVersion: 6, digest: "44fd4a3a5aff367dc06a4352bb977c20cf5edacbd1d90217e1bcc1966628bd3f" },
+    chat: { contractVersion: 5, digest: "3f171c821824feddb819ae71834150beab752ce95d6436888c435a88e0f65d5f" },
+    guild: { contractVersion: 5, digest: "005c6a6195a8c937dbafead7e4d3479391b91d0a6bf1a0641ba48c33cf1886ce" },
+    income: { contractVersion: 7, digest: "b30d2190e3f60c2c321962190c33400ac1aef8c6cf023802b2033e396bbb676b" },
+    mail: { contractVersion: 5, digest: "88ddc9bd181b49f01007cc4af01655845fabdd13365095e56ff776c47c208368" },
+    party: { contractVersion: 5, digest: "a80b6379ef7d6242f4c035dc41c54fc5a0648bbfe9f9780974bcb86bb1279b24" },
+    redeem: { contractVersion: 5, digest: "01729116448beef18e707d6fde5368354ee65643889b7f7e6749f594525c1aaa" },
+    room: { contractVersion: 5, digest: "390209b1681dc83e238b1c52fdc2a3d446844b6522ea3a1a6e595bc67fa86003" },
+    shop: { contractVersion: 5, digest: "68e696920a46d253a8c4e6ee27a636f3a45562085c35c70aa7a611a1f07c3e5f" },
+    slg: { contractVersion: 6, digest: "83374c275d0159ffba1c4700cddf22ea548ba204ee14407cd262b89e21840064" },
+    snakeCosmetic: { contractVersion: 7, digest: "138da20da633269cb11f13de65abf04041b92d851328bb6a3998383d79802f11" },
+    user: { contractVersion: 5, digest: "2bdaf7c83b42005ee958d933e9e846b923c7d17176231d220133b35108d39c6f" },
+    world: { contractVersion: 6, digest: "1eaea7435245ec9d128571b9dbff4aae9a356d1c70ec9e47acf2e25fdda323f5" },
 };
 
 /** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */
@@ -288,13 +288,13 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "chat.send": guardRpcValidator("payload", validateChatSendReq),
     "guild.join": guardRpcValidator("payload", validateGuildJoinReq),
     "guild.leave": guardRpcValidator("payload", validateGuildLeaveReq),
-    "guild.getEvents": guardRpcValidator("payload", validateGuildEventsReq),
+    "guild.getEvents": guardRpcValidator("payload", validateGuildGetEventsReq),
     "income.getPending": guardRpcValidator("payload", validateIncomeGetPendingReq),
     "income.settleOnline": guardRpcValidator("payload", validateIncomeSettleOnlineReq),
     "income.claimOffline": guardRpcValidator("payload", validateIncomeClaimOfflineReq),
     "mail.list": guardRpcValidator("payload", validateMailListReq),
-    "mail.claimAttach": guardRpcValidator("payload", validateMailClaimReq),
-    "mail.markRead": guardRpcValidator("payload", validateMailMarkReq),
+    "mail.claimAttach": guardRpcValidator("payload", validateMailClaimAttachReq),
+    "mail.markRead": guardRpcValidator("payload", validateMailMarkReadReq),
     "party.create": guardRpcValidator("payload", validatePartyCreateReq),
     "party.invite": guardRpcValidator("payload", validatePartyInviteReq),
     "party.accept": guardRpcValidator("payload", validatePartyAcceptReq),
@@ -305,21 +305,21 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "party.get": guardRpcValidator("payload", validatePartyGetReq),
     "party.getEvents": guardRpcValidator("payload", validatePartyGetEventsReq),
     "redeem.claim": guardRpcValidator("payload", validateRedeemClaimReq),
-    "room.prepareCreate": guardRpcValidator("payload", validatePrepareCreateReq),
-    "room.resolve": guardRpcValidator("payload", validateResolveReq),
+    "room.prepareCreate": guardRpcValidator("payload", validateRoomPrepareCreateReq),
+    "room.resolve": guardRpcValidator("payload", validateRoomResolveReq),
     "shop.purchase": guardRpcValidator("payload", validateShopPurchaseReq),
-    "shop.queryOp": guardRpcValidator("payload", validateShopQueryReq),
+    "shop.queryOp": guardRpcValidator("payload", validateShopQueryOpReq),
     "slg.mapTiles": guardRpcValidator("payload", validateSlgMapTilesReq),
     "slg.tileCapture": guardRpcValidator("payload", validateSlgTileCaptureReq),
     "slg.marchDispatch": guardRpcValidator("payload", validateSlgMarchDispatchReq),
     "slg.marchRecall": guardRpcValidator("payload", validateSlgMarchRecallReq),
     "snakeCosmetic.getSnapshot": guardRpcValidator("payload", validateSnakeCosmeticGetSnapshotReq),
-    "snakeCosmetic.equip": guardRpcValidator("payload", validateSnakeCosmeticSkinReq),
-    "snakeCosmetic.unlock": guardRpcValidator("payload", validateSnakeCosmeticSkinReq),
-    "user.getUserId": guardRpcValidator("payload", validateGetUserIdReq),
-    "user.getInfo": guardRpcValidator("payload", validateGetInfoReq),
-    "user.getProfile": guardRpcValidator("payload", validateGetProfileReq),
-    "user.updateProfile": guardRpcValidator("payload", validateUpdateProfileReq),
+    "snakeCosmetic.equip": guardRpcValidator("payload", validateSnakeCosmeticEquipReq),
+    "snakeCosmetic.unlock": guardRpcValidator("payload", validateSnakeCosmeticUnlockReq),
+    "user.getUserId": guardRpcValidator("payload", validateUserGetUserIdReq),
+    "user.getInfo": guardRpcValidator("payload", validateUserGetInfoReq),
+    "user.getProfile": guardRpcValidator("payload", validateUserGetProfileReq),
+    "user.updateProfile": guardRpcValidator("payload", validateUserUpdateProfileReq),
     "world.enter": guardRpcValidator("payload", validateWorldEnterReq),
     "world.resolveTransfer": guardRpcValidator("payload", validateWorldResolveTransferReq),
 };
@@ -330,9 +330,9 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "arena.capture": guardRpcValidator("response", validateArenaCaptureRes),
     "arenaShop.buyBoost": guardRpcValidator("response", validateArenaShopBuyBoostRes),
     "chat.send": guardRpcValidator("response", validateChatSendRes),
-    "guild.join": guardRpcValidator("response", validateJoinRes),
+    "guild.join": guardRpcValidator("response", validateGuildJoinRes),
     "guild.leave": guardRpcValidator("response", validateGuildLeaveRes),
-    "guild.getEvents": guardRpcValidator("response", validateEventsRes),
+    "guild.getEvents": guardRpcValidator("response", validateGuildGetEventsRes),
     "income.getPending": guardRpcValidator("response", validateIncomeGetPendingRes),
     "income.settleOnline": guardRpcValidator("response", validateIncomeSettleOnlineRes),
     "income.claimOffline": guardRpcValidator("response", validateIncomeClaimOfflineRes),
@@ -341,29 +341,29 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "mail.markRead": guardRpcValidator("response", validateMailMarkReadRes),
     "party.create": guardRpcValidator("response", validatePartyCreateRes),
     "party.invite": guardRpcValidator("response", validatePartyInviteRes),
-    "party.accept": guardRpcValidator("response", validatePartySeqRes),
+    "party.accept": guardRpcValidator("response", validatePartyAcceptRes),
     "party.decline": guardRpcValidator("response", validatePartyDeclineRes),
     "party.leave": guardRpcValidator("response", validatePartyLeaveRes),
-    "party.kick": guardRpcValidator("response", validatePartySeqRes),
-    "party.transferLeader": guardRpcValidator("response", validatePartySeqRes),
+    "party.kick": guardRpcValidator("response", validatePartyKickRes),
+    "party.transferLeader": guardRpcValidator("response", validatePartyTransferLeaderRes),
     "party.get": guardRpcValidator("response", validatePartyGetRes),
     "party.getEvents": guardRpcValidator("response", validatePartyGetEventsRes),
     "redeem.claim": guardRpcValidator("response", validateRedeemClaimRes),
-    "room.prepareCreate": guardRpcValidator("response", validatePrepareCreateRes),
-    "room.resolve": guardRpcValidator("response", validateResolveRes),
-    "shop.purchase": guardRpcValidator("response", validatePurchaseResult),
-    "shop.queryOp": guardRpcValidator("response", validatePurchaseResult),
+    "room.prepareCreate": guardRpcValidator("response", validateRoomPrepareCreateRes),
+    "room.resolve": guardRpcValidator("response", validateRoomResolveRes),
+    "shop.purchase": guardRpcValidator("response", validateShopPurchaseRes),
+    "shop.queryOp": guardRpcValidator("response", validateShopQueryOpRes),
     "slg.mapTiles": guardRpcValidator("response", validateSlgMapTilesRes),
     "slg.tileCapture": guardRpcValidator("response", validateSlgTileCaptureRes),
     "slg.marchDispatch": guardRpcValidator("response", validateSlgMarchDispatchRes),
     "slg.marchRecall": guardRpcValidator("response", validateSlgMarchRecallRes),
-    "snakeCosmetic.getSnapshot": guardRpcValidator("response", validateSnakeCosmeticSnapshotRes),
-    "snakeCosmetic.equip": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
-    "snakeCosmetic.unlock": guardRpcValidator("response", validateSnakeCosmeticProfileRes),
-    "user.getUserId": guardRpcValidator("response", validateGetUserIdRes),
-    "user.getInfo": guardRpcValidator("response", validateGetInfoRes),
-    "user.getProfile": guardRpcValidator("response", validateProfileRes),
-    "user.updateProfile": guardRpcValidator("response", validateUpdateRes),
+    "snakeCosmetic.getSnapshot": guardRpcValidator("response", validateSnakeCosmeticGetSnapshotRes),
+    "snakeCosmetic.equip": guardRpcValidator("response", validateSnakeCosmeticEquipRes),
+    "snakeCosmetic.unlock": guardRpcValidator("response", validateSnakeCosmeticUnlockRes),
+    "user.getUserId": guardRpcValidator("response", validateUserGetUserIdRes),
+    "user.getInfo": guardRpcValidator("response", validateUserGetInfoRes),
+    "user.getProfile": guardRpcValidator("response", validateUserGetProfileRes),
+    "user.updateProfile": guardRpcValidator("response", validateUserUpdateProfileRes),
     "world.enter": guardRpcValidator("response", validateWorldEnterRes),
     "world.resolveTransfer": guardRpcValidator("response", validateWorldResolveTransferRes),
 };

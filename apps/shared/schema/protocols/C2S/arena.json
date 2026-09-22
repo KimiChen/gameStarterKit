@@ -1,0 +1,71 @@
+{
+  "domain": "arena",
+  "contractVersion": 5,
+  "errorCodes": ["ARENA_TILE_TAKEN"],
+  "types": {
+    "IArenaTile": {
+      "kind": "external",
+      "from": "../../../kits/arena/api/board/index",
+      "check": { "fn": "validateArenaTile", "from": "../checks/arena" }
+    },
+    "IArenaBoardReq": { "kind": "object", "fields": [] },
+    "IArenaBoardRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "tiles",
+          "kind": "array",
+          "items": { "kind": "ref", "ref": "IArenaTile" },
+          "assert": [
+            { "fn": "assertArenaBoardSize", "from": "../checks/arena" },
+            { "fn": "assertArenaBoardOrder", "from": "../checks/arena" }
+          ]
+        },
+        { "name": "myTrophies", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IArenaCaptureReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        {
+          "name": "tile",
+          "kind": "integer",
+          "check": { "fn": "validateTileIndex", "from": "../../../kits/arena/api/board/index" }
+        }
+      ]
+    },
+    "IArenaCaptureRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "tile",
+          "kind": "integer",
+          "check": { "fn": "validateTileIndex", "from": "../../../kits/arena/api/board/index" }
+        },
+        { "name": "power", "kind": "integer", "check": { "fn": "validateArenaPower", "from": "../checks/arena" } },
+        { "name": "trophies", "kind": "integer", "min": 0 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "ArenaBoard",
+      "route": "arena.board",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "arena",
+      "request": { "kind": "ref", "ref": "IArenaBoardReq" },
+      "response": { "kind": "ref", "ref": "IArenaBoardRes" }
+    },
+    {
+      "name": "ArenaCapture",
+      "route": "arena.capture",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "arena",
+      "request": { "kind": "ref", "ref": "IArenaCaptureReq" },
+      "response": { "kind": "ref", "ref": "IArenaCaptureRes" }
+    }
+  ]
+}

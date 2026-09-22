@@ -1,4 +1,3 @@
-import { ActionActivityNotifyClientTimeVer } from '../../../../src/modules/activity/action/ActionActivityNotifyClientTimeVer'
 import { ActionActivityStageTask } from '../../../../src/modules/activity/action/ActionActivityStageTask'
 import { ActionActivityOpenReload } from '../../../../src/modules/activity/action/ActionActivityOpenReload'
 import { ActionActivityNotifyProcessTimeVer } from '../../../../src/modules/activity/action/ActionActivityNotifyProcessTimeVer'
@@ -7,10 +6,6 @@ import { ActionTimeAddChange } from '../../../../src/modules/adjust/action/Actio
 import { ActionConfigReload } from '../../../../src/modules/adjust/action/ActionConfigReload'
 import { ActionConfigReloadBroadcast } from '../../../../src/modules/adjust/action/ActionConfigReloadBroadcast'
 import { ActionDefault } from '../../../../src/runtime/action/S2S/default/ActionDefault'
-import { ActionFriendDealApply } from '../../../../src/modules/friend/action/ActionFriendDealApply'
-import { ActionFriendDealAccept } from '../../../../src/modules/friend/action/ActionFriendDealAccept'
-import { ActionFriendDealReject } from '../../../../src/modules/friend/action/ActionFriendDealReject'
-import { ActionFriendDefriend } from '../../../../src/modules/friend/action/ActionFriendDefriend'
 import { ActionRepairScript } from '../../../../src/modules/gm/action/ActionRepairScript'
 import { ActionChangeServerState } from '../../../../src/modules/gm/action/ActionChangeServerState'
 import { ActionServerStop } from '../../../../src/modules/gm/action/ActionServerStop'
@@ -28,7 +23,6 @@ import { ActionUserFieldValUpdate } from '../../../../src/modules/user/action/Ac
 import { ActionUserRename } from '../../../../src/modules/user/action/ActionUserRename'
 
 export const Actions = {
-    'activity/ActivityNotifyClientTimeVer': ActionActivityNotifyClientTimeVer,
     'activity/ActivityStageTask': ActionActivityStageTask,
     'activity/ActivityOpenReload': ActionActivityOpenReload,
     'activity/ActivityNotifyProcessTimeVer': ActionActivityNotifyProcessTimeVer,
@@ -37,10 +31,6 @@ export const Actions = {
     'adjust/ConfigReload': ActionConfigReload,
     'adjust/ConfigReloadBroadcast': ActionConfigReloadBroadcast,
     'default/Default': ActionDefault,
-    'friend/FriendDealApply': ActionFriendDealApply,
-    'friend/FriendDealAccept': ActionFriendDealAccept,
-    'friend/FriendDealReject': ActionFriendDealReject,
-    'friend/FriendDefriend': ActionFriendDefriend,
     'gm/RepairScript': ActionRepairScript,
     'gm/ChangeServerState': ActionChangeServerState,
     'gm/ServerStop': ActionServerStop,

@@ -8,7 +8,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { ARENA_SHOP_BOOST_COST, validateArenaShopBuyBoostRes } from "@game/shared/protocol/lobbyRpc/domains/arenaShop";
+import { ARENA_SHOP_BOOST_COST } from "@game/shared/protocol/lobbyRpc/checks/arenaShop";
+import { validateArenaShopBuyBoostRes } from "@game/shared/protocol/lobbyRpc/domains/arenaShop";
 import { RpcFault } from "../src/core/errors";
 import { type ArenaShopBuyDeps, buyArenaBoost } from "../src/core/arenaShop/buy";
 import { ArenaTileNotOwnedError, arenaOpId } from "../src/kits/arena/api/board/index";
@@ -58,6 +59,7 @@ test("arenaShop：服务端用例只 import kit 的 board 面与框架 uow / 区
     "../errors",
     "../infra/keys",
     "../uow",
+    "@game/shared/protocol/lobbyRpc/checks/arenaShop",
     "@game/shared/protocol/lobbyRpc/domains/arenaShop",
   ]);
 });

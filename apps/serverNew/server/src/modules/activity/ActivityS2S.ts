@@ -1,13 +1,6 @@
 import { Service } from '../../runtime/protocol/ServiceType'
 
 /**
- * 把新活动版本给全服在线玩家
- */
-export interface ReqActivityNotifyClientTimeVer extends Service<'Base'> {
-    sId: number
-}
-
-/**
  * 活动阶段切换调度任务
  */
 export interface ReqActivityStageTask extends Service<'Base'> {

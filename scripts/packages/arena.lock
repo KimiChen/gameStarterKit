@@ -1,7 +1,7 @@
-# scripts/packages/arena.lock —— 已安装 kit arena@1.0.1 的登记与文件清单锁。Do not edit by hand.
+# scripts/packages/arena.lock —— 已安装 kit arena@1.0.2 的登记与文件清单锁。Do not edit by hand.
 # writer: npm --workspace @game/server run plugin -- install ；checker: apps/server/test/plugin-lock.test.ts（随 verify:all）与 plugin -- check
-# manifest {"class":"kit","id":"arena","version":"1.0.1","kinds":["client","gameplay","server"],"constantName":null,"modes":[{"id":"arenaCapture","constantName":"ArenaCapture"},{"id":"arenaDuel","constantName":"ArenaDuel"}],"api":{"board":{"version":1,"minSupported":1},"ranking":{"version":1,"minSupported":1}},"domains":["arena"],"fguiPackages":[]}
-# source {"kind":"tree","filesLockSha256":"bfaaa30575417672cbffc1db43e5b3e535226470bfe2d8254e5916c46bf1e548","forkedFrom":{"kind":"package","filesLockSha256":"e9a28ddeb2abd713cfc054491ec23f547654a097d478b06c62597b63b009da50"}}
+# manifest {"class":"kit","id":"arena","version":"1.0.2","kinds":["client","gameplay","server"],"constantName":null,"modes":[{"id":"arenaCapture","constantName":"ArenaCapture"},{"id":"arenaDuel","constantName":"ArenaDuel"}],"api":{"board":{"version":1,"minSupported":1},"ranking":{"version":1,"minSupported":1}},"domains":["arena"],"fguiPackages":[]}
+# source {"kind":"tree","filesLockSha256":"79dff5e7606c520e1d4866053be7e0a401f4afefbed924e859b24fef3f2c53c5","forkedFrom":{"kind":"package","filesLockSha256":"e9a28ddeb2abd713cfc054491ec23f547654a097d478b06c62597b63b009da50"}}
 apps/Cocos/assets/src/gameplay/modes/arenaCapture.meta 23c89f852c8e120a395ade155ef8be8d5044d1fea74cc734415a6dec50fef57b
 apps/Cocos/assets/src/gameplay/modes/arenaCapture/index.ts 35028372f6002da1e11fe982525f29ba821e51c8142e1c4934a96a0c9a7e3214
 apps/Cocos/assets/src/gameplay/modes/arenaCapture/index.ts.meta 1a8babc6ccdc4f66600823d7e660115ea58ba1aeede18d6703510f1569e1a82a
@@ -73,7 +73,7 @@ apps/kits/arena/gameplays/arenaCapture/manifest.json f2e38f4fe797341aebf5f25cb31
 apps/kits/arena/gameplays/arenaCapture/state.json 46808e25110afcbd69d8b66c5fec16efb8aab8ab5a429b44dab65da658733fb9
 apps/kits/arena/gameplays/arenaDuel/manifest.json d7a7daee9c247e40d99d38f1cd7d084b57a8998d5e5eaf448a3c74771c341769
 apps/kits/arena/gameplays/arenaDuel/state.json 0654f08887c38d3461ea842ebb97bb6e288bdfa5b8d3cdaee83570597ffbc2e3
-apps/kits/arena/kit.json 9030ea900faefd631123db3e5eb871aa64629adad067c00b4f8e6a72dbb28425
+apps/kits/arena/kit.json 8e8cc74729749d79233241b71609609c542a0e22c5d402f05e3dc17ccbbd7965
 apps/kits/arena/sql/001-init.sql afd1722fab824d33fc677d591483120637e5c2dcec0e60fda1f40b7a0d7cbc55
 apps/server/src/kits/arena/api/board/index.ts a2546a06a169e8a273c12721105dd8b83bfba4b546fd273687b1aa264e9291da
 apps/server/src/kits/arena/api/ranking/index.ts ad21d40ba9003c6fe9019dd2657e06c99bc9867d9df2c9f97c9e1d2ffcf9f78c
@@ -90,8 +90,8 @@ apps/server/test/arenaDuel-game-mode.test.ts 466a08a15ef75ce6c8a492902a453f25e10
 apps/server/test/lobbyRpcVectors/arena.ts 61a49cebfea3840f77a582f40bd37ac6439f0eb415b06c0af57af9bfec9f913b
 apps/server/test/wire-vectors/arenaCapture.ts b9af15acb685278e354ecb4847e590ba2a466b3deb3bcef42e1d12a41feb3a79
 apps/server/test/wire-vectors/arenaDuel.ts 0cedf8ea295fc0ad46bd2ba5c2242779c3a1d8babc1cbe466b8abd703806b66d
+apps/shared/schema/protocols/C2S/arena.json 97f3f61ecd2d7b3fd501f344d4d7d9cdba54f89dbac21860c984722173043a7f
 apps/shared/src/gameplays/arenaCapture/wire.ts 2d4eae6ae2037f6b56eb1310fb74f4a513d2df903779dae848bb5ecdcd6e9038
 apps/shared/src/gameplays/arenaDuel/wire.ts f86108b603e436d7a00c5ea16a1814c4e4e4c6e29d48909d8e6602f0b590535f
 apps/shared/src/kits/arena/api/board/index.ts 04f0e970f1aa95812a6941c3ef2d18fe7c366e0220974bdf8e23e50a22b32f32
 apps/shared/src/kits/arena/api/ranking/index.ts 06617f2a99e50a385e11f93822be22aa221005dc8c2efa62aac69062b0a5ae64
-apps/shared/src/protocol/lobbyRpc/domains/arena.ts b0df3a7d9b48719d53c095f3b1e89347416133dc2c3ae57aff6603f1cbe54a09

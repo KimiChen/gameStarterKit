@@ -1,4 +1,13 @@
-import { isLobbyRouteOutcome, lobbyRouteOutcome, type LobbyConnectionContext, type LobbyRouteHandler, type LobbyRouteOutcome, type LobbyRouteRegistry } from '@arthropoda/game-engine'
+import {
+    isLobbyRouteOutcome,
+    lobbyRouteOutcome,
+    executeObjectAction,
+    type LobbyConnectionContext,
+    type LobbyRouteHandler,
+    type LobbyRouteOutcome,
+    type LobbyRouteRegistry,
+} from '@arthropoda/game-engine'
+import { Actions as C2SActions } from '../../../generated/protocol/server/C2S/actions'
 import {
     ALL_LOBBY_RPC_TYPES,
     LOBBY_RPC_CONTRACT_VERSIONS,
@@ -9,6 +18,9 @@ import {
 import type { NativeLobbyIdentityResolver } from '../identity/NativeLobbyAuthProvider'
 import { NativeLobbyIdempotency } from './NativeLobbyIdempotency'
 import { NativeLobbyPendingRoutes } from './NativeLobbyPendingRoutes'
+
+/** 可信连接上下文由 engine 定义；这里转发一次，让业务 Action 只依赖运行时入口。 */
+export type { LobbyConnectionContext }
 
 /** 会话结束（断线 / 顶号 / 被踢）时回调的可信身份；只有当前连接被释放时才会触发。 */
 export interface NativeLobbyReleasedIdentity {
@@ -31,9 +43,19 @@ export interface NativeLobbyRouteServices {
 }
 
 export interface NativeLobbyRouteRegistryOptions {
-    /** 出站响应契约校验；幂等闸必须在提升为 done 之前调用它。 */
-    readonly validateResponse: (route: string, response: unknown) => unknown
+    /**
+     * 出站响应契约校验；幂等闸必须在提升为 done 之前调用它。
+     *
+     * 类型上可选是**故意**的：缺了它就必须在启动期 `assertComplete()` fail-closed，而不是靠
+     * 类型系统逼调用方随便塞个桩函数把闸"看起来装上"。生产装配（`assembleNativeLobbyRoutes`）
+     * 一定传真 codec；这里保留可缺省，是为了让「闸没接全」这件事能在运行期被表达并被测到。
+     */
+    readonly validateResponse?: (route: string, response: unknown) => unknown
     readonly idempotency?: NativeLobbyIdempotency
+    /** schema-owned Lobby route uses the generated C2S Action registry. */
+    readonly resolveInternalUid?: (uid: string, sId: number) => Promise<number>
+    /** Capabilities and trusted connection context injected into generated Store Actions. */
+    readonly actionServices?: NativeLobbyRouteServices
 }
 
 /** 原生 Lobby 的唯一业务路由登记点；处理器必须由所属模块贡献。 */
@@ -51,15 +73,12 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
     }
 
     has(type: string): boolean {
-        return this.handlers.has(type as LobbyRpcType)
+        return this.handlers.has(type as LobbyRpcType) || this.generatedAction(type) !== undefined
     }
 
     async execute(type: string, context: LobbyConnectionContext, payload: unknown): Promise<unknown> {
-        const handler = this.handlers.get(type as LobbyRpcType)
-        if (!handler) throw new Error(`unregistered native Lobby route: ${type}`)
         const execute = async (): Promise<LobbyRouteOutcome> => {
-            const result = await handler(context, payload)
-            return isLobbyRouteOutcome(result) ? result : lobbyRouteOutcome(result)
+            return this.executeHandler(type, context, payload)
         }
         if (LOBBY_RPC_ROUTE_MODES[type as LobbyRpcType] !== 'idempotent-write') return execute()
 
@@ -96,10 +115,10 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
      * ⛔ 不要在目标进程里「顺便」补一次闸；⛔ 也不要让监听进程跳过闸。
      */
     async executeForwarded(type: string, context: LobbyConnectionContext, payload: unknown): Promise<unknown> {
-        const handler = this.handlers.get(type as LobbyRpcType)
-        if (!handler) throw new Error(`unregistered native Lobby route: ${type}`)
-        const result = await handler(context, payload)
-        return isLobbyRouteOutcome(result) ? result : lobbyRouteOutcome(result)
+        const registeredHandler = this.handlers.get(type as LobbyRpcType)
+        if (!registeredHandler && !this.generatedAction(type))
+            throw new Error(`unregistered native Lobby route: ${type}`)
+        return this.executeHandler(type, context, payload)
     }
 
     /**
@@ -117,6 +136,9 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
     assertComplete(): void {
         const declared = new Set<string>(ALL_LOBBY_RPC_TYPES)
         const registered = new Set<string>(this.handlers.keys())
+        if (this.options?.resolveInternalUid) {
+            for (const type of ALL_LOBBY_RPC_TYPES) if (this.generatedAction(type)) registered.add(type)
+        }
 
         // ① 注册面不得超出声明面：多出来的 handler 一定是路由名写错。
         const unexpected = [...registered].filter((type) => !declared.has(type))
@@ -147,6 +169,56 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
         if (hasIdempotentWrite && (!this.idempotency || !this.options?.validateResponse)) {
             throw new Error('native Lobby idempotent-write routes are registered without the generic idempotency gate')
         }
+    }
+
+    private generatedAction(type: string): (new () => unknown) | undefined {
+        if (!this.options?.resolveInternalUid) return undefined
+        // shared wire 面由两代服务端共用；MMO-owned routes stay explicitly pending
+        // even though the schema generator emits their protocol metadata/actions.
+        if (Object.prototype.hasOwnProperty.call(NativeLobbyPendingRoutes, type)) return undefined
+        return (C2SActions as Record<string, new () => unknown>)[type]
+    }
+
+    private async executeHandler(
+        type: string,
+        context: LobbyConnectionContext,
+        payload: unknown,
+    ): Promise<LobbyRouteOutcome> {
+        const handler = this.handlers.get(type as LobbyRpcType)
+        if (handler) {
+            const result = await handler(context, payload)
+            return isLobbyRouteOutcome(result) ? result : lobbyRouteOutcome(result)
+        }
+        const actionClass = this.generatedAction(type)
+        const resolveInternalUid = this.options?.resolveInternalUid
+        if (!actionClass || !resolveInternalUid) throw new Error(`unregistered native Lobby route: ${type}`)
+        const internalUid = context.internalUid ?? (await resolveInternalUid(context.uid, context.sId))
+        const action = new actionClass() as {
+            attachNativeLobbyContext?: (connection: LobbyConnectionContext, services: NativeLobbyRouteServices) => void
+            actionBefore?: (call: unknown) => Promise<void> | void
+            doAction?: (request: unknown, response: unknown) => Promise<void> | void
+            getBindId?: (call: unknown) => Promise<number | undefined> | number | undefined
+        }
+        const actionServices = this.options?.actionServices
+        if (actionServices && action.attachNativeLobbyContext) {
+            action.attachNativeLobbyContext(context, actionServices)
+        }
+        const result = await executeObjectAction(
+            type,
+            payload,
+            {},
+            {
+                getBindId: async (call) => action.getBindId?.call(action, call),
+                actionBefore: action.actionBefore?.bind(action),
+                doAction: async (request, response) => {
+                    if (!action.doAction) throw new Error(`generated Action has no doAction: ${type}`)
+                    await action.doAction(request, response)
+                },
+            },
+            { uid: internalUid, externalUid: context.uid, sId: context.sId },
+        )
+        if (!result.ok) throw result.error
+        return lobbyRouteOutcome(result.data, result.sync)
     }
 }
 

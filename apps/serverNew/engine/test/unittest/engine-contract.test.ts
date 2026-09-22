@@ -274,7 +274,7 @@ describe('engine business contracts', () => {
         assert.deepEqual(calls, ['save', 'success', 'post-commit'])
     })
 
-    it('never attaches framework-side _mod to the business response', async () => {
+    it('keeps the committed Bean diff in the sync receipt and never in the business response', async () => {
         const originalSave = RedisService.save
         const originalChanged = ModSync.autoGetModChanged
         const originalLog = global.Log
@@ -301,6 +301,8 @@ describe('engine business contracts', () => {
             error: async () => undefined,
             getApiName: () => 'probe',
             getMsgType: () => 0,
+            // 挂生产实现而不是另写一份记录器：断言读的就是宿主组装 reply.sync 时读的那个字段。
+            appendSyncChange: ApiCall.prototype.appendSyncChange,
         } as unknown as ApiCall
         try {
             const { ContextEngine } = require('../../src/context/ContextEngine')
@@ -314,8 +316,108 @@ describe('engine business contracts', () => {
         // 响应体只带业务声明的字段：不能再出现框架自动附加的 _mod。
         assert.deepEqual(responses, [{ value: 1 }])
         assert.equal(Object.prototype.hasOwnProperty.call(responses[0] as object, '_mod'), false)
-        // 框架也不再为了响应去读 Bean 变更；变更数据的通知只由所属模块的领域推送负责。
-        assert.equal(consultedChangedMods, 0)
+        // 提交后的差异只有一个去处：sync 回执。提交点读一次变更，不重复读。
+        assert.equal(consultedChangedMods, 1)
+        assert.deepEqual(task.call!.syncChanges, { 42: { versions: { user: 3 } } })
+    })
+
+    it('freezes the Bean diff before the Redis commit clears it', async () => {
+        const originalSave = RedisService.save
+        const originalChanged = ModSync.autoGetModChanged
+        const originalLog = global.Log
+        const originalLogicError = GameError.logicError
+        const order: string[] = []
+        /** 落盘会逐个 Bean 走 `Hash.save()`，其 `finally` → `initDiff()` 清空字段级变更。 */
+        let diffCleared = false
+
+        global.Log = { error: () => undefined, exception: { info: () => undefined } } as unknown as typeof Log
+        GameError.logicError = new GameError(1, 'logic error')
+        RedisService.save = async () => {
+            order.push('commit')
+            diffCleared = true
+        }
+        // 真实实现读的是 Bean 的**字段级 diff**：`toModData(true)` 一旦遇到 `BeanStatus.None`
+        // 就返回 null，`getModData` 随即跳过该 Bean，装配出来的是空对象 —— `reply.sync` 永远
+        // 缺席，且不报任何错。所以「冻结」必须早于落盘，这条用例锁的就是这个先后关系。
+        ModSync.autoGetModChanged = () => {
+            assert.equal(
+                diffCleared,
+                false,
+                'Bean 变更必须在 Redis 落盘之前冻结：落盘后 diff 已被清空，reply.sync 只会拿到空载荷',
+            )
+            order.push('freeze')
+            return { 42: { versions: { user: 3 } } }
+        }
+        const task = new ServerTask()
+        task.call = {
+            protocol: { name: 'probe' },
+            messageHead: { uId: 7, serverId: 1 },
+            res: { value: 1 },
+            actionBefore: async () => undefined,
+            doAction: async () => ({ value: 1 }),
+            succ: async () => undefined,
+            error: async () => undefined,
+            getApiName: () => 'probe',
+            getMsgType: () => 0,
+            appendSyncChange: ApiCall.prototype.appendSyncChange,
+        } as unknown as ApiCall
+        try {
+            const { ContextEngine } = require('../../src/context/ContextEngine')
+            await ContextEngine.asyncLocalStorage.run(task.ctx, async () => task.doAction())
+        } finally {
+            RedisService.save = originalSave
+            ModSync.autoGetModChanged = originalChanged
+            global.Log = originalLog
+            GameError.logicError = originalLogicError
+        }
+        assert.deepEqual(order, ['freeze', 'commit'])
+        assert.deepEqual(task.call!.syncChanges, { 42: { versions: { user: 3 } } })
+    })
+
+    it('keeps a committed Action successful when post-commit sync delivery throws', async () => {
+        const originalSave = RedisService.save
+        const originalChanged = ModSync.autoGetModChanged
+        const originalLog = global.Log
+        const originalLogicError = GameError.logicError
+        const responses: unknown[] = []
+        const failures: unknown[] = []
+
+        global.Log = { error: () => undefined, exception: { info: () => undefined } } as unknown as typeof Log
+        GameError.logicError = new GameError(1, 'logic error')
+        RedisService.save = async () => undefined
+        ModSync.autoGetModChanged = () => ({ 42: { versions: { user: 3 } } })
+        // 宿主投递器（`ServiceRuntime.installCommittedSyncDelivery`）抛错。此时 Redis 已经落盘，
+        // 让异常冒泡就是把「已提交」改写成业务失败：客户端重试会把同一笔业务再做一遍。
+        const unsubscribe = ModSync.onCommitted(() => {
+            throw new Error('sync delivery failed')
+        })
+        const task = new ServerTask()
+        task.call = {
+            protocol: { name: 'probe' },
+            messageHead: { uId: 7, serverId: 1 },
+            res: { value: 1 },
+            actionBefore: async () => undefined,
+            doAction: async () => ({ value: 1 }),
+            succ: async (res: unknown) => responses.push(res),
+            error: async (err: unknown) => failures.push(err),
+            getApiName: () => 'probe',
+            getMsgType: () => 0,
+            appendSyncChange: ApiCall.prototype.appendSyncChange,
+        } as unknown as ApiCall
+        try {
+            const { ContextEngine } = require('../../src/context/ContextEngine')
+            await ContextEngine.asyncLocalStorage.run(task.ctx, async () => task.doAction())
+        } finally {
+            unsubscribe()
+            RedisService.save = originalSave
+            ModSync.autoGetModChanged = originalChanged
+            global.Log = originalLog
+            GameError.logicError = originalLogicError
+        }
+        assert.deepEqual(failures, [])
+        assert.deepEqual(responses, [{ value: 1 }])
+        // 投递失败不改写请求者自己的回执：他的变更仍由 reply.sync 带走。
+        assert.deepEqual(task.call!.syncChanges, { 42: { versions: { user: 3 } } })
     })
 })
 

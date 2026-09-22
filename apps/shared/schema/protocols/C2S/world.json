@@ -1,0 +1,69 @@
+{
+  "domain": "world",
+  "contractVersion": 6,
+  "errorCodes": [
+    "WORLD_PERSONA_INVALID",
+    "WORLD_TRANSFER_INVALID",
+    "WORLD_LINE_UNAVAILABLE",
+    "WORLD_SERVICE_UNAVAILABLE"
+  ],
+  "types": {
+    "IWorldEnterReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "personaId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "mapId", "kind": "string", "check": { "fn": "validateWorldMapId", "from": "../checks/world" } },
+        { "name": "line", "kind": "integer", "min": 0, "max": 65535, "required": false }
+      ]
+    },
+    "IWorldEnterRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "worldAddress", "kind": "string", "minLength": 1, "maxLength": 128 },
+        { "name": "mapId", "kind": "string", "check": { "fn": "validateWorldMapId", "from": "../checks/world" } },
+        { "name": "line", "kind": "integer", "min": 0, "max": 65535 },
+        { "name": "endpoint", "kind": "string", "check": { "fn": "validateWorldEndpoint", "from": "../checks/world" } },
+        { "name": "ticket", "kind": "string", "check": { "fn": "validateWorldTicket", "from": "../checks/world" } },
+        { "name": "expiresAt", "kind": "integer", "min": 0 },
+        { "name": "transferId", "kind": "string", "minLength": 1, "maxLength": 64, "nullable": true }
+      ]
+    },
+    "IWorldResolveTransferReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "transferId", "kind": "string", "minLength": 1, "maxLength": 64 }
+      ]
+    },
+    "IWorldResolveTransferRes": { "kind": "ref", "ref": "IWorldEnterRes" },
+    "IWorldTransferPush": {
+      "kind": "object",
+      "fields": [
+        { "name": "transferId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "personaId", "kind": "string", "minLength": 1, "maxLength": 64 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "WorldEnter",
+      "route": "world.enter",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "world",
+      "request": { "kind": "ref", "ref": "IWorldEnterReq" },
+      "response": { "kind": "ref", "ref": "IWorldEnterRes" }
+    },
+    {
+      "name": "WorldResolveTransfer",
+      "route": "world.resolveTransfer",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "world",
+      "request": { "kind": "ref", "ref": "IWorldResolveTransferReq" },
+      "response": { "kind": "ref", "ref": "IWorldResolveTransferRes" }
+    }
+  ],
+  "pushes": [
+    { "key": "WorldTransfer", "type": "world.transfer", "data": { "kind": "ref", "ref": "IWorldTransferPush" } }
+  ]
+}

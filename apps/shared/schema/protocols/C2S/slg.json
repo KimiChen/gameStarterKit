@@ -1,0 +1,141 @@
+{
+  "domain": "slg",
+  "contractVersion": 6,
+  "errorCodes": [
+    "SLG_TILE_NOT_OWNED",
+    "SLG_MARCH_LIMIT",
+    "SLG_MARCH_NOT_FOUND",
+    "SLG_MARCH_FINISHED",
+    "SLG_SETTLEMENT_PENDING"
+  ],
+  "types": {
+    "ISlgChunkRect": {
+      "kind": "external",
+      "from": "../../../kits/slg/api/worldmap/index",
+      "check": { "fn": "validateSlgChunkRect", "from": "../../../kits/slg/api/worldmap/index" }
+    },
+    "ISlgTile": {
+      "kind": "external",
+      "from": "../../../kits/slg/api/worldmap/index",
+      "check": { "fn": "validateSlgTile", "from": "../../../kits/slg/api/worldmap/index" }
+    },
+    "ISlgMarch": {
+      "kind": "external",
+      "from": "../../../kits/slg/api/march/index",
+      "check": { "fn": "validateSlgMarch", "from": "../../../kits/slg/api/march/index" }
+    },
+    "SlgTileOutcome": {
+      "kind": "enum",
+      "members": ["captured", "reinforced", "damaged"],
+      "enumCode": "SLG_OUTCOME"
+    },
+    "ISlgMapTilesReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "mapId", "kind": "string", "check": { "fn": "validateSlgMapId", "from": "../../../kits/slg/api/worldmap/index" } },
+        { "name": "rect", "kind": "ref", "ref": "ISlgChunkRect" }
+      ]
+    },
+    "ISlgMapTilesRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "tiles",
+          "kind": "array",
+          "items": { "kind": "ref", "ref": "ISlgTile" },
+          "maxItems": 1024,
+          "sizeCode": "SLG_TILES_SIZE",
+          "assert": { "fn": "assertSlgTilesOrder", "from": "../checks/slg" }
+        },
+        { "name": "revision", "kind": "integer", "min": 0 },
+        { "name": "myTrophies", "kind": "integer", "min": 0 }
+      ]
+    },
+    "ISlgTileCaptureReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "tileId", "kind": "integer", "check": { "fn": "validateSlgTileId", "from": "../../../kits/slg/api/worldmap/index" } }
+      ]
+    },
+    "ISlgTileCaptureRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "tile", "kind": "ref", "ref": "ISlgTile" },
+        { "name": "outcome", "kind": "ref", "ref": "SlgTileOutcome" }
+      ]
+    },
+    "ISlgMarchDispatchReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "fromTile", "kind": "integer", "check": { "fn": "validateSlgTileId", "from": "../../../kits/slg/api/worldmap/index" } },
+        { "name": "toTile", "kind": "integer", "check": { "fn": "validateSlgTileId", "from": "../../../kits/slg/api/worldmap/index" } }
+      ],
+      "assert": { "fn": "assertSlgMarchEndpoints", "from": "../checks/slg" }
+    },
+    "ISlgMarchDispatchRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "march", "kind": "ref", "ref": "ISlgMarch" },
+        { "name": "balance", "kind": "integer", "min": 0 }
+      ]
+    },
+    "ISlgMarchRecallReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "marchId", "kind": "string", "minLength": 1, "maxLength": 64 }
+      ]
+    },
+    "ISlgMarchRecallRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "march",
+          "kind": "ref",
+          "ref": "ISlgMarch",
+          "assert": { "fn": "assertSlgMarchRecalled", "from": "../checks/slg" }
+        }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "SlgMapTiles",
+      "route": "slg.mapTiles",
+      "serviceType": "Base",
+      "mode": "natural-write",
+      "ownerModule": "slg",
+      "request": { "kind": "ref", "ref": "ISlgMapTilesReq" },
+      "response": { "kind": "ref", "ref": "ISlgMapTilesRes" }
+    },
+    {
+      "name": "SlgTileCapture",
+      "route": "slg.tileCapture",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "slg",
+      "request": { "kind": "ref", "ref": "ISlgTileCaptureReq" },
+      "response": { "kind": "ref", "ref": "ISlgTileCaptureRes" }
+    },
+    {
+      "name": "SlgMarchDispatch",
+      "route": "slg.marchDispatch",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "slg",
+      "request": { "kind": "ref", "ref": "ISlgMarchDispatchReq" },
+      "response": { "kind": "ref", "ref": "ISlgMarchDispatchRes" }
+    },
+    {
+      "name": "SlgMarchRecall",
+      "route": "slg.marchRecall",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "slg",
+      "request": { "kind": "ref", "ref": "ISlgMarchRecallReq" },
+      "response": { "kind": "ref", "ref": "ISlgMarchRecallRes" }
+    }
+  ]
+}

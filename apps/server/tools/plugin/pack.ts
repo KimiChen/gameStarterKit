@@ -128,7 +128,7 @@ export function collectPluginFiles(root: string, manifest: PackageManifest): {
     }
   };
   for (const relative of [...candidates].sort()) {
-    if (hardExclusionReason(relative, rules) !== null || !classifyPath(relative, rules, protectedPaths).allowed) {
+    if (hardExclusionReason(relative) !== null || !classifyPath(relative, rules, protectedPaths).allowed) {
       skipped.push(relative);
       continue;
     }

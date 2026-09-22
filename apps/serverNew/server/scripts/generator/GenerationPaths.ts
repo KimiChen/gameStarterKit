@@ -111,6 +111,10 @@ export class GenerationPaths {
         return this.moduleActionFile(packageName, actionName)
     }
 
+    schemaLobbyContractDomainFile(domain: string) {
+        return path.join(this.generatedRoot, 'lobby-contract', 'protocol', 'lobbyRpc', 'domains', `${domain}.ts`)
+    }
+
     runtimeProtocolFile(direction: ProtocolDirection, packageName: string) {
         return path.join(this.projectRoot, 'src', 'runtime', 'protocol', direction, packageName + '.ts')
     }
@@ -146,11 +150,23 @@ export class GenerationPaths {
         return sources.sort((left, right) => left.logicalPath.localeCompare(right.logicalPath))
     }
 
+    /**
+     * 发现**旧 TS 协议源**。
+     *
+     * C2S 只认 `src/runtime/protocol/C2S/` 这组框架级兼容锚点（`base` / `global` / `commom` /
+     * `default`，由 `proto.json5` 与兼容基线钉住），⛔ **不再发现业务模块的 `XxxC2S.ts`**：
+     * 业务模块的 C2S 协议真源是 `apps/shared/schema/protocols/`，由 `SchemaLobbyProtocol` 读取。
+     *
+     * 理由：同一方向同时读业务模块 TS 协议与 schema 会生成两套路由（`mail.list` 与 `mail/...`
+     * 并存），而旧那套在 serverNew 里没有消费者 —— 旧二进制网关与 PB 通道已删除，
+     * 生成器只是把死路由重新登记一遍。要让某条业务路由重新进来，先在 schema 里声明它，
+     * ⛔ 不要恢复业务模块 C2S 协议文件这条发现路径。
+     */
     discoverProtocolSources(direction: ProtocolDirection): ProtocolSourceFile[] {
         const sources: ProtocolSourceFile[] = []
         const claimedPackages = new Set<string>()
         const modulesRoot = path.join(this.projectRoot, 'src', 'modules')
-        for (const moduleName of listDirectories(modulesRoot)) {
+        for (const moduleName of direction === 'S2S' ? listDirectories(modulesRoot) : []) {
             const moduleRoot = path.join(modulesRoot, moduleName)
             if (!fs.existsSync(moduleRoot)) continue
             const matches = fs

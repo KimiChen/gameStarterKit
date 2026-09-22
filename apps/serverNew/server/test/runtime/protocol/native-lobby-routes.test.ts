@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict'
 import {
     GameError,
+    isLobbyRouteOutcome,
+    ModSync,
     PlatformLineInfo,
     RedisService,
     RouteAction,
     timestamp,
     type LobbyConnectionContext,
+    type LobbyRouteOutcome,
 } from '@arthropoda/game-engine'
 import {
     ALL_LOBBY_RPC_TYPES,
@@ -23,6 +26,7 @@ import {
     SNAKE_FRAGMENT_SKIN_IDS,
     SNAKE_FRAGMENT_SKIN_THRESHOLDS,
 } from '../../../src/modules/snakeCosmetic/lobby/SnakeSkinBusinessCatalog'
+import { SnakeCosmeticNativeLobbyStore } from '../../../src/modules/snakeCosmetic/lobby/SnakeCosmeticNativeLobbyStore'
 import { User } from '../../../src/modules/user/bean/User'
 import { UserSessionLifecycle } from '../../../src/modules/user/lifecycle/UserSessionLifecycle'
 import {
@@ -32,6 +36,7 @@ import {
     roomTicketQuotaKey,
 } from '../../../src/modules/room/lobby/RoomInviteContract'
 import { installFakeCenterRedis, type FakeCenterRedis } from '../../support/FakeCenterRedis'
+import { lobbyOutcomeData } from '../../support/lobbyOutcome'
 
 /**
  * 原生 Lobby 的**全路由契约**测试（P4 验收：「全路由契约向量通过，关键写操作同时验证响应、
@@ -99,7 +104,7 @@ describe('native Lobby full route contract', () => {
         RedisService.save = async () => undefined
         savedProcessRouter = RouteAction.processRouter
         RouteAction.processRouter = undefined
-        redis = installFakeCenterRedis()
+        redis = installFakeCenterRedis({ player: true })
 
         pushes = []
         pushFailure = undefined
@@ -878,108 +883,94 @@ describe('native Lobby full route contract', () => {
         assert.equal(await balanceOf(uid), 0)
     })
 
-    it('initializes a native income account and keeps offline income claim-only without loading legacy User', async () => {
-        const uid = 'contract-income'
+    it('executes income through generated Actions and keeps idempotent replay on the Bean path', async () => {
+        const uid = 'contract-income-bean'
         const internalUid = await identities.resolve(uid, SID)
-        const accountKey = 'nativeLobby:income:account:v1'
-        const accountField = `${SID}:${internalUid}`
-        const accountOf = async () => {
-            const raw = await redis.hGet(accountKey, accountField)
-            assert.ok(raw, '认证必须初始化新服务收益账户')
-            return JSON.parse(raw) as {
-                level: number
-                copper: number
-                lastIncomeAt: number
-                offlineCopper: number
-                offlineSeconds: number
-            }
+        const fakeUser = {
+            id: internalUid,
+            sId: SID,
+            lv: 1,
+            copper: 200,
+            lastCopperIncomeTime: timestamp(),
+            offlineCopperPending: 50,
+            offlineCopperSecondsPending: 10,
+            nextDayTime: Number.MAX_SAFE_INTEGER,
+            loginDays: 0,
         }
         const userBean = User as unknown as { load: unknown }
         const savedLoad = userBean.load
-        userBean.load = async () => { throw new Error('income must not read legacy User') }
+        userBean.load = async () => fakeUser
         try {
-            // ① 登录钩子：新账号首次认证原子初始化 1 级 / 0 铜币账户；不读旧 User Bean。
-            //    ⚠ 这一步有副作用，所以下面一律用 `rpc(context, …)`：`call` 会重新认证，
-            //    等于在每条 RPC 前再跑一次登录钩子，把被测状态改掉。
             const context = await connect(uid)
-            const first = await accountOf()
-            assert.equal(first.level, 1)
-            assert.equal(first.lastIncomeAt > 0, true)
-            assert.equal(first.offlineCopper, 0)
-            assert.equal(first.copper, 0)
-
-            // ② 预览是只读路由（query）：查一次不能让任何字段动，⛔ 更不能顺手把待领收益发出去。
-            const baseline = first.lastIncomeAt
             assert.deepEqual(await rpc(context, 'income.getPending', {}), {
                 level: 1,
                 intervalSeconds: 5,
                 perInterval: 100,
-                offlineSeconds: 0,
-                offlineCopper: 0,
-                copper: 0,
-            })
-            assert.equal((await accountOf()).lastIncomeAt, baseline)
-            assert.equal((await accountOf()).copper, 0)
-
-            // ③ 在线结算：12s → 2 个整周期，基线按整周期推进（余量留给下一次心跳）。
-            const onlineSince = timestamp() - 12
-            await redis.hSet(accountKey, accountField, JSON.stringify({ ...await accountOf(), lastIncomeAt: onlineSince }))
-            assert.deepEqual(await rpc(context, 'income.settleOnline', {}), { copper: 200, balance: 200 })
-            assert.equal((await accountOf()).copper, 200)
-            assert.equal((await accountOf()).lastIncomeAt, onlineSince + 10)
-
-            // ④ 再登录一次：这次有历史结算点，钩子必须把离线那段**算好暂存**，⛔ 不到账。
-            const offlineSince = timestamp() - 120
-            await redis.hSet(accountKey, accountField, JSON.stringify({ ...await accountOf(), lastIncomeAt: offlineSince }))
-            await connect(uid)
-            // 断言落在「关系」上而不是写死的秒数：认证与取时间之间会跨过 1 秒边界。
-            const parkedAccount = await accountOf()
-            const parkedSeconds = parkedAccount.offlineSeconds
-            assert.ok(parkedSeconds >= 120 && parkedSeconds <= 125, `离线秒数应约等于 120，实际 ${parkedSeconds}`)
-            assert.equal(parkedAccount.offlineCopper, 100 * Math.floor(parkedSeconds / 5))
-            assert.ok(parkedAccount.lastIncomeAt > offlineSince)
-            assert.equal(parkedAccount.copper, 200)
-
-            // ⑤ 待领收益在预览里看得到，但⛔ 领取前不进 copper。
-            const parkedCopper = parkedAccount.offlineCopper
-            assert.deepEqual(await rpc(context, 'income.getPending', {}), {
-                level: 1,
-                intervalSeconds: 5,
-                perInterval: 100,
-                offlineSeconds: parkedSeconds,
-                offlineCopper: parkedCopper,
+                offlineSeconds: 10,
+                offlineCopper: 50,
                 copper: 200,
             })
-            assert.equal((await accountOf()).copper, 200)
-
-            // ⑥ 点「确定」→ 领取：响应、实际余额、暂存清零三者必须自洽。
-            const claimedBalance = 200 + parkedCopper
-            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'i-1' }), {
-                copper: parkedCopper,
-                offlineSeconds: parkedSeconds,
-                balance: claimedBalance,
+            assert.deepEqual(await rpc(context, 'income.settleOnline', {}), { copper: 0, balance: 200 })
+            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'income-bean-1' }), {
+                copper: 50,
+                offlineSeconds: 10,
+                balance: 250,
             })
-            assert.equal((await accountOf()).copper, claimedBalance)
-            assert.equal((await accountOf()).offlineCopper, 0)
-            assert.equal((await accountOf()).offlineSeconds, 0)
-
-            // ⑦ 同一 clientReqId 重放返回首次结果，且不重复发钱（通用幂等闸承重）。
-            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'i-1' }), {
-                copper: parkedCopper,
-                offlineSeconds: parkedSeconds,
-                balance: claimedBalance,
+            assert.equal(fakeUser.copper, 250)
+            assert.equal(fakeUser.offlineCopperPending, 0)
+            assert.equal(fakeUser.offlineCopperSecondsPending, 0)
+            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'income-bean-1' }), {
+                copper: 50,
+                offlineSeconds: 10,
+                balance: 250,
             })
-            assert.equal((await accountOf()).copper, claimedBalance)
-
-            // ⑧ 换一个 clientReqId 再来一次：没有待领收益，⛔ 不能凭空发钱。
-            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'i-2' }), {
+            assert.deepEqual(await rpc(context, 'income.claimOffline', { clientReqId: 'income-bean-2' }), {
                 copper: 0,
                 offlineSeconds: 0,
-                balance: claimedBalance,
+                balance: 250,
             })
-            assert.equal((await accountOf()).copper, claimedBalance)
         } finally {
             userBean.load = savedLoad
+        }
+    })
+
+    it('replays the committed sync together with the idempotent result', async () => {
+        // 幂等重放只回结果、不回 sync，客户端重试拿到的响应里就没有那次变更：服务端已经改完、
+        // 客户端永远补不上。这正是 BF5 要消灭的形态，所以重放面必须逐字段比对 sync。
+        //
+        // ⚠ 本用例把 `User.load` 换成了普通对象（不是真 Bean），diff 面因此没有变更可读；
+        // 这里直接替身 `ModSync.autoGetModChanged` 给出「提交点读到的差异」。真实 Bean diff
+        // 走同一条回执链的证明在 `pnpm verify:native-lobby-live` 的 income 场景里。
+        const uid = 'contract-income-sync-replay'
+        const internalUid = await identities.resolve(uid, SID)
+        const fakeUser = {
+            id: internalUid,
+            sId: SID,
+            lv: 1,
+            copper: 0,
+            lastCopperIncomeTime: timestamp(),
+            offlineCopperPending: 50,
+            offlineCopperSecondsPending: 10,
+            nextDayTime: Number.MAX_SAFE_INTEGER,
+            loginDays: 0,
+        }
+        const userBean = User as unknown as { load: unknown }
+        const savedLoad = userBean.load
+        const savedChanged = ModSync.autoGetModChanged
+        userBean.load = async () => fakeUser
+        ModSync.autoGetModChanged = () => ({ [internalUid]: { versions: { user: 3 }, copper: 50 } })
+        try {
+            const context = await connect(uid)
+            const claimed = await rpcOutcome(context, 'income.claimOffline', { clientReqId: 'income-sync-1' })
+            assert.deepEqual(claimed.data, { copper: 50, offlineSeconds: 10, balance: 50 })
+            assert.deepEqual(claimed.sync, { mods: { versions: { user: 3 }, copper: 50 } })
+
+            const replayed = await rpcOutcome(context, 'income.claimOffline', { clientReqId: 'income-sync-1' })
+            assert.deepEqual(replayed.data, claimed.data)
+            assert.deepEqual(replayed.sync, claimed.sync, '幂等重放必须连 sync 一起回')
+        } finally {
+            userBean.load = savedLoad
+            ModSync.autoGetModChanged = savedChanged
         }
     })
 
@@ -1052,7 +1043,25 @@ describe('native Lobby full route contract', () => {
         exercised.add(type)
         const result = await assembly.routes.execute(type, context, payload)
         // 出站必须过 shared 响应 validator；本地「看起来对」不算契约通过。
-        return assembly.wire.validateResponse(type, result)
+        // ⚠ `execute` 返回的是传输层 `LobbyRouteOutcome`（带 sync），契约校验的是里面的 data。
+        return assembly.wire.validateResponse(type, lobbyOutcomeData(result))
+    }
+
+    /**
+     * 与 `rpc` 走同一条路径，但返回**未解包**的路由结果，供断言传输层载荷（`sync`）的用例使用。
+     *
+     * 出站响应仍然过 shared validator：看 sync 不是跳过契约校验的理由。
+     */
+    async function rpcOutcome(
+        context: LobbyConnectionContext,
+        type: LobbyRpcType,
+        payload: unknown,
+    ): Promise<LobbyRouteOutcome> {
+        exercised.add(type)
+        const result = await assembly.routes.execute(type, context, payload)
+        assembly.wire.validateResponse(type, lobbyOutcomeData(result))
+        assert.equal(isLobbyRouteOutcome(result), true, `${type} 的传输层结果必须是 LobbyRouteOutcome`)
+        return result as LobbyRouteOutcome
     }
 
     async function fails(uid: string, type: LobbyRpcType, payload: unknown, code: string): Promise<void> {
@@ -1117,14 +1126,23 @@ describe('native Lobby full route contract', () => {
         )
     }
 
+    /**
+     * 播种衣柜档。
+     *
+     * 走 store 自己的**存储契约**（`SnakeCosmeticNativeLobbyStore` 的 `profilesKey` / `userField` /
+     * `serialize`），⛔ 不在这里另抄一份键名与字段形状：夹具与生产写路径共用同一份定义，store 改形状
+     * 时这里会跟着变，不会静默落后成「夹具写进去的东西 store 读不出来」（那种症状是 `read()` 抛
+     * `USER_DATA_LOST`，看着像业务坏了）。
+     * 等 snakeCosmetic 按施工单的后续迁移清单迁到 Bean + Action 后，这里应改为走生产写路径。
+     */
     async function seedWardrobe(
         uid: string,
         value: { owned: number[]; fragments: Record<number, number> },
     ): Promise<void> {
         await redis.hSet(
-            'nativeLobby:snakeCosmetic:profiles:v1',
-            `${SID}:${uid}`,
-            JSON.stringify({
+            SnakeCosmeticNativeLobbyStore.profilesKey,
+            SnakeCosmeticNativeLobbyStore.userField(uid, SID),
+            SnakeCosmeticNativeLobbyStore.serialize({
                 equippedSkinId: value.owned[0],
                 ownedSkinIds: value.owned,
                 fragmentBalances: Object.fromEntries(

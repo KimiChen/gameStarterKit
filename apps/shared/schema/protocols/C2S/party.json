@@ -1,0 +1,259 @@
+{
+  "domain": "party",
+  "contractVersion": 5,
+  "errorCodes": [
+    "PARTY_NOT_FOUND",
+    "PARTY_FULL",
+    "PARTY_NOT_MEMBER",
+    "PARTY_NOT_LEADER",
+    "PARTY_ALREADY_IN_PARTY",
+    "PARTY_INVITE_INVALID",
+    "PARTY_TARGET_OFFLINE"
+  ],
+  "types": {
+    "IPartyMember": {
+      "kind": "object",
+      "fields": [
+        { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128 },
+        { "name": "joinedAt", "kind": "integer", "min": 0 },
+        { "name": "online", "kind": "boolean" }
+      ]
+    },
+    "IPartyView": {
+      "kind": "object",
+      "fields": [
+        { "name": "partyId", "kind": "integer", "min": 1, "max": 999999999999 },
+        { "name": "leader", "kind": "string", "minLength": 1, "maxLength": 128 },
+        { "name": "maxSize", "kind": "integer", "min": 1, "max": 64 },
+        { "name": "ver", "kind": "integer", "min": 1 },
+        {
+          "name": "members",
+          "kind": "array",
+          "items": { "kind": "ref", "ref": "IPartyMember" },
+          "maxItems": 64,
+          "sizeCode": "RPC_PARTY_MEMBERS"
+        }
+      ]
+    },
+    "IPartyEvent": {
+      "kind": "object",
+      "fields": [
+        { "name": "seq", "kind": "integer", "min": 1 },
+        { "name": "kind", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "data", "kind": "json", "required": false },
+        { "name": "at", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IPartyCreateReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 }
+      ]
+    },
+    "IPartyCreateRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "partyId", "kind": "integer", "min": 1, "max": 999999999999 },
+        { "name": "seq", "kind": "integer", "min": 1 }
+      ]
+    },
+    "IPartyInviteReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128 }
+      ]
+    },
+    "IPartyInviteRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "ok", "kind": "boolean" },
+        { "name": "seq", "kind": "integer", "min": 1 },
+        { "name": "expAt", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IPartyAcceptReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "partyId", "kind": "integer", "min": 1, "max": 999999999999 }
+      ]
+    },
+    "IPartyAcceptRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "ok", "kind": "boolean" },
+        { "name": "seq", "kind": "integer", "min": 1 }
+      ]
+    },
+    "IPartyDeclineReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "partyId", "kind": "integer", "min": 1, "max": 999999999999 }
+      ]
+    },
+    "IPartyDeclineRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "ok", "kind": "boolean" }
+      ]
+    },
+    "IPartyLeaveReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 }
+      ]
+    },
+    "IPartyLeaveRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "ok", "kind": "boolean" },
+        { "name": "disbanded", "kind": "boolean" }
+      ]
+    },
+    "IPartyKickReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128 }
+      ]
+    },
+    "IPartyTransferLeaderReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "clientReqId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128 }
+      ]
+    },
+    "IPartyGetReq": { "kind": "object", "fields": [] },
+    "IPartyGetRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "party", "kind": "ref", "ref": "IPartyView", "nullable": true }
+      ]
+    },
+    "IPartyGetEventsReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "sinceSeq", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IPartyGetEventsRes": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "events",
+          "kind": "array",
+          "items": { "kind": "ref", "ref": "IPartyEvent" },
+          "maxItems": 1000,
+          "sizeCode": "RPC_EVENTS"
+        },
+        { "name": "latestSeq", "kind": "integer", "min": 0 },
+        { "name": "partyId", "kind": "integer", "min": 0, "max": 999999999999 }
+      ]
+    },
+    "IPartyEventPush": {
+      "kind": "object",
+      "fields": [
+        { "name": "seq", "kind": "integer", "min": 0 },
+        { "name": "partyId", "kind": "integer", "min": 0, "max": 999999999999 }
+      ]
+    },
+    "IPartyInvitedPush": {
+      "kind": "object",
+      "fields": [
+        { "name": "partyId", "kind": "integer", "min": 1, "max": 999999999999 },
+        { "name": "by", "kind": "string", "minLength": 1, "maxLength": 128 },
+        { "name": "expAt", "kind": "integer", "min": 0 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "PartyCreate",
+      "route": "party.create",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyCreateReq" },
+      "response": { "kind": "ref", "ref": "IPartyCreateRes" }
+    },
+    {
+      "name": "PartyInvite",
+      "route": "party.invite",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyInviteReq" },
+      "response": { "kind": "ref", "ref": "IPartyInviteRes" }
+    },
+    {
+      "name": "PartyAccept",
+      "route": "party.accept",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyAcceptReq" },
+      "response": { "kind": "ref", "ref": "IPartyAcceptRes" }
+    },
+    {
+      "name": "PartyDecline",
+      "route": "party.decline",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyDeclineReq" },
+      "response": { "kind": "ref", "ref": "IPartyDeclineRes" }
+    },
+    {
+      "name": "PartyLeave",
+      "route": "party.leave",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyLeaveReq" },
+      "response": { "kind": "ref", "ref": "IPartyLeaveRes" }
+    },
+    {
+      "name": "PartyKick",
+      "route": "party.kick",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyKickReq" },
+      "response": { "kind": "ref", "ref": "IPartyAcceptRes" }
+    },
+    {
+      "name": "PartyTransferLeader",
+      "route": "party.transferLeader",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyTransferLeaderReq" },
+      "response": { "kind": "ref", "ref": "IPartyAcceptRes" }
+    },
+    {
+      "name": "PartyGet",
+      "route": "party.get",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyGetReq" },
+      "response": { "kind": "ref", "ref": "IPartyGetRes" }
+    },
+    {
+      "name": "PartyGetEvents",
+      "route": "party.getEvents",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "party",
+      "request": { "kind": "ref", "ref": "IPartyGetEventsReq" },
+      "response": { "kind": "ref", "ref": "IPartyGetEventsRes" }
+    }
+  ],
+  "pushes": [
+    { "key": "PartyEvent", "type": "party.event", "data": { "kind": "ref", "ref": "IPartyEventPush" } },
+    { "key": "PartyInvited", "type": "party.invited", "data": { "kind": "ref", "ref": "IPartyInvitedPush" } }
+  ]
+}

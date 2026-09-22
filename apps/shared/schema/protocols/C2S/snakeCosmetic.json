@@ -1,0 +1,100 @@
+{
+  "domain": "snakeCosmetic",
+  "contractVersion": 7,
+  "errorCodes": [
+    "SNAKE_SKIN_UNKNOWN",
+    "SNAKE_SKIN_NOT_OWNED",
+    "SNAKE_SKIN_NOT_CRAFTABLE",
+    "SNAKE_SKIN_FRAGMENTS_INSUFFICIENT",
+    "SNAKE_COSMETIC_WRITES_DISABLED"
+  ],
+  "types": {
+    "ISnakeCosmeticProfile": {
+      "kind": "object",
+      "fields": [
+        { "name": "version", "kind": "integer", "min": 0, "readonly": true },
+        { "name": "equippedSkinId", "kind": "integer", "min": 1, "readonly": true },
+        {
+          "name": "ownedSkinIds",
+          "kind": "array",
+          "items": { "kind": "integer", "min": 1 },
+          "maxItems": 512,
+          "readonly": true
+        },
+        {
+          "name": "fragmentBalances",
+          "kind": "record",
+          "values": { "kind": "integer", "min": 0 },
+          "keyPattern": "^[1-9][0-9]{0,8}$",
+          "maxKeys": 64,
+          "readonly": true
+        }
+      ]
+    },
+    "ISnakeCosmeticGetSnapshotReq": { "kind": "object", "fields": [] },
+    "ISnakeCosmeticSkinReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "skinId", "kind": "integer", "min": 1, "readonly": true }
+      ]
+    },
+    "ISnakeCosmeticProfileRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "profile", "kind": "ref", "ref": "ISnakeCosmeticProfile", "readonly": true }
+      ]
+    },
+    "ISnakeCosmeticCatalogEntry": {
+      "kind": "object",
+      "fields": [
+        { "name": "skinId", "kind": "integer", "min": 1, "readonly": true },
+        { "name": "displayName", "kind": "string", "minLength": 1, "maxLength": 64, "readonly": true },
+        { "name": "rarity", "kind": "integer", "min": 0, "max": 5, "readonly": true },
+        { "name": "acquisition", "kind": "string", "minLength": 1, "maxLength": 32, "readonly": true },
+        { "name": "fragmentThreshold", "kind": "integer", "min": 1, "nullable": true, "readonly": true }
+      ]
+    },
+    "ISnakeCosmeticSnapshotRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "profile", "kind": "ref", "ref": "ISnakeCosmeticProfile", "readonly": true },
+        {
+          "name": "catalog",
+          "kind": "array",
+          "items": { "kind": "ref", "ref": "ISnakeCosmeticCatalogEntry" },
+          "maxItems": 256,
+          "readonly": true
+        }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "SnakeCosmeticGetSnapshot",
+      "route": "snakeCosmetic.getSnapshot",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "snakeCosmetic",
+      "request": { "kind": "ref", "ref": "ISnakeCosmeticGetSnapshotReq" },
+      "response": { "kind": "ref", "ref": "ISnakeCosmeticSnapshotRes" }
+    },
+    {
+      "name": "SnakeCosmeticEquip",
+      "route": "snakeCosmetic.equip",
+      "serviceType": "Base",
+      "mode": "natural-write",
+      "ownerModule": "snakeCosmetic",
+      "request": { "kind": "ref", "ref": "ISnakeCosmeticSkinReq" },
+      "response": { "kind": "ref", "ref": "ISnakeCosmeticProfileRes" }
+    },
+    {
+      "name": "SnakeCosmeticUnlock",
+      "route": "snakeCosmetic.unlock",
+      "serviceType": "Base",
+      "mode": "natural-write",
+      "ownerModule": "snakeCosmetic",
+      "request": { "kind": "ref", "ref": "ISnakeCosmeticSkinReq" },
+      "response": { "kind": "ref", "ref": "ISnakeCosmeticProfileRes" }
+    }
+  ]
+}

@@ -1,112 +1,123 @@
-/**
- * income 域 ws-RPC 契约——「铜币收益」玩法（每 5 秒按等级发铜币 + 离线收益弹窗）。
- *
- * 执行模式三分（关键，⛔ 不得按「请求是否含 clientReqId」推断）：
- *  - GetPending  = query           只读预览（弹窗数据源），⛔ 不产生任何领域写入；
- *  - SettleOnline= natural-write   在线心跳结算，写入本身可安全重复（基线自己往前走，重放只结算新增时间）；
- *  - ClaimOffline= idempotent-write 领取离线收益，重复执行会重复加钱，故必须带 clientReqId 进通用幂等闸。
- *
- * 等级、账本与收益时间轴均是 serverNew 的 income 账户数据；首次认证以 1 级 / 0 铜币初始化，
- * 不读取旧通道的 `User` Bean。本域只定义 wire 面。
- * 文件顶层保持可静态读取形态（约束见 ../defineDomain.ts 抬头）。
- */
-import { assertExactKeys, finiteInteger, type RuntimeValidator } from "../../http";
+/** AUTO-GENERATED from apps/shared/schema/protocols/C2S/*.json. Do not edit. */
+/** Source: apps/shared/schema/protocols/C2S/income.json; validators are generated, complex leaf checks stay in ../checks/. */
+import { assertExactKeys, boundedString, finiteInteger, type RuntimeValidator } from "../../http";
+import { rpcRecord } from "../primitives";
 import { defineLobbyRpcDomain, defineRpcIdempotentWrite, defineRpcNaturalWrite, defineRpcQuery } from "../defineDomain";
-import { emptyPayload, requiredId, rpcRecord } from "../primitives";
 
 /** income 域路由名 */
 export const IncomeRpc = {
-    /** 待领收益预览（只读）：离线收益弹窗的数据源 */
     GetPending: "income.getPending",
-    /** 在线结算：每 5 秒由客户端轮询触发，把已凑满周期的铜币入账 */
     SettleOnline: "income.settleOnline",
-    /** 领取离线收益（写路径，幂等）：客户端点「确定」后调用 */
     ClaimOffline: "income.claimOffline",
 } as const;
 
-export interface IIncomeGetPendingReq {}
-export interface IIncomeGetPendingRes {
-    /** 收益账户等级（新账号初始为 1） */
-    level: number;
-    /** 结算周期（秒），当前为 5 */
-    intervalSeconds: number;
-    /** 每个周期的基础收益（`100 × 等级^1.1`） */
-    perInterval: number;
-    /** 待领取的离线秒数（登录时算好暂存，领取才清零） */
-    offlineSeconds: number;
-    /** 待领取的离线铜币 */
-    offlineCopper: number;
-    /** 当前铜币余额（⛔ 不含上面待领的那笔） */
-    copper: number;
+export interface IIncomeGetPendingReq {
+    readonly [key: string]: never
 }
 
-export interface IIncomeSettleOnlineReq {}
+export interface IIncomeGetPendingRes {
+    level: number
+    intervalSeconds: number
+    perInterval: number
+    offlineSeconds: number
+    offlineCopper: number
+    copper: number
+}
+
+export interface IIncomeSettleOnlineReq {
+    readonly [key: string]: never
+}
+
 export interface IIncomeSettleOnlineRes {
-    /** 本次入账的铜币；不足一个周期的余量不结算，故合法值为 0 */
-    copper: number;
-    /** 入账后的铜币余额 */
-    balance: number;
+    copper: number
+    balance: number
 }
 
 export interface IIncomeClaimOfflineReq {
-    /** 幂等 id（09·I2）：每个逻辑操作生成一次，重试复用 */
-    clientReqId: string;
+    clientReqId: string
 }
+
 export interface IIncomeClaimOfflineRes {
-    /** 本次领取的离线铜币；没有待领收益时为 0 */
-    copper: number;
-    /** 本次领取对应的离线秒数 */
-    offlineSeconds: number;
-    /** 领取后的铜币余额 */
-    balance: number;
+    copper: number
+    offlineSeconds: number
+    balance: number
 }
 
-/** 路由名 → { req, res } */
-export interface IncomeRpcMap {
-    [IncomeRpc.GetPending]: { req: IIncomeGetPendingReq; res: IIncomeGetPendingRes };
-    [IncomeRpc.SettleOnline]: { req: IIncomeSettleOnlineReq; res: IIncomeSettleOnlineRes };
-    [IncomeRpc.ClaimOffline]: { req: IIncomeClaimOfflineReq; res: IIncomeClaimOfflineRes };
+function parseIIncomeGetPendingReq(input: unknown, path: string): IIncomeGetPendingReq {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, [], [], path)
+    const out: IIncomeGetPendingReq = {
+    }
+    return out
 }
 
-export const validateIncomeGetPendingReq: RuntimeValidator<IIncomeGetPendingReq> = emptyPayload;
-export const validateIncomeSettleOnlineReq: RuntimeValidator<IIncomeSettleOnlineReq> = emptyPayload;
-export const validateIncomeClaimOfflineReq: RuntimeValidator<IIncomeClaimOfflineReq> = (input) => {
-    const value = rpcRecord(input); assertExactKeys(value, ["clientReqId"], [], "payload"); return { clientReqId: requiredId(value, "clientReqId") };
-};
+function parseIIncomeGetPendingRes(input: unknown, path: string): IIncomeGetPendingRes {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, ["level", "intervalSeconds", "perInterval", "offlineSeconds", "offlineCopper", "copper"], [], path)
+    const out: IIncomeGetPendingRes = {
+        level: finiteInteger(value.level, `${path}.level`, 0, Number.MAX_SAFE_INTEGER),
+        intervalSeconds: finiteInteger(value.intervalSeconds, `${path}.intervalSeconds`, 1, Number.MAX_SAFE_INTEGER),
+        perInterval: finiteInteger(value.perInterval, `${path}.perInterval`, 0, Number.MAX_SAFE_INTEGER),
+        offlineSeconds: finiteInteger(value.offlineSeconds, `${path}.offlineSeconds`, 0, Number.MAX_SAFE_INTEGER),
+        offlineCopper: finiteInteger(value.offlineCopper, `${path}.offlineCopper`, 0, Number.MAX_SAFE_INTEGER),
+        copper: finiteInteger(value.copper, `${path}.copper`, 0, Number.MAX_SAFE_INTEGER),
+    }
+    return out
+}
 
-export const validateIncomeGetPendingRes: RuntimeValidator<IIncomeGetPendingRes> = (input) => {
-    const value = rpcRecord(input, "response");
-    assertExactKeys(value, ["level", "intervalSeconds", "perInterval", "offlineSeconds", "offlineCopper", "copper"], [], "response");
-    return {
-        level: finiteInteger(value.level, "response.level", 0),
-        intervalSeconds: finiteInteger(value.intervalSeconds, "response.intervalSeconds", 1),
-        perInterval: finiteInteger(value.perInterval, "response.perInterval", 0),
-        offlineSeconds: finiteInteger(value.offlineSeconds, "response.offlineSeconds", 0),
-        offlineCopper: finiteInteger(value.offlineCopper, "response.offlineCopper", 0),
-        copper: finiteInteger(value.copper, "response.copper", 0),
-    };
-};
-export const validateIncomeSettleOnlineRes: RuntimeValidator<IIncomeSettleOnlineRes> = (input) => {
-    const value = rpcRecord(input, "response");
-    assertExactKeys(value, ["copper", "balance"], [], "response");
-    return {
-        copper: finiteInteger(value.copper, "response.copper", 0),
-        balance: finiteInteger(value.balance, "response.balance", 0),
-    };
-};
-export const validateIncomeClaimOfflineRes: RuntimeValidator<IIncomeClaimOfflineRes> = (input) => {
-    const value = rpcRecord(input, "response");
-    assertExactKeys(value, ["copper", "offlineSeconds", "balance"], [], "response");
-    return {
-        copper: finiteInteger(value.copper, "response.copper", 0),
-        offlineSeconds: finiteInteger(value.offlineSeconds, "response.offlineSeconds", 0),
-        balance: finiteInteger(value.balance, "response.balance", 0),
-    };
-};
+function parseIIncomeSettleOnlineReq(input: unknown, path: string): IIncomeSettleOnlineReq {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, [], [], path)
+    const out: IIncomeSettleOnlineReq = {
+    }
+    return out
+}
+
+function parseIIncomeSettleOnlineRes(input: unknown, path: string): IIncomeSettleOnlineRes {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, ["copper", "balance"], [], path)
+    const out: IIncomeSettleOnlineRes = {
+        copper: finiteInteger(value.copper, `${path}.copper`, 0, Number.MAX_SAFE_INTEGER),
+        balance: finiteInteger(value.balance, `${path}.balance`, 0, Number.MAX_SAFE_INTEGER),
+    }
+    return out
+}
+
+function parseIIncomeClaimOfflineReq(input: unknown, path: string): IIncomeClaimOfflineReq {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, ["clientReqId"], [], path)
+    const out: IIncomeClaimOfflineReq = {
+        clientReqId: boundedString(value.clientReqId, `${path}.clientReqId`, 1, 64),
+    }
+    return out
+}
+
+function parseIIncomeClaimOfflineRes(input: unknown, path: string): IIncomeClaimOfflineRes {
+    const value = rpcRecord(input, path)
+    assertExactKeys(value, ["copper", "offlineSeconds", "balance"], [], path)
+    const out: IIncomeClaimOfflineRes = {
+        copper: finiteInteger(value.copper, `${path}.copper`, 0, Number.MAX_SAFE_INTEGER),
+        offlineSeconds: finiteInteger(value.offlineSeconds, `${path}.offlineSeconds`, 0, Number.MAX_SAFE_INTEGER),
+        balance: finiteInteger(value.balance, `${path}.balance`, 0, Number.MAX_SAFE_INTEGER),
+    }
+    return out
+}
+
+export const validateIncomeGetPendingReq: RuntimeValidator<IIncomeGetPendingReq> = (input) => parseIIncomeGetPendingReq(input, "payload")
+
+export const validateIncomeGetPendingRes: RuntimeValidator<IIncomeGetPendingRes> = (input) => parseIIncomeGetPendingRes(input, "response")
+
+export const validateIncomeSettleOnlineReq: RuntimeValidator<IIncomeSettleOnlineReq> = (input) => parseIIncomeSettleOnlineReq(input, "payload")
+
+export const validateIncomeSettleOnlineRes: RuntimeValidator<IIncomeSettleOnlineRes> = (input) => parseIIncomeSettleOnlineRes(input, "response")
+
+export const validateIncomeClaimOfflineReq: RuntimeValidator<IIncomeClaimOfflineReq> = (input) => parseIIncomeClaimOfflineReq(input, "payload")
+
+export const validateIncomeClaimOfflineRes: RuntimeValidator<IIncomeClaimOfflineRes> = (input) => parseIIncomeClaimOfflineRes(input, "response")
 
 export default defineLobbyRpcDomain({
     domain: "income",
-    contractVersion: 2,
+    contractVersion: 7,
     errorCodes: [],
     pushes: [],
     routes: [

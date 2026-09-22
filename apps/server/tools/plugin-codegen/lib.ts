@@ -63,8 +63,17 @@ import {
 } from "./viewCatalog";
 import { CONTRIBUTIONS_BASENAME, CONTRIBUTIONS_FILE_RE } from "./contributions";
 import { CONTRIBUTION_ENDS } from "./pluginManifestSchema";
+import {
+  assertSchemaDomainArtifactsFresh,
+  renderSchemaDomainArtifacts,
+  writeSchemaDomainArtifacts,
+  type SchemaDomainArtifact,
+} from "./schemaDomainCodegen";
 
-const TOOL_REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const TOOL_REPOSITORY_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../../..",
+);
 const LOBBY_RPC_DIR_RELATIVE = "apps/shared/src/protocol/lobbyRpc";
 const DOMAINS_DIR_RELATIVE = `${LOBBY_RPC_DIR_RELATIVE}/domains`;
 const CORE_ERRORS_RELATIVE = `${LOBBY_RPC_DIR_RELATIVE}/coreErrors.ts`;
@@ -86,6 +95,12 @@ const SOURCE_LABEL = `${DOMAINS_DIR_RELATIVE}/*.ts + ${LOBBY_RPC_DIR_RELATIVE}/c
 export type PluginCodegenOptions = {
   readonly repositoryRoot?: string;
   readonly allowDelete?: readonly string[];
+  /**
+   * Test-only legacy descriptor fixture switch. The real CLI never sets this;
+   * it lets parser tests mutate a hand-written descriptor without pretending
+   * that the schema writer accepted stale generated output.
+   */
+  readonly skipSchemaDomainCodegen?: boolean;
 };
 
 /** 域契约身份：`domains/<域>.ts` 的字节 digest + 人工 contractVersion（与 gameplay 的 contractDigest/modeVersion 对称）。 */
@@ -135,33 +150,56 @@ function posixPath(value: string): string {
 // ── 发现与跨域校验 ───────────────────────────────────────────────────────────
 
 /** 发现并解析全部 domain descriptor 与 core 段；域按 id 稳定排序。 */
-export function readPluginDescriptors(options: PluginCodegenOptions = {}): PluginDescriptors {
+export function readPluginDescriptors(
+  options: PluginCodegenOptions = {},
+  virtualDomainArtifacts?: readonly SchemaDomainArtifact[],
+): PluginDescriptors {
   const root = resolvedRoot(options);
   const domainsDir = path.join(root, DOMAINS_DIR_RELATIVE);
-  if (!fs.existsSync(domainsDir)) fail(DOMAINS_DIR_RELATIVE, "domains directory is missing");
+  const virtualDomains =
+    virtualDomainArtifacts === undefined
+      ? undefined
+      : schemaDomainContents(virtualDomainArtifacts);
+  if (virtualDomains === undefined && !fs.existsSync(domainsDir)) {
+    fail(DOMAINS_DIR_RELATIVE, "domains directory is missing");
+  }
 
-  const entries = fs.readdirSync(domainsDir, { withFileTypes: true })
-    .map((entry) => entry.name)
-    .sort();
+  const entries =
+    virtualDomains === undefined
+      ? fs
+          .readdirSync(domainsDir, { withFileTypes: true })
+          .map((entry) => entry.name)
+          .sort()
+      : [...virtualDomains.keys()].sort();
   const domains: DomainDeclaration[] = [];
   const contracts: DomainContract[] = [];
   const seenNormalized = new Map<string, string>();
   for (const name of entries) {
     const label = `${DOMAINS_DIR_RELATIVE}/${name}`;
     const file = path.join(domainsDir, name);
-    assertRegularFile(file, label);
+    if (virtualDomains === undefined) assertRegularFile(file, label);
     if (!name.endsWith(".ts")) fail(label, "domains/ 只允许 .ts domain 文件");
     const id = name.slice(0, -".ts".length);
-    if (!DOMAIN_ID.test(id)) fail(label, `域名 "${id}" 必须是 camelCase 标识符（^[a-z][A-Za-z0-9]{0,63}$）`);
+    if (!DOMAIN_ID.test(id))
+      fail(
+        label,
+        `域名 "${id}" 必须是 camelCase 标识符（^[a-z][A-Za-z0-9]{0,63}$）`,
+      );
     const normalized = id.toLowerCase();
     const clash = seenNormalized.get(normalized);
     if (clash) fail(label, `域名与 "${clash}" 大小写归一化后冲突`);
     seenNormalized.set(normalized, id);
 
-    const bytes = fs.readFileSync(file);
+    const bytes = Buffer.from(
+      virtualDomains?.get(name) ?? fs.readFileSync(file, "utf8"),
+      "utf8",
+    );
     const declaration = parseDomainModule(bytes.toString("utf8"), label);
     if (declaration.domain !== id) {
-      fail(label, `descriptor.domain ("${declaration.domain}") 必须等于文件名 ("${id}")`);
+      fail(
+        label,
+        `descriptor.domain ("${declaration.domain}") 必须等于文件名 ("${id}")`,
+      );
     }
     contracts.push({
       domain: id,
@@ -170,21 +208,35 @@ export function readPluginDescriptors(options: PluginCodegenOptions = {}): Plugi
     });
     for (const route of declaration.routes) {
       const prefix = `${id}.`;
-      if (!route.type.startsWith(prefix) || !ROUTE_METHOD.test(route.type.slice(prefix.length))) {
-        fail(label, `路由名 "${route.type}" 必须是 "${id}.<method>"（method 为标识符，loader 按路径映射）`);
+      if (
+        !route.type.startsWith(prefix) ||
+        !ROUTE_METHOD.test(route.type.slice(prefix.length))
+      ) {
+        fail(
+          label,
+          `路由名 "${route.type}" 必须是 "${id}.<method>"（method 为标识符，loader 按路径映射）`,
+        );
       }
     }
     for (const code of declaration.errorCodes) {
-      if (!ERROR_CODE.test(code)) fail(label, `错误码 "${code}" 必须是大写蛇形（^[A-Z][A-Z0-9_]*$）`);
+      if (!ERROR_CODE.test(code))
+        fail(label, `错误码 "${code}" 必须是大写蛇形（^[A-Z][A-Z0-9_]*$）`);
     }
     domains.push(declaration);
   }
   domains.sort((left, right) => (left.domain < right.domain ? -1 : 1));
 
-  assertRegularFile(path.join(root, CORE_ERRORS_RELATIVE), CORE_ERRORS_RELATIVE);
-  const core = parseCoreErrorsModule(fs.readFileSync(path.join(root, CORE_ERRORS_RELATIVE), "utf8"), CORE_ERRORS_RELATIVE);
+  assertRegularFile(
+    path.join(root, CORE_ERRORS_RELATIVE),
+    CORE_ERRORS_RELATIVE,
+  );
+  const core = parseCoreErrorsModule(
+    fs.readFileSync(path.join(root, CORE_ERRORS_RELATIVE), "utf8"),
+    CORE_ERRORS_RELATIVE,
+  );
   for (const code of core.coreErrorCodes) {
-    if (!ERROR_CODE.test(code)) fail(CORE_ERRORS_RELATIVE, `错误码 "${code}" 必须是大写蛇形`);
+    if (!ERROR_CODE.test(code))
+      fail(CORE_ERRORS_RELATIVE, `错误码 "${code}" 必须是大写蛇形`);
   }
 
   assertCrossDescriptorUniqueness(domains, core);
@@ -195,17 +247,50 @@ export function readPluginDescriptors(options: PluginCodegenOptions = {}): Plugi
   return { domains, core, contracts };
 }
 
+/** schema 生成物的虚拟域文件表：写盘前也必须能走完整 descriptor / digest 门禁。 */
+function schemaDomainContents(
+  artifacts: readonly SchemaDomainArtifact[],
+): ReadonlyMap<string, string> {
+  const contents = new Map<string, string>();
+  for (const artifact of artifacts) {
+    const relative = artifact.relative.replaceAll("\\", "/");
+    const prefix = `${DOMAINS_DIR_RELATIVE}/`;
+    if (
+      !relative.startsWith(prefix) ||
+      relative.slice(prefix.length).includes("/")
+    ) {
+      fail(
+        relative,
+        "schema domain artifact must be a direct domains/*.ts output",
+      );
+    }
+    const name = relative.slice(prefix.length);
+    if (!name.endsWith(".ts") || contents.has(name)) {
+      fail(relative, "schema domain artifact names must be unique .ts files");
+    }
+    contents.set(name, artifact.content);
+  }
+  return contents;
+}
+
 // ── 域契约闸（digest 变化必须伴随 contractVersion 递增；与 gameplay-codegen 的 modeVersion 闸对称）──
 
 /** 从既有 registry 生成物恢复 per-domain 契约记录（生成物格式由本生成器唯一拥有；解析不动 = 无历史）。 */
-export function previousDomainContracts(options: PluginCodegenOptions = {}): ReadonlyMap<string, DomainContract> {
+export function previousDomainContracts(
+  options: PluginCodegenOptions = {},
+): ReadonlyMap<string, DomainContract> {
   const file = path.join(resolvedRoot(options), REGISTRY_RELATIVE);
   const records = new Map<string, DomainContract>();
   if (!fs.existsSync(file)) return records;
   const text = fs.readFileSync(file, "utf8");
-  const entry = /^ {4}([A-Za-z0-9]+): \{ contractVersion: (\d+), digest: "([0-9a-f]{64})" \},$/gmu;
+  const entry =
+    /^ {4}([A-Za-z0-9]+): \{ contractVersion: (\d+), digest: "([0-9a-f]{64})" \},$/gmu;
   for (const match of text.matchAll(entry)) {
-    records.set(match[1], { domain: match[1], contractVersion: Number(match[2]), digest: match[3] });
+    records.set(match[1], {
+      domain: match[1],
+      contractVersion: Number(match[2]),
+      digest: match[3],
+    });
   }
   return records;
 }
@@ -228,23 +313,36 @@ export function assertDomainContractVersionBumped(
     if (contract.contractVersion > record.contractVersion) continue;
     fail(
       `${DOMAINS_DIR_RELATIVE}/${contract.domain}.ts`,
-      `domain contract digest changed but contractVersion did not increase (kept ${contract.contractVersion}, `
-      + `previous ${record.contractVersion}). Bump contractVersion in defineLobbyRpcDomain({ domain: "${contract.domain}", contractVersion: ${record.contractVersion + 1}, … })`,
+      `domain contract digest changed but contractVersion did not increase (kept ${contract.contractVersion}, ` +
+        `previous ${record.contractVersion}). Bump contractVersion in defineLobbyRpcDomain({ domain: "${contract.domain}", contractVersion: ${record.contractVersion + 1}, … })`,
     );
   }
 }
 
-function assertCrossDescriptorUniqueness(domains: readonly DomainDeclaration[], core: CoreErrorsDeclaration): void {
+function assertCrossDescriptorUniqueness(
+  domains: readonly DomainDeclaration[],
+  core: CoreErrorsDeclaration,
+): void {
   const routeOwner = new Map<string, string>();
   const errorOwner = new Map<string, string>();
   const pushTypeOwner = new Map<string, string>();
   const pushKeyOwner = new Map<string, string>();
-  const claim = (table: Map<string, string>, key: string, owner: string, kind: string): void => {
+  const claim = (
+    table: Map<string, string>,
+    key: string,
+    owner: string,
+    kind: string,
+  ): void => {
     const existing = table.get(key);
-    if (existing) fail(SOURCE_LABEL, `${kind} "${key}" 同时由 ${existing} 与 ${owner} 声明`);
+    if (existing)
+      fail(
+        SOURCE_LABEL,
+        `${kind} "${key}" 同时由 ${existing} 与 ${owner} 声明`,
+      );
     table.set(key, owner);
   };
-  for (const code of core.coreErrorCodes) claim(errorOwner, code, "coreErrors", "错误码");
+  for (const code of core.coreErrorCodes)
+    claim(errorOwner, code, "coreErrors", "错误码");
   for (const push of core.pushes) {
     claim(pushTypeOwner, push.type, "coreErrors", "推送消息名");
     claim(pushKeyOwner, push.key.toLowerCase(), "coreErrors", "推送 key");
@@ -252,9 +350,12 @@ function assertCrossDescriptorUniqueness(domains: readonly DomainDeclaration[], 
   // §6.13/§5.5：operationGroup 进重复 id 拒绝清单——一个组由且仅由一个域拥有
   const groupOwner = new Map<string, string>();
   for (const domain of domains) {
-    for (const route of domain.routes) claim(routeOwner, route.type, domain.domain, "路由");
-    for (const code of domain.errorCodes) claim(errorOwner, code, domain.domain, "错误码");
-    for (const group of domain.ownsOperationGroups) claim(groupOwner, group, domain.domain, "operationGroup");
+    for (const route of domain.routes)
+      claim(routeOwner, route.type, domain.domain, "路由");
+    for (const code of domain.errorCodes)
+      claim(errorOwner, code, domain.domain, "错误码");
+    for (const group of domain.ownsOperationGroups)
+      claim(groupOwner, group, domain.domain, "operationGroup");
     for (const push of domain.pushes) {
       claim(pushTypeOwner, push.type, domain.domain, "推送消息名");
       claim(pushKeyOwner, push.key.toLowerCase(), domain.domain, "推送 key");
@@ -272,49 +373,92 @@ function assertCrossDescriptorUniqueness(domains: readonly DomainDeclaration[], 
  *  - exposesOperationGroupTo 的 key 必须是本域拥有的组、value 必须是已存在的其他域；
  *  - 同一路由不得双声明 operationGroup 与 inspectsOperationGroup（builder 形态已排除，仍复核）。
  */
-function assertOperationGroupOwnership(domains: readonly DomainDeclaration[]): void {
+function assertOperationGroupOwnership(
+  domains: readonly DomainDeclaration[],
+): void {
   const ownerOf = new Map<string, DomainDeclaration>();
   const domainIds = new Set(domains.map((domain) => domain.domain));
   for (const domain of domains) {
     const label = `${DOMAINS_DIR_RELATIVE}/${domain.domain}.ts`;
     for (const group of domain.ownsOperationGroups) {
       if (!OPERATION_GROUP_ID.test(group)) {
-        fail(label, `operationGroup "${group}" 必须是 camelCase 标识符（^[a-z][A-Za-z0-9]{0,63}$）`);
+        fail(
+          label,
+          `operationGroup "${group}" 必须是 camelCase 标识符（^[a-z][A-Za-z0-9]{0,63}$）`,
+        );
       }
       ownerOf.set(group, domain);
     }
   }
   for (const domain of domains) {
     const label = `${DOMAINS_DIR_RELATIVE}/${domain.domain}.ts`;
-    for (const [group, consumers] of Object.entries(domain.exposesOperationGroupTo)) {
+    for (const [group, consumers] of Object.entries(
+      domain.exposesOperationGroupTo,
+    )) {
       if (ownerOf.get(group)?.domain !== domain.domain) {
-        fail(label, `exposesOperationGroupTo 的组 "${group}" 不由本域 ownsOperationGroups 声明——只能暴露自己拥有的组`);
+        fail(
+          label,
+          `exposesOperationGroupTo 的组 "${group}" 不由本域 ownsOperationGroups 声明——只能暴露自己拥有的组`,
+        );
       }
       for (const consumer of consumers) {
-        if (consumer === domain.domain) fail(label, `exposesOperationGroupTo["${group}"] 不需要（也不允许）列出本域自身`);
+        if (consumer === domain.domain)
+          fail(
+            label,
+            `exposesOperationGroupTo["${group}"] 不需要（也不允许）列出本域自身`,
+          );
         if (!domainIds.has(consumer)) {
-          fail(label, `exposesOperationGroupTo["${group}"] 引用了不存在的域 "${consumer}"（悬空暴露 fail closed）`);
+          fail(
+            label,
+            `exposesOperationGroupTo["${group}"] 引用了不存在的域 "${consumer}"（悬空暴露 fail closed）`,
+          );
         }
       }
     }
     for (const route of domain.routes) {
-      if (route.operationGroup !== null && route.inspectsOperationGroup !== null) {
-        fail(label, `路由 ${route.type} 不得同时声明 operationGroup 与 inspectsOperationGroup`);
+      if (
+        route.operationGroup !== null &&
+        route.inspectsOperationGroup !== null
+      ) {
+        fail(
+          label,
+          `路由 ${route.type} 不得同时声明 operationGroup 与 inspectsOperationGroup`,
+        );
       }
-      if (route.operationGroup !== null && ownerOf.get(route.operationGroup)?.domain !== domain.domain) {
-        fail(label, `路由 ${route.type} 的 operationGroup "${route.operationGroup}" 必须先由本域 ownsOperationGroups 声明所有权`);
+      if (
+        route.operationGroup !== null &&
+        ownerOf.get(route.operationGroup)?.domain !== domain.domain
+      ) {
+        fail(
+          label,
+          `路由 ${route.type} 的 operationGroup "${route.operationGroup}" 必须先由本域 ownsOperationGroups 声明所有权`,
+        );
       }
       if (route.inspectable && route.operationGroup === null) {
-        fail(label, `路由 ${route.type} 声明了 inspectable 但缺 operationGroup——无组的可查路由无意义`);
+        fail(
+          label,
+          `路由 ${route.type} 声明了 inspectable 但缺 operationGroup——无组的可查路由无意义`,
+        );
       }
       const inspects = route.inspectsOperationGroup;
       if (inspects !== null) {
         const owner = ownerOf.get(inspects);
-        if (!owner) fail(label, `路由 ${route.type} 的 inspectsOperationGroup "${inspects}" 无任何域声明所有权`);
-        if (owner.domain !== domain.domain
-          && !(owner.exposesOperationGroupTo[inspects] ?? []).includes(domain.domain)) {
-          fail(label, `路由 ${route.type} 的 inspectsOperationGroup "${inspects}" 属于域 ${owner.domain}，`
-            + `且未经 exposesOperationGroupTo["${inspects}"] 显式暴露给 ${domain.domain}（fail closed）`);
+        if (!owner)
+          fail(
+            label,
+            `路由 ${route.type} 的 inspectsOperationGroup "${inspects}" 无任何域声明所有权`,
+          );
+        if (
+          owner.domain !== domain.domain &&
+          !(owner.exposesOperationGroupTo[inspects] ?? []).includes(
+            domain.domain,
+          )
+        ) {
+          fail(
+            label,
+            `路由 ${route.type} 的 inspectsOperationGroup "${inspects}" 属于域 ${owner.domain}，` +
+              `且未经 exposesOperationGroupTo["${inspects}"] 显式暴露给 ${domain.domain}（fail closed）`,
+          );
         }
       }
     }
@@ -322,32 +466,57 @@ function assertOperationGroupOwnership(domains: readonly DomainDeclaration[]): v
 }
 
 /** RPC_ERR_CODE_ORDER 钉表：引用不存在的码即拒绝（防钉表漂移成第二真源）。 */
-function assertErrorCodeOrderPin(domains: readonly DomainDeclaration[], core: CoreErrorsDeclaration): void {
+function assertErrorCodeOrderPin(
+  domains: readonly DomainDeclaration[],
+  core: CoreErrorsDeclaration,
+): void {
   const known = new Set<string>(core.coreErrorCodes);
-  for (const domain of domains) for (const code of domain.errorCodes) known.add(code);
+  for (const domain of domains)
+    for (const code of domain.errorCodes) known.add(code);
   const dangling = core.errorCodeOrder.filter((code) => !known.has(code));
   if (dangling.length > 0) {
-    fail(CORE_ERRORS_RELATIVE, `RPC_ERR_CODE_ORDER 引用了不属于任何 descriptor 的码：${dangling.join(", ")}`);
+    fail(
+      CORE_ERRORS_RELATIVE,
+      `RPC_ERR_CODE_ORDER 引用了不属于任何 descriptor 的码：${dangling.join(", ")}`,
+    );
   }
 }
 
 type ResolvedTypeRef = { readonly name: string; readonly specifier: string };
 
 /** 把 domain/core 文件内的类型 import specifier 重定位为 registry（lobbyRpc/ 目录）视角。 */
-function resolveTypeRef(ref: TypeRef, ownerDir: string, ownerLabel: string): ResolvedTypeRef {
+function resolveTypeRef(
+  ref: TypeRef,
+  ownerDir: string,
+  ownerLabel: string,
+): ResolvedTypeRef {
   if (ref.specifier === null) {
-    fail(ownerLabel, `内部错误：本地类型 "${ref.name}" 不应走 specifier 重定位`);
+    fail(
+      ownerLabel,
+      `内部错误：本地类型 "${ref.name}" 不应走 specifier 重定位`,
+    );
   }
   if (!ref.specifier.startsWith(".")) {
-    fail(ownerLabel, `类型 "${ref.name}" 来自非相对 specifier "${ref.specifier}"（shared 零依赖，禁 npm 包类型）`);
+    fail(
+      ownerLabel,
+      `类型 "${ref.name}" 来自非相对 specifier "${ref.specifier}"（shared 零依赖，禁 npm 包类型）`,
+    );
   }
-  const resolved = path.posix.normalize(path.posix.join(ownerDir, ref.specifier));
+  const resolved = path.posix.normalize(
+    path.posix.join(ownerDir, ref.specifier),
+  );
   if (!resolved.startsWith("apps/shared/src/")) {
-    fail(ownerLabel, `类型 "${ref.name}" 的 specifier "${ref.specifier}" 越出 apps/shared/src`);
+    fail(
+      ownerLabel,
+      `类型 "${ref.name}" 的 specifier "${ref.specifier}" 越出 apps/shared/src`,
+    );
   }
   for (const banned of ["index", "envelope", "registry.generated"]) {
     if (resolved === `${LOBBY_RPC_DIR_RELATIVE}/${banned}`) {
-      fail(ownerLabel, `类型 "${ref.name}" 不得取自 ${banned}（registry 会形成 import 环）`);
+      fail(
+        ownerLabel,
+        `类型 "${ref.name}" 不得取自 ${banned}（registry 会形成 import 环）`,
+      );
     }
   }
   let relative = path.posix.relative(LOBBY_RPC_DIR_RELATIVE, resolved);
@@ -356,23 +525,39 @@ function resolveTypeRef(ref: TypeRef, ownerDir: string, ownerLabel: string): Res
 }
 
 /** registry 要 import 的符号必须全仓唯一：同名 validator/类型来自不同模块即拒绝。 */
-function assertImportSymbolUniqueness(domains: readonly DomainDeclaration[], core: CoreErrorsDeclaration): void {
+function assertImportSymbolUniqueness(
+  domains: readonly DomainDeclaration[],
+  core: CoreErrorsDeclaration,
+): void {
   const owners = new Map<string, string>();
   const claim = (symbol: string, module: string): void => {
     const existing = owners.get(symbol);
     if (existing && existing !== module) {
-      fail(SOURCE_LABEL, `符号 "${symbol}" 同时来自 ${existing} 与 ${module}——registry 无法同名 import`);
+      fail(
+        SOURCE_LABEL,
+        `符号 "${symbol}" 同时来自 ${existing} 与 ${module}——registry 无法同名 import`,
+      );
     }
     owners.set(symbol, module);
   };
-  const claimType = (ref: TypeRef, ownerModule: string, ownerDir: string, ownerLabel: string): void => {
+  const claimType = (
+    ref: TypeRef,
+    ownerModule: string,
+    ownerDir: string,
+    ownerLabel: string,
+  ): void => {
     if (ref.specifier === null) claim(ref.name, ownerModule);
     else claim(ref.name, resolveTypeRef(ref, ownerDir, ownerLabel).specifier);
   };
   const corePushes = core.pushes;
   for (const push of corePushes) {
     claim(push.validator, "./coreErrors");
-    claimType(push.dataType, "./coreErrors", LOBBY_RPC_DIR_RELATIVE, CORE_ERRORS_RELATIVE);
+    claimType(
+      push.dataType,
+      "./coreErrors",
+      LOBBY_RPC_DIR_RELATIVE,
+      CORE_ERRORS_RELATIVE,
+    );
   }
   for (const domain of domains) {
     const module = `./domains/${domain.domain}`;
@@ -400,7 +585,10 @@ function typeRefName(ref: TypeRef): string {
   return ref.name;
 }
 
-function orderedErrorCodes(domains: readonly DomainDeclaration[], core: CoreErrorsDeclaration): readonly string[] {
+function orderedErrorCodes(
+  domains: readonly DomainDeclaration[],
+  core: CoreErrorsDeclaration,
+): readonly string[] {
   const aggregate: string[] = [...core.coreErrorCodes];
   for (const domain of domains) aggregate.push(...domain.errorCodes);
   const pinned = core.errorCodeOrder.filter((code) => aggregate.includes(code));
@@ -408,19 +596,31 @@ function orderedErrorCodes(domains: readonly DomainDeclaration[], core: CoreErro
   return [...pinned, ...rest];
 }
 
-function allPushes(domains: readonly DomainDeclaration[], core: CoreErrorsDeclaration): readonly (PushDeclaration & { readonly owner: string })[] {
-  const pushes: (PushDeclaration & { owner: string })[] = core.pushes.map((push) => ({ ...push, owner: "core" }));
+function allPushes(
+  domains: readonly DomainDeclaration[],
+  core: CoreErrorsDeclaration,
+): readonly (PushDeclaration & { readonly owner: string })[] {
+  const pushes: (PushDeclaration & { owner: string })[] = core.pushes.map(
+    (push) => ({ ...push, owner: "core" }),
+  );
   for (const domain of domains) {
-    for (const push of domain.pushes) pushes.push({ ...push, owner: domain.domain });
+    for (const push of domain.pushes)
+      pushes.push({ ...push, owner: domain.domain });
   }
   return pushes;
 }
 
-function allRoutes(domains: readonly DomainDeclaration[]): readonly RouteDeclaration[] {
+function allRoutes(
+  domains: readonly DomainDeclaration[],
+): readonly RouteDeclaration[] {
   return domains.flatMap((domain) => domain.routes);
 }
 
-function renderImportLine(specifier: string, values: readonly string[], types: readonly string[]): string | null {
+function renderImportLine(
+  specifier: string,
+  values: readonly string[],
+  types: readonly string[],
+): string | null {
   const members = [
     ...[...new Set(values)].sort(),
     ...[...new Set(types)].sort().map((name) => `type ${name}`),
@@ -447,7 +647,12 @@ function renderRegistry(descriptors: PluginDescriptors): string {
   const coreValues = new Set<string>();
   const coreTypes = new Set<string>();
 
-  const addType = (ref: TypeRef, domainId: string | null, ownerDir: string, ownerLabel: string): void => {
+  const addType = (
+    ref: TypeRef,
+    domainId: string | null,
+    ownerDir: string,
+    ownerLabel: string,
+  ): void => {
     if (ref.specifier === null) {
       if (domainId === null) coreTypes.add(ref.name);
       else {
@@ -483,21 +688,34 @@ function renderRegistry(descriptors: PluginDescriptors): string {
   }
 
   const lines: string[] = [generatedHeader()];
-  lines.push(`import { assertExactKeys, guardWire, WireValidationError, type RuntimeValidator } from "../http";`);
+  lines.push(
+    `import { assertExactKeys, guardWire, WireValidationError, type RuntimeValidator } from "../http";`,
+  );
   lines.push(`import type { LobbyRpcRouteMode } from "./defineDomain";`);
-  const primitiveValues = ["pushRecord", ...(routes.length > 0 ? ["guardRpcValidator"] : [])].sort();
+  const primitiveValues = [
+    "pushRecord",
+    ...(routes.length > 0 ? ["guardRpcValidator"] : []),
+  ].sort();
   lines.push(`import { ${primitiveValues.join(", ")} } from "./primitives";`);
-  const coreImport = renderImportLine("./coreErrors", [...coreValues], [...coreTypes]);
+  const coreImport = renderImportLine(
+    "./coreErrors",
+    [...coreValues],
+    [...coreTypes],
+  );
   if (coreImport) lines.push(coreImport);
   for (const specifier of [...externalTypes.keys()].sort()) {
-    const line = renderImportLine(specifier, [], [...externalTypes.get(specifier) ?? []]);
+    const line = renderImportLine(
+      specifier,
+      [],
+      [...(externalTypes.get(specifier) ?? [])],
+    );
     if (line) lines.push(line);
   }
   for (const domain of domains) {
     const line = renderImportLine(
       `./domains/${domain.domain}`,
-      [...domainValues.get(domain.domain) ?? []],
-      [...domainTypes.get(domain.domain) ?? []],
+      [...(domainValues.get(domain.domain) ?? [])],
+      [...(domainTypes.get(domain.domain) ?? [])],
     );
     if (line) lines.push(line);
   }
@@ -509,71 +727,116 @@ function renderRegistry(descriptors: PluginDescriptors): string {
   lines.push("];");
   lines.push("");
 
-  lines.push("/** 全量路由契约（服务端 defineRpc 与客户端 WebSocketClient.rpc 的公共类型域） */");
+  lines.push(
+    "/** 全量路由契约（服务端 defineRpc 与客户端 WebSocketClient.rpc 的公共类型域） */",
+  );
   lines.push("export interface LobbyRpcMap {");
   for (const route of routes) {
-    lines.push(`    "${route.type}": { req: ${typeRefName(route.requestType)}; res: ${typeRefName(route.responseType)} };`);
+    lines.push(
+      `    "${route.type}": { req: ${typeRefName(route.requestType)}; res: ${typeRefName(route.responseType)} };`,
+    );
   }
   lines.push("}");
   lines.push("");
   lines.push("export type LobbyRpcType = keyof LobbyRpcMap;");
-  lines.push('export type RpcReq<T extends LobbyRpcType> = LobbyRpcMap[T]["req"];');
-  lines.push('export type RpcRes<T extends LobbyRpcType> = LobbyRpcMap[T]["res"];');
+  lines.push(
+    'export type RpcReq<T extends LobbyRpcType> = LobbyRpcMap[T]["req"];',
+  );
+  lines.push(
+    'export type RpcRes<T extends LobbyRpcType> = LobbyRpcMap[T]["res"];',
+  );
   lines.push("");
 
-  const idemRoutes = routes.filter((route) => route.mode === "idempotent-write");
-  const naturalRoutes = routes.filter((route) => route.mode === "natural-write");
-  lines.push("/** 幂等写路由子集（mode=idempotent-write 的显式字面量联合——由 metadata 生成，⛔ 非 clientReqId 结构推断） */");
+  const idemRoutes = routes.filter(
+    (route) => route.mode === "idempotent-write",
+  );
+  const naturalRoutes = routes.filter(
+    (route) => route.mode === "natural-write",
+  );
+  lines.push(
+    "/** 幂等写路由子集（mode=idempotent-write 的显式字面量联合——由 metadata 生成，⛔ 非 clientReqId 结构推断） */",
+  );
   if (idemRoutes.length === 0) {
     lines.push("export type LobbyRpcIdemType = never;");
   } else {
     lines.push("export type LobbyRpcIdemType =");
     idemRoutes.forEach((route, index) => {
-      lines.push(`    | "${route.type}"${index === idemRoutes.length - 1 ? ";" : ""}`);
+      lines.push(
+        `    | "${route.type}"${index === idemRoutes.length - 1 ? ";" : ""}`,
+      );
     });
   }
   lines.push("");
-  lines.push("/** natural-write 路由子集（写入天然可安全重复；不进通用幂等层） */");
+  lines.push(
+    "/** natural-write 路由子集（写入天然可安全重复；不进通用幂等层） */",
+  );
   if (naturalRoutes.length === 0) {
     lines.push("export type LobbyRpcNaturalWriteType = never;");
   } else {
     lines.push("export type LobbyRpcNaturalWriteType =");
     naturalRoutes.forEach((route, index) => {
-      lines.push(`    | "${route.type}"${index === naturalRoutes.length - 1 ? ";" : ""}`);
+      lines.push(
+        `    | "${route.type}"${index === naturalRoutes.length - 1 ? ";" : ""}`,
+      );
     });
   }
   lines.push("");
 
-  lines.push("/** 路由 → 执行模式（服务端 defineRpc 据此派生 schema/幂等行为，endpoint 不再自填） */");
-  lines.push("export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRouteMode } = {");
-  for (const route of routes) lines.push(`    "${route.type}": "${route.mode}",`);
+  lines.push(
+    "/** 路由 → 执行模式（服务端 defineRpc 据此派生 schema/幂等行为，endpoint 不再自填） */",
+  );
+  lines.push(
+    "export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRouteMode } = {",
+  );
+  for (const route of routes)
+    lines.push(`    "${route.type}": "${route.mode}",`);
   lines.push("};");
   lines.push("");
 
-  lines.push("/** 运行时全集：服务端 loader 启动校验 + 契约测试用。新增路由若漏在此处，服务端拒绝启动。 */");
+  lines.push(
+    "/** 运行时全集：服务端 loader 启动校验 + 契约测试用。新增路由若漏在此处，服务端拒绝启动。 */",
+  );
   lines.push("export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [");
   for (const route of routes) lines.push(`    "${route.type}",`);
   lines.push("];");
   lines.push("");
 
-  lines.push("/** 路由 → 契约版本（§6.11：随 validator 语义变更人工 bump；幂等 v2 记录持久化并 fail-closed 比对，");
+  lines.push(
+    "/** 路由 → 契约版本（§6.11：随 validator 语义变更人工 bump；幂等 v2 记录持久化并 fail-closed 比对，",
+  );
   lines.push(" *  ⛔ 不进摘要 preimage、不进 Redis key）。缺省 1。 */");
-  lines.push("export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number } = {");
-  for (const route of routes) lines.push(`    "${route.type}": ${route.contractVersion},`);
+  lines.push(
+    "export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number } = {",
+  );
+  for (const route of routes)
+    lines.push(`    "${route.type}": ${route.contractVersion},`);
   lines.push("};");
   lines.push("");
-  lines.push("/** 域契约身份（codegen 闸：domains/<域>.ts 的 sha256 变化必须伴随 contractVersion 递增；⛔ 不进 wire）。 */");
-  lines.push("export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {");
+  lines.push(
+    "/** 域契约身份（codegen 闸：domains/<域>.ts 的 sha256 变化必须伴随 contractVersion 递增；⛔ 不进 wire）。 */",
+  );
+  lines.push(
+    "export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly contractVersion: number; readonly digest: string } } = {",
+  );
   for (const contract of descriptors.contracts) {
-    lines.push(`    ${contract.domain}: { contractVersion: ${contract.contractVersion}, digest: ${JSON.stringify(contract.digest)} },`);
+    lines.push(
+      `    ${contract.domain}: { contractVersion: ${contract.contractVersion}, digest: ${JSON.stringify(contract.digest)} },`,
+    );
   }
   lines.push("};");
   lines.push("");
 
-  const groupRoutes = idemRoutes.filter((route) => route.operationGroup !== null);
-  lines.push("/** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */");
-  lines.push("export const LOBBY_RPC_OPERATION_GROUPS: { readonly [K in LobbyRpcType]?: string } = {");
-  for (const route of groupRoutes) lines.push(`    "${route.type}": "${route.operationGroup}",`);
+  const groupRoutes = idemRoutes.filter(
+    (route) => route.operationGroup !== null,
+  );
+  lines.push(
+    "/** idempotent-write 路由 → operation group（§6.13 inspect 机制的元数据；未声明不入表）。 */",
+  );
+  lines.push(
+    "export const LOBBY_RPC_OPERATION_GROUPS: { readonly [K in LobbyRpcType]?: string } = {",
+  );
+  for (const route of groupRoutes)
+    lines.push(`    "${route.type}": "${route.operationGroup}",`);
   lines.push("};");
   lines.push("");
   const inspectableRoutes = idemRoutes.filter((route) => route.inspectable);
@@ -582,50 +845,89 @@ function renderRegistry(descriptors: PluginDescriptors): string {
   for (const route of inspectableRoutes) lines.push(`    "${route.type}",`);
   lines.push("];");
   lines.push("");
-  const inspectsRoutes = routes.filter((route) => route.inspectsOperationGroup !== null);
-  lines.push("/** query 路由 → 其可查询的 operation group（inspectsOperationGroup）。 */");
-  lines.push("export const LOBBY_RPC_INSPECTS: { readonly [K in LobbyRpcType]?: string } = {");
-  for (const route of inspectsRoutes) lines.push(`    "${route.type}": "${route.inspectsOperationGroup}",`);
+  const inspectsRoutes = routes.filter(
+    (route) => route.inspectsOperationGroup !== null,
+  );
+  lines.push(
+    "/** query 路由 → 其可查询的 operation group（inspectsOperationGroup）。 */",
+  );
+  lines.push(
+    "export const LOBBY_RPC_INSPECTS: { readonly [K in LobbyRpcType]?: string } = {",
+  );
+  for (const route of inspectsRoutes)
+    lines.push(`    "${route.type}": "${route.inspectsOperationGroup}",`);
   lines.push("};");
   lines.push("");
 
-  lines.push("/** Route request validators: exact fields + finite/range checks, shared by client and server adapters. */");
-  lines.push("export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: RuntimeValidator<RpcReq<K>> } = {");
-  for (const route of routes) lines.push(`    "${route.type}": guardRpcValidator("payload", ${route.requestValidator}),`);
+  lines.push(
+    "/** Route request validators: exact fields + finite/range checks, shared by client and server adapters. */",
+  );
+  lines.push(
+    "export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: RuntimeValidator<RpcReq<K>> } = {",
+  );
+  for (const route of routes)
+    lines.push(
+      `    "${route.type}": guardRpcValidator("payload", ${route.requestValidator}),`,
+    );
   lines.push("};");
   lines.push("");
   lines.push("/** Route response validators. */");
-  lines.push("export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: RuntimeValidator<RpcRes<K>> } = {");
-  for (const route of routes) lines.push(`    "${route.type}": guardRpcValidator("response", ${route.responseValidator}),`);
+  lines.push(
+    "export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: RuntimeValidator<RpcRes<K>> } = {",
+  );
+  for (const route of routes)
+    lines.push(
+      `    "${route.type}": guardRpcValidator("response", ${route.responseValidator}),`,
+    );
   lines.push("};");
   lines.push("");
-  lines.push("export function validateLobbyRpcRequest<T extends LobbyRpcType>(type: T, input: unknown): RpcReq<T> {");
+  lines.push(
+    "export function validateLobbyRpcRequest<T extends LobbyRpcType>(type: T, input: unknown): RpcReq<T> {",
+  );
   lines.push('    return guardWire("payload", () => {');
-  lines.push("        const validator = LOBBY_RPC_REQUEST_VALIDATORS[type] as RuntimeValidator<RpcReq<T>> | undefined;");
-  lines.push('        if (!validator) throw new WireValidationError("RPC_TYPE", "type");');
+  lines.push(
+    "        const validator = LOBBY_RPC_REQUEST_VALIDATORS[type] as RuntimeValidator<RpcReq<T>> | undefined;",
+  );
+  lines.push(
+    '        if (!validator) throw new WireValidationError("RPC_TYPE", "type");',
+  );
   lines.push("        return validator(input);");
   lines.push("    });");
   lines.push("}");
   lines.push("");
-  lines.push("export function validateLobbyRpcResponse<T extends LobbyRpcType>(type: T, input: unknown): RpcRes<T> {");
+  lines.push(
+    "export function validateLobbyRpcResponse<T extends LobbyRpcType>(type: T, input: unknown): RpcRes<T> {",
+  );
   lines.push('    return guardWire("response", () => {');
-  lines.push("        const validator = LOBBY_RPC_RESPONSE_VALIDATORS[type] as RuntimeValidator<RpcRes<T>> | undefined;");
-  lines.push('        if (!validator) throw new WireValidationError("RPC_TYPE", "type");');
+  lines.push(
+    "        const validator = LOBBY_RPC_RESPONSE_VALIDATORS[type] as RuntimeValidator<RpcRes<T>> | undefined;",
+  );
+  lines.push(
+    '        if (!validator) throw new WireValidationError("RPC_TYPE", "type");',
+  );
   lines.push("        return validator(input);");
   lines.push("    });");
   lines.push("}");
   lines.push("");
 
-  lines.push("/** 服务端错误码全集（core + 域聚合；顺序由 coreErrors.ts 的 RPC_ERR_CODE_ORDER 历史钉决定，");
-  lines.push(" *  未上钉的新码按「core 声明序 → 域名序 → 域内声明序」追加）。服务端 ErrCode 即此联合类型。 */");
+  lines.push(
+    "/** 服务端错误码全集（core + 域聚合；顺序由 coreErrors.ts 的 RPC_ERR_CODE_ORDER 历史钉决定，",
+  );
+  lines.push(
+    " *  未上钉的新码按「core 声明序 → 域名序 → 域内声明序」追加）。服务端 ErrCode 即此联合类型。 */",
+  );
   lines.push("export const RPC_ERR_CODES = [");
   for (const code of errorCodes) lines.push(`    "${code}",`);
   lines.push("] as const;");
   lines.push("");
   lines.push("export type RpcErrCode = (typeof RPC_ERR_CODES)[number];");
   lines.push("");
-  lines.push("export function isRpcErrCode(value: unknown): value is RpcErrCode {");
-  lines.push("    return typeof value === \"string\" && (RPC_ERR_CODES as readonly string[]).includes(value);");
+  lines.push(
+    "export function isRpcErrCode(value: unknown): value is RpcErrCode {",
+  );
+  lines.push(
+    '    return typeof value === "string" && (RPC_ERR_CODES as readonly string[]).includes(value);',
+  );
   lines.push("}");
   lines.push("");
 
@@ -634,45 +936,73 @@ function renderRegistry(descriptors: PluginDescriptors): string {
   for (const push of pushes) lines.push(`    ${push.key}: "${push.type}",`);
   lines.push("} as const;");
   lines.push("");
-  lines.push("/** 推送类型名 → data 形状（客户端 WebSocketClient.onPush 的类型域） */");
+  lines.push(
+    "/** 推送类型名 → data 形状（客户端 WebSocketClient.onPush 的类型域） */",
+  );
   lines.push("export interface LobbyPushMap {");
-  for (const push of pushes) lines.push(`    "${push.type}": ${typeRefName(push.dataType)};`);
+  for (const push of pushes)
+    lines.push(`    "${push.type}": ${typeRefName(push.dataType)};`);
   lines.push("}");
   lines.push("");
   lines.push("export type LobbyPushType = keyof LobbyPushMap;");
   lines.push("");
-  lines.push("/** 推送 data runtime validators（与各 descriptor 引用同一函数）。 */");
-  lines.push("export const PUSH_RUNTIME_VALIDATORS: { readonly [K in LobbyPushType]: RuntimeValidator<LobbyPushMap[K]> } = {");
-  for (const push of pushes) lines.push(`    "${push.type}": ${push.validator},`);
+  lines.push(
+    "/** 推送 data runtime validators（与各 descriptor 引用同一函数）。 */",
+  );
+  lines.push(
+    "export const PUSH_RUNTIME_VALIDATORS: { readonly [K in LobbyPushType]: RuntimeValidator<LobbyPushMap[K]> } = {",
+  );
+  for (const push of pushes)
+    lines.push(`    "${push.type}": ${push.validator},`);
   lines.push("};");
   lines.push("");
-  lines.push("export function validatePushData<K extends LobbyPushType>(type: K, input: unknown): LobbyPushMap[K] {");
-  lines.push("    const validator = Object.prototype.hasOwnProperty.call(PUSH_RUNTIME_VALIDATORS, type)");
-  lines.push("        ? (PUSH_RUNTIME_VALIDATORS[type] as RuntimeValidator<LobbyPushMap[K]>)");
+  lines.push(
+    "export function validatePushData<K extends LobbyPushType>(type: K, input: unknown): LobbyPushMap[K] {",
+  );
+  lines.push(
+    "    const validator = Object.prototype.hasOwnProperty.call(PUSH_RUNTIME_VALIDATORS, type)",
+  );
+  lines.push(
+    "        ? (PUSH_RUNTIME_VALIDATORS[type] as RuntimeValidator<LobbyPushMap[K]>)",
+  );
   lines.push("        : undefined;");
-  lines.push('    if (!validator) throw new WireValidationError("PUSH_TYPE", "push.type");');
+  lines.push(
+    '    if (!validator) throw new WireValidationError("PUSH_TYPE", "push.type");',
+  );
   lines.push("    return validator(input);");
   lines.push("}");
   lines.push("");
-  lines.push("/** Discriminated push envelope; narrowing `type` also narrows `data`. */");
+  lines.push(
+    "/** Discriminated push envelope; narrowing `type` also narrows `data`. */",
+  );
   lines.push("export type LobbyPushEnvelope = {");
   lines.push("    [K in LobbyPushType]: { type: K; data: LobbyPushMap[K] };");
   lines.push("}[LobbyPushType];");
   lines.push("");
-  lines.push("/** 主动推送 envelope（{type,data}）的 exact runtime validator。 */");
-  lines.push("export function validateLobbyPush(input: unknown): LobbyPushEnvelope {");
+  lines.push(
+    "/** 主动推送 envelope（{type,data}）的 exact runtime validator。 */",
+  );
+  lines.push(
+    "export function validateLobbyPush(input: unknown): LobbyPushEnvelope {",
+  );
   lines.push('    return guardWire("push", () => {');
   lines.push('        const value = pushRecord(input, "push");');
   lines.push('        assertExactKeys(value, ["type", "data"], [], "push");');
   lines.push("        const type = value.type;");
   if (pushes.length === 0) {
-    lines.push('        throw new WireValidationError("PUSH_TYPE", "push.type");');
+    lines.push(
+      '        throw new WireValidationError("PUSH_TYPE", "push.type");',
+    );
   } else {
     const conditions = pushes.map((push) => `type !== "${push.type}"`);
     lines.push(`        if (${conditions.join("\n            && ")}) {`);
-    lines.push('            throw new WireValidationError("PUSH_TYPE", "push.type");');
+    lines.push(
+      '            throw new WireValidationError("PUSH_TYPE", "push.type");',
+    );
     lines.push("        }");
-    lines.push("        return { type, data: validatePushData(type, value.data) } as LobbyPushEnvelope;");
+    lines.push(
+      "        return { type, data: validatePushData(type, value.data) } as LobbyPushEnvelope;",
+    );
   }
   lines.push("    });");
   lines.push("}");
@@ -685,11 +1015,22 @@ function renderRegistry(descriptors: PluginDescriptors): string {
  *  - 每个 sidecar 必须对应一个 domain（域删除时同批删 sidecar，⛔ 不留孤儿）。
  * 返回按 id 排序的域名集（= sidecar 集）；⛔ 不执行 sidecar，只做存在性/形态校验。
  */
-export function readVectorSidecars(root: string, descriptors: PluginDescriptors): readonly string[] {
+export function readVectorSidecars(
+  root: string,
+  descriptors: PluginDescriptors,
+): readonly string[] {
   const dir = path.join(root, VECTORS_DIR_RELATIVE);
-  if (!fs.existsSync(dir)) fail(VECTORS_DIR_RELATIVE, "vectors directory is missing");
-  const sidecars = fs.readdirSync(dir)
-    .filter((name) => name.endsWith(".ts") && name !== VECTORS_TYPES_FILE && !name.endsWith(".generated.ts") && !name.endsWith(".d.ts"))
+  if (!fs.existsSync(dir))
+    fail(VECTORS_DIR_RELATIVE, "vectors directory is missing");
+  const sidecars = fs
+    .readdirSync(dir)
+    .filter(
+      (name) =>
+        name.endsWith(".ts") &&
+        name !== VECTORS_TYPES_FILE &&
+        !name.endsWith(".generated.ts") &&
+        !name.endsWith(".d.ts"),
+    )
     .map((name) => name.slice(0, -".ts".length))
     .sort();
   const domains = descriptors.domains.map((domain) => domain.domain).sort();
@@ -699,7 +1040,10 @@ export function readVectorSidecars(root: string, descriptors: PluginDescriptors)
   }
   for (const sidecar of sidecars) {
     if (!domains.includes(sidecar)) {
-      fail(`${VECTORS_DIR_RELATIVE}/${sidecar}.ts`, `向量 sidecar 没有对应的 domain descriptor（域已删除？同批删除该 sidecar）`);
+      fail(
+        `${VECTORS_DIR_RELATIVE}/${sidecar}.ts`,
+        `向量 sidecar 没有对应的 domain descriptor（域已删除？同批删除该 sidecar）`,
+      );
     }
   }
   return domains;
@@ -708,12 +1052,13 @@ export function readVectorSidecars(root: string, descriptors: PluginDescriptors)
 /** 向量登记表 `lobbyRpcVectors/index.generated.ts`：域 → sidecar default（两份 vectors 测试的唯一消费面）。 */
 function renderVectorsIndex(domains: readonly string[]): string {
   const lines = [
-    "/** AUTO-GENERATED by apps/server/tools/plugin-codegen/cli.ts from"
-      + ` ${DOMAINS_DIR_RELATIVE}/*.ts + ${VECTORS_DIR_RELATIVE}/<域>.ts. Do not edit. */`,
+    "/** AUTO-GENERATED by apps/server/tools/plugin-codegen/cli.ts from" +
+      ` ${DOMAINS_DIR_RELATIVE}/*.ts + ${VECTORS_DIR_RELATIVE}/<域>.ts. Do not edit. */`,
   ];
-  for (const domain of domains) lines.push(`import ${domain}Vectors from "./${domain}";`);
+  for (const domain of domains)
+    lines.push(`import ${domain}Vectors from "./${domain}";`);
   lines.push(
-    "import type { LobbyRpcVectorFile } from \"./vectorTypes\";",
+    'import type { LobbyRpcVectorFile } from "./vectorTypes";',
     "",
     "/** 域 → sidecar default（= LOBBY_RPC_DOMAINS；新增域只新增 lobbyRpcVectors/<域>.ts 并重跑 codegen:plugins）。 */",
     "export const LOBBY_RPC_VECTOR_FILES: Readonly<Record<string, LobbyRpcVectorFile>> = {",
@@ -729,20 +1074,30 @@ export function renderPluginArtifacts(
   descriptors: PluginDescriptors,
   catalog: ReturnType<typeof readViewCatalog>,
 ): ReadonlyMap<string, string> {
-  const artifacts = new Map<string, string>([[REGISTRY_RELATIVE, renderRegistry(descriptors)]]);
-  for (const [relative, content] of renderViewCatalogArtifacts(catalog)) artifacts.set(relative, content);
-  artifacts.set(VECTORS_INDEX_RELATIVE, renderVectorsIndex(readVectorSidecars(catalog.root, descriptors)));
+  const artifacts = new Map<string, string>([
+    [REGISTRY_RELATIVE, renderRegistry(descriptors)],
+  ]);
+  for (const [relative, content] of renderViewCatalogArtifacts(catalog))
+    artifacts.set(relative, content);
+  artifacts.set(
+    VECTORS_INDEX_RELATIVE,
+    renderVectorsIndex(readVectorSidecars(catalog.root, descriptors)),
+  );
   return artifacts;
 }
 
 // ── 删除保护 ────────────────────────────────────────────────────────────────
 
 /** 从既有 registry 生成物恢复域集合（生成物格式由本生成器唯一拥有）。 */
-export function previousRegistryDomains(options: PluginCodegenOptions = {}): readonly string[] {
+export function previousRegistryDomains(
+  options: PluginCodegenOptions = {},
+): readonly string[] {
   const file = path.join(resolvedRoot(options), REGISTRY_RELATIVE);
   if (!fs.existsSync(file)) return [];
   const text = fs.readFileSync(file, "utf8");
-  const block = text.match(/^export const LOBBY_RPC_DOMAINS: readonly string\[\] = \[\n((?: {4}"[^"\n]+",\n)*)\];$/mu);
+  const block = text.match(
+    /^export const LOBBY_RPC_DOMAINS: readonly string\[\] = \[\n((?: {4}"[^"\n]+",\n)*)\];$/mu,
+  );
   if (!block) return [];
   return [...block[1].matchAll(/"([^"\n]+)"/gu)].map((match) => match[1]);
 }
@@ -759,19 +1114,25 @@ function collectOwnedFiles(root: string): readonly string[] {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full, base);
-      else if (entry.name.endsWith(".generated.ts")) out.push(posixPath(path.relative(base, full)));
+      else if (entry.name.endsWith(".generated.ts"))
+        out.push(posixPath(path.relative(base, full)));
     }
   };
   walk(path.join(root, LOBBY_RPC_DIR_RELATIVE), root);
   walk(path.join(root, "apps/client/src/generated"), root);
   walk(path.join(root, VECTORS_DIR_RELATIVE), root);
-  for (const relative of [PLUGIN_INDEX_RELATIVE, KIT_CATALOG_SHARED_RELATIVE, KIT_CATALOG_SERVER_RELATIVE]) {
+  for (const relative of [
+    PLUGIN_INDEX_RELATIVE,
+    KIT_CATALOG_SHARED_RELATIVE,
+    KIT_CATALOG_SERVER_RELATIVE,
+  ]) {
     if (fs.existsSync(path.join(root, relative))) out.push(relative);
   }
   // MF9：每 kit 一份的贡献收录文件（只认 kits/<id>/ 一层下的固定文件名，⛔ 不递归 kit 目录）。
   for (const end of CONTRIBUTION_ENDS) {
     const kitsDir = path.join(root, `apps/${end}/src/kits`);
-    if (!fs.existsSync(kitsDir) || !fs.statSync(kitsDir).isDirectory()) continue;
+    if (!fs.existsSync(kitsDir) || !fs.statSync(kitsDir).isDirectory())
+      continue;
     for (const entry of fs.readdirSync(kitsDir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const file = path.join(kitsDir, entry.name, CONTRIBUTIONS_BASENAME);
@@ -788,6 +1149,7 @@ function collectOwnedFiles(root: string): readonly string[] {
  * + 能力索引 `docs/plugins.generated.md` + kit 登记双端生成物（精确两个路径）。集合外的任何路径都拒绝。
  */
 const WRITER_OUTPUT_ALLOWED = [
+  /^apps\/shared\/src\/protocol\/lobbyRpc\/domains\/[A-Za-z0-9_-]+\.ts$/u,
   /^apps\/shared\/src\/protocol\/lobbyRpc\/[A-Za-z0-9_/.-]*\.generated\.ts$/u,
   /^apps\/client\/src\/generated\/[A-Za-z0-9_.-]+\.generated\.ts$/u,
   /^docs\/plugins\.generated\.md$/u,
@@ -806,15 +1168,24 @@ export function assertWriterOutputSetSafe(outputs: readonly string[]): void {
   for (const output of outputs) {
     const normalized = posixPath(output);
     if (/(^|\/)plan(-v\d+)?\.md$/u.test(normalized)) {
-      fail(normalized, "当前计划文件（plan-*.md）不得进入生成器允许输出集合——验收与实跑证据由人工维护（§5.7）");
+      fail(
+        normalized,
+        "当前计划文件（plan-*.md）不得进入生成器允许输出集合——验收与实跑证据由人工维护（§5.7）",
+      );
     }
     if (!WRITER_OUTPUT_ALLOWED.some((pattern) => pattern.test(normalized))) {
-      fail(normalized, "不在生成器允许输出集合内（lobbyRpc/客户端 generated 的 *.generated.ts + docs/plugins.generated.md + lobbyRpcVectors/index.generated.ts + {shared,server}/src/kits/catalog.generated.ts + apps/{shared,server,client}/src/kits/<id>/contributions.generated.ts）");
+      fail(
+        normalized,
+        "不在生成器允许输出集合内（lobbyRpc/客户端 generated 的 *.generated.ts + docs/plugins.generated.md + lobbyRpcVectors/index.generated.ts + {shared,server}/src/kits/catalog.generated.ts + apps/{shared,server,client}/src/kits/<id>/contributions.generated.ts）",
+      );
     }
   }
 }
 
-function diffArtifacts(root: string, expected: ReadonlyMap<string, string>): {
+function diffArtifacts(
+  root: string,
+  expected: ReadonlyMap<string, string>,
+): {
   readonly stale: readonly string[];
   readonly missing: readonly string[];
   readonly extra: readonly string[];
@@ -829,17 +1200,28 @@ function diffArtifacts(root: string, expected: ReadonlyMap<string, string>): {
       stale.push(relative);
     }
   }
-  const extra = collectOwnedFiles(root).filter((relative) => !expected.has(relative));
+  const extra = collectOwnedFiles(root).filter(
+    (relative) => !expected.has(relative),
+  );
   return { stale, missing, extra };
 }
 
 /** 只读 freshness 断言：stale / missing / extra 任一非空即失败并点名。 */
-export function assertPluginArtifactsFresh(options: PluginCodegenOptions = {}): void {
+export function assertPluginArtifactsFresh(
+  options: PluginCodegenOptions = {},
+): void {
   const root = resolvedRoot(options);
+  if (!options.skipSchemaDomainCodegen) assertSchemaDomainArtifactsFresh(root);
   const descriptors = readPluginDescriptors(options);
-  assertDomainContractVersionBumped(descriptors, previousDomainContracts(options));
+  assertDomainContractVersionBumped(
+    descriptors,
+    previousDomainContracts(options),
+  );
   const catalog = readViewCatalog(root);
-  assertDomainOwnership(descriptors.domains.map((domain) => domain.domain), catalog.plugins);
+  assertDomainOwnership(
+    descriptors.domains.map((domain) => domain.domain),
+    catalog.plugins,
+  );
   const expected = renderPluginArtifacts(descriptors, catalog);
   assertWriterOutputSetSafe([...expected.keys()]);
   const { stale, missing, extra } = diffArtifacts(root, expected);
@@ -867,63 +1249,134 @@ function atomicWrite(file: string, content: string): void {
  * PluginHost 单元锚在 PLUGIN_IDS，两处任一命中都要求显式删除）。同一 id 换类别
  * （plugin ⇄ kit：共享 id 空间与锁目录 scripts/packages/）与删除同等重大，两个方向都要显式 --allow-delete。
  */
-export function writePluginArtifacts(options: PluginCodegenOptions = {}): PluginWriteResult {
+export function writePluginArtifacts(
+  options: PluginCodegenOptions = {},
+): PluginWriteResult {
   const root = resolvedRoot(options);
+  // schema 域先只在内存渲染。contractVersion / 删除保护 / View 所有权等任一闸失败时，
+  // 磁盘必须仍是上一次完整生成的状态，不能留下「domains 新、registry 旧」的半写结果。
+  const schemaArtifacts = options.skipSchemaDomainCodegen
+    ? undefined
+    : renderSchemaDomainArtifacts(root);
   const allowDelete = new Set(options.allowDelete ?? []);
-  const descriptors = readPluginDescriptors(options);
-  assertDomainContractVersionBumped(descriptors, previousDomainContracts(options));
+  const descriptors = readPluginDescriptors(options, schemaArtifacts);
+  assertDomainContractVersionBumped(
+    descriptors,
+    previousDomainContracts(options),
+  );
   const catalog = readViewCatalog(root);
-  assertDomainOwnership(descriptors.domains.map((domain) => domain.domain), catalog.plugins);
-  const currentIds = new Set(descriptors.domains.map((domain) => domain.domain));
-  const removed = previousRegistryDomains(options).filter((id) => !currentIds.has(id));
+  assertDomainOwnership(
+    descriptors.domains.map((domain) => domain.domain),
+    catalog.plugins,
+  );
+  const currentIds = new Set(
+    descriptors.domains.map((domain) => domain.domain),
+  );
+  const removed = previousRegistryDomains(options).filter(
+    (id) => !currentIds.has(id),
+  );
   const currentPluginIds = new Set(catalog.plugins.map((plugin) => plugin.id));
-  const currentKitIds = new Set(catalog.plugins.filter((unit) => unit.class === "kit").map((unit) => unit.id));
+  const currentKitIds = new Set(
+    catalog.plugins
+      .filter((unit) => unit.class === "kit")
+      .map((unit) => unit.id),
+  );
   const previousKitIds = previousGeneratedKitIds(root);
   const previousPluginIds = previousGeneratedPluginIds(root);
   // PLUGIN_IDS 不带 class：既在 PLUGIN_IDS 又不在 KIT_CATALOG 的 id 才是「原来是 plugin」。
-  const previousPluginOnlyIds = previousPluginIds.filter((id) => !previousKitIds.includes(id));
-  const removedPlugins = [...new Set([...previousPluginIds, ...previousKitIds])]
-    .filter((id) => !currentPluginIds.has(id)
-      || (previousKitIds.includes(id) && !currentKitIds.has(id))
-      || (previousPluginOnlyIds.includes(id) && currentKitIds.has(id)));
+  const previousPluginOnlyIds = previousPluginIds.filter(
+    (id) => !previousKitIds.includes(id),
+  );
+  const removedPlugins = [
+    ...new Set([...previousPluginIds, ...previousKitIds]),
+  ].filter(
+    (id) =>
+      !currentPluginIds.has(id) ||
+      (previousKitIds.includes(id) && !currentKitIds.has(id)) ||
+      (previousPluginOnlyIds.includes(id) && currentKitIds.has(id)),
+  );
   const currentViewNames = new Set(catalog.entries.map((entry) => entry.name));
-  const removedViews = previousGeneratedViewNames(root).filter((name) => !currentViewNames.has(name));
+  const removedViews = previousGeneratedViewNames(root).filter(
+    (name) => !currentViewNames.has(name),
+  );
   // 同一 id 可能同时是域与 kit（kit 声明与自己同名的域是常态）：去重后再判，--allow-delete <id> 一次覆盖两处。
-  const refused = [...new Set([...removed, ...removedPlugins, ...removedViews])].filter((id) => !allowDelete.has(id));
+  const refused = [
+    ...new Set([...removed, ...removedPlugins, ...removedViews]),
+  ].filter((id) => !allowDelete.has(id));
   if (refused.length > 0) {
     fail(
       `${DOMAINS_DIR_RELATIVE} + ${PLUGINS_DIR_RELATIVE} + ${KITS_DIR_RELATIVE}`,
-      `已登记但真源消失的域/plugin/kit/View：${refused.join(", ")}。`
-      + "删除需要显式 --allow-delete <id>",
+      `已登记但真源消失的域/plugin/kit/View：${refused.join(", ")}。` +
+        "删除需要显式 --allow-delete <id>",
     );
   }
 
   const expected = renderPluginArtifacts(descriptors, catalog);
   assertWriterOutputSetSafe([...expected.keys()]);
-  const orphans = collectOwnedFiles(root).filter((relative) => !expected.has(relative));
+  const expectedSchemaFiles = new Set(
+    schemaArtifacts?.map((artifact) => artifact.relative) ?? [],
+  );
+  const schemaOrphans =
+    schemaArtifacts === undefined
+      ? []
+      : fs.existsSync(path.join(root, DOMAINS_DIR_RELATIVE))
+        ? fs
+            .readdirSync(path.join(root, DOMAINS_DIR_RELATIVE), {
+              withFileTypes: true,
+            })
+            .filter((entry) => entry.isFile())
+            .map((entry) => `${DOMAINS_DIR_RELATIVE}/${entry.name}`)
+            .filter((relative) => !expectedSchemaFiles.has(relative))
+        : [];
+  for (const relative of schemaOrphans) {
+    const domain = path.basename(relative, ".ts");
+    if (!removed.includes(domain) || !allowDelete.has(domain)) {
+      fail(relative, "unexpected generated schema domain file. " + RUN_HINT);
+    }
+  }
+  const orphans = collectOwnedFiles(root).filter(
+    (relative) => !expected.has(relative),
+  );
   const removedFiles: string[] = [];
   for (const relative of orphans) {
     // MF9：kit 撤销了某端的贡献点声明（或 kit 本身已 --allow-delete）⇒ 该端 contributions.generated.ts 是可自动收回的孤儿。
     const contribution = CONTRIBUTIONS_FILE_RE.exec(relative);
     const kitId = contribution?.[2];
-    if (kitId !== undefined && (currentKitIds.has(kitId) || allowDelete.has(kitId))) {
+    if (
+      kitId !== undefined &&
+      (currentKitIds.has(kitId) || allowDelete.has(kitId))
+    ) {
       fs.rmSync(path.join(root, relative));
       removedFiles.push(relative);
       continue;
     }
-    fail(relative, `unexpected generated file in an owned generated directory. ${RUN_HINT}`);
+    fail(
+      relative,
+      `unexpected generated file in an owned generated directory. ${RUN_HINT}`,
+    );
   }
 
+  const schemaChanged =
+    schemaArtifacts === undefined
+      ? []
+      : writeSchemaDomainArtifacts(root, schemaArtifacts);
+  for (const relative of schemaOrphans) {
+    fs.rmSync(path.join(root, relative));
+    removedFiles.push(relative);
+  }
   const changed: string[] = [];
   for (const [relative, content] of expected) {
     const file = path.join(root, relative);
-    if (fs.existsSync(file) && fs.readFileSync(file, "utf8") === content) continue;
+    if (fs.existsSync(file) && fs.readFileSync(file, "utf8") === content)
+      continue;
     atomicWrite(file, content);
     changed.push(relative);
   }
   return {
-    changed,
-    deleted: [...new Set([...removed, ...removedPlugins, ...removedViews])].filter((id) => allowDelete.has(id)),
+    changed: [...schemaChanged, ...changed],
+    deleted: [
+      ...new Set([...removed, ...removedPlugins, ...removedViews]),
+    ].filter((id) => allowDelete.has(id)),
     removedFiles,
   };
 }
@@ -947,29 +1400,37 @@ export function parseCli(argv: readonly string[]): PluginCliArguments {
       if (check) throw new Error("duplicate argument: --check");
       check = true;
     } else if (arg === "--root") {
-      if (repositoryRoot !== undefined) throw new Error("duplicate argument: --root");
+      if (repositoryRoot !== undefined)
+        throw new Error("duplicate argument: --root");
       const value = argv[++index];
       if (!value) throw new Error("--root requires a non-empty directory");
       repositoryRoot = value;
     } else if (arg.startsWith("--root=")) {
-      if (repositoryRoot !== undefined) throw new Error("duplicate argument: --root");
+      if (repositoryRoot !== undefined)
+        throw new Error("duplicate argument: --root");
       repositoryRoot = arg.slice("--root=".length);
-      if (!repositoryRoot) throw new Error("--root requires a non-empty directory");
+      if (!repositoryRoot)
+        throw new Error("--root requires a non-empty directory");
     } else if (arg === "--allow-delete") {
       const value = argv[++index];
-      if (!value || !ALLOW_DELETE_ID.test(value)) throw new Error("--allow-delete requires a domain/plugin/View id");
-      if (allowDelete.includes(value)) throw new Error(`duplicate argument: --allow-delete ${value}`);
+      if (!value || !ALLOW_DELETE_ID.test(value))
+        throw new Error("--allow-delete requires a domain/plugin/View id");
+      if (allowDelete.includes(value))
+        throw new Error(`duplicate argument: --allow-delete ${value}`);
       allowDelete.push(value);
     } else if (arg.startsWith("--allow-delete=")) {
       const value = arg.slice("--allow-delete=".length);
-      if (!value || !ALLOW_DELETE_ID.test(value)) throw new Error("--allow-delete requires a domain/plugin/View id");
-      if (allowDelete.includes(value)) throw new Error(`duplicate argument: --allow-delete ${value}`);
+      if (!value || !ALLOW_DELETE_ID.test(value))
+        throw new Error("--allow-delete requires a domain/plugin/View id");
+      if (allowDelete.includes(value))
+        throw new Error(`duplicate argument: --allow-delete ${value}`);
       allowDelete.push(value);
     } else {
       throw new Error(`unknown argument: ${arg}`);
     }
   }
-  if (check && allowDelete.length > 0) throw new Error("--check is read-only and rejects --allow-delete");
+  if (check && allowDelete.length > 0)
+    throw new Error("--check is read-only and rejects --allow-delete");
   return {
     check,
     ...(repositoryRoot === undefined ? {} : { repositoryRoot }),

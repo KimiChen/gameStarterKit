@@ -8,7 +8,8 @@
  *  - 出站前按 CHAT_TEXT_MAX / trim 非空做本地预检（服务端仍是权威）。
  */
 import { LobbyPush } from "../../shared/index";
-import { CHAT_TEXT_MAX, type IChatMessagePush, type IChatSendRes } from "../../shared/protocol/lobbyRpc/domains/chat";
+import { CHAT_TEXT_MAX } from "../../shared/protocol/lobbyRpc/checks/chat";
+import type { IChatMessagePush, IChatSendRes } from "../../shared/protocol/lobbyRpc/domains/chat";
 
 export interface IChatLogicDeps {
     /** 生产 = (channel, text) => WebSocketClient.inst.rpc(ChatRpc.Send, { channel, text }) */

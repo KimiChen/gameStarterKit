@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "协议声明语言 v1 —— apps/shared/schema/protocols/**/*.json",
+  "description": "协议声明语言的唯一真源。解析器（apps/shared/src/schema）按 fieldKinds 的 constraints 白名单做 fail-fast 校验：未知字段种类、某一种类不接受的约束键、非法引用、重复路由/类型一律拒绝。因此新增种类或约束必须改本文件，⛔ 不在解析器里另留一份（两份必然漂移）。limits 是**声明上限**（超过即拒），不是 wire 上限：maxStringLength 取 65536 是因为 mail 正文按 64 KiB 设计，比它更长的字符串在 wire 上没有合法字段。",
+  "schemaVersion": 1,
+
+  "identifier": {
+    "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+    "description": "类型名 / 字段名 / 推送 key / operation group id 的形态"
+  },
+  "route": {
+    "pattern": "^[a-z][A-Za-z0-9]{0,31}\\.[A-Za-z][A-Za-z0-9]{0,63}$",
+    "description": "外部字符串路由，点号分隔；Native Lobby 保持 income.claimOffline 形态，⛔ 不生成数字协议号"
+  },
+  "errorCode": {
+    "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+    "description": "领域错误码（如 INSUFFICIENT_BALANCE）；core 通用码在 coreErrors.ts，⛔ 不在这里登记"
+  },
+  "modes": ["query", "natural-write", "idempotent-write"],
+  "serviceTypes": ["Base", "Chat", "Guild", "Mail", "SceneLobby"],
+
+  "fieldKinds": {
+    "boolean": { "constraints": ["nullable", "check", "assert"] },
+    "integer": { "constraints": ["min", "max", "nullable", "check", "assert"] },
+    "number": { "constraints": ["min", "max", "nullable", "check", "assert"] },
+    "string": {
+      "constraints": [
+        "minLength",
+        "maxLength",
+        "pattern",
+        "patternCode",
+        "nullable",
+        "check",
+        "assert"
+      ]
+    },
+    "enum": { "constraints": ["members", "enumCode", "nullable", "check", "assert"], "requires": ["members", "enumCode"] },
+    "object": { "constraints": ["fields", "nullable", "check", "assert"] },
+    "array": {
+      "constraints": ["items", "minItems", "maxItems", "sizeCode", "nullable", "check", "assert"],
+      "requires": ["items"]
+    },
+    "record": {
+      "constraints": ["values", "keyPattern", "keyPatternCode", "maxKeys", "sizeCode", "nullable", "check", "assert"],
+      "requires": ["values"]
+    },
+    "json": { "constraints": ["nullable", "check", "assert"] },
+    "ref": { "constraints": ["ref", "nullable", "check", "assert"], "requires": ["ref"] },
+    "external": { "constraints": ["from", "tsType", "nullable", "check", "assert"], "requires": ["from"] }
+  },
+
+  "fieldKeys": ["name", "required", "readonly"],
+  "typeExprKeys": ["kind"],
+
+  "declarations": {
+    "domain": {
+      "keys": [
+        "domain",
+        "contractVersion",
+        "errorCodes",
+        "ownsOperationGroups",
+        "exposesOperationGroupTo",
+        "pushes",
+        "apis",
+        "types"
+      ],
+      "required": ["domain", "apis"],
+      "discriminator": "domain",
+      "priority": 1
+    },
+    "types": {
+      "keys": ["types"],
+      "required": ["types"],
+      "discriminator": "types",
+      "priority": 2
+    }
+  },
+
+  "apiKeys": [
+    "name",
+    "route",
+    "serviceType",
+    "mode",
+    "ownerModule",
+    "contractVersion",
+    "request",
+    "response",
+    "operationGroup",
+    "inspectable",
+    "inspectsOperationGroup"
+  ],
+  "apiRequired": ["name", "route", "serviceType", "mode", "ownerModule", "request", "response"],
+
+  "pushKeys": ["key", "type", "data"],
+  "pushRequired": ["key", "type", "data"],
+
+  "defaults": {
+    "contractVersion": 1,
+    "required": true,
+    "errorCodes": [],
+    "ownsOperationGroups": [],
+    "exposesOperationGroupTo": {}
+  },
+
+  "limits": {
+    "maxNestingDepth": 8,
+    "maxFieldsPerObject": 256,
+    "maxArrayItems": 4096,
+    "maxStringLength": 65536,
+    "maxApisPerDomain": 256,
+    "maxTypesPerFile": 256,
+    "maxPushesPerDomain": 64,
+    "maxErrorCodesPerDomain": 256
+  }
+}

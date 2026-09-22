@@ -1,0 +1,52 @@
+{
+  "domain": "chat",
+  "contractVersion": 5,
+  "errorCodes": ["CHAT_CHANNEL_FORBIDDEN", "CHAT_UNAVAILABLE"],
+  "types": {
+    "IChatSendReq": {
+      "kind": "object",
+      "fields": [
+        { "name": "channel", "kind": "string", "check": { "fn": "validateChatChannel", "from": "../checks/chat" } },
+        { "name": "text", "kind": "string", "check": { "fn": "validateChatText", "from": "../checks/chat" } }
+      ]
+    },
+    "IChatSendRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "msgId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        { "name": "at", "kind": "integer", "min": 0 }
+      ]
+    },
+    "IChatMessagePush": {
+      "kind": "object",
+      "fields": [
+        { "name": "channel", "kind": "string", "check": { "fn": "validateChatChannel", "from": "../checks/chat" } },
+        { "name": "msgId", "kind": "string", "minLength": 1, "maxLength": 64 },
+        {
+          "name": "from",
+          "kind": "object",
+          "fields": [
+            { "name": "uid", "kind": "string", "minLength": 1, "maxLength": 128 },
+            { "name": "name", "kind": "string", "minLength": 0, "maxLength": 128 }
+          ]
+        },
+        { "name": "text", "kind": "string", "check": { "fn": "validateChatPushText", "from": "../checks/chat" } },
+        { "name": "at", "kind": "integer", "min": 0 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "ChatSend",
+      "route": "chat.send",
+      "serviceType": "Base",
+      "mode": "natural-write",
+      "ownerModule": "chat",
+      "request": { "kind": "ref", "ref": "IChatSendReq" },
+      "response": { "kind": "ref", "ref": "IChatSendRes" }
+    }
+  ],
+  "pushes": [
+    { "key": "ChatMessage", "type": "chat.message", "data": { "kind": "ref", "ref": "IChatMessagePush" } }
+  ]
+}

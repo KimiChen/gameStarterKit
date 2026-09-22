@@ -8,7 +8,8 @@
  * 扣款失败由框架抛 INSUFFICIENT_BALANCE / STALE_FENCE（分别归 shop 域 / core 所有，本域不重复声明）。
  * `deps` 只给单测注入（假 kit 面 / 假 withUser），生产缺省即真实实现。
  */
-import { ARENA_SHOP_BOOST_COST, type IArenaShopBuyBoostRes } from "@game/shared/protocol/lobbyRpc/domains/arenaShop";
+import { ARENA_SHOP_BOOST_COST } from "@game/shared/protocol/lobbyRpc/checks/arenaShop";
+import { type IArenaShopBuyBoostRes } from "@game/shared/protocol/lobbyRpc/domains/arenaShop";
 import { currentZoneId } from "../infra/keys";
 import { RpcFault } from "../errors";
 import { withUser } from "../uow";

@@ -3,16 +3,16 @@ import { CenterGuildModel } from '../../../../generated/persistence/CenterGuildM
 import { SystemErrors } from '../../../runtime/errors/SystemErrors'
 import { ResDefault } from '../../../runtime/protocol/C2S/default'
 import { Props } from '../../props/inventory/Props'
-import { ReqGuildCreate } from '../GuildC2S'
 import { GuildErrors } from '../GuildErrors'
 import { Guild } from '../bean/Guild'
 import { ActionGuild } from './ActionGuild'
+import { GuildCreateRequest } from './GuildCreateRequest'
 
 /**
  * 创建妖盟
  */
 export class ActionGuildCreate extends ActionGuild {
-    async doAction(req: ReqGuildCreate, res: ResDefault) {
+    async doAction(req: GuildCreateRequest, res: ResDefault) {
         const name = req.guildName // 妖盟名称
         const head = req.head // 图标
         const open = req.open // 妖盟自由加入状态

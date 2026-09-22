@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { ARENA_TILE_COUNT, fetchArenaBoard } from "../src/kits/arena/api/board/index";
 import { ArenaShopLogic, describeArenaShopError } from "../src/plugins/arenaShop/logic/ArenaShopLogic";
 import type { ArenaShopRuntime } from "../src/plugins/arenaShop/logic/arenaShopRuntime";
-import { ARENA_SHOP_BOOST_COST } from "../src/shared/protocol/lobbyRpc/domains/arenaShop";
+import { ARENA_SHOP_BOOST_COST } from "../src/shared/protocol/lobbyRpc/checks/arenaShop";
 import type { IArenaTile } from "../src/shared/kits/arena/api/board/index";
 
 class FakeRpcError extends Error {

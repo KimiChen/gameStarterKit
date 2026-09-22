@@ -1,6 +1,5 @@
 import { ServiceProto } from '@arthropoda/game-engine'
 import {
-    ReqActivityNotifyClientTimeVer,
     ReqActivityStageTask,
     ReqActivityOpenReload,
     ReqActivityNotifyProcessTimeVer,
@@ -9,12 +8,6 @@ import {
 import { ReqTimeAddChange, ReqConfigReload, ReqConfigReloadBroadcast } from '../../../../src/modules/adjust/AdjustS2S'
 import {} from '../../../../src/runtime/protocol/S2S/commom'
 import { ReqDefault, ResDefault } from '../../../../src/runtime/protocol/S2S/default'
-import {
-    ReqFriendDealApply,
-    ReqFriendDealAccept,
-    ReqFriendDealReject,
-    ReqFriendDefriend,
-} from '../../../../src/modules/friend/FriendS2S'
 import { ReqRepairScript, ReqChangeServerState, ReqServerStop, ReqGmUserForbid } from '../../../../src/modules/gm/GmS2S'
 import { ReqGuildResetGift } from '../../../../src/modules/guild/GuildS2S'
 import { ReqOnlyJson, ResOnlyJson } from '../../../../src/runtime/protocol/S2S/http'
@@ -30,10 +23,6 @@ import { ReqUserQuitGuild, ReqUserFieldValUpdate, ReqUserRename } from '../../..
 
 export interface ServiceType {
     api: {
-        'activity/ActivityNotifyClientTimeVer': {
-            req: ReqActivityNotifyClientTimeVer
-            res: ResDefault
-        }
         'activity/ActivityStageTask': {
             req: ReqActivityStageTask
             res: ResDefault
@@ -64,22 +53,6 @@ export interface ServiceType {
         }
         'default/Default': {
             req: ReqDefault
-            res: ResDefault
-        }
-        'friend/FriendDealApply': {
-            req: ReqFriendDealApply
-            res: ResDefault
-        }
-        'friend/FriendDealAccept': {
-            req: ReqFriendDealAccept
-            res: ResDefault
-        }
-        'friend/FriendDealReject': {
-            req: ReqFriendDealReject
-            res: ResDefault
-        }
-        'friend/FriendDefriend': {
-            req: ReqFriendDefriend
             res: ResDefault
         }
         'gm/RepairScript': {
@@ -149,11 +122,6 @@ export const serviceProto: ServiceProto = {
     version: 91,
     protocols: [
         {
-            name: 'activity/ActivityNotifyClientTimeVer',
-            type: 'api',
-            serviceType: 'Base',
-        },
-        {
             name: 'activity/ActivityStageTask',
             type: 'api',
             serviceType: 'Base',
@@ -192,26 +160,6 @@ export const serviceProto: ServiceProto = {
             name: 'default/Default',
             type: 'api',
             serviceType: 'undefined',
-        },
-        {
-            name: 'friend/FriendDealApply',
-            type: 'api',
-            serviceType: 'Base',
-        },
-        {
-            name: 'friend/FriendDealAccept',
-            type: 'api',
-            serviceType: 'Base',
-        },
-        {
-            name: 'friend/FriendDealReject',
-            type: 'api',
-            serviceType: 'Base',
-        },
-        {
-            name: 'friend/FriendDefriend',
-            type: 'api',
-            serviceType: 'Base',
         },
         {
             name: 'gm/RepairScript',

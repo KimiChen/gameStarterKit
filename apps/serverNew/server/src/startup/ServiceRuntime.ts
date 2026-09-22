@@ -132,9 +132,36 @@ export async function shutdownServiceRuntime() {
 }
 
 /**
+ * 提交后同步的投递目标：**排除发起本次调用的那个用户**。
+ *
+ * 他的变更已经由 `ObjectAction.result` 附到 `reply.sync`，再 push 一次就是同一份数据走两条路，
+ * 客户端会把它当成两次变更（版本推进两次、覆盖正在编辑的本地状态）。其余在线用户走主动 sync。
+ *
+ * 非对象出口（后台 Action、cron、内部动作）没有请求者，全部走主动 sync。
+ */
+export function committedSyncTargets(
+    changes: { [key: number]: unknown },
+    call: unknown,
+): Array<{ readonly internalUid: number; readonly sync: { readonly mods: unknown } }> {
+    const caller = call as { readonly responseTransport?: unknown; readonly uId?: unknown } | undefined
+    const replyUid = caller?.responseTransport === 'object' && typeof caller.uId === 'number' ? caller.uId : undefined
+    const targets: Array<{ internalUid: number; sync: { mods: unknown } }> = []
+    for (const [rawUid, mods] of Object.entries(changes)) {
+        const internalUid = Number(rawUid)
+        if (!Number.isSafeInteger(internalUid) || internalUid < 1) continue
+        if (internalUid === replyUid) continue
+        targets.push({ internalUid, sync: { mods } })
+    }
+    return targets
+}
+
+/**
  * 所有 Action 都在 Redis 成功提交后由 SyncReceiptTask 进入这里。请求发起者的数据由
  * ObjectAction.result 附到 reply.sync，避免同一变化既 reply 又 push；其余在线用户以及
  * 无请求上下文的后台 Action 走主动 sync 帧。
+ *
+ * 逐 uid 隔离投递失败：一个用户的通道故障不能饿死同一批里其他在线用户。业务数据此时已经提交，
+ * 投递本身也只是「尽力而为」——失败只记日志，⛔ 不要上抛（上抛会把已提交改写成业务失败）。
  */
 function installCommittedSyncDelivery(
     role: 'listen' | 'forward' | undefined,
@@ -145,18 +172,16 @@ function installCommittedSyncDelivery(
     if (!role) return
     removeSyncListener = ModSync.onCommitted(async (changes, call) => {
         if (!changes) return
-        const caller = call as { readonly responseTransport?: unknown; readonly uId?: unknown } | undefined
-        const replyUid = caller?.responseTransport === 'object' && typeof caller.uId === 'number'
-            ? caller.uId
-            : undefined
-        for (const [rawUid, mods] of Object.entries(changes)) {
-            const internalUid = Number(rawUid)
-            if (!Number.isSafeInteger(internalUid) || internalUid < 1) continue
-            // 当前 native RPC 的同步由 reply.sync 回传；不要重复 push。
-            if (internalUid === replyUid) continue
-            const sync = { mods }
-            if (role === 'listen') await nativeLobby?.syncByInternalUid(internalUid, SERVER_ID, sync)
-            else await forwardSync?.(internalUid, SERVER_ID, sync)
+        for (const target of committedSyncTargets(changes, call)) {
+            try {
+                if (role === 'listen') {
+                    await nativeLobby?.syncByInternalUid(target.internalUid, SERVER_ID, target.sync)
+                } else {
+                    await forwardSync?.(target.internalUid, SERVER_ID, target.sync)
+                }
+            } catch (error) {
+                Log.error(`native Lobby committed sync delivery failed uid:${target.internalUid}`, error)
+            }
         }
     })
 }

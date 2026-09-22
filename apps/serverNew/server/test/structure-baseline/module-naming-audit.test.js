@@ -14,10 +14,12 @@ const {
 const report = auditModuleNames()
 
 assert.deepStrictEqual(report.violations, [])
+for (const [filePath] of compatibilityAllowlist) {
+    assert.ok(fs.existsSync(path.resolve(__dirname, '../..', filePath)), `stale naming allowlist entry: ${filePath}`)
+}
 assert.deepStrictEqual(
     report.compatibility,
     [...compatibilityAllowlist]
-        .filter(([filePath]) => fs.existsSync(path.resolve(__dirname, '../..', filePath)))
         .flatMap(([filePath, allowance]) =>
             allowance.names.map((name) => `${filePath} -> ${name}: ${allowance.reason}`),
         )

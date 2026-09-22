@@ -141,16 +141,4 @@ export class EquipFashion {
         // 卸下时装衣服同步场景
         // SceneSync.sync_UserAttrs(user.id, [EquipDefine.FASHION_TYPES[fashionWear.type] => 0]);
     }
-
-    /**
-     * 获取穿戴时装
-     * @param user
-     */
-    static getPbFashionWear(user: User) {
-        // pbFashionWear = [];
-        // foreach(user.fashionWear as item) {
-        //     pbFashionWear[] = item.toProtobuf(PbFashionWearItem.class);
-        // }
-        // return pbFashionWear;
-    }
 }
