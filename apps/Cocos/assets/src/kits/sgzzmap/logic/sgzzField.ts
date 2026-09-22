@@ -44,6 +44,8 @@ export interface SgzzFieldParams {
     readonly coastDisplacementMaxCells: number;
     /** 陆水颜色混合半宽（R）：零等值线两侧多宽范围内做过渡。 */
     readonly waterBlendHalfWidthCells: number;
+    /** 岸条材质的映射半范围（R）：岸距图按这个范围归一化，着色器据此铺湿沙/小砾。 */
+    readonly shoreStripHalfWidthCells: number;
     /**
      * 细特征（同类邻居 ≤ 此数）的保护半宽（R）。
      * ⚠ 只给细特征加宽，⛔ 全局加宽会把开阔岸线压成一块块方的。
@@ -61,6 +63,7 @@ export const SGZZ_FIELD_DEFAULTS: SgzzFieldParams = Object.freeze({
     coastSigmaCells: 0.60,
     coastDisplacementMaxCells: 0.38,
     waterBlendHalfWidthCells: 0.08,
+    shoreStripHalfWidthCells: 0.35,
     // ⚠ 必须 ≥ 0.5R：细特征上相邻格心相距 R，保护圆盘的直径不到 R 就搭不上，
     //   河会被打散成一串圆点（实测 0.42R 时仍断 6/64 行）。⛔ 别照抄文档的 0.42 —— 那是
     //   「沿中心线展开的管带」的半宽，我这里是逐格圆盘，几何不同。
@@ -102,6 +105,12 @@ export interface SgzzBakedField {
     readonly weights0: Uint8Array;
     /** 地形 4..7 的权重（RGBA8）。 */
     readonly weights1: Uint8Array;
+    /**
+     * 到岸线的**有符号**距离（RGBA8，只用 R 通道）。
+     * 编码：`enc = clamp(d / shoreHalf, -1, 1) * 0.5 + 0.5` —— 0.5 正好是岸线。
+     * ⚠ 必须单独一张：8 路权重已经把两张 RGBA8 占满，⛔ 没有空通道可借。
+     */
+    readonly coast: Uint8Array;
     readonly width: number;
     readonly height: number;
 }
@@ -331,6 +340,8 @@ export function bakeSgzzField(
 
     const weights0 = new Uint8Array(inner.width * inner.height * 4);
     const weights1 = new Uint8Array(inner.width * inner.height * 4);
+    const coastOut = new Uint8Array(inner.width * inner.height * 4);
+    const shoreHalf = (params.shoreStripHalfWidthCells * R) / rect.step;
     // ⚠ 复用一条缓冲：⛔ 每个输出像素 new 一个数组 = 5 万次分配
     const cubed = new Float32Array(SGZZ_FIELD_CLASSES);
     for (let j = 0; j < inner.height; j += 1) {
@@ -338,6 +349,10 @@ export function bakeSgzzField(
             const src = (j + inner.y) * w + (i + inner.x);
             const dst = (j * inner.width + i) * 4;
             const own = ownClass[src];
+            // 岸距：0.5 = 岸线，> 0.5 = 水侧。⚠ 与权重**同一张场**算出来，⛔ 不另建轮廓
+            const enc = Math.max(-1, Math.min(1, coast[src] / shoreHalf)) * 0.5 + 0.5;
+            coastOut[dst] = Math.round(enc * 255);
+            coastOut[dst + 3] = 255;
             // ★ 格心保护：这个半径内强制本格地形，⛔ 平滑不得改变玩法可读性
             if (centreDist[src] <= margin && own >= 0 && own < SGZZ_FIELD_CLASSES) {
                 if (own < 4) weights0[dst + own] = 255; else weights1[dst + (own - 4)] = 255;
@@ -377,5 +392,5 @@ export function bakeSgzzField(
             }
         }
     }
-    return { weights0, weights1, width: inner.width, height: inner.height };
+    return { weights0, weights1, coast: coastOut, width: inner.width, height: inner.height };
 }

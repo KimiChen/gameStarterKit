@@ -318,3 +318,23 @@ test("★ 分档：LOD2 用大块，⛔ 一套尺寸吃遍所有档会烘一秒"
     const naive = sgzzFieldChunksFor(0, -22416, 750 / 0.34 / 2, 1122 / 0.34 / 2, SGZZ_FIELD_TIERS[0]);
     assert.ok(near.length * 3 <= naive.length, `LOD2 大块 ${near.length} 块 vs 小块 ${naive.length} 块，省得不够`);
 });
+
+test("★ 岸距图：0.5 正好是岸线，水侧 > 0.5、陆侧 < 0.5", () => {
+    const f = bakeWith((row) => (row < 700 ? 5 : 0), 8);
+    // 与权重来自**同一张场** ⇒ 岸距的符号必须和水占比一致，⛔ 两套轮廓会让岸条错位
+    let mismatch = 0, nearShore = 0, checked = 0;
+    for (let i = 0; i < f.width * f.height; i += 1) {
+        const enc = f.coast[i * 4] / 255;
+        const wv = waterAt(f, i);
+        if (wv > 0.9 && enc <= 0.5) mismatch += 1;
+        if (wv < 0.1 && enc >= 0.5) mismatch += 1;
+        if (Math.abs(enc - 0.5) < 0.12) nearShore += 1;
+        checked += 1;
+        assert.equal(f.coast[i * 4 + 3], 255, "alpha 该恒为 255（⛔ 这张图不是透明度）");
+    }
+    assert.equal(mismatch, 0, `有 ${mismatch}/${checked} 个点的岸距符号与水占比不一致`);
+    assert.ok(nearShore > 0, "应该存在岸线附近的采样点，否则岸条无处可画");
+    // ⚠ 编码要**饱和**：远离岸线的点必须压到 0 / 1，⛔ 否则岸条会糊满整屏
+    const far = [...f.coast].filter((_, i) => i % 4 === 0).filter((v) => v === 0 || v === 255).length;
+    assert.ok(far > f.width * f.height * 0.3, `饱和点只有 ${far}，编码范围太宽`);
+});

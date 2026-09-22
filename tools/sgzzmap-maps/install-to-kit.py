@@ -38,6 +38,7 @@ FILES = {
     # ⚠ ⛔ 没有 atlas-lod3：地表层门控 hideAtLod:2（LOD3 起改用整幅底图），
     #   早先烘的那张从来没人消费，已撤。
     "field-atlas.png": "field-atlas.png",
+    "shore-strip.png": "shore-strip.png",
     "field-atlas.meta.json": "field-atlas.info.json",
     "decor-atlas.png": "decor-atlas.png",
     "decor-atlas.meta.json": "decor-atlas.info.json",

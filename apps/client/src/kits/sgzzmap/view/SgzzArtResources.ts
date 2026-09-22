@@ -7,7 +7,7 @@
 import { EffectAsset, Texture2D, resources } from "cc";
 import {
     SGZZ_DECOR_ATLAS_ASSET, SGZZ_FIELD_ATLAS_ASSET, SGZZ_FIELD_EFFECT_ASSET,
-    SGZZ_MINIMAP_ASSET, sgzzAtlasAsset, sgzzPlateAsset,
+    SGZZ_MINIMAP_ASSET, SGZZ_SHORE_STRIP_ASSET, sgzzAtlasAsset, sgzzPlateAsset,
 } from "../logic/sgzzFar";
 import { SGZZ_ATLAS_LODS } from "../../../shared/kits/sgzzmap/api/hexmap/index";
 
@@ -22,6 +22,8 @@ export interface SgzzArtResources {
     /** 连续覆盖场用：无缝地表图集 + 自定义着色器。⚠ 缺任一就退回逐格地表，⛔ 不半开着跑。 */
     readonly fieldAtlas: Texture2D | null;
     readonly fieldEffect: EffectAsset | null;
+    /** 岸条材质。缺席则不画岸条（⛔ 不是致命，覆盖场照常）。 */
+    readonly shoreStrip: Texture2D | null;
     release(): void;
 }
 
@@ -48,13 +50,15 @@ function loadEffect(path: string): Promise<EffectAsset | null> {
 }
 
 export async function loadSgzzArtResources(): Promise<SgzzArtResources> {
-    const [plate4, plate5, minimap, decorAtlas, fieldAtlas, fieldEffect, ...atlases] = await Promise.all([
+    const [plate4, plate5, minimap, decorAtlas, fieldAtlas, fieldEffect, shoreStrip,
+           ...atlases] = await Promise.all([
         loadTexture(sgzzPlateAsset(4)),
         loadTexture(sgzzPlateAsset(5)),
         loadTexture(SGZZ_MINIMAP_ASSET),
         loadTexture(SGZZ_DECOR_ATLAS_ASSET),
         loadTexture(SGZZ_FIELD_ATLAS_ASSET),
         loadEffect(SGZZ_FIELD_EFFECT_ASSET),
+        loadTexture(SGZZ_SHORE_STRIP_ASSET),
         ...SGZZ_ATLAS_LODS.map((lod) => loadTexture(sgzzAtlasAsset(lod))),
     ]);
     const byLod = new Map<number, Texture2D | null>();
@@ -64,11 +68,13 @@ export async function loadSgzzArtResources(): Promise<SgzzArtResources> {
         plate4, plate5, minimap, decorAtlas,
         fieldAtlas: fieldAtlas as Texture2D | null,
         fieldEffect: fieldEffect as EffectAsset | null,
+        shoreStrip: shoreStrip as Texture2D | null,
         atlasFor(lod: number): Texture2D | null { return byLod.get(lod) ?? null; },
         release(): void {
             if (released) return;
             released = true;
-            for (const asset of [plate4, plate5, minimap, decorAtlas, fieldAtlas, fieldEffect, ...atlases]) {
+            for (const asset of [plate4, plate5, minimap, decorAtlas, fieldAtlas, fieldEffect,
+                                 shoreStrip, ...atlases]) {
                 asset?.decRef();
             }
         },

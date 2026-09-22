@@ -24,12 +24,15 @@ import { createSgzzBatch, destroySgzzBatch, type SgzzBatch } from "./SgzzMeshBat
 const TILE_WORLD = 160;
 /** 无缝图集的排布（与 pack-atlas.py 的 FIELD_COLS/ROWS 一致）。 */
 const ATLAS_COLS = 4, ATLAS_ROWS = 2;
+/** 岸条沿岸线的循环长度（世界单位）。⚠ 太短会看出重复，太长纹理会拉糊。 */
+const SHORE_TILE_WORLD = 900;
 
 interface Cached {
     readonly chunk: SgzzFieldChunk;
     readonly material: Material;
     readonly w0: Texture2D;
     readonly w1: Texture2D;
+    readonly coast: Texture2D;
     batch: SgzzBatch | null;
     used: number;
 }
@@ -89,23 +92,34 @@ export class SgzzFieldRenderer {
 
         const w0 = this.makeWeightTexture(field.weights0, field.width, field.height);
         const w1 = this.makeWeightTexture(field.weights1, field.width, field.height);
+        const coast = this.makeWeightTexture(field.coast, field.width, field.height);
         const material = new Material();
         material.initialize({ effectAsset: art.fieldEffect });
         material.setProperty("atlasTex", art.fieldAtlas);
         material.setProperty("weights0", w0);
         material.setProperty("weights1", w1);
+        material.setProperty("coastTex", coast);
+        if (art.shoreStrip) {
+            // ⚠ 横向必须 REPEAT（沿岸循环），纵向 CLAMP（上下是透明的过渡）——
+            //   ⛔ meta 里统一写的是 clamp，只能运行时改。
+            art.shoreStrip.setWrapMode(Texture2D.WrapMode.REPEAT, Texture2D.WrapMode.CLAMP_TO_EDGE);
+            material.setProperty("shoreTex", art.shoreStrip);
+        }
         // (minX, minY, 1/width, 1/height) —— 着色器据此把 map 坐标换成权重图 UV
         // ⚠ 必须传 Vec4：⛔ 传 JS 数组 setProperty 会**静默失败**，uniform 留 0 ⇒
         //   fract(v_map/0) = NaN、cellOrigin 除以 0 ⇒ 整片地表渲成一块纯色（真机 run 24 实证）。
         material.setProperty("chunkRect", new Vec4(chunk.minX, chunk.minY, 1 / chunk.size, 1 / chunk.size));
         material.setProperty("tileWorld", new Vec4(TILE_WORLD, TILE_WORLD, ATLAS_COLS, ATLAS_ROWS));
+        // (开关, 沿岸循环长度, 不透明度下限, 上限) —— ⚠ 缺岸条贴图就关掉，⛔ 别拿 grey 兜底画出灰带
+        material.setProperty("shoreParams", new Vec4(
+            art.shoreStrip ? 1 : 0, SHORE_TILE_WORLD, 0.65, 0.80));
 
         const geometry = buildSgzzPolyMesh([{
             points: sgzzFieldChunkQuad(chunk), rgba: [1, 1, 1, 1],
         }]);
         const batch = createSgzzBatch(this.root, `sgzz-field-${chunk.tier}_${chunk.cx}_${chunk.cy}`,
             geometry, material, 0);
-        return { chunk, material, w0, w1, batch, used: this.tick };
+        return { chunk, material, w0, w1, coast, batch, used: this.tick };
     }
 
     private makeWeightTexture(data: Uint8Array, width: number, height: number): Texture2D {
@@ -134,7 +148,7 @@ export class SgzzFieldRenderer {
     private drop(c: Cached): void {
         destroySgzzBatch(c.batch); c.batch = null;
         c.material.destroy();
-        c.w0.destroy(); c.w1.destroy();
+        c.w0.destroy(); c.w1.destroy(); c.coast.destroy();
     }
 
     /** 切到远档：整批撤掉。 */

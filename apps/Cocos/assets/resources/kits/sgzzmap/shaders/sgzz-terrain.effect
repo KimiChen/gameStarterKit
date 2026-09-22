@@ -28,8 +28,11 @@ CCEffect %{
         atlasTex:   { value: grey }
         weights0:   { value: white }
         weights1:   { value: white }
+        coastTex:   { value: grey }
+        shoreTex:   { value: grey }
         chunkRect:  { value: [0.0, 0.0, 1.0, 1.0] }
         tileWorld:  { value: [64.0, 64.0, 0.0, 0.0] }
+        shoreParams: { value: [0.0, 1000.0, 0.65, 0.80] }
 }%
 
 CCProgram sgzz-terrain-vs %{
@@ -60,12 +63,17 @@ CCProgram sgzz-terrain-fs %{
   uniform sampler2D atlasTex;
   uniform sampler2D weights0;
   uniform sampler2D weights1;
+  // 岸距（R 通道，0.5 = 岸线）与岸条材质（湿沙/小砾，横向循环、上下透明）
+  uniform sampler2D coastTex;
+  uniform sampler2D shoreTex;
 
   uniform SgzzTerrain {
     // (minX, minY, 1/width, 1/height) —— chunk 在 map 平面里的矩形
     vec4 chunkRect;
     // (tileWorldX, tileWorldY, atlasCols, atlasRows) —— 一次平铺覆盖多少世界单位 / 图集排布
     vec4 tileWorld;
+    // (岸条开关 0/1, 沿岸循环长度, 不透明度下限, 上限)
+    vec4 shoreParams;
   };
 
   // 第 i 类地形在图集里的格（按 atlasCols/atlasRows 均分，与 pack-atlas 的排布一致）
@@ -104,6 +112,19 @@ CCProgram sgzz-terrain-fs %{
 
     // ⚠ 采样后重新归一：八个通道是独立数值，⛔ 不保证和为 1
     vec3 col = total > 0.0001 ? acc / total : sampleClass(0.0, tileUv);
+
+    // ── 岸条：沿岸线铺湿沙/小砾（美术规范-过渡区域 v2 §4） ─────────────────
+    // ⚠ 相位用**全局** map 坐标，⛔ 不能按 chunk 重算 —— 那样块与块之间会错开一条缝。
+    if (shoreParams.x > 0.5) {
+      float d = texture(coastTex, wuv).r * 2.0 - 1.0;      // -1 陆 … +1 水，0 = 岸线
+      float across = d * 0.5 + 0.5;                         // 映到岸条图的上下
+      float along = v_map.x / max(1.0, shoreParams.y);
+      vec4 strip = texture(shoreTex, vec2(fract(along), across));
+      // 不透明度按世界坐标缓变，⛔ 恒定会出现「宽度一致的道路感」
+      float opacity = mix(shoreParams.z, shoreParams.w,
+                          0.5 + 0.5 * sin(v_map.x * 0.0013 + v_map.y * 0.0007));
+      col = mix(col, strip.rgb, strip.a * opacity);
+    }
     return vec4(col * v_color.rgb, v_color.a);
   }
 }%

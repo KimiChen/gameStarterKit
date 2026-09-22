@@ -21,6 +21,8 @@ export const SGZZ_MINIMAP_ASSET = "kits/sgzzmap/maps/zhongyuan/minimap";
 /** 连续覆盖场：无缝地表图集（4×2、⛔ 无出血带）与自定义着色器。 */
 export const SGZZ_FIELD_ATLAS_ASSET = "kits/sgzzmap/maps/zhongyuan/field-atlas";
 export const SGZZ_FIELD_EFFECT_ASSET = "kits/sgzzmap/shaders/sgzz-terrain";
+/** 岸条材质（湿沙/小砾，横向循环、上下透明）。⚠ 横向要 REPEAT，运行时设，⛔ meta 里是 clamp。 */
+export const SGZZ_SHORE_STRIP_ASSET = "kits/sgzzmap/maps/zhongyuan/shore-strip";
 /** 摆件图集（⚠ 与地表图集不是同一张：256×256 方格、1024² 表）。 */
 export const SGZZ_DECOR_ATLAS_ASSET = "kits/sgzzmap/maps/zhongyuan/decor-atlas";
 /** 近档地表图集。⚠ 只有 LOD0/1/2 有（门控 hideAtLod:2），⛔ 没有 atlas-lod3。 */
