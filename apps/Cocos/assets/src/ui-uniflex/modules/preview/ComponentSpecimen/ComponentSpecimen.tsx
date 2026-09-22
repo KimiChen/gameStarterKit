@@ -14,7 +14,7 @@ import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
 import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
-import { mailTab } from '../../../components/tab/tabSkins';
+import { allianceTab, characterTab, flagTab, heroDetailTab, heroListTab, mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
@@ -61,15 +61,41 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const font = fontRef('fonts/regular', 700);
     const gearIcon = imageRef('ui/settings/gear');
     const gemIcon = itemIcon('gem');
-    const tabSkin = useMemo(() => ({
-        ...mailTab,
-        selected: theme.tab.skins.mail.selected,
-        unselected: theme.tab.skins.mail.unselected,
-        color: theme.tab.color,
-        activeColor: theme.tab.activeColor,
-        badgeSource: theme.tab.badge,
-        noticeSource: theme.tab.notice,
-    }), [theme]);
+    const showMailTab = part === 'cmp-tabs';
+    const showAllianceTab = part === 'cmp-tab-alliance';
+    const showFlagTab = part === 'cmp-tab-flag';
+    const showCharacterTab = part === 'cmp-tab-character';
+    const showHeroListTab = part === 'cmp-tab-hero-list';
+    const showHeroDetailTab = part === 'cmp-tab-hero-detail';
+    const tabTop = showHeroDetailTab ? 0 : showCharacterTab ? 8 : (showFlagTab || showHeroListTab) ? 14 : 15;
+    const tabItemWidth = showHeroDetailTab ? 225 : showHeroListTab ? 227 : showCharacterTab ? 195 : showFlagTab ? 170 : showAllianceTab ? 200 : 190;
+    const tabGap = showHeroDetailTab ? -14 : showHeroListTab ? 0 : showCharacterTab ? 25 : showAllianceTab ? 13 : 14;
+    const tabSkin = useMemo(() => {
+        const badgeSource = theme.tab.badge;
+        const noticeSource = theme.tab.notice;
+        if (showAllianceTab) {
+            const art = theme.tab.skins.alliance;
+            return { ...allianceTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.color, badgeSource, noticeSource };
+        }
+        if (showFlagTab) {
+            const art = theme.tab.skins.flag;
+            return { ...flagTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.color, badgeSource, noticeSource };
+        }
+        if (showCharacterTab) {
+            const art = theme.tab.skins.character;
+            return { ...characterTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.color, badgeSource, noticeSource };
+        }
+        if (showHeroListTab) {
+            const art = theme.tab.skins.heroList;
+            return { ...heroListTab, selected: art.selected, color: theme.tab.color, activeColor: theme.tab.activeColor, badgeSource, noticeSource };
+        }
+        if (showHeroDetailTab) {
+            const art = theme.tab.skins.heroDetail;
+            return { ...heroDetailTab, selected: art.selected, color: theme.button.label, activeColor: theme.tab.color, badgeSource, noticeSource };
+        }
+        const art = theme.tab.skins.mail;
+        return { ...mailTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.activeColor, badgeSource, noticeSource };
+    }, [theme, showAllianceTab, showFlagTab, showCharacterTab, showHeroListTab, showHeroDetailTab]);
     const toggleChecked = () => setChecked(!checked);
     const selectTab = (id: string) => setSelectedTab(id);
     const onQuantity = (value: number) => setQuantity(value);
@@ -88,7 +114,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showInput = part === 'cmp-input';
     const showProgress = part === 'cmp-progress';
     const showEmpty = part === 'cmp-empty';
-    const showTabs = part === 'cmp-tabs';
+    const showTabs = showMailTab || showAllianceTab || showFlagTab || showCharacterTab || showHeroListTab || showHeroDetailTab;
     const showQuantity = part === 'cmp-quantity';
     const showSlot = part === 'cmp-slot';
     const showResource = part === 'cmp-resource';
@@ -141,7 +167,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
             <EmptyState theme={theme} left={283} top={4} label="空状态" labelLeft={232} labelTop={124} labelWidth={210} />
         </view>
         <view visible={showTabs} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
-            <TabBar theme={theme} items={TABS} selected={selectedTab} left={0} top={15} itemWidth={190} width={674} skin={tabSkin} onSelect={selectTab} />
+            <TabBar theme={theme} items={TABS} selected={selectedTab} left={0} top={tabTop} itemWidth={tabItemWidth} gap={tabGap} width={width} skin={tabSkin} onSelect={selectTab} />
         </view>
         <view visible={showQuantity} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <QuantityControl theme={theme} left={0} top={0} value={quantity} max={9} skin={QUANTITY_LAYOUT} onChange={onQuantity} />
