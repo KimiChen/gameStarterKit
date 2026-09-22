@@ -182,20 +182,23 @@ export class SgzzmapWorldView extends CocosView {
         this.world.setPosition(-logic.camera.x * scale, -logic.camera.y * scale + (this.mapBottom + this.mapTop) / 2, 0);
 
         this.world.active = true;
+        // ★ 连续覆盖场跨近/远两档（LOD0–4）：⛔ 只在近档画的话切到 LOD3 岸线会跳回底图的旧轮廓
+        const field = this.fieldRenderer?.ready === true
+            && sgzzLayerVisible("field", logic.camera.lod);
+        if (field) this.fieldRenderer?.render(logic);
+        else this.fieldRenderer?.clear();
+        const covered = field && this.fieldRenderer?.isCovered === true;
+
         if (sgzzIsNearField(logic.camera.lod)) {
-            // ★ 连续覆盖场就绪就由它画地表；缺 effect/图集则退回逐格地表 + 过渡片
-            const field = this.fieldRenderer?.ready === true
-                && sgzzLayerVisible("field", logic.camera.lod);
-            if (field) this.fieldRenderer?.render(logic);
-            else this.fieldRenderer?.clear();
             // ⚠ 只有覆盖场**铺满视野**才撤逐格地表：没铺满时未烘的块是全黑的，
             //   摆件会浮在黑底上（真机 run 27 实证）。没铺满就让逐格地表垫在下面。
-            const covered = field && this.fieldRenderer?.isCovered === true;
             this.fieldRoot?.setSiblingIndex(covered ? 0 : 1);
             this.renderer.render(logic, covered);
             this.farRenderer?.clear();
         } else {
-            this.fieldRenderer?.clear();
+            // ⚠ 远档：底图在兄弟序 0，覆盖场压在它**之上**（序 1）——
+            //   底图顺便当填充期的兜底，⛔ 不会再出现「未烘的块是黑的」。
+            this.fieldRoot?.setSiblingIndex(1);
             // 远档：整幅底图 + 鸟瞰聚合色块，逐格网格整批撤掉
             this.renderer.clear();
             this.farRenderer?.render(logic);

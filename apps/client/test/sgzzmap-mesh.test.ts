@@ -210,9 +210,9 @@ test("★ 层表：未实现的层恒不可见（⛔ 不许门控说该建而渲
     for (let lod = 0; lod <= 5; lod += 1) assert.equal(sgzzLayerVisible("grid", lod), false);
     assert.ok(!sgzzVisibleLayers(0).includes("grid"), "⛔ 网格线不得再出现在可见层里");
     // 连续覆盖场：LOD 0–2 建（与地表同档），L3 起交给整幅底图
-    assert.equal(sgzzLayerVisible("field", 0), true);
-    assert.equal(sgzzLayerVisible("field", 2), true);
-    assert.equal(sgzzLayerVisible("field", 3), false);
+    // ⚠ 覆盖场一直盖到 LOD4：⛔ 只盖到 2 的话切到 LOD3 岸线会跳回整幅底图的旧轮廓
+    for (const lod of [0, 1, 2, 3, 4]) assert.equal(sgzzLayerVisible("field", lod), true, `field@${lod}`);
+    assert.equal(sgzzLayerVisible("field", 5), false, "LOD5 一格才 3.2 屏幕像素，交给底图");
     // decor 已实现：LOD 0/1 建、LOD 2 起撤
     assert.equal(sgzzLayerVisible("decor", 1), true);
     assert.equal(sgzzLayerVisible("decor", 2), false);

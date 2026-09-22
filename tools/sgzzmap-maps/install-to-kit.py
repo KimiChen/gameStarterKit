@@ -51,8 +51,16 @@ def uuid_for(rel: str) -> str:
     return f"{h[0:8]}-{h[8:12]}-4{h[13:16]}-a{h[17:20]}-{h[20:32]}"
 
 
+# ⚠ Cocos 3.x 图片资源的 texture 子资源 id 是**固定的 6c48a**，⛔ 不能按路径另造一个：
+#   另造的话 Creator 导入时会再加一个它自己的 6c48a，两个子资源都叫 texture、
+#   动态加载 URL 完全相同（kits/.../minimap/texture），Creator 直接警告
+#   「请调整目录结构来避免动态加载资源时出现异常」，resources.load 拿到哪个是不确定的。
+COCOS_TEXTURE_SUB_ID = "6c48a"
+
+
 def sub_id(rel: str) -> str:
-    return hashlib.sha1(f"sgzzmap::sub::{rel}".encode()).hexdigest()[:5]
+    _ = rel
+    return COCOS_TEXTURE_SUB_ID
 
 
 def dir_meta_for(rel: str) -> dict:

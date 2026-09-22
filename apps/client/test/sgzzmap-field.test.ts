@@ -270,7 +270,8 @@ test("★ 单格宽的河与陆桥不被掐断（v2 §6 的窄特征保护）—
         ["单格宽河", (_row: number, col: number) => (col === 700 ? 4 : 0), true],
         ["单格宽陆桥", (_row: number, col: number) => (col === 700 ? 0 : 5), false],
     ] as const) {
-        const f = bakeWith(terrain, 8, tier.step);
+        // ⚠ 采样区要按步长放大，⛔ 固定 8 格的话 tier2（步长 32）只剩 7 行可查，测不出东西
+        const f = bakeWith(terrain, Math.ceil((100 * tier.step) / SGZZ_FIELD_CELL_EDGE), tier.step);
         let broken = 0, checked = 0;
         for (let j = 0; j < f.height; j += 1) {
             if (!interior(f, j)) continue;
@@ -293,6 +294,8 @@ test("★ 分档：LOD2 用大块，⛔ 一套尺寸吃遍所有档会烘一秒"
     assert.equal(sgzzFieldTierFor(0).cells, 20);
     assert.equal(sgzzFieldTierFor(1).cells, 20);
     assert.ok(sgzzFieldTierFor(2).cells > sgzzFieldTierFor(0).cells, "LOD2 该用更大的块");
+    assert.ok(sgzzFieldTierFor(4).cells > sgzzFieldTierFor(2).cells, "LOD3–4 该用更大的块");
+    assert.equal(sgzzFieldTierFor(3).tier, sgzzFieldTierFor(4).tier, "LOD3 与 LOD4 同档");
     // ⚠ 步长最多粗一倍：⛔ 再粗（16）时一格才 2.8 个采样点，单格宽的河会被平滑抹掉
     assert.ok(sgzzFieldTierFor(2).step <= sgzzFieldTierFor(0).step * 2,
         `LOD2 步长 ${sgzzFieldTierFor(2).step} 太粗，窄河会消失`);

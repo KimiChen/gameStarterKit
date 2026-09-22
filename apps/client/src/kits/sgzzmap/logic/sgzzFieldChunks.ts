@@ -30,9 +30,14 @@ export const SGZZ_FIELD_TIERS: readonly SgzzFieldTier[] = Object.freeze([
     //   单格宽的河/陆桥直接被平滑抹掉（实测断 2/16 行）。而 LOD2 一格仍有 22×11 屏幕像素，
     //   河看不见是真的玩法可读性问题。⛔ 别为了省块数把步长调到 16。
     { tier: 1, cells: 40, step: 8 },
+    // ⚠ LOD3–4：步长 32 时一格才 1.4 个采样点，但**窄河仍然保得住** ——
+    //   细特征保护是按世界单位算的（0.55R），会随步长缩放（实测三种步长都 0/160 不断）。
+    //   ⛔ 别据此以为「步长随便粗」：保护只保细特征，开阔岸线的精度仍随步长下降。
+    { tier: 2, cells: 160, step: 32 },
 ]);
 export function sgzzFieldTierFor(lod: number): SgzzFieldTier {
-    return lod <= 1 ? SGZZ_FIELD_TIERS[0] : SGZZ_FIELD_TIERS[1];
+    if (lod <= 1) return SGZZ_FIELD_TIERS[0];
+    return lod <= 2 ? SGZZ_FIELD_TIERS[1] : SGZZ_FIELD_TIERS[2];
 }
 /** ⚠ 兼容旧引用：默认档（LOD0/1）的块尺寸与步长。 */
 export const SGZZ_FIELD_CHUNK_CELLS = SGZZ_FIELD_TIERS[0].cells;

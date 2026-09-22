@@ -8,30 +8,6 @@
     ".png"
   ],
   "subMetas": {
-    "af336": {
-      "importer": "texture",
-      "uuid": "d83215c1-a592-4598-a368-6b761f86ddf7@af336",
-      "displayName": "decor-atlas",
-      "id": "af336",
-      "name": "texture",
-      "userData": {
-        "wrapModeS": "clamp-to-edge",
-        "wrapModeT": "clamp-to-edge",
-        "minfilter": "linear",
-        "magfilter": "linear",
-        "mipfilter": "none",
-        "anisotropy": 0,
-        "isUuid": true,
-        "imageUuidOrDatabaseUri": "d83215c1-a592-4598-a368-6b761f86ddf7",
-        "visible": false
-      },
-      "ver": "1.0.22",
-      "imported": true,
-      "files": [
-        ".json"
-      ],
-      "subMetas": {}
-    },
     "6c48a": {
       "importer": "texture",
       "uuid": "d83215c1-a592-4598-a368-6b761f86ddf7@6c48a",
@@ -39,8 +15,8 @@
       "id": "6c48a",
       "name": "texture",
       "userData": {
-        "wrapModeS": "repeat",
-        "wrapModeT": "repeat",
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
         "minfilter": "linear",
         "magfilter": "linear",
         "mipfilter": "none",

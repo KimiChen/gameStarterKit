@@ -31,7 +31,9 @@ export const SGZZ_LAYERS: readonly LayerGate[] = Object.freeze([
     // ⚠ 连续覆盖场就绪时这一层不建（场本身就是连续的）；缺 effect/图集才退回它兜底。
     { id: "blend", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: true },
     // ★ 连续覆盖场（v2）：一块一张权重图 + 自定义着色器，跨格连续，⛔ 不是逐格片
-    { id: "field", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
+    // ⚠ 一直盖到 LOD4：⛔ 只盖到 2 的话切到 LOD3 岸线会跳回整幅底图的旧轮廓。
+    //   LOD5 全图可见（步长 64 也要 15 块）且一格才 3.2 屏幕像素，轮廓差看不出来 ⇒ 交给底图。
+    { id: "field", hideAtLod: 4, showFromLod: 0, streamed: true, implemented: true },
     // ⚠ 常驻网格线**已停用**（2026-09-22 拍板：普通视图看不出网格）。
     //   实现还在（sgzzGridEdgePolys），只是门控关死 ⇒ ⛔ 别再把它当成可见层去调 alpha。
     //   格的可辨识性改由「选中框 + 领地描边」承担。
