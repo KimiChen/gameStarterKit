@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 2,
+  "kind": "stage3d-numeric-summary",
+  "scenario": "stage3d-snake",
+  "startedAt": "2026-09-21T23:20:36.940Z",
+  "finishedAt": "2026-09-21T23:20:41.057Z",
+  "durationMs": 4117,
+  "options": {
+    "mode": "snake",
+    "preview": "http://127.0.0.1:7457",
+    "devtools": "http://127.0.0.1:9222",
+    "cycles": 20,
+    "expectWebgl": 2,
+    "reuse": true,
+    "tabId": "9AF022E590DEE82568B49058741E8CAC",
+    "out": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl2-modal-fixed",
+    "summary": "docs/perf/stage3d/2026-09-22-snake-input.json",
+    "scene": null,
+    "bootTimeoutMs": 300000,
+    "stepTimeoutMs": 30000,
+    "startupFrames": 600
+  },
+  "executedOk": true,
+  "ok": true,
+  "exitCode": 0,
+  "sc0Exit": false,
+  "error": null,
+  "cleanupError": null,
+  "pending": [],
+  "evidence": {
+    "reportPath": "/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion/docs/evidence/creator-2026-09-22/stage3d-snake-webgl2-modal-fixed/report.json",
+    "reportSha256": "722c567ed2dce18202e8e02113897b8cb99d439253ae035aebeed9b96e00ef13",
+    "storage": "local-only raw report and screenshots",
+    "screenshots": {},
+    "realtimeScreenshots": {},
+    "note": "Report SHA256 identifies the exact raw JSON bytes; paths do not imply screenshot/visual approval."
+  },
+  "environment": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "platform": "MacIntel",
+    "webgl": 2,
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "viewport": {
+      "window": {
+        "width": 375,
+        "height": 812,
+        "dpr": 2,
+        "visualViewport": {
+          "width": 375,
+          "height": 812,
+          "scale": 1
+        }
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 375,
+        "height": 812,
+        "backingWidth": 750,
+        "backingHeight": 1624
+      },
+      "preview": {
+        "device": "WebpageFullScreen",
+        "rotated": false,
+        "toolbar": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "hidden": true
+        }
+      },
+      "cc": {
+        "visible": {
+          "width": 750,
+          "height": 1624
+        },
+        "design": {
+          "width": 750,
+          "height": 1624
+        },
+        "screenPixels": {
+          "width": 750,
+          "height": 1624
+        },
+        "dpr": 2
+      }
+    },
+    "engineInput": {
+      "inputTouchFeature": true,
+      "capabilitiesTouches": null
+    },
+    "skinningCapabilities": {
+      "supportedGlExtensions": [
+        "EXT_clip_control",
+        "EXT_color_buffer_float",
+        "EXT_color_buffer_half_float",
+        "EXT_conservative_depth",
+        "EXT_depth_clamp",
+        "EXT_disjoint_timer_query_webgl2",
+        "EXT_float_blend",
+        "EXT_polygon_offset_clamp",
+        "EXT_render_snorm",
+        "EXT_texture_compression_bptc",
+        "EXT_texture_compression_rgtc",
+        "EXT_texture_filter_anisotropic",
+        "EXT_texture_mirror_clamp_to_edge",
+        "EXT_texture_norm16",
+        "KHR_parallel_shader_compile",
+        "NV_shader_noperspective_interpolation",
+        "OES_draw_buffers_indexed",
+        "OES_sample_variables",
+        "OES_shader_multisample_interpolation",
+        "OES_texture_float_linear",
+        "WEBGL_blend_func_extended",
+        "WEBGL_clip_cull_distance",
+        "WEBGL_compressed_texture_astc",
+        "WEBGL_compressed_texture_etc",
+        "WEBGL_compressed_texture_etc1",
+        "WEBGL_compressed_texture_pvrtc",
+        "WEBGL_compressed_texture_s3tc",
+        "WEBGL_compressed_texture_s3tc_srgb",
+        "WEBGL_debug_renderer_info",
+        "WEBGL_debug_shaders",
+        "WEBGL_lose_context",
+        "WEBGL_multi_draw",
+        "WEBGL_polygon_mode",
+        "WEBGL_provoking_vertex",
+        "WEBGL_render_shared_exponent",
+        "WEBGL_stencil_texturing"
+      ],
+      "oesTextureFloat": false,
+      "oesTextureFloatLinear": true,
+      "vertexTextureUnits": 16,
+      "rgba32fFormat": 44,
+      "rgba32fFeatures": 31,
+      "rgba32fSampled": true,
+      "rgba8Format": 35,
+      "rgba8Features": 31,
+      "rgba8Sampled": true,
+      "scope": "This browser/context only. Extension-restricted Chrome runs do not establish general device float/RGBA8 support or sampling performance."
+    },
+    "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+    "gfxAPI": 7,
+    "device": "WebGL2Device",
+    "pipeline": "WebPipeline",
+    "quality": "SC0 fixed greybox; SC1 quality tiers are not implemented"
+  },
+  "viewport": {
+    "requested": {
+      "width": 375,
+      "height": 812,
+      "deviceScaleFactor": 2,
+      "mobile": false
+    },
+    "requiredPreview": {
+      "device": "WebpageFullScreen",
+      "rotated": false,
+      "setup": "Select Creator native WebpageFullScreen before boot; no harness CSS, DOM layout, or engine size override."
+    },
+    "actual": {
+      "window": {
+        "width": 375,
+        "height": 812,
+        "dpr": 2,
+        "visualViewport": {
+          "width": 375,
+          "height": 812,
+          "scale": 1
+        }
+      },
+      "canvas": {
+        "x": 0,
+        "y": 0,
+        "width": 375,
+        "height": 812,
+        "backingWidth": 750,
+        "backingHeight": 1624
+      },
+      "preview": {
+        "device": "WebpageFullScreen",
+        "rotated": false,
+        "toolbar": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "hidden": true
+        }
+      },
+      "cc": {
+        "visible": {
+          "width": 750,
+          "height": 1624
+        },
+        "design": {
+          "width": 750,
+          "height": 1624
+        },
+        "screenPixels": {
+          "width": 750,
+          "height": 1624
+        },
+        "dpr": 2
+      }
+    },
+    "action": "validated-existing-without-changing-metrics",
+    "scope": "375x812 CSS canvas / 750x1624 backbuffer via Creator native WebpageFullScreen, desktop UA, desktop GPU and wheel; CSS/DPR emulation is not mobile hardware evidence.",
+    "valid": true,
+    "error": null
+  },
+  "boot": {
+    "coldBoot": true,
+    "bootStartedAtEpochMs": 1790032834023.1,
+    "bootCompletedAtEpochMs": 1790032836071,
+    "firstFixtureLoadStartedAtEpochMs": null,
+    "provenance": {
+      "kind": "owned-snake-cold-boot",
+      "tabId": "9AF022E590DEE82568B49058741E8CAC",
+      "expectedWebgl": 2,
+      "sceneUuidAtBoot": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+      "fixtureUuidsUnloaded": true
+    }
+  },
+  "consoleClassification": {
+    "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+    "context": {
+      "expectedWebgl": 2,
+      "actualWebgl": 2,
+      "device": "WebGL2Device",
+      "pipeline": "WebPipeline",
+      "coldBoot": true,
+      "bootStartedAtEpochMs": 1790032834023.1,
+      "bootCompletedAtEpochMs": 1790032836071,
+      "firstFixtureLoadStartedAtEpochMs": null
+    },
+    "bootDiagnosticCutoffAtEpochMs": 1790032836071,
+    "windowValid": true,
+    "expectedBootDiagnostics": 0,
+    "unexpectedErrors": 0,
+    "nonErrorCount": 0
+  },
+  "cameras": null,
+  "layers": null,
+  "steps": [
+    {
+      "name": "systemjs-runtime-and-real-viewmgr",
+      "status": "passed",
+      "error": null,
+      "durationMs": 7,
+      "screenshot": null
+    },
+    {
+      "name": "engine-touch-source-and-dom-capture",
+      "status": "passed",
+      "error": null,
+      "durationMs": 5,
+      "screenshot": null
+    },
+    {
+      "name": "existing-snake-prerequisite",
+      "status": "passed",
+      "error": null,
+      "durationMs": 6,
+      "screenshot": null
+    },
+    {
+      "name": "attach-real-fgui-hud-to-snake",
+      "status": "passed",
+      "error": null,
+      "durationMs": 79,
+      "screenshot": null
+    },
+    {
+      "name": "hud-click",
+      "status": "passed",
+      "error": null,
+      "durationMs": 326,
+      "screenshot": null
+    },
+    {
+      "name": "world-drag-across-hud",
+      "status": "passed",
+      "error": null,
+      "durationMs": 271,
+      "screenshot": null
+    },
+    {
+      "name": "hud-drag-across-world",
+      "status": "passed",
+      "error": null,
+      "durationMs": 267,
+      "screenshot": null
+    },
+    {
+      "name": "simultaneous-hud-and-world",
+      "status": "passed",
+      "error": null,
+      "durationMs": 519,
+      "screenshot": null
+    },
+    {
+      "name": "modal-cancels-held-world-and-restores-fresh-only",
+      "status": "passed",
+      "error": null,
+      "durationMs": 1867,
+      "screenshot": null
+    },
+    {
+      "name": "hud-close-remount-cancels-old-pointer",
+      "status": "passed",
+      "error": null,
+      "durationMs": 656,
+      "screenshot": null
+    }
+  ],
+  "initialState": null,
+  "finalState": {
+    "atMs": 7031.600000023842,
+    "visible": true,
+    "sceneNodes": 94,
+    "fixtureNodes": 0,
+    "cubes": 0,
+    "bipeds": 0,
+    "particles": 0,
+    "businessRefs": 0,
+    "ready": false,
+    "error": null,
+    "input": {
+      "active": false,
+      "blocked": false,
+      "ownersCount": 0
+    },
+    "gfx": {
+      "drawCalls": 62,
+      "triangles": 28132,
+      "instances": 0,
+      "bufferBytes": 17814148,
+      "textureBytes": 45700644
+    }
+  },
+  "startupPerformance": null,
+  "performance": null,
+  "framing": null,
+  "skinning": null,
+  "realtimeSkinning": null,
+  "resources": {
+    "prewarm": null,
+    "cycles": []
+  },
+  "input": {
+    "browser": {
+      "protocolVersion": "1.3",
+      "product": "Chrome/153.0.8010.48",
+      "revision": "@199a3a541d76237379e353b348e64045584db057",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+      "jsVersion": "15.3.76.12"
+    },
+    "policy": "Chrome 153 live diagnostics: partial touchEnd carries ended points; final touchEnd is empty. This conflicts with the local CDP schema description that touchEnd must be empty. Every command validates actual window-capture DOM changedTouches and remaining touches; another runtime failing that check is a failed probe.",
+    "commands": 32,
+    "passedCommands": 32,
+    "failedCommands": [],
+    "domCounts": {
+      "touchstart": 12,
+      "touchend": 12,
+      "touchmove": 8
+    },
+    "finalCounters": {
+      "worldStarts": 6,
+      "worldMoves": 5,
+      "worldEnds": 3,
+      "worldCancels": 3,
+      "worldWheels": 0,
+      "hudStarts": 5,
+      "cancellations": 8
+    }
+  },
+  "console": {
+    "total": 0,
+    "severityCounts": {},
+    "failures": [],
+    "omittedFailureMessages": 0
+  }
+}

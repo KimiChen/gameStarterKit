@@ -18,7 +18,9 @@
     "apps/client/src/view/ConfirmView.view.json",
     "apps/client/src/view/SettingsView.view.json",
     "apps/client/src/view/EntryGroupView.view.json",
-    "apps/client/src/view/rooms/ballMove/BallMoveView.view.json"
+    "apps/client/src/view/rooms/ballMove/BallMoveView.view.json",
+    "apps/client/src/view/Stage3dFixtureView.view.json",
+    "apps/client/src/view/Stage3dSpikeHudView.view.json"
   ],
   "owners": [
     {
@@ -62,6 +64,14 @@
     {
       "id": "confirm",
       "view": "Confirm"
+    },
+    {
+      "id": "stage3dFixture",
+      "view": "Stage3dFixture"
+    },
+    {
+      "id": "stage3dSpikeHud",
+      "view": "Stage3dSpikeHud"
     }
   ],
   "menu": [

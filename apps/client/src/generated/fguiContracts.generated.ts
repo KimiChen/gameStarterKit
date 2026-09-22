@@ -334,10 +334,18 @@ export const LOGINNOTICE_CONTRACT: FguiContract = {
     ]
 };
 
+/** Common_Component/GoContainer（owner: builtin；真源 apps/client/src/view/Stage3dSpikeHudView.view.json） */
+export const STAGE3DSPIKEHUD_CONTRACT: FguiContract = {
+    "pkg": "Common_Component",
+    "comp": "GoContainer",
+    "required": []
+};
+
 /** 全部已登记视图的契约（守门测试遍历它做相等校验）。 */
 export const FGUI_CONTRACTS: readonly FguiContract[] = [
     AREALIST_CONTRACT,
     HOME_CONTRACT,
     LOGIN_CONTRACT,
     LOGINNOTICE_CONTRACT,
+    STAGE3DSPIKEHUD_CONTRACT,
 ];

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "owner": "builtin",
+  "kind": "fgui",
+  "layer": "popup",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": false,
+  "package": "Common_Component",
+  "component": "GoContainer",
+  "logic": "apps/client/src/logic/page/Stage3dFixtureLogic.ts",
+  "group": "authenticated",
+  "restore": "discard"
+}

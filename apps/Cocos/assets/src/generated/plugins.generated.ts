@@ -97,6 +97,8 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
             { id: "settings", view: "Settings", group: "authenticated", restore: "discard" },
             { id: "entryGroup", view: "EntryGroup", group: "authenticated", restore: "discard" },
             { id: "confirm", view: "Confirm", group: "system", restore: "discard" },
+            { id: "stage3dFixture", view: "Stage3dFixture", group: "authenticated", restore: "discard" },
+            { id: "stage3dSpikeHud", view: "Stage3dSpikeHud", group: "authenticated", restore: "discard" },
         ],
         menu: [
             { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },

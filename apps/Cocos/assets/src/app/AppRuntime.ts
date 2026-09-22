@@ -1,3 +1,4 @@
+import { cancelSpikeWorldInput } from "../view/scene3d/spikeInput";
 /**
  * AppRuntime（Non-intrusive §7.2 阶段 5b）：应用宿主根。原 Cocos 组件 Main.ts 的全部
  * 编排逻辑（gameplay 装配 / enterBattle / startGameplay / stopGameplay / dispose 顺序）
@@ -275,6 +276,7 @@ export class AppRuntime {
 
     /** §7.8 (1)(2)：hide 暂停本地 tick/预测与新输入意图。 */
     private onHostHide(): void {
+        cancelSpikeWorldInput();
         this.hostHidden = true;
         this.frameScheduler.setPaused(true);
     }

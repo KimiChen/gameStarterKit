@@ -1783,6 +1783,12 @@
       "pkg": "View_AreaList_LoginNotice",
       "comp": "LoginNotice",
       "generatedHash": "add78fc68cdad498de7415411c34a11916da975aa1faf11e6f816e0341eaf3c6"
+    },
+    {
+      "path": "apps/client/src/view/Stage3dSpikeHudView.ts",
+      "pkg": "Common_Component",
+      "comp": "GoContainer",
+      "generatedHash": "2de652781da83bee120cb669ca598a9591aa5add73d5d262a345d54e525a4b39"
     }
   ]
 }

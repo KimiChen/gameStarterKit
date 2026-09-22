@@ -13,6 +13,10 @@
 无尽生命周期、drop-in 自由加入 + AI 填充、真人死亡限时金币复活、16 套原作皮肤的衣柜与装备、
 个人 run 结算与养成奖励。当前代码基线 `snake@5`（S4 因 `wire.ts` 改动从 4 bump 到 5）。
 
+插件包 `1.2.4` 接入 SC0 的原始输入验证桥：HUD 打开时在玩法 router 前固定 pointer 归属，
+模态、关闭和重挂取消已有拖拽 / boost；HUD 关闭时回到既有全局输入入口。
+这是固定夹具原型，正式 owner 输入端口留 SC1；验收状态见 [3D-PLAN §8](../../../docs/3D-PLAN.md#8-批次状态只在本文回写阶段级完成回写-3dmd-10)。
+
 ⛔ **这是 demo，不是可放行的生产功能**：衣柜与养成先更新进程内存，再 best-effort 镜像到
 同一个 Redis HASH；run 去重与最近结果只在内存，进程重启即丢。发布开关
 `onlineCoinRelive5V1` 保持关闭，`eligibleForEnable=false`。任何阶段都不产生生产金币或

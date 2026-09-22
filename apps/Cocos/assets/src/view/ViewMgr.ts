@@ -24,6 +24,7 @@ import type { CocosView } from "./CocosView";
 import { VIEW_LAYERS, type ViewLayer } from "./layers";
 import type { ViewMeta } from "./defineView";
 import { VIEW_REGISTRY } from "./viewRegistry";
+import { cancelSpikeWorldInput, setSpikeInputBlocked } from "./scene3d/spikeInput";
 
 /** open 的返回句柄：关闭唯一入口（幂等）。 */
 export interface ViewHandle {
@@ -274,6 +275,7 @@ function syncInput(): void {
   }
   if (inputOwner !== top?.view) {
     inputOwner = top?.view;
+    cancelSpikeWorldInput();
     FguiView.cancelPendingInput();
     return syncInput();
   }
@@ -283,7 +285,11 @@ function syncInput(): void {
       (page.view as CocosView).setInputEnabled(!top || comparePages(page, top) >= 0);
     }
   }
-  FguiView.setInputEnabled(!!top && top.meta.kind !== "cocos");
+  // SC0 fixed-fixture exception; full inputMode metadata belongs to SC1-B9.
+  const hasSpikeHud = [...mountedPages.values()].some((page) => page.meta.name === "Stage3dSpikeHud"
+    && (!top || comparePages(page, top) >= 0));
+  setSpikeInputBlocked(!!top);
+  FguiView.setInputEnabled((!!top && top.meta.kind !== "cocos") || hasSpikeHud);
 }
 
 function closeEffects(view: ViewBase): void {

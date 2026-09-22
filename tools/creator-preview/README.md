@@ -117,6 +117,61 @@ SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观�
 - `slg.mjs`：SLG 地图场景与公开 UI 证据解析。只遍历渲染节点/文本、发送普通 CDP 点击/拖动/滚轮，不访问页面 Logic、RPC 端口或私有相机字段；场景只验证阶段 1，行军面板和房间 AOI 不在本轮范围。
 - 钉：`apps/server/test/creator-preview-tool.test.ts`。
 
+## SC0 Stage3D 独立探针
+
+`probe-stage3d.mjs` 使用隔离 Creator 预览 `7457`；Chrome CDP 默认 `9222`，可通过
+`--devtools http://127.0.0.1:9224` 或 `9225` 指向已启动的独立浏览器。脚本不启动 Creator、Chrome 或游戏服。
+
+**启动前必须将该 Creator 的原生预览设备选为 `WebpageFullScreen`，并关闭 Rotate。**
+在已有预览页的原生工具栏点击设备选择器（例如 Design Resolution），选择「Webpage Full Screen / 网页全屏」，
+再新建正式验收页面。核对 HTTP 返回的新预览 HTML 中 `#view-select` 的 `value` 为 `WebpageFullScreen`，
+随后由探针验证真实运行时选项与尺寸。2026-09-22 隔离实例实测：通过
+`Editor.Profile.setConfig('preview', 'device', 'WebpageFullScreen', 'local')` 写入配置并重启仍不足以使 HTTP 设备
+选项生效；实际原生菜单选择后才生效。因此配置文件、Profile 读值或重启均不能代替上述验证，也不依赖
+未经验证的设备 URL 参数。
+
+探针在新页面启动前设置 **375×812 CSS 窗口、DPR 2、桌面 UA 与 touch emulation**；原生网页全屏模式负责
+隐藏 Creator 工具栏并确定游戏容器尺寸。报告分别记录请求窗口、实际窗口、原生设备/旋转/工具栏、
+canvas 的 CSS 位置与尺寸、backbuffer、Cocos visible/design/screen 尺寸。验收要求 canvas 位于 `(0,0)`、
+CSS 为 `375×812`、backbuffer 为 `750×1624`、Cocos visible 为 `750×1624`。这些仍是桌面 GPU 证据。
+`Default` 设备下工具栏参与 flex 布局，观察到的 47px 不是固定高度；不能用任意增加窗口高度替代上述验证。
+探针不注入 CSS、不在启动后修改容器或引擎布局；旧失败报告保留。
+
+```bash
+node tools/creator-preview/probe-stage3d.mjs --mode fixture --devtools http://127.0.0.1:9224 --expect-webgl 2 --out docs/evidence/creator-<日期>/stage3d-fixture-webgl2
+node tools/creator-preview/probe-stage3d.mjs --mode snake --reuse --tab <精确页面ID> --devtools http://127.0.0.1:9225 --out docs/evidence/creator-<日期>/stage3d-snake-webgl1
+```
+
+Snake 模式需要已在对应浏览器中启动、可操控的真实 Snake 会话。`--reuse --tab ID` 只接受该 CDP 地址
+返回的 page 目标，且 URL 必须匹配指定 preview 的 origin/path；缺失、worker、其他端口或路径均拒绝。
+省略 ID 时必须恰有一个匹配页面，多页时拒绝猜测。复用时只读检查既有布局，尺寸或原生设备不匹配记
+pending，不重载页面或隐式改变 metrics。`--tab` 不允许用于新建 fixture。
+
+本地临时辅助脚本 `.cache/stage3d/boot-snake.mjs`（ignored，非分发工具）接受 `--devtools`、`--preview`、
+`--out`，并要求显式 `--expect-webgl 1|2`；例如 `node .cache/stage3d/boot-snake.mjs --devtools http://127.0.0.1:9225 --expect-webgl 1`。
+它新建页面并通过真实 Login → Settings → Snake 进入每次独立的 `sc0_input_<run>` 开发账号，要求游戏服已启动；
+独立账号避免前次已关闭页面留下的对局重连保留态。进入后立即接正式探针，避免静止角色在等待时死亡。
+默认产物在 `.cache/stage3d/snake-cdp-<端口>/`，`snake-tab.json` 同时记录 `id`、`devtools`、`preview`；
+将这些原值传给正式探针的 `--reuse --tab` 交接，不输出 token，也不自动结束或重新登录已有 Snake 页面。
+helper 在 Cocos 启动前安装 console 记录与带 exact tab、预期 WebGL、`performance.timeOrigin` 的来源标记，
+再记录真实引擎启动完成时间与 device/pipeline。探针复验相同页面、上下文和未加载夹具的状态；
+只有此前缀启动窗口内的精确 WebGL2→WebGL1 回退诊断能被分类，原 console 不清除。
+旧 helper 页面缺少来源标记时，WebGL1 Snake 留 pending，须使用新 helper 重启一次获得最终证据。
+
+原始截图、DOM 事件和完整报告仅保留在 ignored evidence 目录；`--summary` 指定的数字摘要包含帧间隔、
+分位数、资源基线、蒙皮纹理/Pass 分组及转换等实测结果，并以报告路径和 SHA256 关联原始证据。
+输入验证结束后，探针先关闭并重新打开夹具，恢复固定初始相机，再采集 60 个 warmup 与 240 个帧间隔。
+采样前后检查 500 个 cube 的真实 `model.worldBounds` 全部八角经 `Camera.worldToScreen` 投影均位于
+`750×1624` 舞台范围及有效深度内，并读取舞台相机实际裁剪结果、对应材质/网格的实例批次与上传实例数。
+报告记录完整构图检查、可见网格数量、相机姿态及提交计数；仅节点存在不能通过。此项证明几何进入绘制提交，
+不保证每个像素都未被其他物体遮挡，画面仍需人工复核。
+蒙皮检查还将同一个 CrossAtlas 临时切为实时模式：先安装 `USE_INSTANCING=false` 的独立材质，
+验证实际 `SkinningModel`、`batchingScheme=0`、舞台普通绘制队列、slot 3 关节 UBO 绑定与矩阵随动画推进，
+再恢复 baked 模型及原共享纹理/Pass；另外 99 个实例必须保持 baked。20 轮资源检查交替在实时状态与恢复后关闭，
+旧实例批次仍在使用时延到后续 `AFTER_DRAW` 释放，不能提前通过引用归零。这是 SC0 受控样本，SC4 正式回退接口另行实现。
+截图人工复核、另一种纹理格式或设备验收缺失时明确记 pending；成功运行不代表 SC0 退出。
+离线回归在 `apps/server/test/stage3d-probe.test.ts`，不操作浏览器。
+
 ## sgzzmap 场景（三战式大地图）
 
 ```bash

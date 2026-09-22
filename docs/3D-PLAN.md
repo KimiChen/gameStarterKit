@@ -270,7 +270,7 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
-- [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [ ] SC0-B1 [x] SC0-B2 [ ] SC0-B3 [ ] SC0-B5 [ ] SC0-B4
+- [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [ ] SC0-B1 [x] SC0-B2 [x] SC0-B3 [ ] SC0-B5 [ ] SC0-B4
 - [ ] SC1-B1 [ ] SC1-B2 [ ] SC1-B3 [ ] SC1-B8 [ ] SC1-B9 [ ] SC1-B4 [ ] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
@@ -281,6 +281,8 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 - 2026-09-22 SC0-B1：内置新管线、两个保留层位与 Spine 4.2 配置已落地；按用户确认将登录页 Spine 3.8.99 装饰动画改为原 idle 首帧静态展示，保留原素材归档，真实 4.2 预览无该资源错误。微信测试项目 / AppID 尚缺，构建可运行性门未过，B1 不勾选退出；SC0 保持未退出，预算仍候选，SC1 尚未开始。
 
 - 2026-09-22 SC0-B2：四份自制灰盒与外置 64² 棋盘 PNG、确定性生成器及结构反例测试已交付；Creator 3.8.8 实际导入并从 gltf-scene 子路径加载，数字摘要见 [creator-import-report.json](../tools/art3d/creator-import-report.json)。灰盒命名与尺寸例外为精确临时登记，蒙皮 CPU 读取保留理由和数据量下界已登记；SC0 仍未退出。 当前批次 `verify:all`、`verify:sync` 及生成器 8 项反例测试通过。
+
+- 2026-09-22 SC0-B3：真实 Cocos 页面与 Snake 载体的输入原型、相机叠加、蒙皮分组及回收验收通过，当前批次 `verify:all` 通过。WebGL2 / WebGL1 浮点 / WebGL1 显式 RGBA8 能力故障注入各完成 18 步；500 立方体实际提交、100 蒙皮中两动画同播及跨关节纹理切换正确，实时样本关闭 instancing 并可恢复。三路径各预热 60 帧、采样 240 帧，原始帧间隔 p95 为 18.7 / 18.9 / 18.8 ms，启动长帧最大值 120.5 / 148.7 / 126.6 ms 保留；各连续开关 20 次，关闭节点与业务引用回基线，GFX 增量为 0。Snake 两上下文各 10 步、32 条 trusted DOM 输入通过；wheel 由夹具覆盖。汇总见 [B3 审阅报告](perf/stage3d/2026-09-22-spike-review.json)，原始报告及截图留本地。该结果限于桌面原型，不是微信真机或正式 SC1 框架交付；B1 微信测试项目 / AppID 与可运行构建证据未齐，B4 预算未冻结，SC0 未退出。
 
 - 2026-09-19 文档 v1.2：采纳 §1.3 的 3D-23–3D-32；新增 SC0-B5、SC1-B8/B9，补齐全局租约、输入、画质、资产闸与离线 LOD 的施工及退出条件。仅文档修订，以上未勾选项仍未实施。
 - 2026-09-19 文档 v1.3：采纳 §1.4 的 3D-33–3D-40；SC0-B2 / B3、SC1-B2 / B3 / B7 / B9、§0 / §4.2 更新。仍未实施。

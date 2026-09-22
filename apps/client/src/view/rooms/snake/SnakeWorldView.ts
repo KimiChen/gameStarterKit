@@ -44,6 +44,7 @@ import { snakeCameraScale, SNAKE_RULESET } from "../../../shared/gameplays/snake
 import type { ISnakeReliveDecisionResult, ISnakeReliveOffered, ISnakeReliveResolved, ISnakeRunFinalizing } from "../../../shared/index";
 import { SnakeMeshRenderer, snakeTimedFrame } from "./SnakeMeshRenderer";
 import { SnakeFoodMeshRenderer } from "./SnakeFoodMeshRenderer";
+import { isSpikeInputActive, registerSpikeWorld } from "../../scene3d/spikeInput";
 import {
     SnakeMagnetAuraRenderer,
     snakeMagnetAuraDependencies,
@@ -142,6 +143,7 @@ export class SnakeWorldView implements SnakePresentation {
     private audioSource: AudioSource | null = null;
     private observedMagnetRunId: string | null = null;
     private observedMagnetCount = 0;
+    private releaseSpikeWorld: (() => void) | null = null;
 
     constructor(
         private readonly host: Node,
@@ -167,10 +169,21 @@ export class SnakeWorldView implements SnakePresentation {
         this.safeBottom = this.readSafeBottom();
         this.buildHud();
         this.buildControls();
-        input.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
-        input.on(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
-        input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
-        input.on(Input.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
+        input.on(Input.EventType.TOUCH_START, this.onGlobalTouchStart, this);
+        input.on(Input.EventType.TOUCH_MOVE, this.onGlobalTouchMove, this);
+        input.on(Input.EventType.TOUCH_END, this.onGlobalTouchEnd, this);
+        input.on(Input.EventType.TOUCH_CANCEL, this.onGlobalTouchCancel, this);
+        this.releaseSpikeWorld = registerSpikeWorld({
+            touch: (phase, event) => {
+                if (phase === "start") this.onTouchStart(event);
+                else if (phase === "move") this.onTouchMove(event);
+                else if (phase === "end") this.onTouchEnd(event);
+                else this.onTouchCancel(event);
+            },
+            cancel: () => this.cancelInput(),
+            inspect: () => ({ kind: "snake", boosting: this.boosting, routerOwnersCount: this.router?.ownerCount ?? 0,
+                joystickX: this.joystickKnob?.position.x ?? 0, joystickY: this.joystickKnob?.position.y ?? 0 }),
+        });
         game.on(Game.EVENT_HIDE, this.cancelInput, this);
         // ⚠ 必须接管：loadAssets 内任何抛出都会让 this.assets 永不赋值、整局退化成默认视觉。
         // 曾经是裸 `void`，真引擎里的 pivot TypeError 就只表现为一条无来源的 PromiseRejectionEvent。
@@ -294,10 +307,12 @@ export class SnakeWorldView implements SnakePresentation {
         if (!this.mounted && !this.root) return;
         this.mounted = false;
         this.cancelInput();
-        input.off(Input.EventType.TOUCH_START, this.onTouchStart, this);
-        input.off(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
-        input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
-        input.off(Input.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
+        this.releaseSpikeWorld?.();
+        this.releaseSpikeWorld = null;
+        input.off(Input.EventType.TOUCH_START, this.onGlobalTouchStart, this);
+        input.off(Input.EventType.TOUCH_MOVE, this.onGlobalTouchMove, this);
+        input.off(Input.EventType.TOUCH_END, this.onGlobalTouchEnd, this);
+        input.off(Input.EventType.TOUCH_CANCEL, this.onGlobalTouchCancel, this);
         game.off(Game.EVENT_HIDE, this.cancelInput, this);
         this.meshRenderer?.dispose();
         this.meshRenderer = null;
@@ -864,6 +879,12 @@ export class SnakeWorldView implements SnakePresentation {
             if (control.action === "boost") apply(this.slotNodes.get(control.id), this.assets.boost, control.visibleDiameter);
         }
     }
+
+    /** SC0 raw bridge is the sole source while its fixed overlay is active. */
+    private onGlobalTouchStart(event: EventTouch): void { if (!isSpikeInputActive()) this.onTouchStart(event); }
+    private onGlobalTouchMove(event: EventTouch): void { if (!isSpikeInputActive()) this.onTouchMove(event); }
+    private onGlobalTouchEnd(event: EventTouch): void { if (!isSpikeInputActive()) this.onTouchEnd(event); }
+    private onGlobalTouchCancel(event: EventTouch): void { if (!isSpikeInputActive()) this.onTouchCancel(event); }
 
     private onTouchStart(event: EventTouch): void {
         if (!this.mounted || this.reliveLayer || this.confirmLayer || this.resultLayer || this.reconnectLayer) return;

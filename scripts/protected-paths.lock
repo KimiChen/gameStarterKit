@@ -2,7 +2,7 @@
 # writer: node scripts/protected-paths-lock.mjs --write ；checker: --check（npm run verify:protected-paths）
 # 每行 `<路径> <sha256>`（内容哈希，可用 shasum -a 256 复核）；范围见 scripts/protected-paths.json。
 apps/client/src/Main.ts 191f4065c7c32bd446a6ad361e7d8e15596759e7c7fb4c7b49043f496685e97b
-apps/client/src/app/AppRuntime.ts ae593523cdf806fb74a9e1f6424fbac843873ec4c43bc77c382cc5edabaad23d
+apps/client/src/app/AppRuntime.ts 56d0715ab4b22f69460a38941894d0245daaed68fd9aa99fc5babbc7c743d9d5
 apps/client/src/app/CocosLifecycleBridge.ts 333e689f1657019ab7e2f6dbf87a524b87af3988a2a1a6748b5fbf1c6e72361d
 apps/client/src/app/FrameScheduler.ts 04766a657ba81991e085d5cc960c1a4caa700686eee2ca69c9dd8a2d9ec3c262
 apps/client/src/app/LifecycleBus.ts 1b6a8730a81a67eaaad7de2939eb58e8fb484a78271f6a10e3315cb8bf83c358
@@ -31,7 +31,7 @@ apps/client/src/net/WebSocketClient.ts f7c569a7c6b16304279b43d8d4d2c3b12fe0316ca
 apps/client/src/net/rooms/GameRoomTransport.ts 0d4e678f91fe8916b9a4cc12c7faf5d0e86321001c3e79944706ca354f574036
 apps/client/src/net/session.ts 67f7f35372082d92d385db70d655d3caf93f71c5d9704ed2ebaa4ce3f86916ea
 apps/client/src/view/HomeView.ts 757781d51594acfc3d610cbf2a999544a1a6804414976b1ed12b0411df58fa66
-apps/client/src/view/ViewMgr.ts cec47546c7aab8509691168b483d6520103eb6ee0932e35ae48f4508c644fc44
+apps/client/src/view/ViewMgr.ts a6ddd31cbe56b392d698dd678cd83daf41317e3f8a709ac3a9fae630ff4621b0
 apps/client/src/view/defineView.ts 3c435c751573824c5dfc1253483a85a861119726ca4217871456aeba2da1f913
 apps/client/src/view/fguiContracts.ts 93841ad5d394e9ab99be9999943264079ecaa667c844e283f9d0b2180d9e99d1
 apps/client/src/view/pages.ts 9cee05d4b1ee7374414154909de2afc2f9c965e034a104853493e2a7486cdd5c

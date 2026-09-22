@@ -104,6 +104,7 @@ declare module "cc" {
     destroy(): boolean;
   }
   export class Material {
+    copy(source: Material, overrides?: { defines?: Record<string, boolean | number> }): void;
     initialize(options: {
       /** ⚠ 内置 effect 用名字；**自定义 .effect 必须传 effectAsset**（名字查不到）。 */
       effectName?: string;
@@ -126,6 +127,8 @@ declare module "cc" {
   export class UIMeshRenderer extends Component {}
   /** ⚠ 在 cc 模块里导出，但**不在** cc 全局对象上（全局那份的旧名是 ModelComponent）。 */
   export class MeshRenderer extends Component {
+      sharedMaterials: (Material | null)[];
+      setMaterial(material: Material | null, index: number): void;
       mesh: Mesh | null; material: Material | null;
       /** ⚠ 每次 mesh.updateSubMesh 之后必须调用：它才会把新的顶点/索引数同步进 InputAssembler。 */
       onGeometryChanged(): void;
@@ -150,6 +153,9 @@ declare module "cc" {
     };
 
     export class Node {
+        lookAt(target: Vec3): void;
+        setRotationFromEuler(x: number, y: number, z: number): void;
+        getComponentsInChildren<T>(type: new (...args: never[]) => T): T[];
         pauseSystemEvents(recursive?: boolean): void;
         resumeSystemEvents(recursive?: boolean): void;
         getChildByName(name: string): Node | null;
@@ -205,6 +211,10 @@ declare module "cc" {
         /** 引擎内置资源表；⚠ `default-spriteframe` 是共用的 2×2 全白图，见 view/uiPlate.ts。 */
     export const builtinResMgr: { get<T>(name: string): T };
     export const director: {
+      root: { dataPoolManager: { jointTexturePool: {
+        registerCustomTextureLayouts(layouts: { textureLength: number; contents: { skeleton: number; clips: number[] }[] }[]): void;
+      } } } | null;
+      once(type: string, callback: () => void): void;
       /** ⚠ 场景根同时挂着渲染全局设置；`globals` 在部分宿主下可能缺席，调用方需可选取值。 */
       getScene(): (Node & { globals?: { postSettings?: { toneMappingType: number } } }) | null;
     };
@@ -318,7 +328,7 @@ declare module "db://fairygui-cc/fairygui.mjs" {
     }
     export class GLoader extends GObject { url: string; }
     export class GLoader3D extends GLoader {}
-    export class GTextField extends GObject { text: string; }
+    export class GTextField extends GObject { text: string; fontSize: number; color: import("cc").Color; }
     export class GRichTextField extends GTextField {}
     export class GGroup extends GObject {}
     export class GProgressBar extends GComponent { min: number; max: number; value: number; }
@@ -342,4 +352,32 @@ declare module "cc/env" {
     export const DEV: boolean;
     export const EDITOR: boolean;
     export const PREVIEW: boolean;
+}
+
+/** SC0 prototype's actual 3.8.8 API surface; formal Stage3D coverage belongs to SC1. */
+declare module "cc" {
+    export class Prefab { data: Node; addRef(): this; decRef(): this; readonly refCount: number; }
+    export class AnimationClip { name: string; readonly hash: number; }
+    export class Skeleton { readonly hash: number; readonly joints: string[]; }
+    export class SkinnedMeshRenderer extends MeshRenderer { skeleton: Skeleton | null; }
+    export function instantiate(prefab: Prefab): Node;
+    export class Camera extends Component {
+        static ProjectionType: { PERSPECTIVE: number; ORTHO: number };
+        static ClearFlag: { SOLID_COLOR: number; DEPTH_ONLY: number };
+        projection: number; priority: number; visibility: number; fov: number;
+        near: number; far: number; clearFlags: number; clearColor: Color;
+    }
+    export class DirectionalLight extends Component { illuminance: number; }
+    export class SkeletalAnimation extends Component {
+        useBakedAnimation: boolean;
+        clips: (AnimationClip | null)[];
+        addClip(clip: AnimationClip, name?: string): unknown;
+        play(name?: string): unknown;
+        stop(): void;
+    }
+    export class ParticleSystem extends Component {
+        play(): void; stop(): void; capacity: number; loop: boolean;
+        processor: { getDefaultMaterial(): Material | null };
+    }
+    export const Director: { EVENT_AFTER_DRAW: string };
 }

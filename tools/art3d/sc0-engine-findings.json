@@ -1,0 +1,3119 @@
+{
+  "schemaVersion": 1,
+  "scope": "SC0 fixed greybox engine findings; numeric evidence summary, not a stage-exit or platform acceptance report.",
+  "recordedOn": "2026-09-22",
+  "status": "engine-finding-fixes-verified-selected-desktop-contexts-and-full-verification-sc0-gates-pending",
+  "engine": {
+    "product": "Cocos Creator",
+    "version": "3.8.8",
+    "pipeline": "WebPipeline",
+    "observedGraphicsBackend": "WebGL2",
+    "installedEngineRoot": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine",
+    "sourcePathsRelativeTo": "installedEngineRoot",
+    "sources": [
+      {
+        "id": "render-instancing-queue",
+        "path": "cocos/rendering/custom/web-pipeline-types.ts",
+        "sha256": "e2ffa36fe5b1f33b5a866413336422aab819eec9dd84bf7133c96cc59e72d033",
+        "locations": [
+          {
+            "symbol": "RenderInstancingQueue.add",
+            "lineStart": 903,
+            "lineEnd": 926,
+            "finding": "The custom pipeline owns cached InstancedBuffers independently of each material Pass."
+          },
+          {
+            "symbol": "RenderInstancingQueue.clear",
+            "lineStart": 929,
+            "lineEnd": 934,
+            "finding": "Clears per-frame membership and counts while retaining instance VB/IA allocations."
+          }
+        ]
+      },
+      {
+        "id": "instanced-buffer",
+        "path": "cocos/rendering/instanced-buffer.ts",
+        "sha256": "38b6713bb1d4541476ccc281947f7a4d34c751faa1af9a45e4ec64c824973306",
+        "locations": [
+          {
+            "symbol": "InstancedBuffer.destroy",
+            "lineStart": 77,
+            "lineEnd": 83,
+            "finding": "Destroys every item and resets the shared PassPool; the workaround must not call it."
+          },
+          {
+            "symbol": "InstancedBuffer.merge",
+            "lineStart": 110,
+            "lineEnd": 175,
+            "finding": "Uses source index-buffer identity and bindings to select cached items, resizes the dedicated instance VB, and updates descriptorSet on reuse."
+          },
+          {
+            "symbol": "InstancedBuffer.clear",
+            "lineStart": 187,
+            "lineEnd": 192,
+            "finding": "Resets item counts and pending state without destroying cached items."
+          }
+        ]
+      },
+      {
+        "id": "scene-culling",
+        "path": "cocos/rendering/custom/scene-culling.ts",
+        "sha256": "c2ea8df1daf373b6dffdf2bbf356501face85bfb9841dfc6cbb4eb21eab0a43b",
+        "locations": [
+          {
+            "symbol": "CullingPools.renderQueueRecycle",
+            "lineStart": 25,
+            "lineEnd": 25,
+            "finding": "RenderQueues are pooled and survive individual camera/fixture lifetimes."
+          },
+          {
+            "symbol": "SceneCulling.clear",
+            "lineStart": 313,
+            "lineEnd": 328,
+            "finding": "Resets pool usage and empties active renderQueues without discarding cached queue objects."
+          }
+        ]
+      },
+      {
+        "id": "recycle-pool",
+        "path": "cocos/core/memop/recycle-pool.ts",
+        "sha256": "c535843b914161ea6c7656a346077de2a9d2097bd91fc063bca2d576031a6997",
+        "locations": [
+          {
+            "symbol": "RecyclePool.data / reset",
+            "lineStart": 76,
+            "lineEnd": 86,
+            "finding": "The data getter exposes cached objects; reset resets the used count."
+          }
+        ]
+      },
+      {
+        "id": "particle-batch-model",
+        "path": "cocos/particle/models/particle-batch-model.ts",
+        "sha256": "a1241ae26812a6db996548429c201384d9ed31a1e5e0de3f3a5aed36e3eaf187",
+        "locations": [
+          {
+            "symbol": "ParticleBatchModel.createSubMeshDataInsDynamic",
+            "lineStart": 235,
+            "lineEnd": 249,
+            "finding": "Empties the shared _insBuffers array before destroySubMeshData, losing prior vertex-buffer references during a capacity rebuild."
+          },
+          {
+            "symbol": "ParticleBatchModel.createSubMeshDataInsStatic",
+            "lineStart": 254,
+            "lineEnd": 319,
+            "finding": "Allocates the static particle vertex/index buffers."
+          },
+          {
+            "symbol": "ParticleBatchModel.createInsSubmesh",
+            "lineStart": 322,
+            "lineEnd": 325,
+            "finding": "Passes the _insBuffers array directly to RenderingSubMesh."
+          },
+          {
+            "symbol": "ParticleBatchModel.rebuildIns / destroySubMeshData",
+            "lineStart": 618,
+            "lineEnd": 633,
+            "finding": "A rebuild creates replacement dynamic/static buffers and destroys the previous submesh."
+          }
+        ]
+      },
+      {
+        "id": "rendering-sub-mesh",
+        "path": "cocos/asset/assets/rendering-sub-mesh.ts",
+        "sha256": "a3f39fa7a08812defae96f88aec45311d44770a6cc3ed5a4ae9a0cf5cf815ce4",
+        "locations": [
+          {
+            "symbol": "RenderingSubMesh.constructor",
+            "lineStart": 144,
+            "lineEnd": 157,
+            "finding": "Retains the supplied vertexBuffers array by identity."
+          },
+          {
+            "symbol": "RenderingSubMesh.destroy",
+            "lineStart": 438,
+            "lineEnd": 454,
+            "finding": "Destroys only vertex buffers still present in that array, then the index buffer."
+          }
+        ]
+      },
+      {
+        "id": "particle-renderer-cpu",
+        "path": "cocos/particle/renderer/particle-system-renderer-cpu.ts",
+        "sha256": "b4ab4d0eb95a36a1b9b9b3ff476f1d9ec323ac10225ac81b79ff2f1243e7bdaf",
+        "locations": [
+          {
+            "symbol": "ParticleSystemRendererCPU.onDestroy",
+            "lineStart": 248,
+            "lineEnd": 251,
+            "finding": "Destroys the particle pool and model through the base implementation but does not destroy _defaultMat."
+          },
+          {
+            "symbol": "ParticleSystemRendererCPU.getDefaultMaterial",
+            "lineStart": 323,
+            "lineEnd": 325,
+            "finding": "Public accessor returns the processor-owned fallback material instance."
+          },
+          {
+            "symbol": "ParticleSystemRendererCPU.updateMaterialParams",
+            "lineStart": 678,
+            "lineEnd": 701,
+            "finding": "Creates the fallback MaterialInstance outside the component material-instance list when no shared material is supplied."
+          }
+        ]
+      },
+      {
+        "id": "particle-renderer-base",
+        "path": "cocos/particle/renderer/particle-system-renderer-base.ts",
+        "sha256": "5dcf548b38367e988e5573fdede8754fc2611fc8f26d2550983d58e09c2a8fec",
+        "locations": [
+          {
+            "symbol": "ParticleSystemRendererBase.onDestroy",
+            "lineStart": 85,
+            "lineEnd": 90,
+            "finding": "Destroys the model; does not destroy the CPU processor fallback material."
+          },
+          {
+            "symbol": "ParticleSystemRendererBase.getDefaultMaterial",
+            "lineStart": 140,
+            "lineEnd": 140,
+            "finding": "Abstract accessor is part of the installed processor API."
+          }
+        ]
+      },
+      {
+        "id": "particle-system",
+        "path": "cocos/particle/particle-system.ts",
+        "sha256": "4322a0ef5d6c373cfd34f99da32c8d4cbec9d4a049f3f2d444a9bb4d9677399f",
+        "locations": [
+          {
+            "symbol": "ParticleSystem.capacity",
+            "lineStart": 80,
+            "lineEnd": 94,
+            "finding": "Updating capacity after a model exists calls model.setCapacity."
+          },
+          {
+            "symbol": "ParticleSystem.processor",
+            "lineStart": 809,
+            "lineEnd": 812,
+            "finding": "Exposes the renderer processor."
+          },
+          {
+            "symbol": "ParticleSystem.onDestroy",
+            "lineStart": 1082,
+            "lineEnd": 1099,
+            "finding": "Calls processor destruction and particle-specific cleanup."
+          }
+        ]
+      },
+      {
+        "id": "creator-declarations",
+        "path": "bin/.declarations/cc.d.ts",
+        "sha256": "88fa33fe074ccd5471fb1bea6779a37d025dbf9570a195fc0d9f684a3608dcc9",
+        "locations": [
+          {
+            "symbol": "ParticleSystem.processor",
+            "lineStart": 46839,
+            "lineEnd": 46839,
+            "finding": "Installed declaration exposes ParticleSystem.processor."
+          },
+          {
+            "symbol": "ParticleSystemRendererBase.getDefaultMaterial",
+            "lineStart": 70518,
+            "lineEnd": 70518,
+            "finding": "Installed declaration exposes getDefaultMaterial(): Material | null."
+          }
+        ]
+      },
+      {
+        "id": "skeletal-animation-state",
+        "path": "cocos/3d/skeletal-animation/skeletal-animation-state.ts",
+        "sha256": "bb87520da6936195ac7c94c56d7180074270e0b699a3e6d180b6b4b2b85771b6",
+        "locations": [
+          {
+            "symbol": "SkeletalAnimationState.initialize",
+            "lineStart": 72,
+            "lineEnd": 83,
+            "finding": "Copies the initial baked mode into _doNotCreateEval before calling AnimationState.initialize; a state first initialized in baked mode has no curve evaluator."
+          },
+          {
+            "symbol": "SkeletalAnimationState.setUseBaked",
+            "lineStart": 101,
+            "lineEnd": 113,
+            "finding": "The first transition to realtime calls the base initialize after clearing _curveLoaded, but does not reset _doNotCreateEval; the base initializer therefore still skips the evaluator and _curvesInited is then marked true."
+          }
+        ]
+      },
+      {
+        "id": "animation-state",
+        "path": "cocos/animation/animation-state.ts",
+        "sha256": "0997d4d6b614aae6fa605a0e305a485bdcbaa0e06250ff45e2f5feb23b5dc237",
+        "locations": [
+          {
+            "symbol": "AnimationState._clipEval / _doNotCreateEval",
+            "lineStart": 303,
+            "lineEnd": 311,
+            "finding": "Declares the evaluator and its creation guard."
+          },
+          {
+            "symbol": "AnimationState.initialize",
+            "lineStart": 334,
+            "lineEnd": 379,
+            "finding": "Creates PoseOutput and the clip evaluator only when _doNotCreateEval is false. Reinitialization resets prior evaluator/output state before applying the guard."
+          }
+        ]
+      },
+      {
+        "id": "animation-component",
+        "path": "cocos/animation/animation-component.ts",
+        "sha256": "e8442e8c8c81f8dc6fbad2ab3c10885277a5a0517faf608b57b174b5720479b4",
+        "locations": [
+          {
+            "symbol": "Animation.createState",
+            "lineStart": 273,
+            "lineEnd": 288,
+            "finding": "Public creation stops/removes an existing state with the same name and creates its replacement."
+          },
+          {
+            "symbol": "Animation.addClip",
+            "lineStart": 307,
+            "lineEnd": 320,
+            "finding": "Public addClip deduplicates the same clip object in clips, then calls createState; reusing the already-owned clip does not duplicate the clip list."
+          },
+          {
+            "symbol": "Animation._doCreateState",
+            "lineStart": 438,
+            "lineEnd": 446,
+            "finding": "Initializes the newly created state against the component node before storing it by name."
+          }
+        ]
+      },
+      {
+        "id": "skeletal-animation",
+        "path": "cocos/3d/skeletal-animation/skeletal-animation.ts",
+        "sha256": "abc014114c244d1d3b3dbb25f8e8c8c7ec8830a0d1d3b705e8c886dcfc46ca4f",
+        "locations": [
+          {
+            "symbol": "SkeletalAnimation.useBakedAnimation",
+            "lineStart": 139,
+            "lineEnd": 147,
+            "finding": "The public mode setter applies the bake-flag change."
+          },
+          {
+            "symbol": "SkeletalAnimation._createState",
+            "lineStart": 315,
+            "lineEnd": 316,
+            "finding": "Creates a fresh SkeletalAnimationState, whose initialization reads the current component mode."
+          },
+          {
+            "symbol": "SkeletalAnimation._applyBakeFlagChange",
+            "lineStart": 356,
+            "lineEnd": 375,
+            "finding": "Applies setUseBaked to existing states and changes the renderer model mode; changing the model alone does not prove curve evaluation advances."
+          }
+        ]
+      },
+      {
+        "id": "skeletal-animation-utils",
+        "path": "cocos/3d/skeletal-animation/skeletal-animation-utils.ts",
+        "sha256": "b187c1663fc31be0c33cc91b8da539e47eee78dba2a1b218affa5727fc8ec0f8",
+        "locations": [
+          {
+            "symbol": "roundUpTextureSize",
+            "lineStart": 94,
+            "lineEnd": 96,
+            "finding": "Normal joint texture allocation rounds texture width to a multiple of 12."
+          },
+          {
+            "symbol": "JointTexturePool constructor",
+            "lineStart": 163,
+            "lineEnd": 171,
+            "finding": "Selects texture format and 48-byte joint-record size; initializes both pools with the rounding callback."
+          },
+          {
+            "symbol": "JointTexturePool.registerCustomTextureLayouts",
+            "lineStart": 179,
+            "lineEnd": 195,
+            "finding": "Doubles custom textureLength for RGBA8 when RGBA32F sampling is absent, then calls createChunk directly; custom layouts bypass the normal size-rounding allocation path."
+          },
+          {
+            "symbol": "selectJointsMediumFormat",
+            "lineStart": 43,
+            "lineEnd": 48,
+            "finding": "Chooses RGBA32F only from SAMPLED_TEXTURE; otherwise chooses RGBA8. This differs from the pipeline macro condition, exposing incoherent fault-injected capabilities."
+          }
+        ]
+      },
+      {
+        "id": "texture-buffer-pool",
+        "path": "cocos/render-scene/core/texture-buffer-pool.ts",
+        "sha256": "11bd2ae1d95325e522a37837ae8a9945cf22fe1b979c00414ab70b95d5ff1b4e",
+        "locations": [
+          {
+            "symbol": "TextureBufferPool.alloc new-chunk path",
+            "lineStart": 135,
+            "lineEnd": 138,
+            "finding": "Normal allocation applies the configured roundUpFn before creating a chunk."
+          },
+          {
+            "symbol": "TextureBufferPool.createChunk",
+            "lineStart": 161,
+            "lineEnd": 181,
+            "finding": "Creates the texture using the exact supplied length for width and height; it does not apply roundUpFn."
+          }
+        ]
+      },
+      {
+        "id": "skinning-animation-lbs-shader",
+        "path": "editor/assets/chunks/builtin/functionalities/skinning-animation-lbs.chunk",
+        "sha256": "c84ab5f88c601a1a69ddcfaecb25f1707403ba549b9a1b7b8d609332a853ddc8",
+        "locations": [
+          {
+            "symbol": "getJointMatrix baked float branch",
+            "lineStart": 5,
+            "lineEnd": 13,
+            "finding": "Uses one computed row y while reading three adjacent RGBA32F texels for one joint."
+          },
+          {
+            "symbol": "getJointMatrix baked RGBA8 branch",
+            "lineStart": 15,
+            "lineEnd": 37,
+            "finding": "Uses one computed row y while decoding twelve adjacent RGBA8 texels for one joint; it does not advance rows when x crosses the width."
+          }
+        ]
+      },
+      {
+        "id": "skinning-texture-coordinates-shader",
+        "path": "editor/assets/chunks/builtin/uniforms/cc-skinning.chunk",
+        "sha256": "b1429c387d5c556ea6af3cba2707fb745a6efd82273645746d9688bb97ede49f",
+        "locations": [
+          {
+            "symbol": "CCGetJointTextureCoords",
+            "lineStart": 21,
+            "lineEnd": 31,
+            "finding": "Computes x and y once from the joint start pixel; subsequent LBS reads share that y."
+          }
+        ]
+      },
+      {
+        "id": "joint-texture-sampler",
+        "path": "cocos/3d/misc/joint-texture-sampler-info.ts",
+        "sha256": "231e7bad273af62d84e0de51fa239b26ce3d60c310b0a76f10bbc3fdab1fbd44",
+        "locations": [
+          {
+            "symbol": "jointTextureSamplerInfo",
+            "lineStart": 27,
+            "lineEnd": 34,
+            "finding": "Joint textures use POINT min/mag, no mip and CLAMP addresses, so out-of-row x reads repeat the current row edge rather than continuing in the next row."
+          }
+        ]
+      },
+      {
+        "id": "web-pipeline-constant-macros",
+        "path": "cocos/rendering/custom/web-pipeline.ts",
+        "sha256": "e25ba3bf281f3e9cd4c20efdd9b18f5c9061df409a840301412b2cfd786e5331",
+        "locations": [
+          {
+            "symbol": "WebPipeline._generateConstantMacros",
+            "lineStart": 1244,
+            "lineEnd": 1247,
+            "finding": "Sets CC_DEVICE_SUPPORT_FLOAT_TEXTURE when RGBA32F has either RENDER_TARGET or SAMPLED_TEXTURE; a render-target-only bit still enables the float shader branch."
+          }
+        ]
+      },
+      {
+        "id": "webgl-device-float-features",
+        "path": "cocos/gfx/webgl/webgl-device.ts",
+        "sha256": "54447aaf52d20dbf99ecc9a85368b6a36131d3ad940db5fa56e6c6d8e457e9c5",
+        "locations": [
+          {
+            "symbol": "WebGLDevice format feature initialization",
+            "lineStart": 342,
+            "lineEnd": 346,
+            "finding": "The float formats initially retain the VERTEX_ATTRIBUTE feature bit."
+          },
+          {
+            "symbol": "WEBGL_color_buffer_float capability mapping",
+            "lineStart": 360,
+            "lineEnd": 364,
+            "finding": "This independent queried extension adds the RGBA32F RENDER_TARGET bit."
+          },
+          {
+            "symbol": "OES_texture_float / OES_texture_float_linear mapping",
+            "lineStart": 374,
+            "lineEnd": 387,
+            "finding": "OES_texture_float adds RENDER_TARGET and SAMPLED_TEXTURE; the linear extension separately adds LINEAR_FILTER."
+          }
+        ]
+      },
+      {
+        "id": "format-feature-bits",
+        "path": "cocos/gfx/base/define.ts",
+        "sha256": "15ffd6c561a6fc1e62bb0942dd345688215c955f1bdb1ac2f9f58a62bd6d0062",
+        "locations": [
+          {
+            "symbol": "FormatFeatureBit",
+            "lineStart": 425,
+            "lineEnd": 433,
+            "finding": "RENDER_TARGET=1, SAMPLED_TEXTURE=2, LINEAR_FILTER=4, VERTEX_ATTRIBUTE=16; observed17 is render-target plus vertex-attribute, without sampled-texture support."
+          }
+        ]
+      },
+      {
+        "id": "layout-graph-constant-macros",
+        "path": "cocos/rendering/custom/layout-graph-utils.ts",
+        "sha256": "4d65cf929e796b1f8440fbac3b1b6d7f5686279f99daa0207fa334f2660503ac",
+        "locations": [
+          {
+            "symbol": "generateConstantMacros",
+            "lineStart": 591,
+            "lineEnd": 595,
+            "finding": "Uses the same RENDER_TARGET-or-SAMPLED_TEXTURE condition for the float capability macro."
+          }
+        ]
+      }
+    ]
+  },
+  "localEvidenceRoot": "/Users/kimi/.codex/worktrees/stage3d-sc0/kitVersion",
+  "bufferLeak": {
+    "status": "reproduced-and-attributed-before-workarounds",
+    "fixture": {
+      "cubeInstances": 500,
+      "bakedBipedInstances": 100,
+      "particleCapacityAfterActivation": 50,
+      "particleInitialCapacityBeforeFix": 100
+    },
+    "perClosedCycleBytes": 47616,
+    "components": [
+      {
+        "id": "custom-pipeline-instance-cache",
+        "perCycleBytes": 43008,
+        "allocations": [
+          {
+            "kind": "cube-instance-vb",
+            "bytes": 32768,
+            "strideBytes": 64,
+            "capacity": 512
+          },
+          {
+            "kind": "biped-instance-vb",
+            "bytes": 10240,
+            "strideBytes": 80,
+            "capacity": 128
+          }
+        ],
+        "evidence": "Queue snapshots retain live dedicated VB/IA after count becomes zero; the referenced source mesh VB/indexBuffer are already destroyed.",
+        "engineSourceIds": [
+          "render-instancing-queue",
+          "instanced-buffer",
+          "scene-culling",
+          "recycle-pool"
+        ],
+        "workaroundId": "retire-exact-owned-instancing"
+      },
+      {
+        "id": "particle-capacity-rebuild",
+        "perCycleBytes": 4448,
+        "allocations": [
+          {
+            "kind": "initial-dynamic-particle-vb",
+            "bytes": 4400,
+            "strideBytes": 44,
+            "capacity": 100
+          },
+          {
+            "kind": "initial-static-particle-vb",
+            "bytes": 48
+          }
+        ],
+        "evidence": "Allocation stacks resolve to ParticleBatchModel.createSubMeshDataInsDynamic/createSubMeshDataInsStatic during onLoad; both survive after the capacity-50 replacement and final close.",
+        "engineSourceIds": [
+          "particle-batch-model",
+          "rendering-sub-mesh",
+          "particle-system"
+        ],
+        "workaroundId": "configure-particle-before-activation"
+      },
+      {
+        "id": "particle-default-material",
+        "perCycleBytes": 160,
+        "allocations": [
+          {
+            "kind": "default-material-pass-ubo",
+            "bytes": 80,
+            "count": 2
+          }
+        ],
+        "evidence": "Two surviving PassInstance._buildMaterialUniformBlocks allocations originate from ParticleSystemRendererCPU.updateMaterialParams creating one fallback MaterialInstance.",
+        "engineSourceIds": [
+          "particle-renderer-cpu",
+          "particle-renderer-base",
+          "particle-system",
+          "creator-declarations"
+        ],
+        "workaroundId": "retain-and-destroy-particle-default-material"
+      }
+    ],
+    "unattributedBytesPerCycle": 0,
+    "allocationTrace": {
+      "evidence": {
+        "path": ".cache/stage3d/buffer-lifetime-trace.json",
+        "sha256": "d983e075f124720e897b69f89a78e3b1dd86471a250f0a5085834225339f5590",
+        "bytes": 10061245,
+        "storage": "local-only"
+      },
+      "runner": {
+        "path": ".cache/stage3d/trace-buffer-lifetimes.mjs",
+        "sha256": "8d36b05d181f703d76d519b6a474a8ef2d5513434dd42b08f6ce33c59e4b0968",
+        "bytes": 3820,
+        "storage": "local-only"
+      },
+      "consoleLog": {
+        "path": ".cache/stage3d/buffer-lifetime-trace.log",
+        "sha256": "9f3e11b7c8445bb441af954c3a22a1f29781ba7cfa33bb1dd0b1e00fab721c91",
+        "bytes": 3357,
+        "storage": "local-only"
+      },
+      "performedBy": "main integrator on its existing owned fixture tab; subagent prepared script and analyzed the output",
+      "tabId": "F38CE8B62C2EE1281AA8899E915E1833",
+      "openCloseCycles": 2,
+      "framesAfterEachOpen": 120,
+      "framesAfterEachClose": 60,
+      "instrumentation": "Temporarily wrap device.createBuffer and each returned buffer.destroy, preserve allocation/destruction behavior, record object IDs/size/stacks, and restore original own property descriptors or inherited methods in finally.",
+      "instrumentationCreateBufferRestored": true,
+      "instrumentationFailure": null,
+      "allocationCount": 3620,
+      "survivingNativeAllocationCount": 12,
+      "survivingNativeBytes": 95232,
+      "closedBufferBytes": [
+        209788,
+        257404,
+        305020
+      ],
+      "closedTextureBytes": [
+        41552480,
+        41552480,
+        41552480
+      ],
+      "perCycleSurvivors": [
+        {
+          "phase": "open-1",
+          "count": 6,
+          "bytes": 47616,
+          "bufferIds": [
+            82441,
+            82445,
+            82448,
+            82449,
+            82476,
+            82478
+          ]
+        },
+        {
+          "phase": "open-2",
+          "count": 6,
+          "bytes": 47616,
+          "bufferIds": [
+            86339,
+            86343,
+            86346,
+            86347,
+            86374,
+            86376
+          ]
+        }
+      ]
+    },
+    "supportingEvidence": [
+      {
+        "path": ".cache/stage3d/instanced-leak-three-cycles.json",
+        "sha256": "c5769e8a3758b4f6a145b92aaf22e2d62949e1475614eb4a88a21506e336769d",
+        "bytes": 193150,
+        "storage": "local-only"
+      },
+      {
+        "path": ".cache/stage3d/instanced-buffer-snapshot.js",
+        "sha256": "8bd25c307af435f2f3d3cdaeba76d35b6e56c92dd73af8ae21a8526126296501",
+        "bytes": 5415,
+        "storage": "local-only"
+      }
+    ]
+  },
+  "workarounds": [
+    {
+      "id": "retire-exact-owned-instancing",
+      "status": "implemented-final-selected-desktop-regressions-passed",
+      "implementation": "apps/client/src/view/scene3d/spikeOwnedInstancing.ts",
+      "entryPoint": "captureSpikeOwnedInstancing",
+      "integration": "apps/client/src/view/Stage3dFixtureView.ts",
+      "integrationPoints": [
+        "onCloseLifecycle",
+        "createSpikeRealtimeSwitcher beforeModelSwap callback",
+        "afterInstancingRetired"
+      ],
+      "behavior": "Capture descriptorSet identities before model destruction/replacement. After draw, distinguish current renderQueues[0..numRenderQueues) from cached-only queues: only a current active item with nonzero count delays release; cached counts may be stale. Recheck exact current descriptorSet ownership and destroy only owned dedicated instance VB/IA, never source mesh buffers or global pools. Retain materials/assets until no owned active item remains.",
+      "privateEngineBinding": true,
+      "versionBoundTo": "3.8.8 WebPipeline and the engine source hashes above",
+      "foreignOwnerReuseProtected": true,
+      "activeItemsPreserved": true,
+      "sourceMeshBuffersPreserved": true,
+      "wholeInstancedBufferDestroyCalled": false,
+      "globalPoolResetOrClearCalledByWorkaround": false,
+      "engineOrVendorSourceModified": false,
+      "automatedVerification": {
+        "test": "apps/client/test/stage3d-owned-instancing.test.ts",
+        "passed": 8,
+        "failed": 0,
+        "covers": [
+          "active and cached transparent queues",
+          "exact identity recheck after foreign-owner reuse",
+          "busy-item retry",
+          "model replacement",
+          "20 independent owner lifetimes without shared-pool clearing",
+          "unsupported-pipeline guard",
+          "cached-only queue retains stale nonzero count after camera removal",
+          "renderQueues capacity tail is not currently active"
+        ],
+        "clientStrictTypecheck": "passed",
+        "clientLegacyTypecheck": "passed",
+        "scope": "Node fakes and static typing; does not establish real GFX recovery."
+      },
+      "realVerificationEvidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "configure-particle-before-activation",
+      "status": "implemented-final-selected-desktop-regressions-passed",
+      "implementation": "apps/client/src/view/Stage3dFixtureView.ts",
+      "behavior": "Create an inactive particle node, add/configure ParticleSystem capacity=50 before onLoad, then parent and activate it. Avoid the observed runtime capacity rebuild that discards old VB references.",
+      "engineOrVendorSourceModified": false,
+      "realVerificationEvidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "retain-and-destroy-particle-default-material",
+      "status": "implemented-final-selected-desktop-regressions-passed",
+      "implementation": "apps/client/src/view/Stage3dFixtureView.ts",
+      "behavior": "Read processor.getDefaultMaterial after activation, retain that owner-specific fallback MaterialInstance in the fixture materials map, and destroy it after old render references retire.",
+      "publicEngineAccessor": "ParticleSystem.processor.getDefaultMaterial()",
+      "engineSourceIds": [
+        "particle-renderer-cpu",
+        "creator-declarations"
+      ],
+      "engineOrVendorSourceModified": false,
+      "realVerificationEvidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "recreate-existing-main-state-on-first-realtime-entry",
+      "status": "implemented-final-selected-desktop-regressions-passed",
+      "implementation": "apps/client/src/view/scene3d/spikeSkinning.ts",
+      "entryPoint": "createSpikeRealtimeSwitcher",
+      "engineSourceIds": [
+        "skeletal-animation-state",
+        "animation-state",
+        "animation-component",
+        "skeletal-animation"
+      ],
+      "behavior": "Find the main clip already owned by animation.clips by name and hash. On first realtime entry, install non-instanced materials, set useBakedAnimation=false, then invoke public addClip(existingMainClip) once to replace the evaluator-free baked state. Reuse that state on subsequent switches; restore baked mode before shared baked materials on return.",
+      "publicEngineApis": [
+        "SkeletalAnimation.useBakedAnimation",
+        "Animation.addClip"
+      ],
+      "privateStateWritten": false,
+      "engineOrVendorSourceModified": false,
+      "sourcePrefabOrClipMutated": false,
+      "duplicateClipAdded": false,
+      "stateRecreatedEverySwitch": false,
+      "automatedVerification": {
+        "tests": [
+          "apps/client/test/stage3d-spike-skinning.test.ts",
+          "apps/client/test/stage3d-fixture-lifecycle.test.ts"
+        ],
+        "passed": 13,
+        "failed": 0,
+        "clientStrictTypecheck": "passed",
+        "clientLegacyTypecheck": "passed",
+        "provenance": "Main integrator reported the current targeted tests and both client typechecks green; this documentation-only task did not rerun them.",
+        "covers": [
+          "State replacement observes realtime mode",
+          "Existing clip identity and list preserved",
+          "Only one replacement over 20 transitions",
+          "Non-instanced material assignment precedes model replacement",
+          "Baked restoration precedes shared-material restoration"
+        ],
+        "scope": "Node fakes and static typing only; subsequent real WebGL2/WebGL1 evidence is recorded separately in postWorkaroundBrowserRegression."
+      },
+      "realVerificationEvidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "align-custom-joint-texture-rows",
+      "status": "implemented-final-selected-desktop-regressions-passed",
+      "implementation": "apps/client/src/view/scene3d/spikeSkinning.ts",
+      "entryPoint": "prepareSpikeSkinningLayouts",
+      "behavior": "Use custom textureLength72 so the real float width72 and Creator-doubled RGBA8 width144 keep complete joint records in one shader row.",
+      "engineSourceIds": [
+        "skeletal-animation-utils",
+        "texture-buffer-pool",
+        "skinning-animation-lbs-shader",
+        "skinning-texture-coordinates-shader",
+        "joint-texture-sampler"
+      ],
+      "engineOrVendorSourceModified": false,
+      "globalPoolResetOrClearCalledByWorkaround": false,
+      "evidenceKey": "customJointTextureRowAlignment",
+      "realVerificationEvidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "coherent-rgba8-extension-mask",
+      "status": "implemented-final-selected-desktop-regressions-passed",
+      "implementation": "tools/creator-preview/probe-stage3d-rgba8.mjs",
+      "behavior": "Mask dependent float color-buffer extensions before engine boot with float sampling extensions; require both feature bits absent and macro0, prove alignedRGBA8, restore owned-page hooks.",
+      "realVerificationEvidenceKey": "finalAlignedCoherentRevalidation",
+      "engineOrVendorSourceModified": false,
+      "shaderOrFormatTableModified": false
+    }
+  ],
+  "samplingMutation": {
+    "status": "passed-mutation-detection-and-exact-restoration",
+    "source": "tools/creator-preview/stage3d-sampling.mjs",
+    "sourceLineAtRun": 77,
+    "mutation": "Replace the measured interval between adjacent performance.now timestamps from real AFTER_DRAW callbacks with root.frameTime * 1000; preserve all other source bytes.",
+    "command": [
+      "node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-reporter=tap",
+      "--test-name-pattern",
+      "measured intervals|1\\.2s long frame|explicit stop|aggregation rejects|percentile summary|numeric summary preserves",
+      "apps/server/test/stage3d-probe.test.ts"
+    ],
+    "startedAt": "2026-09-21T21:45:23.716363+00:00",
+    "finishedAt": "2026-09-21T21:45:24.178074+00:00",
+    "original": {
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "exitCode": 0,
+      "sourceSha256": "83fa6ef27e35a705fda73625ae3da5c58bc2816dca4c73cfcd217fd1e793d739",
+      "evidence": {
+        "path": ".cache/stage3d/sampling-mutation-original.log",
+        "sha256": "25335f2e4d3210d94e541703fb0904fc766620f326067d9bc4e25b6cede6f973",
+        "bytes": 2015,
+        "storage": "local-only"
+      }
+    },
+    "mutated": {
+      "tests": 6,
+      "passed": 3,
+      "failed": 3,
+      "exitCode": 1,
+      "sourceSha256": "8f7f97eeee760dafd33b9879ebcdeee134908faee9ab4d2f1d4d926355b4979a",
+      "evidence": {
+        "path": ".cache/stage3d/sampling-mutation-mutated.log",
+        "sha256": "2f991a55452b5c241c2527fb537a4af6257c0c0bc123d86eb553891eb885f3c6",
+        "bytes": 3927,
+        "storage": "local-only"
+      }
+    },
+    "restored": {
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "exitCode": 0,
+      "sourceSha256": "83fa6ef27e35a705fda73625ae3da5c58bc2816dca4c73cfcd217fd1e793d739",
+      "evidence": {
+        "path": ".cache/stage3d/sampling-mutation-restored.log",
+        "sha256": "0da00faf73fb25741c3a9828a63dbf445d889a7755683582abad70d03ce3bfbf",
+        "bytes": 2013,
+        "storage": "local-only"
+      }
+    },
+    "failingAssertions": [
+      {
+        "test": "stage3d keeps a 1.2s long frame, independent sequence across frameCount reset, and frame-end counters",
+        "lineAtRun": 102,
+        "observed": "The interval/sequence aggregation verdict becomes invalid."
+      },
+      {
+        "test": "stage3d explicit stop is idempotent and releases partial samples",
+        "lineAtRun": 148,
+        "expectedIntervalMs": 30,
+        "actualIntervalMs": 16
+      },
+      {
+        "test": "stage3d numeric summary preserves evidence, frame intervals and actual groups without raw DOM/full instance snapshots",
+        "lineAtRun": 539,
+        "expectedIntervalsMs": [
+          20,
+          1200
+        ],
+        "actualIntervalsMs": []
+      }
+    ],
+    "restoredByteEqual": true,
+    "hashEvidence": {
+      "path": ".cache/stage3d/sampling-mutation-hashes.log",
+      "sha256": "ea6a4033e66f6738c46ca065e1fa52ac19addc452a2c620d7c281e7213d4d657",
+      "bytes": 1357,
+      "storage": "local-only"
+    },
+    "interpretation": "All six selected tests pass before/after restoration; three fail under the dt mutation, including the 1200 ms long-frame preservation case. This validates the sampling guard, not platform performance budgets."
+  },
+  "pendingAcceptance": [
+    {
+      "id": "real-20-cycle-post-workaround",
+      "status": "passed-selected-desktop-contexts",
+      "requiredCycles": 20,
+      "requiredWarmupFrames": 60,
+      "requiredMeasuredFrames": 240,
+      "postWorkaroundResult": {
+        "contexts": 3,
+        "cyclesPerContext": 20,
+        "allClosedStatesEqualWarmedBaseline": true,
+        "bufferGrowthBytes": 0,
+        "textureGrowthBytes": 0,
+        "baseline": {
+          "sceneNodes": 13,
+          "fixtureNodes": 0,
+          "businessRefs": 0,
+          "bufferBytes": 69500,
+          "textureBytes": 41587296
+        }
+      },
+      "owner": "main integrator",
+      "requirement": "Run the full real fixture regression after integration; node/business-reference counts must return to the warmed baseline and GFX allocations must not keep growing.",
+      "accepted": true,
+      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "evidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "webgl1-float-path",
+      "status": "passed-selected-desktop-contexts",
+      "accepted": true,
+      "requirement": "Record actual device float-extension support, sampled texture capability, actual joint texture format, cross-animation grouping and complete input/resource/performance evidence.",
+      "selectedBrowserEvidenceKey": "finalAlignedCoherentRevalidation.fullRuns[1]",
+      "selectedBrowserExecutedAssertionsPassed": true,
+      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "evidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "webgl1-rgba8-path",
+      "status": "passed-coherent-desktop-fault-injection",
+      "accepted": true,
+      "requirement": "Prove actual RGBA8 joint textures and degraded-path rendering on the real selected device/runtime. A browser disable-extension flag alone is not evidence.",
+      "acceptanceScope": "Artificial coherentRGBA8 on native-float desktop only; naturally limited/WeChat hardware not proven.",
+      "evidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "verify-all-after-integration",
+      "status": "passed",
+      "owner": "main integrator",
+      "evidence": {
+        "command": "TMPDIR=/Volumes/KimData/.codex-stage3d-tests npm run verify:all",
+        "status": "passed",
+        "exitCode": 0,
+        "candidate": "B3 plus already committed prerequisites only; later batch sources hidden",
+        "recordedAt": "2026-09-22T00:05:44.979620+00:00",
+        "evidence": {
+          "file": ".cache/stage3d/verify-all-sc0-b3.log",
+          "bytes": 420949,
+          "sha256": "14fab57bf373933bdd881adec4fb4c79dc2b55c0e75adc6b044cf1dcaba0c7b1",
+          "storage": "local-only"
+        }
+      }
+    },
+    {
+      "id": "sc1-formal-handoff",
+      "status": "not-implemented",
+      "requirement": "Reassess the version-bound SC0 workaround for a formal owner/resource lifecycle only after SC0 exits; no SC1 pool or Stage3D API is implemented here."
+    },
+    {
+      "id": "real-realtime-state-reinitialization",
+      "status": "passed-selected-desktop-contexts",
+      "accepted": true,
+      "postWorkaroundResult": {
+        "matricesAndTimeAdvance": true,
+        "bakedRestorationPassed": true,
+        "mainIntegratorVisualReview": "passed30phaseTargets"
+      },
+      "owner": "main integrator",
+      "requirement": "Prove advancing actual bone matrices and playback time on the same realtime instance, unchanged 99 baked siblings, return to baked sharing, visual correctness and subsequent warmed lifecycle recovery. Preserve independent WebGL1 float/RGBA8 and WeChat gates.",
+      "runLabels": [
+        "stage3d-fixture-webgl2-aligned",
+        "stage3d-fixture-webgl1-aligned",
+        "stage3d-fixture-rgba8-coherent"
+      ],
+      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "evidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "real-row-aligned-custom-joint-layouts",
+      "status": "passed-selected-desktop-contexts",
+      "accepted": true,
+      "postWorkaroundResult": {
+        "floatWidth": 72,
+        "rgba8Width": 144,
+        "contexts": 3,
+        "visualReview": "passed",
+        "stepsPerContext": 18,
+        "cyclesPerContext": 20
+      },
+      "owner": "main integrator",
+      "requirement": "Fresh-pool native WebGL2 float, native WebGL1 float and explicitly injected RGBA8 runs must verify actual72/144 widths, multi-clip/cross-atlas animation visually and numerically, realtime restoration, warmed20cycles and real frame sampling. Earlier64/128 results cannot close this gate.",
+      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "evidenceKey": "finalAlignedCoherentRevalidation"
+    },
+    {
+      "id": "rgba8-coherent-fault-capabilities-and-shader",
+      "status": "passed-selected-desktop-contexts",
+      "accepted": true,
+      "postWorkaroundResult": {
+        "rgba32fFeatures": 16,
+        "sampled": false,
+        "renderTarget": false,
+        "pipelineMacro": 0,
+        "compiledShaderMacro": 0,
+        "actualFormat": 35,
+        "actualWidth": 144,
+        "visualReview": "passed",
+        "hookRestored": true,
+        "ownedPageClosed": true
+      },
+      "owner": "main integrator",
+      "requirement": "Fresh context with dependent float extensions masked must report RGBA32F sampled=false and renderTarget=false, macro0 and actual alignedRGBA8 texture. Require close-up visual animation, fallback restoration and full resource/performance replay; no vendor/shader/format-table patch.",
+      "acceptanceScope": "Fixed SC0 desktop fixture only; independent WeChat/platform/full-verification gates remain.",
+      "evidenceKey": "finalAlignedCoherentRevalidation"
+    }
+  ],
+  "realtimeSkinningInitialization": {
+    "id": "baked-state-first-realtime-transition-skips-evaluator",
+    "status": "fixed-final-three-context-realtime-and-visual-checks-passed",
+    "scope": "Only the SC0 fixed CrossAtlas instance and its existing ANIM_Greybox_Sway_Main clip. No general SC4 runtime fallback API or platform acceptance is established.",
+    "preFixEvidence": {
+      "fixtureReport": {
+        "path": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-05/report.json",
+        "sha256": "232f586c40ff39a9ed95e8084b8fb1ba4343aaf4c5c6082c7cf0e92d816ac08f",
+        "bytes": 3881729,
+        "availability": "local-only raw evidence; not copied into this numeric summary"
+      },
+      "startedAt": "2026-09-21T22:46:40.627Z",
+      "finishedAt": "2026-09-21T22:46:59.281Z",
+      "executedOk": false,
+      "ok": false,
+      "exitCode": 1,
+      "sc0Exit": false,
+      "error": "Realtime skinning: both playing time and actual joint matrices must advance on the same instance",
+      "target": "Stage3dSpike.CrossAtlas",
+      "targetId": 502,
+      "targetUuid": "Node.1931",
+      "clip": {
+        "name": "ANIM_Greybox_Sway_Main",
+        "hash": 1388145058
+      },
+      "phaseNames": [
+        "realtime",
+        "realtime-later"
+      ],
+      "playingTimeSeconds": [
+        0.35000000000000003,
+        0.7835
+      ],
+      "modelId": 513,
+      "modelType": "SkinningModel",
+      "modelTypeId": 1,
+      "sameNodeAndModel": true,
+      "useBakedAnimation": false,
+      "bakedSiblingCount": 99,
+      "jointCount": 2,
+      "jointMatricesUnchanged": true,
+      "bothJointMatricesIdentity": true,
+      "identity3x4": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "skinningBufferId": 514,
+      "skinningBufferBytes": 12288,
+      "boundAndExpectedSkinningBufferMatch": true,
+      "passBatchingSchemes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "directDrawPassIndices": [
+        0
+      ],
+      "interpretation": "The model, non-instanced Pass and skinning UBO were active while playback time advanced, but actual bone matrices did not move. The report observation text is a probe description, not a successful changing-matrix assertion."
+    },
+    "localBoneDiagnostic": {
+      "raw": {
+        "path": ".cache/stage3d/realtime-bones-diagnostic.json",
+        "sha256": "e20d1bd82b5668240d758e5bcdd326c770ff3f5f71022d5aa19e30b6177bed3b",
+        "bytes": 8083,
+        "availability": "local-only raw evidence; not copied into this numeric summary"
+      },
+      "tabId": "02B8AEEAB908D0B9D2232EB9A17D21ED",
+      "target": "Stage3dSpike.CrossAtlas",
+      "playingTimeSeconds": [
+        0.03230000007152557,
+        0.24860000002384186
+      ],
+      "useBakedAnimation": [
+        false,
+        false
+      ],
+      "skeletonPaths": [
+        "GreyboxBiped/Root",
+        "GreyboxBiped/Root/Upper"
+      ],
+      "jointMaps": [
+        [
+          0,
+          1
+        ]
+      ],
+      "bufferIndices": [
+        0
+      ],
+      "sampledJointDataFloatCount": 48,
+      "activeJointMatrixFloatCount": 24,
+      "jointDataUnchanged": true,
+      "activeJointMatricesIdentity": true,
+      "boneTransformsUnchanged": true,
+      "scope": "Read-only diagnostic confirms static transforms/data despite time progression. It records state field names, not the _doNotCreateEval value or evaluator object; the initialization cause below is established by installed-source inspection."
+    },
+    "sourceCause": {
+      "engineSourceIds": [
+        "skeletal-animation-state",
+        "animation-state",
+        "animation-component",
+        "skeletal-animation"
+      ],
+      "sequence": [
+        "An existing SkeletalAnimationState first initialized with useBakedAnimation=true sets _doNotCreateEval=true and skips createEvaluator.",
+        "The first setUseBaked(false) clears _curveLoaded and invokes AnimationState.initialize without clearing _doNotCreateEval, then marks _curvesInited=true.",
+        "The base initializer therefore skips createEvaluator again. The playback clock and renderer mode can change while the skeleton remains in its unchanged pose.",
+        "After the component enters realtime mode, public addClip on its existing main clip replaces the state; fresh SkeletalAnimationState.initialize reads baked=false and creates the evaluator."
+      ],
+      "engineOrVendorSourceModified": false
+    },
+    "postFixRealAcceptance": {
+      "status": "passed-selected-desktop-contexts",
+      "accepted": true,
+      "runLabels": [
+        "stage3d-fixture-webgl2-aligned",
+        "stage3d-fixture-webgl1-aligned",
+        "stage3d-fixture-rgba8-coherent"
+      ],
+      "evidenceKey": "finalAlignedCoherentRevalidation",
+      "result": {
+        "sameInstanceMatricesAndTimeAdvance": true,
+        "bakedSiblingsUnchanged": 99,
+        "originalBakedBindingsRestored": true,
+        "warmedCloseCyclesPerContext": 20,
+        "bufferGrowthBytes": 0,
+        "textureGrowthBytes": 0
+      },
+      "owner": "main integrator",
+      "note": "Final3 context matrix/time/restoration and main-integrator30-image visual review passed; fullverify/SC0/WeChat gates remain separate.",
+      "acceptanceScope": "Fixed desktop fixture only; no stage/platform exit."
+    }
+  },
+  "postWorkaroundBrowserRegression": {
+    "status": "historical-pre-final-reports-superseded-by-aligned-coherent-revalidation",
+    "stageComplete": false,
+    "sc0Exit": false,
+    "compiledPreflight": {
+      "raw": {
+        "path": ".cache/stage3d/realtime-compiled-preflight.json",
+        "sha256": "73072f095598076e5814cf81ec00d42e7809ad5749e6aa3e00b49cdb7a5a55a4",
+        "bytes": 617,
+        "availability": "local-only raw evidence"
+      },
+      "observedAt": "2026-09-21T22:56:36.686Z",
+      "compiledUrl": "http://127.0.0.1:7457/scripting/x/chunks/25/25676de2aad0e7859806147f05990adb9336d8dd.js",
+      "compiledSha256": "b368ec5b2d150af8d8b0e01fe8da515048be58bfb3bd10065fbac39ce6e6ce70",
+      "publicAddClipPresent": true,
+      "sources": [
+        {
+          "path": "apps/client/src/view/scene3d/spikeSkinning.ts",
+          "sha256": "2f55e8954667287485df6a602b3961515557d1c21007c077f8488c9becd1dbca"
+        },
+        {
+          "path": "apps/Cocos/assets/src/view/scene3d/spikeSkinning.ts",
+          "sha256": "2f55e8954667287485df6a602b3961515557d1c21007c077f8488c9becd1dbca"
+        }
+      ],
+      "creatorRestartPid": 3718,
+      "creatorRestartPidSource": "main integrator observation"
+    },
+    "supersededRun": {
+      "runLabel": "stage3d-fixture-webgl2-06",
+      "raw": {
+        "path": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-06/report.json",
+        "sha256": "5034383ed4bd16f979896ec2a947217c635102a1da758ac4ee8a594fc6e64973",
+        "bytes": 3880356,
+        "availability": "local-only raw evidence"
+      },
+      "classification": "stale-compiled-script",
+      "classificationSource": "Main integrator diagnosed the pre-restart preview as serving the old compiled function; -06 is not a failure of the addClip workaround. The subsequent preflight establishes the repaired compiled function before -07.",
+      "treatedAsPostFixFailure": false
+    },
+    "reports": [
+      {
+        "runLabel": "stage3d-fixture-webgl2-07",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-07/report.json",
+          "sha256": "8266c75d1796ec9f826500d64635b75c2c3fff738580d3f619e9298dda319eee",
+          "bytes": 31184835,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T22:56:36.759Z",
+        "finishedAt": "2026-09-21T22:57:27.723Z",
+        "executedOk": true,
+        "ok": false,
+        "exitCode": 2,
+        "sc0Exit": false,
+        "pending": [
+          {
+            "name": "snake-carrier",
+            "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+          },
+          {
+            "name": "visual-and-skinning-review",
+            "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+          },
+          {
+            "name": "other-sc0-gates",
+            "reason": "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates."
+          }
+        ],
+        "environment": {
+          "webgl": 2,
+          "device": "WebGL2Device",
+          "pipeline": "WebPipeline",
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
+        },
+        "jointTextureFormat": "RGBA32F",
+        "realtimeAdvancement": {
+          "beforeTime": 0.04789999997615814,
+          "afterTime": 0.3646000000238419,
+          "matricesChanged": true,
+          "targetId": 502
+        },
+        "realtimeRestoration": {
+          "targetId": 502,
+          "bakedSiblingsUnchanged": 99,
+          "restoredModelType": "BakedSkinningModel",
+          "restoredBatchingScheme": 1,
+          "restoredTextureId": 1,
+          "originalBindingsRestored": true
+        },
+        "realtimeErrors": [],
+        "sameNodeAndModelAcrossRealtimeSamples": true,
+        "jointMatricesBefore": [
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0.9977642893791199,
+            0.06683117151260376,
+            0,
+            0.06683117151260376,
+            -0.06683117151260376,
+            0.9977642893791199,
+            0,
+            0.002235701773315668,
+            0,
+            0,
+            1,
+            0
+          ]
+        ],
+        "jointMatricesAfter": [
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0.9821824431419373,
+            0.1879298985004425,
+            0,
+            0.1879298985004425,
+            -0.1879298985004425,
+            0.9821824431419373,
+            0,
+            0.017817556858062744,
+            0,
+            0,
+            1,
+            0
+          ]
+        ],
+        "passedSteps": [
+          "systemjs-runtime-and-real-viewmgr",
+          "engine-touch-source-and-dom-capture",
+          "imported-prefab-paths",
+          "initial-load-and-first-activation",
+          "camera-and-layer-configuration",
+          "actual-skinning-textures-and-cross-atlas-switch",
+          "actual-realtime-skinning-without-instancing",
+          "hud-click",
+          "world-drag-across-hud",
+          "hud-drag-across-world",
+          "simultaneous-hud-and-world",
+          "wheel-current-hit",
+          "modal-cancels-held-world-and-restores-fresh-only",
+          "hud-close-remount-cancels-old-pointer",
+          "reset-fixed-framing-before-performance",
+          "steady-state-frame-window",
+          "prewarm-closed-resource-baseline",
+          "repeated-open-close-resource-evidence"
+        ],
+        "framing": {
+          "before": {
+            "cubeCount": 500,
+            "visibleMeshes": 500,
+            "fullyProjectedCubes": 500
+          },
+          "after": {
+            "cubeCount": 500,
+            "visibleMeshes": 500,
+            "fullyProjectedCubes": 500
+          }
+        },
+        "warmedLifecycle": {
+          "prewarmCloses": 2,
+          "cycles": 20,
+          "baseline": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41552480
+          },
+          "allClosedStatesEqualBaseline": true,
+          "bufferGrowthBytes": 0,
+          "textureGrowthBytes": 0
+        },
+        "unexpectedConsoleErrors": 0,
+        "scope": "The selected real browser context passed all executed assertions. Raw report ok=false/exitCode=2 and its three cross-report pending gates are preserved; this is not SC0, WeChat or broad-device acceptance."
+      },
+      {
+        "runLabel": "stage3d-fixture-webgl1-final",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-final/report.json",
+          "sha256": "a058cc4055b1cdd69b4490a62eebca9e1c11956abdcd4d7c3267dbf896c266b1",
+          "bytes": 31194250,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T22:57:51.411Z",
+        "finishedAt": "2026-09-21T22:58:42.777Z",
+        "executedOk": true,
+        "ok": false,
+        "exitCode": 2,
+        "sc0Exit": false,
+        "pending": [
+          {
+            "name": "snake-carrier",
+            "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+          },
+          {
+            "name": "visual-and-skinning-review",
+            "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+          },
+          {
+            "name": "other-sc0-gates",
+            "reason": "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates."
+          }
+        ],
+        "environment": {
+          "webgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
+        },
+        "jointTextureFormat": "RGBA32F",
+        "realtimeAdvancement": {
+          "beforeTime": 0.08360000002384185,
+          "afterTime": 0.4167999999523164,
+          "matricesChanged": true,
+          "targetId": 502
+        },
+        "realtimeRestoration": {
+          "targetId": 502,
+          "bakedSiblingsUnchanged": 99,
+          "restoredModelType": "BakedSkinningModel",
+          "restoredBatchingScheme": 1,
+          "restoredTextureId": 1,
+          "originalBindingsRestored": true
+        },
+        "realtimeErrors": [],
+        "sameNodeAndModelAcrossRealtimeSamples": true,
+        "jointMatricesBefore": [
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0.9931950569152832,
+            0.11646272987127304,
+            0,
+            0.11646272987127304,
+            -0.11646272987127304,
+            0.9931950569152832,
+            0,
+            0.006804937031120062,
+            0,
+            0,
+            1,
+            0
+          ]
+        ],
+        "jointMatricesAfter": [
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0.9932599663734436,
+            0.11590800434350967,
+            0,
+            0.11590800434350967,
+            -0.11590800434350967,
+            0.9932599663734436,
+            0,
+            0.006740046665072441,
+            0,
+            0,
+            1,
+            0
+          ]
+        ],
+        "passedSteps": [
+          "systemjs-runtime-and-real-viewmgr",
+          "engine-touch-source-and-dom-capture",
+          "imported-prefab-paths",
+          "initial-load-and-first-activation",
+          "camera-and-layer-configuration",
+          "actual-skinning-textures-and-cross-atlas-switch",
+          "actual-realtime-skinning-without-instancing",
+          "hud-click",
+          "world-drag-across-hud",
+          "hud-drag-across-world",
+          "simultaneous-hud-and-world",
+          "wheel-current-hit",
+          "modal-cancels-held-world-and-restores-fresh-only",
+          "hud-close-remount-cancels-old-pointer",
+          "reset-fixed-framing-before-performance",
+          "steady-state-frame-window",
+          "prewarm-closed-resource-baseline",
+          "repeated-open-close-resource-evidence"
+        ],
+        "framing": {
+          "before": {
+            "cubeCount": 500,
+            "visibleMeshes": 500,
+            "fullyProjectedCubes": 500
+          },
+          "after": {
+            "cubeCount": 500,
+            "visibleMeshes": 500,
+            "fullyProjectedCubes": 500
+          }
+        },
+        "warmedLifecycle": {
+          "prewarmCloses": 2,
+          "cycles": 20,
+          "baseline": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41552480
+          },
+          "allClosedStatesEqualBaseline": true,
+          "bufferGrowthBytes": 0,
+          "textureGrowthBytes": 0
+        },
+        "unexpectedConsoleErrors": 0,
+        "scope": "The selected real browser context passed all executed assertions. Raw report ok=false/exitCode=2 and its three cross-report pending gates are preserved; this is not SC0, WeChat or broad-device acceptance."
+      }
+    ],
+    "remaining": [
+      "Full verify:all after final integration",
+      "Cross-report Snake/other SC0 gates",
+      "Real WeChat build/device evidence and stage exit"
+    ],
+    "visualObservation": {
+      "source": "main integrator",
+      "observed": "The main integrator viewed both 016-steady-state screenshots and reported complete framing.",
+      "scope": "This observation does not close the reports' broader visual-and-skinning-review pending gate."
+    },
+    "subsequentVisualFailureEvidenceKey": "customJointTextureRowAlignment",
+    "acceptanceWarning": "The earlier64/128-width reports remain unchanged historical evidence. New close-ups exposed malformed RGBA8 baked geometry; 18 passed steps and steady-state framing are not visual approval. Replay all affected contexts after the72/144 fix. Aligned144 also failed under the original inconsistent extension mask; the active shader float macro must agree with the byte texture path before any visual acceptance.",
+    "latestEvidenceKey": "finalAlignedCoherentRevalidation"
+  },
+  "customJointTextureRowAlignment": {
+    "id": "custom-layout-width-splits-baked-joint-records",
+    "status": "fixed-selected-desktop-automated-and-visual-revalidation-passed",
+    "scope": "SC0 custom layouts supplied by the fixture to the installed Creator 3.8.8 API. This finding does not claim that the engine default allocator has the same width bug.",
+    "failureEvidence": [
+      {
+        "mode": "webgl2",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/report.json",
+          "sha256": "103b0cdc2f125d8be8f4bdd47464eefaa67ecabca7b774f6d85193ded4714ec4",
+          "bytes": 3304853,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:07:43.648Z",
+        "finishedAt": "2026-09-21T23:07:50.687Z",
+        "completed": true,
+        "scope": "Separate visual-only camera close-up; no performance acceptance or mobile hardware claim. Original 100 bipeds, 500 cubes, materials and animation clips unchanged.",
+        "jointTexture": {
+          "width": 64,
+          "height": 64,
+          "format": 44,
+          "formatName": "RGBA32F"
+        },
+        "closeupCamera": {
+          "before": {
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.31883281598480706,
+              "y": 0,
+              "z": 0,
+              "w": 0.9478109703159161
+            }
+          },
+          "after": {
+            "position": {
+              "x": 12,
+              "y": 7,
+              "z": 23
+            },
+            "rotation": {
+              "x": -0.23987682007440575,
+              "y": 0,
+              "z": 0,
+              "w": 0.9708033329109411
+            }
+          },
+          "targetPosition": {
+            "x": 13.5,
+            "y": 1.1,
+            "z": 13.5
+          }
+        },
+        "screenshots": [
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/01-main.png",
+            "sha256": "75533ed272746d79509999ffa7e6b9fd6f7c836bfb75eca16712a53ec8a2c2c5",
+            "bytes": 410907,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/02-main-later.png",
+            "sha256": "03b21e586c142d2fd66050a41a2c5bdb850bd050f1b402e363bc280f25556d84",
+            "bytes": 426237,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/03-atlas-b-sway.png",
+            "sha256": "a0e71bf59d79f37fdf3b46c1f110b23c930e9430225465d603caeab69995329b",
+            "bytes": 417285,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/04-atlas-b-sway-later.png",
+            "sha256": "d2c8e6495a67e159afe6ef5a7687ff5790e8feb01f3b3b5d3465b5ed0b2cc059",
+            "bytes": 413137,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/05-atlas-b-bow.png",
+            "sha256": "f99eed4b8498d9a3d152d771ca6eed6cfdd7e96c9d93d2693b74cf53b3f27c52",
+            "bytes": 420075,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/06-atlas-b-bow-later.png",
+            "sha256": "5cc9b88c3ed56755bc8d6640bc06c535c80e5238b9550b4d7b46eafb67447d6a",
+            "bytes": 407831,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/07-main-restored.png",
+            "sha256": "c6dba21ba7199f009f2cf0b77ffc4722255ff02b8daf1388bcc7a7ac3875370b",
+            "bytes": 409731,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/08-realtime.png",
+            "sha256": "ed332f6d3d5ec648ea73c5e3457e3f24a1d26c08c7c6fc771a63145db86e9f7a",
+            "bytes": 424464,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/09-realtime-later.png",
+            "sha256": "29824c8fe88ac7385b5c044dc42be53fdacc6d5b8fe3ae6f024cfd9809844120",
+            "bytes": 411734,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2/10-baked-restored.png",
+            "sha256": "fba49700cdaee0ca09365daa0109afb83de748791feef18e84c6bde1e10e6222",
+            "bytes": 411474,
+            "availability": "local-only raw evidence"
+          }
+        ],
+        "completionIsVisualPass": false
+      },
+      {
+        "mode": "webgl1",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/report.json",
+          "sha256": "34f07b7c635c272d4a01c823a87a6317f4d5c99ad14f25a5d75a6acdb76029b3",
+          "bytes": 3302809,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:08:37.640Z",
+        "finishedAt": "2026-09-21T23:08:43.694Z",
+        "completed": true,
+        "scope": "Separate visual-only camera close-up; no performance acceptance or mobile hardware claim. Original 100 bipeds, 500 cubes, materials and animation clips unchanged.",
+        "jointTexture": {
+          "width": 64,
+          "height": 64,
+          "format": 44,
+          "formatName": "RGBA32F"
+        },
+        "closeupCamera": {
+          "before": {
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.31883281598480706,
+              "y": 0,
+              "z": 0,
+              "w": 0.9478109703159161
+            }
+          },
+          "after": {
+            "position": {
+              "x": 12,
+              "y": 7,
+              "z": 23
+            },
+            "rotation": {
+              "x": -0.23987682007440575,
+              "y": 0,
+              "z": 0,
+              "w": 0.9708033329109411
+            }
+          },
+          "targetPosition": {
+            "x": 13.5,
+            "y": 1.1,
+            "z": 13.5
+          }
+        },
+        "screenshots": [
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/01-main.png",
+            "sha256": "4184de6cb1a2b29971280f9be480edade160f79c16b550a6b5410738cf0025ec",
+            "bytes": 411064,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/02-main-later.png",
+            "sha256": "c24d6dfc64b06281f574c25ac11ca41d8569be5c6a5481fc8f521964c024b9ab",
+            "bytes": 417454,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/03-atlas-b-sway.png",
+            "sha256": "fee40497129c46c07e9a7a4ca6ae762ec62cb3eb003ea86f64c8dea0c4e5bc55",
+            "bytes": 420337,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/04-atlas-b-sway-later.png",
+            "sha256": "50de64239a08b1176f919ec0e0ccb12ab1789063293bab37050542b09ee921a3",
+            "bytes": 433989,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/05-atlas-b-bow.png",
+            "sha256": "e29673c8df439aee52f25f96ed87c99fe3944033ce4dc9b7c20f3864f0e348d6",
+            "bytes": 407138,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/06-atlas-b-bow-later.png",
+            "sha256": "526eda7cf3fd4ccb2624215533e111aadd6a246ce4a0c304d3e3deb9165dc38d",
+            "bytes": 408363,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/07-main-restored.png",
+            "sha256": "472e8a7181a147b5f7834899fc0c1ef24eb841c84321969ab55d2372aa078dc7",
+            "bytes": 409526,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/08-realtime.png",
+            "sha256": "9a653fbcf12fbcbdfd91c8661cc36a03504e863d60c5ca15b0a0b0d519fefd95",
+            "bytes": 408009,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/09-realtime-later.png",
+            "sha256": "b030578b0c459fe6bb6a3b78b4b8a405ad85b593504e3e7a5bd6c9182af08116",
+            "bytes": 409672,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1/10-baked-restored.png",
+            "sha256": "71457471de9d7dfdb56b02dd8ec31fd4a62cf5a59a4dff89ed3ab34e6495ebc1",
+            "bytes": 411381,
+            "availability": "local-only raw evidence"
+          }
+        ],
+        "completionIsVisualPass": false
+      },
+      {
+        "mode": "rgba8",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/report.json",
+          "sha256": "4470272429ef8536cae78dccfa20480c590dbedcf493c8dd71597ec24683db17",
+          "bytes": 3310920,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:08:53.571Z",
+        "finishedAt": "2026-09-21T23:09:01.740Z",
+        "completed": true,
+        "scope": "Separate visual-only camera close-up; no performance acceptance or mobile hardware claim. Original 100 bipeds, 500 cubes, materials and animation clips unchanged.",
+        "jointTexture": {
+          "width": 128,
+          "height": 128,
+          "format": 35,
+          "formatName": "RGBA8"
+        },
+        "closeupCamera": {
+          "before": {
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.31883281598480706,
+              "y": 0,
+              "z": 0,
+              "w": 0.9478109703159161
+            }
+          },
+          "after": {
+            "position": {
+              "x": 12,
+              "y": 7,
+              "z": 23
+            },
+            "rotation": {
+              "x": -0.23987682007440575,
+              "y": 0,
+              "z": 0,
+              "w": 0.9708033329109411
+            }
+          },
+          "targetPosition": {
+            "x": 13.5,
+            "y": 1.1,
+            "z": 13.5
+          }
+        },
+        "screenshots": [
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/01-main.png",
+            "sha256": "259f6a74d2c5811b6e41c2484bedc64fc15bfe17d759a7c3fd6897262e810f02",
+            "bytes": 507578,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/02-main-later.png",
+            "sha256": "8c1feabd785f5dcb70a0e2bdb9a1e14999bd90d121c27174f27c8f9d75437fc1",
+            "bytes": 495962,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/03-atlas-b-sway.png",
+            "sha256": "4ee9de5a31411ec4a423109b8c2013d4fc7d77f7e965c1c693198cfb5389e49b",
+            "bytes": 509714,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/04-atlas-b-sway-later.png",
+            "sha256": "c5e25cdcfaca5624940e9694d531debda3fbc7da24a43e82e5d26572e33c3fdb",
+            "bytes": 507941,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/05-atlas-b-bow.png",
+            "sha256": "7323a1ba79ed05c2aca24a201303ada3b556063569ac68d92fc6fab24ecc266a",
+            "bytes": 501137,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/06-atlas-b-bow-later.png",
+            "sha256": "5e2984537b743bbf43c3b3338f7e2a053031c80df116d557b3c6aab91ee7ccfc",
+            "bytes": 506144,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/07-main-restored.png",
+            "sha256": "74dcac3ad7fe83eff90b8d6473516cd80613b2bde1f9e38f6880085d0def029a",
+            "bytes": 507408,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/08-realtime.png",
+            "sha256": "8f32f905b180673ee23621302622849a807e015cbab55acb09016a8aa09dcdfd",
+            "bytes": 482930,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/09-realtime-later.png",
+            "sha256": "12634be971339887d93b1594db4f43df490a31b753b106f637910ba42fef7f44",
+            "bytes": 492783,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/10-baked-restored.png",
+            "sha256": "ed7d7588f56f2d1bec787b7701b4d48b5200eb9cb3a39de05fa867223ae95229",
+            "bytes": 495787,
+            "availability": "local-only raw evidence"
+          }
+        ],
+        "completionIsVisualPass": false
+      }
+    ],
+    "visualObservation": {
+      "rgba8Baked": "Main integrator observed severe malformed baked geometry in the RGBA8 close-up. This reviewer inspected 05-atlas-b-bow.png: character geometry becomes thin spikes/mostly disappears; 08-realtime.png shows the controlled realtime target with a coherent block-biped shape.",
+      "floatBaked": "The inspected WebGL2 05-atlas-b-bow.png shows coherent block-biped shapes at that captured time. Main integrator also reported float captures appearing normal; those snapshots do not exclude frame-dependent row crossings in the same 64-wide layout.",
+      "accepted": false,
+      "automatedChecksAreVisualAcceptance": false,
+      "previousReportInterpretation": "Earlier 18 executed steps checked clip/texture/Pass identity, time/matrix progression, input, framing and lifecycle. Their passed results remain historical facts but did not prove every baked frame sampled a complete joint record. They must not be promoted to overall visual/B3/SC0 acceptance."
+    },
+    "installedSourceCause": {
+      "engineSourceIds": [
+        "skeletal-animation-utils",
+        "texture-buffer-pool",
+        "skinning-animation-lbs-shader",
+        "skinning-texture-coordinates-shader",
+        "joint-texture-sampler"
+      ],
+      "sequence": [
+        "The default pool allocator rounds dimensions to a multiple of 12, which preserves complete three-texel float and twelve-texel byte joint records.",
+        "registerCustomTextureLayouts uses the caller's length directly, doubled on RGBA8, and calls createChunk rather than the allocator path that applies roundUpFn.",
+        "The fixture supplied 64, producing width64 RGBA32F or width128 RGBA8. Neither width divides its joint-record length (3 or12).",
+        "The shader computes y once for a joint, then reads consecutive x coordinates in that row. At a boundary the POINT/CLAMP sampler repeats the edge pixel instead of reading the next row, corrupting matrix components."
+      ],
+      "engineOrVendorSourceModified": false,
+      "shaderAddressCounterexamples": [
+        {
+          "format": "RGBA32F",
+          "width": 64,
+          "pixelsPerJoint": 3,
+          "frame": 10,
+          "joint": 1,
+          "jointCount": 2,
+          "clipPixelOffset": 0,
+          "jointStartPixel": 63,
+          "componentOffset": 1,
+          "expectedLinearPixel": 64,
+          "sampledLinearPixelWithClamp": 63
+        },
+        {
+          "format": "RGBA8",
+          "width": 128,
+          "pixelsPerJoint": 12,
+          "frame": 5,
+          "joint": 0,
+          "jointCount": 2,
+          "clipPixelOffset": 0,
+          "jointStartPixel": 120,
+          "componentOffset": 8,
+          "expectedLinearPixel": 128,
+          "sampledLinearPixelWithClamp": 127
+        }
+      ],
+      "counterexampleScope": "Deterministic shader-address arithmetic for a clip starting at zero; frame indices are zero-based. These explain corruption without claiming a particular screenshot was captured at that exact frame."
+    },
+    "fix": {
+      "implementation": "apps/client/src/view/scene3d/spikeSkinning.ts",
+      "entryPoint": "prepareSpikeSkinningLayouts",
+      "oldConfiguredLength": 64,
+      "newConfiguredLength": 72,
+      "actualWidths": {
+        "RGBA32F": 72,
+        "RGBA8": 144
+      },
+      "actualWidthsAlignedTo12": true,
+      "scope": "Only two fixed SC0 custom layouts; retain the existing pool-identity/hash registration cache and owner lifecycle. Do not clear global pools or alter vendor shaders.",
+      "addressRegressionTest": "apps/client/test/stage3d-spike-skinning.test.ts",
+      "addressRegressionCoverage": "Two joints, two 1-second clips at 30Hz including31frames, with and without default-pose allocation; all three float/twelve byte components stay within their row at72/144. The old64/128 cases must demonstrate mismatches.",
+      "probeFollowup": "Final full runs passed actual layout checks; final closeups additionally captured compatible pipeline/compiled shader macros.",
+      "automatedVerification": "implementation observed in source; final targeted-test result not incorporated by this documentation-only task",
+      "realVerification": "Final72/144 close-ups and full18-step/20-cycle runs passed in3 selected contexts. Historical aligned02 failed due to the separate now-corrected capability mismatch.",
+      "textureAllocationPerCustomChunkBytes": {
+        "old": 65536,
+        "new": 82944,
+        "delta": 17408
+      },
+      "twoCustomChunksExpectedAdditionalBytes": 34816,
+      "baselinePolicy": "Re-establish each context's warmed baseline in a fresh pool. A higher bounded allocation from the larger layout is not per-cycle leakage; old64/128 layout evidence does not substitute for new72/144 lifecycle or performance validation."
+    },
+    "stageComplete": false,
+    "sc0Exit": false,
+    "subsequentFailureEvidenceKey": "rgba8FaultCapabilityMacroMismatch",
+    "resolutionEvidenceKey": "finalAlignedCoherentRevalidation"
+  },
+  "rgba8FaultCapabilityMacroMismatch": {
+    "id": "rgba8-fault-mask-left-float-render-target-capability",
+    "status": "fault-runner-fixed-coherent-rgba8-automated-and-visual-revalidation-passed",
+    "scope": "The desktop WebGL1 fault-injection setup, which masks extensions before Cocos initialization on float-capable hardware. This inconsistent injected state is not evidence of failure on a naturally limited device.",
+    "failureEvidence": [
+      {
+        "runLabel": "stage3d-skinning-closeup-rgba8-aligned-02",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-aligned-02/report.json",
+          "sha256": "d0e0c48237e5177d5b9141375cc8186da8646c38d80a65343164c4ce0f267a4e",
+          "bytes": 3362218,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:16:22.341Z",
+        "finishedAt": "2026-09-21T23:16:30.111Z",
+        "completed": true,
+        "completionIsVisualPass": false,
+        "actualJointTexture": {
+          "width": 144,
+          "height": 144,
+          "format": 35,
+          "formatName": "RGBA8"
+        },
+        "rgba32fFormat": 44,
+        "rgba32fFeatures": 17,
+        "rgba32fSampled": false,
+        "rgba32fRenderTarget": true,
+        "oesTextureFloat": false,
+        "oesTextureFloatLinear": false,
+        "effectiveWebglColorBufferFloatPresent": true,
+        "faultInstalledBeforeCocos": true,
+        "screenshots": [
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-aligned-02/05-atlas-b-bow.png",
+            "sha256": "0db60ed18ad723b00d27133482cf4473e71f0c12ae1acdf85651130e1489a7f6",
+            "bytes": 505820,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-aligned-02/08-realtime.png",
+            "sha256": "1b4dd844406fac1f60374093f422a3b54d242c0e5f26623acedb64033a3d782d",
+            "bytes": 484912,
+            "availability": "local-only raw evidence"
+          }
+        ]
+      },
+      {
+        "runLabel": "stage3d-skinning-closeup-rgba8-macro-diagnosis",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-macro-diagnosis/report.json",
+          "sha256": "5e809ba764d37ac4310525106dad515fe1a47f328f0a24f36b1c1835fdbebf77",
+          "bytes": 4277589,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:18:34.597Z",
+        "finishedAt": "2026-09-21T23:18:41.225Z",
+        "completed": true,
+        "completionIsVisualPass": false,
+        "actualJointTexture": {
+          "width": 144,
+          "height": 144,
+          "format": 35,
+          "formatName": "RGBA8"
+        },
+        "rgba32fFormat": 44,
+        "rgba32fFeatures": 17,
+        "rgba32fSampled": false,
+        "rgba32fRenderTarget": true,
+        "oesTextureFloat": false,
+        "oesTextureFloatLinear": false,
+        "effectiveWebglColorBufferFloatPresent": true,
+        "faultInstalledBeforeCocos": true,
+        "screenshots": [
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-macro-diagnosis/05-atlas-b-bow.png",
+            "sha256": "02c0761d55a34d26d5eac08aae175974ece4f8c6384559da7c892e29b8733213",
+            "bytes": 507357,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-macro-diagnosis/08-realtime.png",
+            "sha256": "f22520dd42dad94b18abd87c71edace4264ab7e3f283df268aaec3dffe1e1aca",
+            "bytes": 483326,
+            "availability": "local-only raw evidence"
+          }
+        ],
+        "compiledShaderEvidence": {
+          "pipelineFloatTextureMacro": 1,
+          "pipelineMacroStringSha256": "f4cce335f8e78bd4aed13e3efad4c5237c4098fe9a9e16ea4d16c813732edb05",
+          "pipelineMacroStringBytes": 322,
+          "stages": [
+            {
+              "type": 1,
+              "sourceSha256": "2f4574558dd2302fbe92efea5c130ac87d40f6ba2ffde6b77366dfd6149034f5",
+              "sourceBytes": 33586,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 16,
+              "sourceSha256": "9fcccb2e6b1096b30ed43608683356e381d9427758cdb745f55bbf5f8b15bce1",
+              "sourceBytes": 171751,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 1,
+              "sourceSha256": "fdeaf6b206a543701c9b01ac74fd1e4868247301c0234932e3b2dbe4660afeb6",
+              "sourceBytes": 33586,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 16,
+              "sourceSha256": "1c6b669dc5114ce724c9d22ce026fc5f2c961ea248b48167ec3b1b89e2a9a4a4",
+              "sourceBytes": 171751,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 1,
+              "sourceSha256": "4344d035a7bdd6b7e1e5d5fe9a3828ef803055924473b1f07236f778ea1c6a20",
+              "sourceBytes": 27140,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 16,
+              "sourceSha256": "2bb8509888ecc71373a2430e04941266dbdc4724e3f9c1a280d4201a1e63debc",
+              "sourceBytes": 19544,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 1,
+              "sourceSha256": "156bc5fae508ee7d2f1dc60edbc7ffb9e9ac4d7c1340e98a80c50eb3ed6c0f52",
+              "sourceBytes": 33430,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 16,
+              "sourceSha256": "7fbf48ef89ee91a454866f3d167ed5d28ca509f1ea511c6fe8911e26949817ef",
+              "sourceBytes": 149833,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 1,
+              "sourceSha256": "8ca2c40515b77d3ca06a93b27479c37609ebcb1bd7b5e3c1262f4af2660aa17f",
+              "sourceBytes": 28438,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 16,
+              "sourceSha256": "a71a63066afc53497785366f41ff4df65fd957c8167d1b2651b1b051ec32ce8b",
+              "sourceBytes": 18433,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 1,
+              "sourceSha256": "fb1b83f6a4d9ad1dd1bdf982b420d056739b430f0c4cd235e426f629b1c5230b",
+              "sourceBytes": 33586,
+              "floatTextureMacro": 1
+            },
+            {
+              "type": 16,
+              "sourceSha256": "31d84d9374bf17a1748ea4affb7c2e7de7bfb7e31eabba0d48a29152fb47972a",
+              "sourceBytes": 171751,
+              "floatTextureMacro": 1
+            }
+          ],
+          "origin": "Actual subModel compiled shader sources and pipeline constant string captured by the diagnostic; complete sources remain in the local raw report."
+        }
+      }
+    ],
+    "observation": {
+      "reportedBy": "main integrator",
+      "rowAlignmentChangedButVisualStillFailed": true,
+      "actualRgba8Width": 144,
+      "pipelineAndCompiledShaderFloatMacro": 1,
+      "interpretation": "Row alignment was necessary but insufficient: the shader still selected its three-float-texel branch while the joint pool uploaded byte-encoded RGBA8 joint data. The aligned-02 visual result is FAIL, not acceptance of the72/144 repair."
+    },
+    "installedSourceCause": {
+      "engineSourceIds": [
+        "skeletal-animation-utils",
+        "web-pipeline-constant-macros",
+        "webgl-device-float-features",
+        "format-feature-bits",
+        "layout-graph-constant-macros",
+        "skinning-animation-lbs-shader"
+      ],
+      "sequence": [
+        "The original fault mask suppressed OES_texture_float and OES_texture_float_linear but left WEBGL_color_buffer_float visible.",
+        "WebGLDevice retained RGBA32F features17: VERTEX_ATTRIBUTE16 plus RENDER_TARGET1; SAMPLED_TEXTURE2 was absent.",
+        "selectJointsMediumFormat checks only SAMPLED_TEXTURE, so the actual joint texture pool chose RGBA8 format35 and doubled the repaired72 layout to144.",
+        "WebPipeline constant macros check RENDER_TARGET or SAMPLED_TEXTURE. The remaining RENDER_TARGET bit set CC_DEVICE_SUPPORT_FLOAT_TEXTURE=1 in both pipeline constants and actual subModel compiled shader stages.",
+        "The baked shader therefore used float sampling rather than decoding twelve byte texels per joint. Fault injection had created an inconsistent capability combination; changing row width alone could not correct that branch mismatch."
+      ],
+      "capabilityBitArithmetic": {
+        "observedRgba32fFeatures": 17,
+        "renderTargetBit": 1,
+        "sampledTextureBit": 2,
+        "vertexAttributeBit": 16,
+        "renderTargetEnabled": true,
+        "sampledTextureEnabled": false,
+        "pipelineFloatMacro": 1,
+        "jointTextureFormat": 35
+      },
+      "classification": "fault-injection-capability-closure-defect exposed by differing installed-engine selection predicates",
+      "engineOrVendorSourceModified": false
+    },
+    "plannedCorrection": {
+      "implementation": "tools/creator-preview/probe-stage3d-rgba8.mjs",
+      "owner": "framework agent / main integrator",
+      "status": "implemented-real-revalidation-passed-selected-desktop-context",
+      "behavior": "Mask the dependent float-color-buffer extension together with float sampling/linear extensions before device and pipeline initialization, keeping enumeration and getExtension behavior coherent. Require both RGBA32F sampled and render-target bits false and pipeline float macro0 before accepting the RGBA8 path.",
+      "requiredObservations": [
+        "effective float-extension set matches the injected limited capability",
+        "RGBA32F SAMPLED_TEXTURE=false",
+        "RGBA32F RENDER_TARGET=false",
+        "CC_DEVICE_SUPPORT_FLOAT_TEXTURE=0 in active pipeline/shader",
+        "actual RGBA8 format35 with aligned144 width",
+        "multi-clip/cross-atlas baked geometry visually correct and realtime restoration correct",
+        "fresh warmed20cycle and frame-sampling evidence"
+      ],
+      "doesNotModify": [
+        "shader source",
+        "device format-feature table",
+        "engine/vendor code"
+      ],
+      "automatedVerification": "Final real probe assertions passed; no heavy unit tests rerun by this documentation-only task.",
+      "realVerification": "Final coherentRGBA8: features16, sampled=false, renderTarget=false, pipeline/compiled macro0, format35/width144; full18steps and20cycles passed, all target phase images reviewed, hooks restored and owned page closed.",
+      "platformLimit": "A coherent injected RGBA8 path remains fault-injection evidence on native-float desktop hardware, not a real WeChat or naturally limited device acceptance."
+    },
+    "stageComplete": false,
+    "sc0Exit": false,
+    "resolutionEvidenceKey": "finalAlignedCoherentRevalidation"
+  },
+  "finalAlignedCoherentRevalidation": {
+    "status": "selected-desktop-automated-and-closeup-visual-checks-passed",
+    "stageComplete": false,
+    "sc0Exit": false,
+    "implementedFixes": [
+      {
+        "id": "align-custom-joint-texture-rows",
+        "implementation": "apps/client/src/view/scene3d/spikeSkinning.ts",
+        "configuredLength": 72,
+        "floatWidth": 72,
+        "rgba8Width": 144
+      },
+      {
+        "id": "coherent-rgba8-extension-mask",
+        "implementation": "tools/creator-preview/probe-stage3d-rgba8.mjs",
+        "maskedExtensions": [
+          "OES_texture_float",
+          "OES_texture_float_linear",
+          "WEBGL_color_buffer_float",
+          "EXT_color_buffer_float",
+          "WEBKIT_ and MOZ_ aliases"
+        ],
+        "requires": "RGBA32F sampled=false and renderTarget=false, pipelineFloatTextureMacro=0, actual alignedRGBA8. No shader/format-table/vendor patch."
+      }
+    ],
+    "closeups": [
+      {
+        "runLabel": "stage3d-skinning-closeup-webgl2-aligned",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/report.json",
+          "sha256": "7d61e3c90e357861f4a0266ba909a02452e420109c498bf96ca0db6baaa476ca",
+          "bytes": 4282291,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:22:56.014Z",
+        "finishedAt": "2026-09-21T23:23:02.780Z",
+        "completed": true,
+        "phaseNames": [
+          "01-main",
+          "02-main-later",
+          "03-atlas-b-sway",
+          "04-atlas-b-sway-later",
+          "05-atlas-b-bow",
+          "06-atlas-b-bow-later",
+          "07-main-restored",
+          "08-realtime",
+          "09-realtime-later",
+          "10-baked-restored"
+        ],
+        "screenshots": [
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/01-main.png",
+            "sha256": "32088eae518a7d97fe6c6944d91dec07dd53fda7a2d4a927f9822626c5c95401",
+            "bytes": 426146,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/02-main-later.png",
+            "sha256": "445ac9e9ebe99291bf0d0fd6f622cb95c05f134593883beb93006d27ac831b6c",
+            "bytes": 409325,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/03-atlas-b-sway.png",
+            "sha256": "c1c38ab71676fa1489bea9646834698c3db4322067dd5834cd229fd990ff0bfe",
+            "bytes": 409087,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/04-atlas-b-sway-later.png",
+            "sha256": "0b5fb5e581031b21f1952ee063bdd29ba1cf82ca69f36bc605460ecdc2b8fab6",
+            "bytes": 408719,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/05-atlas-b-bow.png",
+            "sha256": "73783797f95bedb819a7fa7e51bc9e32b76cde4eeb069934d9195dfff3c05bd0",
+            "bytes": 410031,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/06-atlas-b-bow-later.png",
+            "sha256": "07341e7b9a3e0f030f31058c047b8bfa0aa6ed086c97e04373a5d712aa49abd5",
+            "bytes": 422326,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/07-main-restored.png",
+            "sha256": "f003c236be1ef1600bde8cfa57c34624a9bd6771b2534f36df43073804f6d2bc",
+            "bytes": 410864,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/08-realtime.png",
+            "sha256": "9df76ace703f91b1233a28e512e24c63996be183e2936d7f1ac7241eff5cdbf4",
+            "bytes": 413681,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/09-realtime-later.png",
+            "sha256": "796a894eb32bde64c54938a85f2159e7425fb3f240896ad94be28067aae89e57",
+            "bytes": 422743,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/10-baked-restored.png",
+            "sha256": "63df686c6ce67ae63cb88a75a0e2bcbdfa8e973dcb2008ea45c24eb5021e8bea",
+            "bytes": 412591,
+            "availability": "local-only raw evidence"
+          }
+        ],
+        "actualJointTexture": {
+          "width": 72,
+          "height": 72,
+          "format": 44,
+          "formatName": "RGBA32F"
+        },
+        "rgba32fFeatures": 31,
+        "rgba32fSampled": true,
+        "rgba32fRenderTarget": true,
+        "pipelineFloatTextureMacro": 1,
+        "compiledShaderStages": [
+          {
+            "type": 1,
+            "sha256": "b5633ba56e2497b3af55abc0f41f6af4712da4eebda6b0f35af1aedff0c1241e",
+            "bytes": 34604,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "2e7f4b85e0f2edc4bb56244cec25a395f223c5f16beeb4898e2fdcf144f601c1",
+            "bytes": 171646,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "c720c1b3ec73ba33a0c582c07ded20aeb69f1517735b7551f3381e2ac81e8239",
+            "bytes": 34604,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "ce81b16729a2487d91982b65b1e6a1a4b5224ae9cdb21134edcbafc32fb8ff67",
+            "bytes": 171646,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "0d5e4f0cae0d5ce014842fd5866188b5df9d21f8c336dda560599c4fa8f8a50a",
+            "bytes": 28450,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "09941f04a6ac638d96d7d35d376e9c3a296ae5cdf70c360229bb46c598c2fae7",
+            "bytes": 21601,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "1eab363463f7df94fb0946aaed3053ec3f70fc46c7d4be50cacc1cbd16b1e679",
+            "bytes": 34448,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "3925ae949ee400947c21ba4d608702747775d6f32778e286db3720c9cb8a6f1c",
+            "bytes": 149964,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "d3626a0b0dd8c8cbf6451e4d510ed1a3b9cb8dda44a9fb5660d716ce1a616fe5",
+            "bytes": 29569,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "a5eb440e0640d51700ea4911472b2b4fa5738cce66e08b7120e0bcbdedb4795e",
+            "bytes": 20578,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "10b20a12423352ffdf61fe1c66726b9c4c964430eebfb4cff788126b033fbf72",
+            "bytes": 34604,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "bc75fc2d7bfb6a034e6d84d43b5a79ecf9c3ecc6f3384338b3fa8c68facb4b53",
+            "bytes": 171646,
+            "floatTextureMacro": 1
+          }
+        ],
+        "originalCleanup": {
+          "closed": false
+        },
+        "restoredCamera": true,
+        "visualReview": {
+          "status": "passed",
+          "reviewer": "main integrator",
+          "scope": "All10 target-phase images: coherent shape, Sway/Bow, cross-atlas, realtime and baked restoration; RGBA8 additionally reviewed01 full image. Desktop fixture only."
+        }
+      },
+      {
+        "runLabel": "stage3d-skinning-closeup-webgl1-aligned",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/report.json",
+          "sha256": "300b122743b90b6e3eadf40c21b1ef74904ceadb1bfdd49f97894a24cc210784",
+          "bytes": 4271809,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:23:03.013Z",
+        "finishedAt": "2026-09-21T23:23:09.143Z",
+        "completed": true,
+        "phaseNames": [
+          "01-main",
+          "02-main-later",
+          "03-atlas-b-sway",
+          "04-atlas-b-sway-later",
+          "05-atlas-b-bow",
+          "06-atlas-b-bow-later",
+          "07-main-restored",
+          "08-realtime",
+          "09-realtime-later",
+          "10-baked-restored"
+        ],
+        "screenshots": [
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/01-main.png",
+            "sha256": "fea5d556477ac482d8a13f9a1e530bc8ea5eaaaa95dad16e87eead39b2179b06",
+            "bytes": 414373,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/02-main-later.png",
+            "sha256": "62b3cdfa1c62b54657c8eb013fb52a7a00d7e8d2536aaffab8d214e889b1ca1a",
+            "bytes": 409590,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/03-atlas-b-sway.png",
+            "sha256": "03b87e695434f904e887ac1f95baf27d707992e1d786b430d92c761c847e0f55",
+            "bytes": 412807,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/04-atlas-b-sway-later.png",
+            "sha256": "6b6c5998308f3063bf8648981a426ce2b4081705f4f364ac23ae14c1a14c70f4",
+            "bytes": 425348,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/05-atlas-b-bow.png",
+            "sha256": "9490d57b8f0533536647a388c3c68cc619114363e0ab850f03a8a4eed23a5b58",
+            "bytes": 403220,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/06-atlas-b-bow-later.png",
+            "sha256": "7b49b085577bb3f66f5b0d96777fd60353e9eb16dab5d05562bafaed2a7cf54d",
+            "bytes": 402810,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/07-main-restored.png",
+            "sha256": "0e94ef81cd41dc61cc652fbfa6a5b9d3c23115c0e9955a62a33a0d9aa2e40e35",
+            "bytes": 423672,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/08-realtime.png",
+            "sha256": "c20636afcc8e8e2fcf1c2e8818f456359ab354e29a18f2d2e5cf36cc1829ae75",
+            "bytes": 418898,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/09-realtime-later.png",
+            "sha256": "5d022099e4c997e4a97e79e4e99f673b892709cf8114c8871904cb74c6cae1c9",
+            "bytes": 410697,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/10-baked-restored.png",
+            "sha256": "d1eef46d63d2d0b06f9607fcaa8957925bb64a0852e7b348e41dae1cf8a57d84",
+            "bytes": 407752,
+            "availability": "local-only raw evidence"
+          }
+        ],
+        "actualJointTexture": {
+          "width": 72,
+          "height": 72,
+          "format": 44,
+          "formatName": "RGBA32F"
+        },
+        "rgba32fFeatures": 23,
+        "rgba32fSampled": true,
+        "rgba32fRenderTarget": true,
+        "pipelineFloatTextureMacro": 1,
+        "compiledShaderStages": [
+          {
+            "type": 1,
+            "sha256": "2f4574558dd2302fbe92efea5c130ac87d40f6ba2ffde6b77366dfd6149034f5",
+            "bytes": 33586,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "9fcccb2e6b1096b30ed43608683356e381d9427758cdb745f55bbf5f8b15bce1",
+            "bytes": 171751,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "fdeaf6b206a543701c9b01ac74fd1e4868247301c0234932e3b2dbe4660afeb6",
+            "bytes": 33586,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "1c6b669dc5114ce724c9d22ce026fc5f2c961ea248b48167ec3b1b89e2a9a4a4",
+            "bytes": 171751,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "4344d035a7bdd6b7e1e5d5fe9a3828ef803055924473b1f07236f778ea1c6a20",
+            "bytes": 27140,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "2bb8509888ecc71373a2430e04941266dbdc4724e3f9c1a280d4201a1e63debc",
+            "bytes": 19544,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "156bc5fae508ee7d2f1dc60edbc7ffb9e9ac4d7c1340e98a80c50eb3ed6c0f52",
+            "bytes": 33430,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "7fbf48ef89ee91a454866f3d167ed5d28ca509f1ea511c6fe8911e26949817ef",
+            "bytes": 149833,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "8ca2c40515b77d3ca06a93b27479c37609ebcb1bd7b5e3c1262f4af2660aa17f",
+            "bytes": 28438,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "a71a63066afc53497785366f41ff4df65fd957c8167d1b2651b1b051ec32ce8b",
+            "bytes": 18433,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 1,
+            "sha256": "fb1b83f6a4d9ad1dd1bdf982b420d056739b430f0c4cd235e426f629b1c5230b",
+            "bytes": 33586,
+            "floatTextureMacro": 1
+          },
+          {
+            "type": 16,
+            "sha256": "31d84d9374bf17a1748ea4affb7c2e7de7bfb7e31eabba0d48a29152fb47972a",
+            "bytes": 171751,
+            "floatTextureMacro": 1
+          }
+        ],
+        "originalCleanup": {
+          "closed": true
+        },
+        "restoredCamera": true,
+        "visualReview": {
+          "status": "passed",
+          "reviewer": "main integrator",
+          "scope": "All10 target-phase images: coherent shape, Sway/Bow, cross-atlas, realtime and baked restoration; RGBA8 additionally reviewed01 full image. Desktop fixture only."
+        }
+      },
+      {
+        "runLabel": "stage3d-skinning-closeup-rgba8-coherent",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/report.json",
+          "sha256": "cfb39fe8197625b0543768d6fb03ca6e1d4ddef75e530787527377b2e4fe8e11",
+          "bytes": 4277335,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:22:06.014Z",
+        "finishedAt": "2026-09-21T23:22:12.462Z",
+        "completed": true,
+        "phaseNames": [
+          "01-main",
+          "02-main-later",
+          "03-atlas-b-sway",
+          "04-atlas-b-sway-later",
+          "05-atlas-b-bow",
+          "06-atlas-b-bow-later",
+          "07-main-restored",
+          "08-realtime",
+          "09-realtime-later",
+          "10-baked-restored"
+        ],
+        "screenshots": [
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/01-main.png",
+            "sha256": "2aee9cd6b18958e74ef659edcd9d72b58fe4e0ac4b6b6283e0b2b143aca753f4",
+            "bytes": 424588,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/02-main-later.png",
+            "sha256": "966a8fd877f8253d7cae4902cf9534578c7c1047f21986fb24b60e2ff6e88daf",
+            "bytes": 411761,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/03-atlas-b-sway.png",
+            "sha256": "9e4c4cff95610b9a42beff92593eb9812b1f952f9269297d3b346192bac2c1ee",
+            "bytes": 407750,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/04-atlas-b-sway-later.png",
+            "sha256": "5c3bd257570be0ba81d7ef1bd69321ae50b852b4a7f43dbde4013145e4c94ba1",
+            "bytes": 407033,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/05-atlas-b-bow.png",
+            "sha256": "36357042d46b5fd46e74811953f8cb1237182138cf3d1490f36c4c49e9787dfa",
+            "bytes": 410428,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/06-atlas-b-bow-later.png",
+            "sha256": "12e7c545e2fd76c4e469fb191234060d84841c1303649714e0d1a2892889135a",
+            "bytes": 423713,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/07-main-restored.png",
+            "sha256": "ee48fb6818ab7db86f32357ef6dc1430a02c275ac86a0d08c1be616cf2b24b2d",
+            "bytes": 413835,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/08-realtime.png",
+            "sha256": "a7deafafde00c89446caf345ad80d3d4c1aa4aacd3beb5566617e2003534bb0d",
+            "bytes": 409788,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/09-realtime-later.png",
+            "sha256": "5de7ae6b128ed5303a5dd6a2d331e8832f2cecd7f38166df6b7f9f1876383253",
+            "bytes": 412550,
+            "availability": "local-only raw evidence"
+          },
+          {
+            "path": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/10-baked-restored.png",
+            "sha256": "5232b5694d3733ea7ae5fa9382c30c1e9a2977a357c38fbe95f2e42917e202c7",
+            "bytes": 426768,
+            "availability": "local-only raw evidence"
+          }
+        ],
+        "actualJointTexture": {
+          "width": 144,
+          "height": 144,
+          "format": 35,
+          "formatName": "RGBA8"
+        },
+        "rgba32fFeatures": 16,
+        "rgba32fSampled": false,
+        "rgba32fRenderTarget": false,
+        "pipelineFloatTextureMacro": 0,
+        "compiledShaderStages": [
+          {
+            "type": 1,
+            "sha256": "8855cb97571ea581d004a027933971e574a542b502cc62688cfefac520926dfd",
+            "bytes": 33586,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 16,
+            "sha256": "53bfdb8a36ef0f3bbef60b75d7840dc85a5a1a6ce256cfc345881eb4fd9f8602",
+            "bytes": 171751,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 1,
+            "sha256": "f9dab83842dc1e1c958822824d54fd8a36d08e76744acb3201e86d2de0d88765",
+            "bytes": 33586,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 16,
+            "sha256": "856db23b5bfa3d4b6996778b51f76450b132056c102246c827e324ecc3b42d8d",
+            "bytes": 171751,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 1,
+            "sha256": "d4b33ea50521135fcc43851e31112ca777a163fa44aaa6bb539693b24b5a9b46",
+            "bytes": 27140,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 16,
+            "sha256": "af17fc04092242685f213d9e3503f467bc3c6c80c5bfeb652a36cceb1fe831dd",
+            "bytes": 19544,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 1,
+            "sha256": "1a3f12bcbea62e798eefa3885e3bfbf09b673112bb33919e4e240e24dc96ae99",
+            "bytes": 33430,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 16,
+            "sha256": "c7756121007d2140e62dd152aaa2763b23c80106d6ad88e49c293247399ec316",
+            "bytes": 149833,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 1,
+            "sha256": "66b6e49a3f81fec394ada1861d4d0b82c8c77d3c97bb612e6491655c2091f85c",
+            "bytes": 28438,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 16,
+            "sha256": "7a644b72b7fb496aef7de2783615e3a5a5ce086875f02574f6ef58c672717ffe",
+            "bytes": 18433,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 1,
+            "sha256": "c3c5e7bb766505370c2c7fd5f48f154eef2b7f8117f07e2f45238e896ce43a27",
+            "bytes": 33586,
+            "floatTextureMacro": 0
+          },
+          {
+            "type": 16,
+            "sha256": "7df95a101a5627c09618dc76c5c79ab59663677e1d402db7c00640a6dd66484c",
+            "bytes": 171751,
+            "floatTextureMacro": 0
+          }
+        ],
+        "originalCleanup": {
+          "faultRestore": {
+            "restored": true
+          },
+          "closed": true
+        },
+        "restoredCamera": true,
+        "visualReview": {
+          "status": "passed",
+          "reviewer": "main integrator",
+          "scope": "All10 target-phase images: coherent shape, Sway/Bow, cross-atlas, realtime and baked restoration; RGBA8 additionally reviewed01 full image. Desktop fixture only."
+        }
+      }
+    ],
+    "fullRuns": [
+      {
+        "runLabel": "stage3d-fixture-webgl2-aligned",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/report.json",
+          "sha256": "94f0e97ebda526e392be1f0982eeb72c523d611e0275ea921a7a9a2dc173ed6b",
+          "bytes": 31586921,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:19:10.729Z",
+        "finishedAt": "2026-09-21T23:20:00.115Z",
+        "executedOk": true,
+        "ok": false,
+        "exitCode": 2,
+        "sc0Exit": false,
+        "pending": [
+          {
+            "name": "snake-carrier",
+            "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+          },
+          {
+            "name": "visual-and-skinning-review",
+            "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+          },
+          {
+            "name": "other-sc0-gates",
+            "reason": "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates."
+          }
+        ],
+        "environment": {
+          "webgl": 2,
+          "device": "WebGL2Device",
+          "pipeline": "WebPipeline",
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
+        },
+        "passedSteps": [
+          "systemjs-runtime-and-real-viewmgr",
+          "engine-touch-source-and-dom-capture",
+          "imported-prefab-paths",
+          "initial-load-and-first-activation",
+          "camera-and-layer-configuration",
+          "actual-skinning-textures-and-cross-atlas-switch",
+          "actual-realtime-skinning-without-instancing",
+          "hud-click",
+          "world-drag-across-hud",
+          "hud-drag-across-world",
+          "simultaneous-hud-and-world",
+          "wheel-current-hit",
+          "modal-cancels-held-world-and-restores-fresh-only",
+          "hud-close-remount-cancels-old-pointer",
+          "reset-fixed-framing-before-performance",
+          "steady-state-frame-window",
+          "prewarm-closed-resource-baseline",
+          "repeated-open-close-resource-evidence"
+        ],
+        "realtimeAdvancement": {
+          "beforeTime": 0.033100000023841857,
+          "afterTime": 0.3498000000715256,
+          "matricesChanged": true,
+          "targetId": 502
+        },
+        "realtimeRestoration": {
+          "targetId": 502,
+          "bakedSiblingsUnchanged": 99,
+          "restoredModelType": "BakedSkinningModel",
+          "restoredBatchingScheme": 1,
+          "restoredTextureId": 1,
+          "originalBindingsRestored": true
+        },
+        "fullyProjectedCubesBeforeAfter": [
+          500,
+          500
+        ],
+        "sampling": {
+          "warmupFrames": 60,
+          "sampleFrames": 240,
+          "frameEvent": "Director.EVENT_AFTER_DRAW",
+          "clock": "performance.now",
+          "valid": true,
+          "frameIntervals": {
+            "count": 240,
+            "p50Ms": 16.700000047683716,
+            "p95Ms": 18.700000047683716,
+            "maxMs": 20.59999990463257,
+            "meanMs": 16.670416666567327
+          }
+        },
+        "warmedLifecycle": {
+          "prewarmCloses": 2,
+          "cycles": 20,
+          "baseline": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          },
+          "allClosedStatesEqualBaseline": true,
+          "bufferGrowthBytes": 0,
+          "textureGrowthBytes": 0
+        },
+        "unexpectedConsoleErrors": 0
+      },
+      {
+        "runLabel": "stage3d-fixture-webgl1-aligned",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/report.json",
+          "sha256": "4d6f6106dd1c924a5d9e475ee69c9fbf53291a01a4d2afff03aa063ed9cf027f",
+          "bytes": 31596585,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:20:58.098Z",
+        "finishedAt": "2026-09-21T23:21:46.492Z",
+        "executedOk": true,
+        "ok": false,
+        "exitCode": 2,
+        "sc0Exit": false,
+        "pending": [
+          {
+            "name": "snake-carrier",
+            "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+          },
+          {
+            "name": "visual-and-skinning-review",
+            "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+          },
+          {
+            "name": "other-sc0-gates",
+            "reason": "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates."
+          }
+        ],
+        "environment": {
+          "webgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
+        },
+        "passedSteps": [
+          "systemjs-runtime-and-real-viewmgr",
+          "engine-touch-source-and-dom-capture",
+          "imported-prefab-paths",
+          "initial-load-and-first-activation",
+          "camera-and-layer-configuration",
+          "actual-skinning-textures-and-cross-atlas-switch",
+          "actual-realtime-skinning-without-instancing",
+          "hud-click",
+          "world-drag-across-hud",
+          "hud-drag-across-world",
+          "simultaneous-hud-and-world",
+          "wheel-current-hit",
+          "modal-cancels-held-world-and-restores-fresh-only",
+          "hud-close-remount-cancels-old-pointer",
+          "reset-fixed-framing-before-performance",
+          "steady-state-frame-window",
+          "prewarm-closed-resource-baseline",
+          "repeated-open-close-resource-evidence"
+        ],
+        "realtimeAdvancement": {
+          "beforeTime": 0.033299999952316285,
+          "afterTime": 0.3486999999284745,
+          "matricesChanged": true,
+          "targetId": 502
+        },
+        "realtimeRestoration": {
+          "targetId": 502,
+          "bakedSiblingsUnchanged": 99,
+          "restoredModelType": "BakedSkinningModel",
+          "restoredBatchingScheme": 1,
+          "restoredTextureId": 1,
+          "originalBindingsRestored": true
+        },
+        "fullyProjectedCubesBeforeAfter": [
+          500,
+          500
+        ],
+        "sampling": {
+          "warmupFrames": 60,
+          "sampleFrames": 240,
+          "frameEvent": "Director.EVENT_AFTER_DRAW",
+          "clock": "performance.now",
+          "valid": true,
+          "frameIntervals": {
+            "count": 240,
+            "p50Ms": 16.700000047683716,
+            "p95Ms": 18.899999976158142,
+            "maxMs": 20.600000023841858,
+            "meanMs": 16.67208333313465
+          }
+        },
+        "warmedLifecycle": {
+          "prewarmCloses": 2,
+          "cycles": 20,
+          "baseline": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          },
+          "allClosedStatesEqualBaseline": true,
+          "bufferGrowthBytes": 0,
+          "textureGrowthBytes": 0
+        },
+        "unexpectedConsoleErrors": 0
+      },
+      {
+        "runLabel": "stage3d-fixture-rgba8-coherent",
+        "raw": {
+          "path": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/report.json",
+          "sha256": "f56bebb0911fbdad35217a46678379de497798f179d3bfeb1bfec2d95d579c71",
+          "bytes": 31844462,
+          "availability": "local-only raw evidence"
+        },
+        "startedAt": "2026-09-21T23:23:59.690Z",
+        "finishedAt": "2026-09-21T23:24:46.841Z",
+        "executedOk": true,
+        "ok": false,
+        "exitCode": 2,
+        "sc0Exit": false,
+        "pending": [
+          {
+            "name": "snake-carrier",
+            "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+          },
+          {
+            "name": "visual-and-skinning-review",
+            "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+          },
+          {
+            "name": "other-sc0-gates",
+            "reason": "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates."
+          },
+          {
+            "name": "fault-injection-only",
+            "reason": "Native float support must be independently observed and is recorded separately. This owned page deliberately masks WebGL1 float texture/linear and dependent float color-buffer extensions before engine boot. Actual engine-selected RGBA8, absent RGBA32F sampled/render-target features and WebPipeline float-texture macro 0 are required; this is not natural low-end, WeChat, or mobile hardware evidence."
+          }
+        ],
+        "environment": {
+          "webgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)"
+        },
+        "passedSteps": [
+          "systemjs-runtime-and-real-viewmgr",
+          "engine-touch-source-and-dom-capture",
+          "imported-prefab-paths",
+          "initial-load-and-first-activation",
+          "camera-and-layer-configuration",
+          "actual-skinning-textures-and-cross-atlas-switch",
+          "actual-realtime-skinning-without-instancing",
+          "hud-click",
+          "world-drag-across-hud",
+          "hud-drag-across-world",
+          "simultaneous-hud-and-world",
+          "wheel-current-hit",
+          "modal-cancels-held-world-and-restores-fresh-only",
+          "hud-close-remount-cancels-old-pointer",
+          "reset-fixed-framing-before-performance",
+          "steady-state-frame-window",
+          "prewarm-closed-resource-baseline",
+          "repeated-open-close-resource-evidence"
+        ],
+        "realtimeAdvancement": {
+          "beforeTime": 0.03330000007152557,
+          "afterTime": 0.3500000000000001,
+          "matricesChanged": true,
+          "targetId": 502
+        },
+        "realtimeRestoration": {
+          "targetId": 502,
+          "bakedSiblingsUnchanged": 99,
+          "restoredModelType": "BakedSkinningModel",
+          "restoredBatchingScheme": 1,
+          "restoredTextureId": 1,
+          "originalBindingsRestored": true
+        },
+        "fullyProjectedCubesBeforeAfter": [
+          500,
+          500
+        ],
+        "sampling": {
+          "warmupFrames": 60,
+          "sampleFrames": 240,
+          "frameEvent": "Director.EVENT_AFTER_DRAW",
+          "clock": "performance.now",
+          "valid": true,
+          "frameIntervals": {
+            "count": 240,
+            "p50Ms": 16.699999928474426,
+            "p95Ms": 18.799999952316284,
+            "maxMs": 21.600000023841858,
+            "meanMs": 16.664583333333333
+          }
+        },
+        "warmedLifecycle": {
+          "prewarmCloses": 2,
+          "cycles": 20,
+          "baseline": {
+            "sceneNodes": 13,
+            "fixtureNodes": 0,
+            "businessRefs": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          },
+          "allClosedStatesEqualBaseline": true,
+          "bufferGrowthBytes": 0,
+          "textureGrowthBytes": 0
+        },
+        "unexpectedConsoleErrors": 0,
+        "faultInjection": {
+          "artificial": true,
+          "scope": "Native float support must be independently observed and is recorded separately. This owned page deliberately masks WebGL1 float texture/linear and dependent float color-buffer extensions before engine boot. Actual engine-selected RGBA8, absent RGBA32F sampled/render-target features and WebPipeline float-texture macro 0 are required; this is not natural low-end, WeChat, or mobile hardware evidence.",
+          "maskedExtensions": [
+            "OES_texture_float",
+            "OES_texture_float_linear",
+            "WEBGL_color_buffer_float",
+            "EXT_color_buffer_float",
+            "WEBKIT_ and MOZ_ aliases"
+          ],
+          "dependencyClosure": "Creator 3.8.8 JointTexturePool checks SAMPLED_TEXTURE, but WebPipeline float-texture macro checks RENDER_TARGET | SAMPLED_TEXTURE. Both float capabilities must be absent; half-float extensions are unchanged.",
+          "rawChecksStatus": "automated-fault-injection-checks-passed-visual-review-pending",
+          "boot": {
+            "webgl": 1,
+            "nativeFloatSupported": true,
+            "nativeFloatLinearSupported": true,
+            "forcedFloatMask": true,
+            "nativeFloatRenderTargetSupported": true,
+            "engineRgba32fSampled": false,
+            "engineRgba32fRenderTarget": false,
+            "pipelineFloatTextureMacro": 0,
+            "engineRgba8Sampled": true
+          },
+          "cleanup": {
+            "hookRemoved": true,
+            "restore": {
+              "restored": true
+            },
+            "ownedPageClosed": true
+          },
+          "visualReviewEvidenceKey": "finalAlignedCoherentRevalidation.closeups[2]"
+        }
+      }
+    ],
+    "closeupFinalTabClosure": {
+      "raw": {
+        "path": ".cache/stage3d/closeup-final-tab-closure.json",
+        "sha256": "3def6ed83e178781ef18ca216cad972bae8c636f7dff0ab03c31a07e9cadcb56",
+        "bytes": 877,
+        "availability": "local-only raw evidence"
+      },
+      "checks": [
+        {
+          "reportPath": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/report.json",
+          "tabId": "DCC4A3F70D8239E52B7A618DDB2E533E",
+          "originalCleanupClosed": false,
+          "observedAbsent": true,
+          "checkedAt": "2026-09-21T23:25:25.603Z"
+        },
+        {
+          "reportPath": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/report.json",
+          "tabId": "0687BD40562E5ED368C817709979F337",
+          "originalCleanupClosed": true,
+          "observedAbsent": true,
+          "checkedAt": "2026-09-21T23:25:25.617Z"
+        },
+        {
+          "reportPath": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/report.json",
+          "tabId": "D073F1B70B8805E1B72D352850573E8C",
+          "originalCleanupClosed": true,
+          "observedAbsent": true,
+          "checkedAt": "2026-09-21T23:25:25.627Z"
+        }
+      ],
+      "interpretation": "WebGL2 original cleanup.closed=false was an immediate post-close timing observation; later read-only exact-tab checks show all3 absent. Original reports unchanged."
+    },
+    "acceptanceBoundary": {
+      "visualReviewOwner": "main integrator",
+      "rawReportPendingPreserved": true,
+      "rgba8NativeLimitedDeviceProven": false,
+      "wechatDeviceProven": false,
+      "fullVerifyAll": "pending",
+      "budgetFreeze": "not-performed",
+      "scope": "Selected desktop fixture checks only; remaining cross-report gates and full verification are root-owned. No batch/stage/platform exit."
+    }
+  },
+  "stageComplete": false,
+  "sc0Exit": false
+}

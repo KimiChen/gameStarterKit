@@ -62,7 +62,21 @@ SC1-B5 检查器尚未实现，后续按清单迁移，不能据此放宽业务�
 2. 特别检查 cube 的外部 PNG URI 能解析、图片／texture 子 meta 生成、材质棋盘可见；64² PNG 按
    texture 导入，设置 mipfilter 为 linear。若 GLB 外部 URI 不被支持，保留失败证据并走设计拍板，
    不能静默改为内嵌图片。模型导入设置按 `docs/3D-ASSETS.md §3`，UV2 由文件提供。
-3. 后续 SC0-B3 用主 biped 的两个 clip 验证同图集路径，并用备用组验证跨图集。必须记录实际 Skeleton / AnimationClip 与 GPU 纹理身份；两个 GLB 文件或不同 clip 名字不能证明纹理分开。实时蒙皮与分批实现由 B3 交付。
+3. 用主 biped 的两个 clip 验证同图集路径。当前固定夹具在首次实例化前调用 3.8.8
+   `jointTexturePool.registerCustomTextureLayouts`，按实际 `Skeleton.hash / AnimationClip.hash`
+   分别登记两块布局；编辑器资产 UUID 用于导入引用，不是这个运行时 API 的参数。
+   同图实例共用材质；切到备用图时使用独立父材质 Pass，回主图时恢复共享材质，因为此版本
+   `InstancedBuffer.merge` 没有把关节纹理列入分批键。实际是否分离仍由探针读取 GPU 对象判断。
+   记录 clip、skeleton、布局与渲染器取得的 texture 身份，再演示切 clip 后动画及分组正确。
+   固定布局宽度为 72（RGBA32F）或 144（RGBA8）；每骨每帧分别占 3 / 12 个 texel，
+   行宽及像素起点必须按该跨度对齐，避免 shader 的同一行连续取样跨越边界。原 64 / 128
+   布局在实际动画中失败，最终三路径近景及矩阵证据已重验，旧失败证据保留。
+   RGBA8 验证使用显式能力故障注入，同时关闭 RGBA32F 的 SAMPLED_TEXTURE / RENDER_TARGET
+   能力，核对实际纹理格式为 RGBA8、宽度 144，且实际编译 shader 的
+   `CC_DEVICE_SUPPORT_FLOAT_TEXTURE` 为 0；只屏蔽 OES_texture_float 会留下 render-target
+   能力并产生格式与 shader 分支不一致。该注入不代表天然低端设备或真实微信硬件。
+   两个 GLB 文件、两个 skeleton UUID 或不同 clip 名字都不能证明纹理分开；若引擎仍放同一纹理，
+   调整布局后重验，跨图集验收继续 pending，不能以文件分组替代引擎证据。
 4. 烘焙 / instancing / 浮点与 RGBA8 关节纹理 / WebGL1 行为属于 SC0-B3/B5 的真实引擎证据，
    本工具不会宣称这些检查已经通过。实时蒙皮实例不得沿用开启 instancing 的预烘焙材质。
 

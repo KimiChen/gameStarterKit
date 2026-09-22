@@ -1,0 +1,3191 @@
+{
+  "schemaVersion": 2,
+  "kind": "stage3d-b3-three-context-numeric-review",
+  "reviewDate": "2026-09-22",
+  "generatedAt": "2026-09-21T23:34:42.665427+00:00",
+  "batch": "SC0-B3",
+  "browserEvidencePassed": true,
+  "fixtureAutomatedEvidencePassed": true,
+  "snakeCarrierEvidencePassed": true,
+  "visualReviewPassed": true,
+  "fullVerificationPassed": true,
+  "batchComplete": true,
+  "b3Complete": true,
+  "sc0Exit": false,
+  "acceptanceStatus": "SC0-B3 browser prototype batch complete; SC0 exit remains pending",
+  "scope": "Offline revalidation of final actual Creator 3.8.8 browser evidence. Raw reports, summaries and images remain unchanged. Review assembled from immutable stash 772765481b7bc26dc108556092efeee97672913d and retained evidence.",
+  "pending": [
+    {
+      "gate": "sc0-exit",
+      "status": "pending",
+      "reason": "SC0-B1 still needs the real WeChat test project/AppID and runnable build evidence; SC0-B4 budget freeze remains separate. SC4 real-device cache-failure acceptance is a later gate."
+    }
+  ],
+  "limits": [
+    "The RGBA8 path is WebGL1 float-capability fault injection on a device with native float support. It is not a naturally limited or WeChat device test.",
+    "Desktop CSS/DPR emulation is not mobile hardware evidence. SC0-B1 still requires the WeChat test project/AppID and runnable build evidence, and SC0-B4 must freeze the budget after its prerequisites. SC4 real-device cache-failure acceptance remains a later-stage gate.",
+    "Startup maxima are preserved alongside steady p95. These numbers do not freeze candidate budgets or establish a universal performance target.",
+    "Snake wheel coverage is fixture-only.",
+    "Modal pre-block boosting=true was asserted live but its snapshot was not saved. Stored blocked/restored/stale/fresh snapshots show cancellation and fresh input, not the omitted prior state.",
+    "WebGL2 Snake first shows SnakeWorld.Relive at remount.after (also clicked); modal/fresh snapshots are alive with no overlay. This is not gameplay recovery after death evidence."
+  ],
+  "revalidation": {
+    "rawReportShaMatchedSummaries": true,
+    "storedSummaryProjectionMatched": true,
+    "rawSamplingReaggregated": true,
+    "allRawLongFramesPreserved": true,
+    "framingRevalidated": true,
+    "bakedAdvancementAndTransitionRevalidated": true,
+    "actualWidthsAndOffsetsAligned": true,
+    "realtimeMatricesAndRestorationRevalidated": true,
+    "allSixtyCyclesRevalidated": true,
+    "rgba8DependentCapabilitiesAndCleanupRevalidated": true,
+    "actualRgba8CompiledShaderMacroZero": true,
+    "snakeSixtyFourTrustedEventsAndIdentifierSetsRevalidated": true,
+    "sourcePendingUnchanged": true,
+    "note": "Existing pure JS validators and sampling/summary projection re-run before stash; summary projection compared after JSON serialization. Subsequent assembly independently checks hashes, recorded shader macros and DOM identifiers.",
+    "hashedSourceFiles": 105
+  },
+  "requiredStepOrder": [
+    "systemjs-runtime-and-real-viewmgr",
+    "engine-touch-source-and-dom-capture",
+    "imported-prefab-paths",
+    "initial-load-and-first-activation",
+    "camera-and-layer-configuration",
+    "actual-skinning-textures-and-cross-atlas-switch",
+    "actual-realtime-skinning-without-instancing",
+    "hud-click",
+    "world-drag-across-hud",
+    "hud-drag-across-world",
+    "simultaneous-hud-and-world",
+    "wheel-current-hit",
+    "modal-cancels-held-world-and-restores-fresh-only",
+    "hud-close-remount-cancels-old-pointer",
+    "reset-fixed-framing-before-performance",
+    "steady-state-frame-window",
+    "prewarm-closed-resource-baseline",
+    "repeated-open-close-resource-evidence"
+  ],
+  "contexts": [
+    {
+      "id": "webgl2",
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/report.json",
+        "sha256": "94f0e97ebda526e392be1f0982eeb72c523d611e0275ea921a7a9a2dc173ed6b",
+        "bytes": 31586921
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-spike.json",
+        "sha256": "3f9345089fb79bad0245e92c300610d2126ab8ecc5c4e6ddcefda7c3fdb15219",
+        "bytes": 217215
+      },
+      "summaryProjectionRechecked": true,
+      "executedOk": true,
+      "sourceExitCode": 2,
+      "sourcePending": [
+        {
+          "name": "snake-carrier",
+          "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+        },
+        {
+          "name": "visual-and-skinning-review",
+          "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+        },
+        {
+          "name": "other-sc0-gates",
+          "reason": "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates."
+        }
+      ],
+      "startedAt": "2026-09-21T23:19:10.729Z",
+      "finishedAt": "2026-09-21T23:20:00.115Z",
+      "environment": {
+        "webgl": 2,
+        "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "device": "WebGL2Device",
+        "pipeline": "WebPipeline",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "viewport": {
+        "window": {
+          "width": 375,
+          "height": 812,
+          "dpr": 2,
+          "visualViewport": {
+            "width": 375,
+            "height": 812,
+            "scale": 1
+          }
+        },
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624
+        },
+        "preview": {
+          "device": "WebpageFullScreen",
+          "rotated": false,
+          "toolbar": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "hidden": true
+          }
+        },
+        "cc": {
+          "visible": {
+            "width": 750,
+            "height": 1624
+          },
+          "design": {
+            "width": 750,
+            "height": 1624
+          },
+          "screenPixels": {
+            "width": 750,
+            "height": 1624
+          },
+          "dpr": 2
+        }
+      },
+      "steps": [
+        {
+          "name": "systemjs-runtime-and-real-viewmgr",
+          "status": "passed"
+        },
+        {
+          "name": "engine-touch-source-and-dom-capture",
+          "status": "passed"
+        },
+        {
+          "name": "imported-prefab-paths",
+          "status": "passed"
+        },
+        {
+          "name": "initial-load-and-first-activation",
+          "status": "passed"
+        },
+        {
+          "name": "camera-and-layer-configuration",
+          "status": "passed"
+        },
+        {
+          "name": "actual-skinning-textures-and-cross-atlas-switch",
+          "status": "passed"
+        },
+        {
+          "name": "actual-realtime-skinning-without-instancing",
+          "status": "passed"
+        },
+        {
+          "name": "hud-click",
+          "status": "passed"
+        },
+        {
+          "name": "world-drag-across-hud",
+          "status": "passed"
+        },
+        {
+          "name": "hud-drag-across-world",
+          "status": "passed"
+        },
+        {
+          "name": "simultaneous-hud-and-world",
+          "status": "passed"
+        },
+        {
+          "name": "wheel-current-hit",
+          "status": "passed"
+        },
+        {
+          "name": "modal-cancels-held-world-and-restores-fresh-only",
+          "status": "passed"
+        },
+        {
+          "name": "hud-close-remount-cancels-old-pointer",
+          "status": "passed"
+        },
+        {
+          "name": "reset-fixed-framing-before-performance",
+          "status": "passed"
+        },
+        {
+          "name": "steady-state-frame-window",
+          "status": "passed"
+        },
+        {
+          "name": "prewarm-closed-resource-baseline",
+          "status": "passed"
+        },
+        {
+          "name": "repeated-open-close-resource-evidence",
+          "status": "passed"
+        }
+      ],
+      "input": {
+        "allTransportCommandsPassed": true,
+        "commandCount": 30,
+        "domTraceEventCount": 30,
+        "allDomEventsTrusted": true,
+        "changedAndActiveIdentifiersRevalidated": true,
+        "cleanup": {
+          "dispatched": false,
+          "reason": "no-active-touch-sequence"
+        }
+      },
+      "framing": {
+        "before": {
+          "cubeCount": 500,
+          "visibleMeshes": 500,
+          "fullyProjectedCubes": 500,
+          "stageQueueCount": 1,
+          "stageCulledModelCount": 601,
+          "scheduledPhases": [
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            }
+          ],
+          "camera": {
+            "node": "Stage3dSpike.Camera",
+            "enabled": true,
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.3188328159848071,
+              "y": 0,
+              "z": 0,
+              "w": 0.947810970315916
+            },
+            "fov": 45,
+            "near": 0.1,
+            "far": 1000,
+            "visibility": 1073741826,
+            "width": 750,
+            "height": 1624,
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          },
+          "projected": {
+            "minX": 39.534250636903636,
+            "minY": 664.3339304615354,
+            "maxX": 710.4657493630964,
+            "maxY": 963.0650115884538
+          },
+          "submissions": [
+            {
+              "key": "[1,70971,70970]",
+              "requiredCubeInstances": 500,
+              "submittedInstances": 500,
+              "batches": 1
+            }
+          ],
+          "gfx": {
+            "drawCalls": 8,
+            "triangles": 15968,
+            "instances": 600
+          },
+          "source": "Creator 3.8.8 Camera.worldToScreen, Model.worldBounds, WebPipeline executor culling results and submitted instanced buffer/IA counts. Submission is not a per-pixel occlusion guarantee."
+        },
+        "after": {
+          "cubeCount": 500,
+          "visibleMeshes": 500,
+          "fullyProjectedCubes": 500,
+          "stageQueueCount": 1,
+          "stageCulledModelCount": 602,
+          "scheduledPhases": [
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            }
+          ],
+          "camera": {
+            "node": "Stage3dSpike.Camera",
+            "enabled": true,
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.3188328159848071,
+              "y": 0,
+              "z": 0,
+              "w": 0.947810970315916
+            },
+            "fov": 45,
+            "near": 0.1,
+            "far": 1000,
+            "visibility": 1073741826,
+            "width": 750,
+            "height": 1624,
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          },
+          "projected": {
+            "minX": 39.534250636903636,
+            "minY": 664.3339304615354,
+            "maxX": 710.4657493630964,
+            "maxY": 963.0650115884538
+          },
+          "submissions": [
+            {
+              "key": "[1,70971,70970]",
+              "requiredCubeInstances": 500,
+              "submittedInstances": 500,
+              "batches": 1
+            }
+          ],
+          "gfx": {
+            "drawCalls": 9,
+            "triangles": 16066,
+            "instances": 649
+          },
+          "source": "Creator 3.8.8 Camera.worldToScreen, Model.worldBounds, WebPipeline executor culling results and submitted instanced buffer/IA counts. Submission is not a per-pixel occlusion guarantee."
+        },
+        "cameraUnchanged": true,
+        "scope": "500 cubes fully projected, culled and submitted; not a per-pixel occlusion claim."
+      },
+      "startup": {
+        "sampleFrames": 600,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 19.5,
+          "maxMs": 120.5,
+          "meanMs": 17.22816666662693
+        },
+        "gfxPeak": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 308580,
+          "textureBytes": 41663260,
+          "totalBytes": 41971840
+        },
+        "readyAtMs": 2309.2000000476837
+      },
+      "steady": {
+        "sampleFrames": 240,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 18.700000047683716,
+          "maxMs": 20.59999990463257,
+          "meanMs": 16.670416666567327
+        },
+        "gfxPeak": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        },
+        "warmupFrames": 60,
+        "lastFrameGfx": {
+          "drawCalls": 9,
+          "triangles": 16066,
+          "instances": 649,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        }
+      },
+      "bakedSkinning": {
+        "mainAdvancingClips": [
+          1388145058,
+          3585340301
+        ],
+        "alternateAdvancingClips": [
+          4250087398
+        ],
+        "actualTextureFormats": [
+          "RGBA32F"
+        ],
+        "actualTextureWidths": [
+          72
+        ],
+        "actualPixelOffsets": [
+          0,
+          186,
+          1116,
+          1302,
+          1488,
+          1674,
+          1860,
+          2046,
+          2232,
+          2418,
+          2604,
+          2790,
+          2976,
+          3162,
+          3348,
+          3534,
+          3720,
+          3906,
+          4092,
+          4278,
+          4464,
+          4650,
+          4836
+        ],
+        "checkedRendererObservations": 3800,
+        "allWidthsAndOffsetsAligned": true,
+        "drawCallChanges": {
+          "alternate0": 1,
+          "alternate1": 1,
+          "restored": 0
+        },
+        "transitionCriterion": "one unchanged instance/model: shared main texture/pass -> distinct alternate texture/pass -> original shared bindings",
+        "mainTextureId": 1,
+        "alternateTextureId": 2,
+        "restoredTextureId": 1
+      },
+      "realtimeSkinning": {
+        "targetId": 502,
+        "bakedSiblings": 99,
+        "actualModelTypes": [
+          "SkinningModel"
+        ],
+        "advancement": {
+          "beforeTime": 0.033100000023841857,
+          "afterTime": 0.3498000000715256,
+          "matricesChanged": true,
+          "targetId": 502
+        },
+        "restoration": {
+          "targetId": 502,
+          "bakedSiblingsUnchanged": 99,
+          "restoredModelType": "BakedSkinningModel",
+          "restoredBatchingScheme": 1,
+          "restoredTextureId": 1,
+          "originalBindingsRestored": true
+        },
+        "scope": "One actual non-instanced SkinningModel with advancing real matrices and 99 unchanged baked siblings; not the future SC4 API."
+      },
+      "resources": {
+        "observedCycles": 20,
+        "closeModes": {
+          "realtime": 10,
+          "restored-baked": 10
+        },
+        "baseline": {
+          "sceneNodes": 13,
+          "fixtureNodes": 0,
+          "businessRefs": 0,
+          "ready": false,
+          "gfx": {
+            "drawCalls": 1,
+            "triangles": 180,
+            "instances": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          }
+        },
+        "closedSceneNodes": {
+          "min": 13,
+          "max": 13
+        },
+        "closedFixtureNodes": {
+          "min": 0,
+          "max": 0
+        },
+        "closedBusinessRefs": {
+          "min": 0,
+          "max": 0
+        },
+        "closedBufferBytes": {
+          "min": 69500,
+          "max": 69500
+        },
+        "closedTextureBytes": {
+          "min": 41587296,
+          "max": 41587296
+        },
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0,
+        "finalState": {
+          "sceneNodes": 13,
+          "fixtureNodes": 0,
+          "businessRefs": 0,
+          "ready": false,
+          "gfx": {
+            "drawCalls": 1,
+            "triangles": 180,
+            "instances": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          }
+        },
+        "note": "Each prewarm activates one realtime sample before close. Engine-retained high-water marks are recorded, not equated to business references."
+      },
+      "consoleClassification": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 2,
+          "actualWebgl": 2,
+          "device": "WebGL2Device",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790032751347,
+          "firstFixtureLoadStartedAtEpochMs": 1790032753420
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790032753420,
+        "expectedBootDiagnostics": [],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "capabilityFaultInjection": null,
+      "screenshots": [
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/001-initial-fixture.png",
+          "sha256": "cc402a96a316f68f71a80a85d447da8cdd31c2de9c63108f9a57e81755ee7728",
+          "bytes": 363231
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/002-camera-layer-evidence.png",
+          "sha256": "4424759bfccbf43bcc57d270f67d43941f05f475402227d14229c7ff8335b253",
+          "bytes": 362578
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/003-skinning-main-shared.png",
+          "sha256": "623502ce2571d413fdbc5cbdb361eed3f79aafc800089163209d0193e1db5136",
+          "bytes": 360233
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/004-skinning-main-shared-later.png",
+          "sha256": "dcdeae1a2c72d175ea6f8e9fd0e2633925b8fb9e5a15de2ca7c5a23071fd6849",
+          "bytes": 359923
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/005-skinning-alternate-0.png",
+          "sha256": "e4cb75ce40353226b0bfb30aac7d297fd249dda47fbb9469fd1e9d7428b18b97",
+          "bytes": 357539
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/006-skinning-alternate-0-later.png",
+          "sha256": "d0cf0598e4b4b34d13626ad339c53ff7232141be97ec5268a44ba44b6804ba46",
+          "bytes": 360363
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/007-skinning-alternate-1.png",
+          "sha256": "91eac1578918e8dde9f1453d79e9e14cec9f65e67c10755b3e63087ce74d6aa2",
+          "bytes": 356321
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/008-skinning-main-restored.png",
+          "sha256": "0fbcc618823413aefa230a400c13ab88ac00c7c47bc6f2cd1abe65c7c8b52279",
+          "bytes": 358777
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/009-realtime-baked-before.png",
+          "sha256": "c0487f49c52b8e833a1b6ff9d2c1bb045b44239a728694d24b24afae5746d136",
+          "bytes": 358541
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/010-realtime-realtime.png",
+          "sha256": "68bcc40234781f1cdb72d58c5982b18df5eede2731c25cccc77b1b16667771f9",
+          "bytes": 358341
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/011-realtime-realtime-later.png",
+          "sha256": "ee0c32cea972d5a7330549ebde3793e30223b1ae1a110be9ca091b3816d749dd",
+          "bytes": 360498
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/012-realtime-baked-restored.png",
+          "sha256": "85e2b57e1f0fc2c6d78c8e1ae327bc682532b50836179e9bf2120fdecf3b2134",
+          "bytes": 361602
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/013-hud-click.png",
+          "sha256": "b6514f247d29d2eed8ebef96cc85a1cee36fabd505e58b28ee831a21c917f2ca",
+          "bytes": 359684
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/014-parallel-pointers.png",
+          "sha256": "685f17ce0d901ed9de9fc2449090cb41f7e3fe9cdb64012b924a18b82ef6a793",
+          "bytes": 288387
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/015-modal-restored.png",
+          "sha256": "a8295307af897c4ce6fee0662087fe84dc36d181a7a0dbf0b3a04e81b834fc33",
+          "bytes": 277618
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-aligned/016-steady-state.png",
+          "sha256": "3b787068a032869f1494e33943da8449536e6294c65ab420f52dea6d92ff09d7",
+          "bytes": 362116
+        }
+      ],
+      "samplingPreservation": "All raw intervals, including startup and steady long frames, remain in the referenced raw report and hash-matched numeric summary; no trimming/clamping/filtering."
+    },
+    {
+      "id": "webgl1",
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/report.json",
+        "sha256": "4d6f6106dd1c924a5d9e475ee69c9fbf53291a01a4d2afff03aa063ed9cf027f",
+        "bytes": 31596585
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-spike-webgl1.json",
+        "sha256": "83782493622a3899642f53bc44333c6471bf96c890127b1099d87b0b70ec4e2f",
+        "bytes": 217249
+      },
+      "summaryProjectionRechecked": true,
+      "executedOk": true,
+      "sourceExitCode": 2,
+      "sourcePending": [
+        {
+          "name": "snake-carrier",
+          "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+        },
+        {
+          "name": "visual-and-skinning-review",
+          "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+        },
+        {
+          "name": "other-sc0-gates",
+          "reason": "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates."
+        }
+      ],
+      "startedAt": "2026-09-21T23:20:58.098Z",
+      "finishedAt": "2026-09-21T23:21:46.492Z",
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "viewport": {
+        "window": {
+          "width": 375,
+          "height": 812,
+          "dpr": 2,
+          "visualViewport": {
+            "width": 375,
+            "height": 812,
+            "scale": 1
+          }
+        },
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624
+        },
+        "preview": {
+          "device": "WebpageFullScreen",
+          "rotated": false,
+          "toolbar": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "hidden": true
+          }
+        },
+        "cc": {
+          "visible": {
+            "width": 750,
+            "height": 1624
+          },
+          "design": {
+            "width": 750,
+            "height": 1624
+          },
+          "screenPixels": {
+            "width": 750,
+            "height": 1624
+          },
+          "dpr": 2
+        }
+      },
+      "steps": [
+        {
+          "name": "systemjs-runtime-and-real-viewmgr",
+          "status": "passed"
+        },
+        {
+          "name": "engine-touch-source-and-dom-capture",
+          "status": "passed"
+        },
+        {
+          "name": "imported-prefab-paths",
+          "status": "passed"
+        },
+        {
+          "name": "initial-load-and-first-activation",
+          "status": "passed"
+        },
+        {
+          "name": "camera-and-layer-configuration",
+          "status": "passed"
+        },
+        {
+          "name": "actual-skinning-textures-and-cross-atlas-switch",
+          "status": "passed"
+        },
+        {
+          "name": "actual-realtime-skinning-without-instancing",
+          "status": "passed"
+        },
+        {
+          "name": "hud-click",
+          "status": "passed"
+        },
+        {
+          "name": "world-drag-across-hud",
+          "status": "passed"
+        },
+        {
+          "name": "hud-drag-across-world",
+          "status": "passed"
+        },
+        {
+          "name": "simultaneous-hud-and-world",
+          "status": "passed"
+        },
+        {
+          "name": "wheel-current-hit",
+          "status": "passed"
+        },
+        {
+          "name": "modal-cancels-held-world-and-restores-fresh-only",
+          "status": "passed"
+        },
+        {
+          "name": "hud-close-remount-cancels-old-pointer",
+          "status": "passed"
+        },
+        {
+          "name": "reset-fixed-framing-before-performance",
+          "status": "passed"
+        },
+        {
+          "name": "steady-state-frame-window",
+          "status": "passed"
+        },
+        {
+          "name": "prewarm-closed-resource-baseline",
+          "status": "passed"
+        },
+        {
+          "name": "repeated-open-close-resource-evidence",
+          "status": "passed"
+        }
+      ],
+      "input": {
+        "allTransportCommandsPassed": true,
+        "commandCount": 30,
+        "domTraceEventCount": 30,
+        "allDomEventsTrusted": true,
+        "changedAndActiveIdentifiersRevalidated": true,
+        "cleanup": {
+          "dispatched": false,
+          "reason": "no-active-touch-sequence"
+        }
+      },
+      "framing": {
+        "before": {
+          "cubeCount": 500,
+          "visibleMeshes": 500,
+          "fullyProjectedCubes": 500,
+          "stageQueueCount": 1,
+          "stageCulledModelCount": 601,
+          "scheduledPhases": [
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            }
+          ],
+          "camera": {
+            "node": "Stage3dSpike.Camera",
+            "enabled": true,
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.3188328159848071,
+              "y": 0,
+              "z": 0,
+              "w": 0.947810970315916
+            },
+            "fov": 45,
+            "near": 0.1,
+            "far": 1000,
+            "visibility": 1073741826,
+            "width": 750,
+            "height": 1624,
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          },
+          "projected": {
+            "minX": 39.534250636903636,
+            "minY": 664.3339304615354,
+            "maxX": 710.4657493630964,
+            "maxY": 963.0650115884538
+          },
+          "submissions": [
+            {
+              "key": "[1,70971,70970]",
+              "requiredCubeInstances": 500,
+              "submittedInstances": 500,
+              "batches": 1
+            }
+          ],
+          "gfx": {
+            "drawCalls": 8,
+            "triangles": 15968,
+            "instances": 600
+          },
+          "source": "Creator 3.8.8 Camera.worldToScreen, Model.worldBounds, WebPipeline executor culling results and submitted instanced buffer/IA counts. Submission is not a per-pixel occlusion guarantee."
+        },
+        "after": {
+          "cubeCount": 500,
+          "visibleMeshes": 500,
+          "fullyProjectedCubes": 500,
+          "stageQueueCount": 1,
+          "stageCulledModelCount": 602,
+          "scheduledPhases": [
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            }
+          ],
+          "camera": {
+            "node": "Stage3dSpike.Camera",
+            "enabled": true,
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.3188328159848071,
+              "y": 0,
+              "z": 0,
+              "w": 0.947810970315916
+            },
+            "fov": 45,
+            "near": 0.1,
+            "far": 1000,
+            "visibility": 1073741826,
+            "width": 750,
+            "height": 1624,
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          },
+          "projected": {
+            "minX": 39.534250636903636,
+            "minY": 664.3339304615354,
+            "maxX": 710.4657493630964,
+            "maxY": 963.0650115884538
+          },
+          "submissions": [
+            {
+              "key": "[1,70971,70970]",
+              "requiredCubeInstances": 500,
+              "submittedInstances": 500,
+              "batches": 1
+            }
+          ],
+          "gfx": {
+            "drawCalls": 9,
+            "triangles": 16066,
+            "instances": 649
+          },
+          "source": "Creator 3.8.8 Camera.worldToScreen, Model.worldBounds, WebPipeline executor culling results and submitted instanced buffer/IA counts. Submission is not a per-pixel occlusion guarantee."
+        },
+        "cameraUnchanged": true,
+        "scope": "500 cubes fully projected, culled and submitted; not a per-pixel occlusion claim."
+      },
+      "startup": {
+        "sampleFrames": 600,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 18.899999976158142,
+          "maxMs": 148.69999992847443,
+          "meanMs": 16.865
+        },
+        "gfxPeak": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 308580,
+          "textureBytes": 41663260,
+          "totalBytes": 41971840
+        },
+        "readyAtMs": 2296.899999976158
+      },
+      "steady": {
+        "sampleFrames": 240,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 18.899999976158142,
+          "maxMs": 20.600000023841858,
+          "meanMs": 16.67208333313465
+        },
+        "gfxPeak": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        },
+        "warmupFrames": 60,
+        "lastFrameGfx": {
+          "drawCalls": 9,
+          "triangles": 16066,
+          "instances": 649,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        }
+      },
+      "bakedSkinning": {
+        "mainAdvancingClips": [
+          1388145058,
+          3585340301
+        ],
+        "alternateAdvancingClips": [
+          4250087398
+        ],
+        "actualTextureFormats": [
+          "RGBA32F"
+        ],
+        "actualTextureWidths": [
+          72
+        ],
+        "actualPixelOffsets": [
+          0,
+          186,
+          1116,
+          1302,
+          1488,
+          1674,
+          1860,
+          2046,
+          2232,
+          2418,
+          2604,
+          2790,
+          2976,
+          3162,
+          3348,
+          3534,
+          3720,
+          3906,
+          4092,
+          4278,
+          4464,
+          4650,
+          4836
+        ],
+        "checkedRendererObservations": 3800,
+        "allWidthsAndOffsetsAligned": true,
+        "drawCallChanges": {
+          "alternate0": 1,
+          "alternate1": 1,
+          "restored": 0
+        },
+        "transitionCriterion": "one unchanged instance/model: shared main texture/pass -> distinct alternate texture/pass -> original shared bindings",
+        "mainTextureId": 1,
+        "alternateTextureId": 2,
+        "restoredTextureId": 1
+      },
+      "realtimeSkinning": {
+        "targetId": 502,
+        "bakedSiblings": 99,
+        "actualModelTypes": [
+          "SkinningModel"
+        ],
+        "advancement": {
+          "beforeTime": 0.033299999952316285,
+          "afterTime": 0.3486999999284745,
+          "matricesChanged": true,
+          "targetId": 502
+        },
+        "restoration": {
+          "targetId": 502,
+          "bakedSiblingsUnchanged": 99,
+          "restoredModelType": "BakedSkinningModel",
+          "restoredBatchingScheme": 1,
+          "restoredTextureId": 1,
+          "originalBindingsRestored": true
+        },
+        "scope": "One actual non-instanced SkinningModel with advancing real matrices and 99 unchanged baked siblings; not the future SC4 API."
+      },
+      "resources": {
+        "observedCycles": 20,
+        "closeModes": {
+          "realtime": 10,
+          "restored-baked": 10
+        },
+        "baseline": {
+          "sceneNodes": 13,
+          "fixtureNodes": 0,
+          "businessRefs": 0,
+          "ready": false,
+          "gfx": {
+            "drawCalls": 1,
+            "triangles": 180,
+            "instances": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          }
+        },
+        "closedSceneNodes": {
+          "min": 13,
+          "max": 13
+        },
+        "closedFixtureNodes": {
+          "min": 0,
+          "max": 0
+        },
+        "closedBusinessRefs": {
+          "min": 0,
+          "max": 0
+        },
+        "closedBufferBytes": {
+          "min": 69500,
+          "max": 69500
+        },
+        "closedTextureBytes": {
+          "min": 41587296,
+          "max": 41587296
+        },
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0,
+        "finalState": {
+          "sceneNodes": 13,
+          "fixtureNodes": 0,
+          "businessRefs": 0,
+          "ready": false,
+          "gfx": {
+            "drawCalls": 1,
+            "triangles": 180,
+            "instances": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          }
+        },
+        "note": "Each prewarm activates one realtime sample before close. Engine-retained high-water marks are recorded, not equated to business references."
+      },
+      "consoleClassification": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 1,
+          "actualWebgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790032858447.7,
+          "firstFixtureLoadStartedAtEpochMs": 1790032860529
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790032860529,
+        "expectedBootDiagnostics": [
+          {
+            "index": 0,
+            "entry": {
+              "level": "error",
+              "at": 1790032858872,
+              "text": "This device does not support WebGL2"
+            },
+            "reason": "Exact Creator 3.8.8 WebGL2 initialization diagnostic occurred within the verified cold-boot window; requested WebGL1 subsequently initialized as WebGLDevice with WebPipeline"
+          }
+        ],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "capabilityFaultInjection": null,
+      "screenshots": [
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/001-initial-fixture.png",
+          "sha256": "16fecc9f7ccf394badf1eb5cb1836f921230dc15a373bd2b496aa7fb89582bca",
+          "bytes": 360143
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/002-camera-layer-evidence.png",
+          "sha256": "117cebdf976908aac249a167fc2792467a7ba7f3db951252fe95ace2667386b7",
+          "bytes": 361294
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/003-skinning-main-shared.png",
+          "sha256": "2bdce10d69b455f533dd8f53fbc28a36cfe8858742c9f90a916b4c351594060a",
+          "bytes": 359380
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/004-skinning-main-shared-later.png",
+          "sha256": "6fabe6a483a4cb1b91543dc2ccaec544d1f819a706d40c1919a2140b74c5fdd0",
+          "bytes": 357745
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/005-skinning-alternate-0.png",
+          "sha256": "fc767db72c94be8ecaaaccb3d41bf88ca9d0ea539316d330448aa5ed81f2305f",
+          "bytes": 358139
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/006-skinning-alternate-0-later.png",
+          "sha256": "2ea952a52d03a66da715a1421952211cd9817d5b1c9b3a6a11391aa9ce569f5c",
+          "bytes": 359578
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/007-skinning-alternate-1.png",
+          "sha256": "bbfddd7017a63862ac6a329780550324bf6ed504a25280947fe01f025ce899e2",
+          "bytes": 360024
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/008-skinning-main-restored.png",
+          "sha256": "c63b01fe13ee390813e9ffcbf6a04e1ff031b293f515204a868150a12a7835bc",
+          "bytes": 358520
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/009-realtime-baked-before.png",
+          "sha256": "0f24a61d6cbbe9ef25718ef3d5813d11c112268c48ecb668d1edcbfe3887a5dc",
+          "bytes": 358009
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/010-realtime-realtime.png",
+          "sha256": "8a7f047104b0f27b2238391ee7b77adb4d87e769f8f9c0502c6133322a37f93f",
+          "bytes": 358172
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/011-realtime-realtime-later.png",
+          "sha256": "b45f7c9185dc1ad776db9ce23d120430f2bdc233e65edc9d8380720daa351de1",
+          "bytes": 356340
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/012-realtime-baked-restored.png",
+          "sha256": "1458a5304349be785f6605dcb5396c782d5d1258e792cc5c5dd31b8dbae31d6a",
+          "bytes": 360700
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/013-hud-click.png",
+          "sha256": "2999b7e7600be015e52258beb17dd5eee370e47f9ac094a7e0a0504cac5c860d",
+          "bytes": 357665
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/014-parallel-pointers.png",
+          "sha256": "dbccc9ea5a0d0222f185879d9fc4a5c7a48cb88dbfff787f050b412b3cfe3cf4",
+          "bytes": 287962
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/015-modal-restored.png",
+          "sha256": "912a03953d78af73d2a8b4c6ff0e1dd08dec4adcb58703e8d4baffa310afa415",
+          "bytes": 278635
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-aligned/016-steady-state.png",
+          "sha256": "a7aa9669597eb8eade759fe243aa73391d2137ebf71429dc0529b5ce4205494b",
+          "bytes": 360727
+        }
+      ],
+      "samplingPreservation": "All raw intervals, including startup and steady long frames, remain in the referenced raw report and hash-matched numeric summary; no trimming/clamping/filtering."
+    },
+    {
+      "id": "rgba8-injected",
+      "raw": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/report.json",
+        "sha256": "f56bebb0911fbdad35217a46678379de497798f179d3bfeb1bfec2d95d579c71",
+        "bytes": 31844462
+      },
+      "numericSummary": {
+        "file": "docs/perf/stage3d/2026-09-22-spike-rgba8.json",
+        "sha256": "3c0d84c84cd35b654a2437c31a0533f9882284d9f46d1bd356e26377c7dedc8c",
+        "bytes": 477165
+      },
+      "summaryProjectionRechecked": true,
+      "executedOk": true,
+      "sourceExitCode": 2,
+      "sourcePending": [
+        {
+          "name": "snake-carrier",
+          "reason": "Run --mode snake --reuse against an already live Snake session; fixture results do not substitute for gameplay evidence."
+        },
+        {
+          "name": "visual-and-skinning-review",
+          "reason": "Review the skinning phase screenshots and actual animation. Successful clip/texture/pass assertions do not establish visual correctness or cover both float and RGBA8 texture paths."
+        },
+        {
+          "name": "other-sc0-gates",
+          "reason": "Independent baked-Prefab reload, WeChat build/device evidence and the second WebGL context remain separate exit gates."
+        },
+        {
+          "name": "fault-injection-only",
+          "reason": "Native float support must be independently observed and is recorded separately. This owned page deliberately masks WebGL1 float texture/linear and dependent float color-buffer extensions before engine boot. Actual engine-selected RGBA8, absent RGBA32F sampled/render-target features and WebPipeline float-texture macro 0 are required; this is not natural low-end, WeChat, or mobile hardware evidence."
+        }
+      ],
+      "startedAt": "2026-09-21T23:23:59.690Z",
+      "finishedAt": "2026-09-21T23:24:46.841Z",
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "viewport": {
+        "window": {
+          "width": 375,
+          "height": 812,
+          "dpr": 2,
+          "visualViewport": {
+            "width": 375,
+            "height": 812,
+            "scale": 1
+          }
+        },
+        "canvas": {
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624
+        },
+        "preview": {
+          "device": "WebpageFullScreen",
+          "rotated": false,
+          "toolbar": {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0,
+            "hidden": true
+          }
+        },
+        "cc": {
+          "visible": {
+            "width": 750,
+            "height": 1624
+          },
+          "design": {
+            "width": 750,
+            "height": 1624
+          },
+          "screenPixels": {
+            "width": 750,
+            "height": 1624
+          },
+          "dpr": 2
+        }
+      },
+      "steps": [
+        {
+          "name": "systemjs-runtime-and-real-viewmgr",
+          "status": "passed"
+        },
+        {
+          "name": "engine-touch-source-and-dom-capture",
+          "status": "passed"
+        },
+        {
+          "name": "imported-prefab-paths",
+          "status": "passed"
+        },
+        {
+          "name": "initial-load-and-first-activation",
+          "status": "passed"
+        },
+        {
+          "name": "camera-and-layer-configuration",
+          "status": "passed"
+        },
+        {
+          "name": "actual-skinning-textures-and-cross-atlas-switch",
+          "status": "passed"
+        },
+        {
+          "name": "actual-realtime-skinning-without-instancing",
+          "status": "passed"
+        },
+        {
+          "name": "hud-click",
+          "status": "passed"
+        },
+        {
+          "name": "world-drag-across-hud",
+          "status": "passed"
+        },
+        {
+          "name": "hud-drag-across-world",
+          "status": "passed"
+        },
+        {
+          "name": "simultaneous-hud-and-world",
+          "status": "passed"
+        },
+        {
+          "name": "wheel-current-hit",
+          "status": "passed"
+        },
+        {
+          "name": "modal-cancels-held-world-and-restores-fresh-only",
+          "status": "passed"
+        },
+        {
+          "name": "hud-close-remount-cancels-old-pointer",
+          "status": "passed"
+        },
+        {
+          "name": "reset-fixed-framing-before-performance",
+          "status": "passed"
+        },
+        {
+          "name": "steady-state-frame-window",
+          "status": "passed"
+        },
+        {
+          "name": "prewarm-closed-resource-baseline",
+          "status": "passed"
+        },
+        {
+          "name": "repeated-open-close-resource-evidence",
+          "status": "passed"
+        }
+      ],
+      "input": {
+        "allTransportCommandsPassed": true,
+        "commandCount": 30,
+        "domTraceEventCount": 30,
+        "allDomEventsTrusted": true,
+        "changedAndActiveIdentifiersRevalidated": true,
+        "cleanup": {
+          "dispatched": false,
+          "reason": "no-active-touch-sequence"
+        }
+      },
+      "framing": {
+        "before": {
+          "cubeCount": 500,
+          "visibleMeshes": 500,
+          "fullyProjectedCubes": 500,
+          "stageQueueCount": 1,
+          "stageCulledModelCount": 601,
+          "scheduledPhases": [
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 601
+            }
+          ],
+          "camera": {
+            "node": "Stage3dSpike.Camera",
+            "enabled": true,
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.3188328159848071,
+              "y": 0,
+              "z": 0,
+              "w": 0.947810970315916
+            },
+            "fov": 45,
+            "near": 0.1,
+            "far": 1000,
+            "visibility": 1073741826,
+            "width": 750,
+            "height": 1624,
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          },
+          "projected": {
+            "minX": 39.534250636903636,
+            "minY": 664.3339304615354,
+            "maxX": 710.4657493630964,
+            "maxY": 963.0650115884538
+          },
+          "submissions": [
+            {
+              "key": "[1,70975,70974]",
+              "requiredCubeInstances": 500,
+              "submittedInstances": 500,
+              "batches": 1
+            }
+          ],
+          "gfx": {
+            "drawCalls": 8,
+            "triangles": 15968,
+            "instances": 600
+          },
+          "source": "Creator 3.8.8 Camera.worldToScreen, Model.worldBounds, WebPipeline executor culling results and submitted instanced buffer/IA counts. Submission is not a per-pixel occlusion guarantee."
+        },
+        "after": {
+          "cubeCount": 500,
+          "visibleMeshes": 500,
+          "fullyProjectedCubes": 500,
+          "stageQueueCount": 1,
+          "stageCulledModelCount": 602,
+          "scheduledPhases": [
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            },
+            {
+              "queueId": 0,
+              "queueKey": "0-4294967295-1",
+              "phaseId": 1,
+              "culledModels": 602
+            }
+          ],
+          "camera": {
+            "node": "Stage3dSpike.Camera",
+            "enabled": true,
+            "position": {
+              "x": 0,
+              "y": 110,
+              "z": 145
+            },
+            "rotation": {
+              "x": -0.3188328159848071,
+              "y": 0,
+              "z": 0,
+              "w": 0.947810970315916
+            },
+            "fov": 45,
+            "near": 0.1,
+            "far": 1000,
+            "visibility": 1073741826,
+            "width": 750,
+            "height": 1624,
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          },
+          "projected": {
+            "minX": 39.534250636903636,
+            "minY": 664.3339304615354,
+            "maxX": 710.4657493630964,
+            "maxY": 963.0650115884538
+          },
+          "submissions": [
+            {
+              "key": "[1,70975,70974]",
+              "requiredCubeInstances": 500,
+              "submittedInstances": 500,
+              "batches": 1
+            }
+          ],
+          "gfx": {
+            "drawCalls": 9,
+            "triangles": 16066,
+            "instances": 649
+          },
+          "source": "Creator 3.8.8 Camera.worldToScreen, Model.worldBounds, WebPipeline executor culling results and submitted instanced buffer/IA counts. Submission is not a per-pixel occlusion guarantee."
+        },
+        "cameraUnchanged": true,
+        "scope": "500 cubes fully projected, culled and submitted; not a per-pixel occlusion claim."
+      },
+      "startup": {
+        "sampleFrames": 600,
+        "frameIntervals": {
+          "count": 600,
+          "p50Ms": 16.700000047683716,
+          "p95Ms": 33.10000002384186,
+          "maxMs": 126.59999990463257,
+          "meanMs": 18.338666666547457
+        },
+        "gfxPeak": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 308580,
+          "textureBytes": 41663260,
+          "totalBytes": 41971840
+        },
+        "readyAtMs": 2383.5
+      },
+      "steady": {
+        "sampleFrames": 240,
+        "frameIntervals": {
+          "count": 240,
+          "p50Ms": 16.699999928474426,
+          "p95Ms": 18.799999952316284,
+          "maxMs": 21.600000023841858,
+          "meanMs": 16.664583333333333
+        },
+        "gfxPeak": {
+          "drawCalls": 9,
+          "triangles": 16068,
+          "instances": 650,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        },
+        "warmupFrames": 60,
+        "lastFrameGfx": {
+          "drawCalls": 9,
+          "triangles": 16066,
+          "instances": 649,
+          "bufferBytes": 311140,
+          "textureBytes": 41663260,
+          "totalBytes": 41974400
+        }
+      },
+      "bakedSkinning": {
+        "mainAdvancingClips": [
+          1388145058,
+          3585340301
+        ],
+        "alternateAdvancingClips": [
+          4250087398
+        ],
+        "actualTextureFormats": [
+          "RGBA8"
+        ],
+        "actualTextureWidths": [
+          144
+        ],
+        "actualPixelOffsets": [
+          0,
+          744,
+          4464,
+          5208,
+          5952,
+          6696,
+          7440,
+          8184,
+          8928,
+          9672,
+          10416,
+          11160,
+          11904,
+          12648,
+          13392,
+          14136,
+          14880,
+          15624,
+          16368,
+          17112,
+          17856,
+          18600,
+          19344
+        ],
+        "checkedRendererObservations": 3800,
+        "allWidthsAndOffsetsAligned": true,
+        "drawCallChanges": {
+          "alternate0": 1,
+          "alternate1": 1,
+          "restored": 0
+        },
+        "transitionCriterion": "one unchanged instance/model: shared main texture/pass -> distinct alternate texture/pass -> original shared bindings",
+        "mainTextureId": 1,
+        "alternateTextureId": 2,
+        "restoredTextureId": 1
+      },
+      "realtimeSkinning": {
+        "targetId": 502,
+        "bakedSiblings": 99,
+        "actualModelTypes": [
+          "SkinningModel"
+        ],
+        "advancement": {
+          "beforeTime": 0.03330000007152557,
+          "afterTime": 0.3500000000000001,
+          "matricesChanged": true,
+          "targetId": 502
+        },
+        "restoration": {
+          "targetId": 502,
+          "bakedSiblingsUnchanged": 99,
+          "restoredModelType": "BakedSkinningModel",
+          "restoredBatchingScheme": 1,
+          "restoredTextureId": 1,
+          "originalBindingsRestored": true
+        },
+        "scope": "One actual non-instanced SkinningModel with advancing real matrices and 99 unchanged baked siblings; not the future SC4 API."
+      },
+      "resources": {
+        "observedCycles": 20,
+        "closeModes": {
+          "realtime": 10,
+          "restored-baked": 10
+        },
+        "baseline": {
+          "sceneNodes": 13,
+          "fixtureNodes": 0,
+          "businessRefs": 0,
+          "ready": false,
+          "gfx": {
+            "drawCalls": 1,
+            "triangles": 180,
+            "instances": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          }
+        },
+        "closedSceneNodes": {
+          "min": 13,
+          "max": 13
+        },
+        "closedFixtureNodes": {
+          "min": 0,
+          "max": 0
+        },
+        "closedBusinessRefs": {
+          "min": 0,
+          "max": 0
+        },
+        "closedBufferBytes": {
+          "min": 69500,
+          "max": 69500
+        },
+        "closedTextureBytes": {
+          "min": 41587296,
+          "max": 41587296
+        },
+        "maxClosedBufferDeltaBytes": 0,
+        "maxClosedTextureDeltaBytes": 0,
+        "finalState": {
+          "sceneNodes": 13,
+          "fixtureNodes": 0,
+          "businessRefs": 0,
+          "ready": false,
+          "gfx": {
+            "drawCalls": 1,
+            "triangles": 180,
+            "instances": 0,
+            "bufferBytes": 69500,
+            "textureBytes": 41587296
+          }
+        },
+        "note": "Each prewarm activates one realtime sample before close. Engine-retained high-water marks are recorded, not equated to business references."
+      },
+      "consoleClassification": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 1,
+          "actualWebgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790033037596.8,
+          "firstFixtureLoadStartedAtEpochMs": 1790033039757
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790033039757,
+        "expectedBootDiagnostics": [
+          {
+            "index": 0,
+            "entry": {
+              "level": "error",
+              "at": 1790033038079,
+              "text": "This device does not support WebGL2"
+            },
+            "reason": "Exact Creator 3.8.8 WebGL2 initialization diagnostic occurred within the verified cold-boot window; requested WebGL1 subsequently initialized as WebGLDevice with WebPipeline"
+          }
+        ],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "capabilityFaultInjection": {
+        "kind": "WebGL1 float-capability fault injection",
+        "artificial": true,
+        "scope": "Native float support must be independently observed and is recorded separately. This owned page deliberately masks WebGL1 float texture/linear and dependent float color-buffer extensions before engine boot. Actual engine-selected RGBA8, absent RGBA32F sampled/render-target features and WebPipeline float-texture macro 0 are required; this is not natural low-end, WeChat, or mobile hardware evidence.",
+        "maskedExtensions": [
+          "OES_texture_float",
+          "OES_texture_float_linear",
+          "WEBGL_color_buffer_float",
+          "EXT_color_buffer_float",
+          "WEBKIT_ and MOZ_ aliases"
+        ],
+        "dependencyClosure": "Creator 3.8.8 JointTexturePool checks SAMPLED_TEXTURE, but WebPipeline float-texture macro checks RENDER_TARGET | SAMPLED_TEXTURE. Both float capabilities must be absent; half-float extensions are unchanged.",
+        "cleanup": {
+          "hookRemoved": true,
+          "restore": {
+            "restored": true
+          },
+          "ownedPageClosed": true
+        },
+        "before": {
+          "installedBeforeCocos": true,
+          "bootStartedAtEpochMs": 1790033037596.8,
+          "alreadyLoadedFixturePrefabs": [],
+          "nativeFloatSupported": true,
+          "nativeFloatLinearSupported": true,
+          "nativeFloatRenderTargetSupported": true,
+          "effectiveFloatSupported": false,
+          "effectiveFloatRenderTargetSupported": false,
+          "engine": {
+            "device": "WebGLDevice",
+            "rgba32fFormat": 44,
+            "rgba32fFeatures": 16,
+            "rgba32fSampled": false,
+            "rgba32fRenderTarget": false,
+            "pipelineFloatTextureMacro": 0,
+            "pipelineFloatTextureMacroLine": "#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0",
+            "pipelineFloatTextureMacroSource": "Creator 3.8.8 WebPipeline.constantMacros (read only)",
+            "rgba8Format": 35,
+            "rgba8Features": 7,
+            "rgba8Sampled": true
+          }
+        },
+        "afterEngine": {
+          "device": "WebGLDevice",
+          "rgba32fFormat": 44,
+          "rgba32fFeatures": 16,
+          "rgba32fSampled": false,
+          "rgba32fRenderTarget": false,
+          "pipelineFloatTextureMacro": 0,
+          "pipelineFloatTextureMacroLine": "#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0",
+          "pipelineFloatTextureMacroSource": "Creator 3.8.8 WebPipeline.constantMacros (read only)",
+          "rgba8Format": 35,
+          "rgba8Features": 7,
+          "rgba8Sampled": true
+        },
+        "checks": {
+          "boot": {
+            "webgl": 1,
+            "nativeFloatSupported": true,
+            "nativeFloatLinearSupported": true,
+            "forcedFloatMask": true,
+            "nativeFloatRenderTargetSupported": true,
+            "engineRgba32fSampled": false,
+            "engineRgba32fRenderTarget": false,
+            "pipelineFloatTextureMacro": 0,
+            "engineRgba8Sampled": true
+          },
+          "cycles": 20,
+          "actualTextureObservations": 5978,
+          "realtimeObservations": 22
+        }
+      },
+      "screenshots": [
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/001-initial-fixture.png",
+          "sha256": "c14b94fb1d928d58e581544fed6bea7cb45233114d1fd9d8cb2dda494d12bf1a",
+          "bytes": 358927
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/002-camera-layer-evidence.png",
+          "sha256": "9f25d77ce95b3af77b9347f3b52b88bdb3933cc1906b37c63999e11f760f72b3",
+          "bytes": 359608
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/003-skinning-main-shared.png",
+          "sha256": "cbd1ddaa3e8b9fdd22835e302dcef283ed7759b9ccc7bc06e70555555da1020a",
+          "bytes": 361150
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/004-skinning-main-shared-later.png",
+          "sha256": "32e4a7a8b3da6c0c01697b399d01027e324c1a4e59aacb5a7ff95a50ee62640b",
+          "bytes": 359300
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/005-skinning-alternate-0.png",
+          "sha256": "8409f9a85e80eb580db339bc5a7b50b79b9dd9713acd36e8aad1ef37f1ec3970",
+          "bytes": 360430
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/006-skinning-alternate-0-later.png",
+          "sha256": "2545125cf26d73adf7468d17065576b84720dac9597e8568950c4f8ada9e7d26",
+          "bytes": 355250
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/007-skinning-alternate-1.png",
+          "sha256": "572d57a390344b5e620aefe029ae1c6226576c3c104e1588f8e6b00fdecee683",
+          "bytes": 359424
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/008-skinning-main-restored.png",
+          "sha256": "07e71ac590d240c48c418c4e202968ca29fc8b042617d7536d9fb47154ec01af",
+          "bytes": 359287
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/009-realtime-baked-before.png",
+          "sha256": "74ad949956854f2295fb99297d7dd824151f817e001a298b6d54d8754226cf02",
+          "bytes": 358268
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/010-realtime-realtime.png",
+          "sha256": "d50ad1d5f1f0a74affd5f87fd98706ea6ea0bde23444eac8c0a17df559591080",
+          "bytes": 357895
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/011-realtime-realtime-later.png",
+          "sha256": "0f73b37e19b59ca2b567c3a5d1ca6258319151bd9d95e8faaca389355beb78ee",
+          "bytes": 359957
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/012-realtime-baked-restored.png",
+          "sha256": "e8c9ebe91c46e256083deb80913ee107d94534b2b8a45904f920a20c55be79df",
+          "bytes": 359818
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/013-hud-click.png",
+          "sha256": "b4180c4a078f05a0635a5718283b2d75fc3045d12465f93f5b387532ff39792a",
+          "bytes": 358468
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/014-parallel-pointers.png",
+          "sha256": "adb883569afa4be575885fbfef1a117fdc511c8a1e6b6c14995f0c43b1340c5c",
+          "bytes": 288469
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/015-modal-restored.png",
+          "sha256": "f4e3406935fab2409dab087590648dad33b5db8bf759dd6e6b262a67b0e779e4",
+          "bytes": 279447
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-coherent/016-steady-state.png",
+          "sha256": "e98effd72ebaefd1e0d8c0afb93de3787344a87109d77ffed5b0f5abac00b8c8",
+          "bytes": 359486
+        }
+      ],
+      "samplingPreservation": "All raw intervals, including startup and steady long frames, remain in the referenced raw report and hash-matched numeric summary; no trimming/clamping/filtering."
+    }
+  ],
+  "snakeCarrier": {
+    "status": "passed-with-explicit-evidence-limits",
+    "contexts": [
+      {
+        "id": "webgl2",
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl2-modal-fixed/report.json",
+          "sha256": "722c567ed2dce18202e8e02113897b8cb99d439253ae035aebeed9b96e00ef13",
+          "bytes": 195025
+        },
+        "numericSummary": {
+          "file": "docs/perf/stage3d/2026-09-22-snake-input.json",
+          "sha256": "a75f5f8bd21820228ec1d3dd04cfbee754ec8a8b2e03139f15b1fa0fadaf56a0",
+          "bytes": 10579
+        },
+        "summaryProjectionRechecked": true,
+        "executedOk": true,
+        "sourceExitCode": 0,
+        "sourcePending": [],
+        "steps": [
+          {
+            "name": "systemjs-runtime-and-real-viewmgr",
+            "status": "passed"
+          },
+          {
+            "name": "engine-touch-source-and-dom-capture",
+            "status": "passed"
+          },
+          {
+            "name": "existing-snake-prerequisite",
+            "status": "passed"
+          },
+          {
+            "name": "attach-real-fgui-hud-to-snake",
+            "status": "passed"
+          },
+          {
+            "name": "hud-click",
+            "status": "passed"
+          },
+          {
+            "name": "world-drag-across-hud",
+            "status": "passed"
+          },
+          {
+            "name": "hud-drag-across-world",
+            "status": "passed"
+          },
+          {
+            "name": "simultaneous-hud-and-world",
+            "status": "passed"
+          },
+          {
+            "name": "modal-cancels-held-world-and-restores-fresh-only",
+            "status": "passed"
+          },
+          {
+            "name": "hud-close-remount-cancels-old-pointer",
+            "status": "passed"
+          }
+        ],
+        "input": {
+          "commandCount": 32,
+          "domTraceEventCount": 32,
+          "allPassed": true,
+          "allTrusted": true,
+          "changedAndActiveIdsMatched": true
+        },
+        "boot": {
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790032834023.1,
+          "bootCompletedAtEpochMs": 1790032836071,
+          "firstFixtureLoadStartedAtEpochMs": null,
+          "provenance": {
+            "kind": "owned-snake-cold-boot",
+            "tabId": "9AF022E590DEE82568B49058741E8CAC",
+            "expectedWebgl": 2,
+            "sceneUuidAtBoot": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+            "fixtureUuidsUnloaded": true
+          }
+        },
+        "consoleClassification": {
+          "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+          "context": {
+            "expectedWebgl": 2,
+            "actualWebgl": 2,
+            "device": "WebGL2Device",
+            "pipeline": "WebPipeline",
+            "coldBoot": true,
+            "bootStartedAtEpochMs": 1790032834023.1,
+            "bootCompletedAtEpochMs": 1790032836071,
+            "firstFixtureLoadStartedAtEpochMs": null
+          },
+          "windowValid": true,
+          "bootDiagnosticCutoffAtEpochMs": 1790032836071,
+          "expectedBootDiagnostics": [],
+          "unexpectedErrors": [],
+          "nonErrorCount": 0
+        },
+        "modalSnapshots": {
+          "blocked": {
+            "blocked": true,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 4,
+              "worldMoves": 3,
+              "worldEnds": 2,
+              "worldCancels": 2,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 4
+            },
+            "overlays": []
+          },
+          "restored": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 4,
+              "worldMoves": 3,
+              "worldEnds": 2,
+              "worldCancels": 2,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 5
+            },
+            "overlays": []
+          },
+          "staleMove": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 4,
+              "worldMoves": 3,
+              "worldEnds": 2,
+              "worldCancels": 2,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 5
+            },
+            "overlays": []
+          },
+          "fresh": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 5,
+              "worldMoves": 4,
+              "worldEnds": 3,
+              "worldCancels": 2,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 5
+            },
+            "overlays": []
+          }
+        },
+        "remountSnapshots": {
+          "closed": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 6,
+              "worldMoves": 5,
+              "worldEnds": 3,
+              "worldCancels": 3,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 6
+            },
+            "overlays": []
+          },
+          "reopened": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 6,
+              "worldMoves": 5,
+              "worldEnds": 3,
+              "worldCancels": 3,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 7
+            },
+            "overlays": []
+          },
+          "after": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 6,
+              "worldMoves": 5,
+              "worldEnds": 3,
+              "worldCancels": 3,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 7
+            },
+            "overlays": [
+              "SnakeWorld.Relive"
+            ]
+          },
+          "clicked": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 6,
+              "worldMoves": 5,
+              "worldEnds": 3,
+              "worldCancels": 3,
+              "worldWheels": 0,
+              "hudStarts": 5,
+              "cancellations": 7
+            },
+            "overlays": [
+              "SnakeWorld.Relive"
+            ]
+          }
+        },
+        "screenshots": [
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl2-modal-fixed/001-hud-click.png",
+            "sha256": "ace338e6c7739366e5b904dcaf47a4b01a44f649bf2c80490922468e15aae22b",
+            "bytes": 253797
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl2-modal-fixed/002-parallel-pointers.png",
+            "sha256": "4fbe89aadc832b3a3c69f3f69c3103b255710c79ad85f0de078edf5ed63ae6e1",
+            "bytes": 256685
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl2-modal-fixed/003-modal-restored.png",
+            "sha256": "32e847c0068a98a56cc5d06249ba1453e89c30a0943ebbcbd260c2ea352b1b9c",
+            "bytes": 282786
+          }
+        ]
+      },
+      {
+        "id": "webgl1",
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl1-modal-fixed/report.json",
+          "sha256": "d76589bdd80a3d9c79c838c4b33b16f605f9931414b9b8c4a2cf4c65837cd050",
+          "bytes": 196719
+        },
+        "numericSummary": {
+          "file": "docs/perf/stage3d/2026-09-22-snake-input-webgl1.json",
+          "sha256": "8fda03bf3c18e88d74bc143a8692ba743f5e2e46aa167ed9f83941b2d295cc31",
+          "bytes": 10642
+        },
+        "summaryProjectionRechecked": true,
+        "executedOk": true,
+        "sourceExitCode": 0,
+        "sourcePending": [],
+        "steps": [
+          {
+            "name": "systemjs-runtime-and-real-viewmgr",
+            "status": "passed"
+          },
+          {
+            "name": "engine-touch-source-and-dom-capture",
+            "status": "passed"
+          },
+          {
+            "name": "existing-snake-prerequisite",
+            "status": "passed"
+          },
+          {
+            "name": "attach-real-fgui-hud-to-snake",
+            "status": "passed"
+          },
+          {
+            "name": "hud-click",
+            "status": "passed"
+          },
+          {
+            "name": "world-drag-across-hud",
+            "status": "passed"
+          },
+          {
+            "name": "hud-drag-across-world",
+            "status": "passed"
+          },
+          {
+            "name": "simultaneous-hud-and-world",
+            "status": "passed"
+          },
+          {
+            "name": "modal-cancels-held-world-and-restores-fresh-only",
+            "status": "passed"
+          },
+          {
+            "name": "hud-close-remount-cancels-old-pointer",
+            "status": "passed"
+          }
+        ],
+        "input": {
+          "commandCount": 32,
+          "domTraceEventCount": 32,
+          "allPassed": true,
+          "allTrusted": true,
+          "changedAndActiveIdsMatched": true
+        },
+        "boot": {
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790032815683.4,
+          "bootCompletedAtEpochMs": 1790032817705,
+          "firstFixtureLoadStartedAtEpochMs": null,
+          "provenance": {
+            "kind": "owned-snake-cold-boot",
+            "tabId": "81D47FCDC903B235BE7DAB662606CF10",
+            "expectedWebgl": 1,
+            "sceneUuidAtBoot": "33a6cd88-ca61-42f3-97e1-6b18a9096a34",
+            "fixtureUuidsUnloaded": true
+          }
+        },
+        "consoleClassification": {
+          "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+          "context": {
+            "expectedWebgl": 1,
+            "actualWebgl": 1,
+            "device": "WebGLDevice",
+            "pipeline": "WebPipeline",
+            "coldBoot": true,
+            "bootStartedAtEpochMs": 1790032815683.4,
+            "bootCompletedAtEpochMs": 1790032817705,
+            "firstFixtureLoadStartedAtEpochMs": null
+          },
+          "windowValid": true,
+          "bootDiagnosticCutoffAtEpochMs": 1790032817705,
+          "expectedBootDiagnostics": [
+            {
+              "index": 0,
+              "entry": {
+                "level": "error",
+                "at": 1790032816026,
+                "text": "This device does not support WebGL2"
+              },
+              "reason": "Exact Creator 3.8.8 WebGL2 initialization diagnostic occurred within the verified cold-boot window; requested WebGL1 subsequently initialized as WebGLDevice with WebPipeline"
+            }
+          ],
+          "unexpectedErrors": [],
+          "nonErrorCount": 0
+        },
+        "modalSnapshots": {
+          "blocked": {
+            "blocked": true,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 4,
+              "worldMoves": 3,
+              "worldEnds": 2,
+              "worldCancels": 2,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 4
+            },
+            "overlays": []
+          },
+          "restored": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 4,
+              "worldMoves": 3,
+              "worldEnds": 2,
+              "worldCancels": 2,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 5
+            },
+            "overlays": []
+          },
+          "staleMove": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 4,
+              "worldMoves": 3,
+              "worldEnds": 2,
+              "worldCancels": 2,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 5
+            },
+            "overlays": []
+          },
+          "fresh": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 5,
+              "worldMoves": 4,
+              "worldEnds": 3,
+              "worldCancels": 2,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 5
+            },
+            "overlays": []
+          }
+        },
+        "remountSnapshots": {
+          "closed": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 6,
+              "worldMoves": 5,
+              "worldEnds": 3,
+              "worldCancels": 3,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 6
+            },
+            "overlays": []
+          },
+          "reopened": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 6,
+              "worldMoves": 5,
+              "worldEnds": 3,
+              "worldCancels": 3,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 7
+            },
+            "overlays": []
+          },
+          "after": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 6,
+              "worldMoves": 5,
+              "worldEnds": 3,
+              "worldCancels": 3,
+              "worldWheels": 0,
+              "hudStarts": 4,
+              "cancellations": 7
+            },
+            "overlays": []
+          },
+          "clicked": {
+            "blocked": false,
+            "owners": 0,
+            "boosting": false,
+            "counters": {
+              "worldStarts": 6,
+              "worldMoves": 5,
+              "worldEnds": 3,
+              "worldCancels": 3,
+              "worldWheels": 0,
+              "hudStarts": 5,
+              "cancellations": 7
+            },
+            "overlays": []
+          }
+        },
+        "screenshots": [
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl1-modal-fixed/001-hud-click.png",
+            "sha256": "a43b9e8f40a80f64fe0f5b68495b94c85c4636abede6e22c4fefd5ec28f9260e",
+            "bytes": 286765
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl1-modal-fixed/002-parallel-pointers.png",
+            "sha256": "99b78ef37521964fc853aa82fc9497787301784995127ad8a7a10e020b4b2655",
+            "bytes": 285707
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-snake-webgl1-modal-fixed/003-modal-restored.png",
+            "sha256": "1b44c155b9ad18d118234e7d41eb5901b03c54173df9ff05d7dcbfb518af7649",
+            "bytes": 285350
+          }
+        ]
+      }
+    ],
+    "wheelCoverage": "fixture-only",
+    "sourceAttestation": "Root and input_evidence confirmed ten steps and 32 trusted DOM records per context, independently rechecked offline."
+  },
+  "visualReview": {
+    "status": "passed",
+    "reviewedBy": "root agent",
+    "source": "Explicit root handoff: all 30 phase target comparison views across final float WebGL2/WebGL1 and coherent RGBA8 passed; coherent RGBA8 first full-frame image also reviewed.",
+    "findings": [
+      "Main Sway/Bow, alternate-atlas, realtime and baked-restored shapes and motion are correct.",
+      "RGBA8 actual width 144, features=16, sampled/render-target false, pipeline/compiled shader macro=0."
+    ],
+    "contexts": [
+      {
+        "id": "webgl2-aligned",
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/report.json",
+          "sha256": "7d61e3c90e357861f4a0266ba909a02452e420109c498bf96ca0db6baaa476ca",
+          "bytes": 4282291
+        },
+        "phaseCount": 10,
+        "reviewedFiles": [
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/01-main.png",
+            "sha256": "32088eae518a7d97fe6c6944d91dec07dd53fda7a2d4a927f9822626c5c95401",
+            "bytes": 426146
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/02-main-later.png",
+            "sha256": "445ac9e9ebe99291bf0d0fd6f622cb95c05f134593883beb93006d27ac831b6c",
+            "bytes": 409325
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/03-atlas-b-sway.png",
+            "sha256": "c1c38ab71676fa1489bea9646834698c3db4322067dd5834cd229fd990ff0bfe",
+            "bytes": 409087
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/04-atlas-b-sway-later.png",
+            "sha256": "0b5fb5e581031b21f1952ee063bdd29ba1cf82ca69f36bc605460ecdc2b8fab6",
+            "bytes": 408719
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/05-atlas-b-bow.png",
+            "sha256": "73783797f95bedb819a7fa7e51bc9e32b76cde4eeb069934d9195dfff3c05bd0",
+            "bytes": 410031
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/06-atlas-b-bow-later.png",
+            "sha256": "07341e7b9a3e0f030f31058c047b8bfa0aa6ed086c97e04373a5d712aa49abd5",
+            "bytes": 422326
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/07-main-restored.png",
+            "sha256": "f003c236be1ef1600bde8cfa57c34624a9bd6771b2534f36df43073804f6d2bc",
+            "bytes": 410864
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/08-realtime.png",
+            "sha256": "9df76ace703f91b1233a28e512e24c63996be183e2936d7f1ac7241eff5cdbf4",
+            "bytes": 413681
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/09-realtime-later.png",
+            "sha256": "796a894eb32bde64c54938a85f2159e7425fb3f240896ad94be28067aae89e57",
+            "bytes": 422743
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/10-baked-restored.png",
+            "sha256": "63df686c6ce67ae63cb88a75a0e2bcbdfa8e973dcb2008ea45c24eb5021e8bea",
+            "bytes": 412591
+          }
+        ],
+        "completed": true,
+        "originalCleanup": {
+          "closed": false
+        },
+        "subsequentClosureCheck": {
+          "reportPath": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl2-aligned/report.json",
+          "tabId": "DCC4A3F70D8239E52B7A618DDB2E533E",
+          "originalCleanupClosed": false,
+          "observedAbsent": true,
+          "checkedAt": "2026-09-21T23:25:25.603Z"
+        },
+        "shaderProof": {
+          "pipelineFloatTextureMacro": 1,
+          "actualCompiledStages": [
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "b5633ba56e2497b3af55abc0f41f6af4712da4eebda6b0f35af1aedff0c1241e"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "2e7f4b85e0f2edc4bb56244cec25a395f223c5f16beeb4898e2fdcf144f601c1"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "c720c1b3ec73ba33a0c582c07ded20aeb69f1517735b7551f3381e2ac81e8239"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "ce81b16729a2487d91982b65b1e6a1a4b5224ae9cdb21134edcbafc32fb8ff67"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "0d5e4f0cae0d5ce014842fd5866188b5df9d21f8c336dda560599c4fa8f8a50a"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "09941f04a6ac638d96d7d35d376e9c3a296ae5cdf70c360229bb46c598c2fae7"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "1eab363463f7df94fb0946aaed3053ec3f70fc46c7d4be50cacc1cbd16b1e679"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "3925ae949ee400947c21ba4d608702747775d6f32778e286db3720c9cb8a6f1c"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "d3626a0b0dd8c8cbf6451e4d510ed1a3b9cb8dda44a9fb5660d716ce1a616fe5"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "a5eb440e0640d51700ea4911472b2b4fa5738cce66e08b7120e0bcbdedb4795e"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "10b20a12423352ffdf61fe1c66726b9c4c964430eebfb4cff788126b033fbf72"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "bc75fc2d7bfb6a034e6d84d43b5a79ecf9c3ecc6f3384338b3fa8c68facb4b53"
+            }
+          ]
+        }
+      },
+      {
+        "id": "webgl1-aligned",
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/report.json",
+          "sha256": "300b122743b90b6e3eadf40c21b1ef74904ceadb1bfdd49f97894a24cc210784",
+          "bytes": 4271809
+        },
+        "phaseCount": 10,
+        "reviewedFiles": [
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/01-main.png",
+            "sha256": "fea5d556477ac482d8a13f9a1e530bc8ea5eaaaa95dad16e87eead39b2179b06",
+            "bytes": 414373
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/02-main-later.png",
+            "sha256": "62b3cdfa1c62b54657c8eb013fb52a7a00d7e8d2536aaffab8d214e889b1ca1a",
+            "bytes": 409590
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/03-atlas-b-sway.png",
+            "sha256": "03b87e695434f904e887ac1f95baf27d707992e1d786b430d92c761c847e0f55",
+            "bytes": 412807
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/04-atlas-b-sway-later.png",
+            "sha256": "6b6c5998308f3063bf8648981a426ce2b4081705f4f364ac23ae14c1a14c70f4",
+            "bytes": 425348
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/05-atlas-b-bow.png",
+            "sha256": "9490d57b8f0533536647a388c3c68cc619114363e0ab850f03a8a4eed23a5b58",
+            "bytes": 403220
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/06-atlas-b-bow-later.png",
+            "sha256": "7b49b085577bb3f66f5b0d96777fd60353e9eb16dab5d05562bafaed2a7cf54d",
+            "bytes": 402810
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/07-main-restored.png",
+            "sha256": "0e94ef81cd41dc61cc652fbfa6a5b9d3c23115c0e9955a62a33a0d9aa2e40e35",
+            "bytes": 423672
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/08-realtime.png",
+            "sha256": "c20636afcc8e8e2fcf1c2e8818f456359ab354e29a18f2d2e5cf36cc1829ae75",
+            "bytes": 418898
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/09-realtime-later.png",
+            "sha256": "5d022099e4c997e4a97e79e4e99f673b892709cf8114c8871904cb74c6cae1c9",
+            "bytes": 410697
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/10-baked-restored.png",
+            "sha256": "d1eef46d63d2d0b06f9607fcaa8957925bb64a0852e7b348e41dae1cf8a57d84",
+            "bytes": 407752
+          }
+        ],
+        "completed": true,
+        "originalCleanup": {
+          "closed": true
+        },
+        "subsequentClosureCheck": {
+          "reportPath": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-webgl1-aligned/report.json",
+          "tabId": "0687BD40562E5ED368C817709979F337",
+          "originalCleanupClosed": true,
+          "observedAbsent": true,
+          "checkedAt": "2026-09-21T23:25:25.617Z"
+        },
+        "shaderProof": {
+          "pipelineFloatTextureMacro": 1,
+          "actualCompiledStages": [
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "2f4574558dd2302fbe92efea5c130ac87d40f6ba2ffde6b77366dfd6149034f5"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "9fcccb2e6b1096b30ed43608683356e381d9427758cdb745f55bbf5f8b15bce1"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "fdeaf6b206a543701c9b01ac74fd1e4868247301c0234932e3b2dbe4660afeb6"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "1c6b669dc5114ce724c9d22ce026fc5f2c961ea248b48167ec3b1b89e2a9a4a4"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "4344d035a7bdd6b7e1e5d5fe9a3828ef803055924473b1f07236f778ea1c6a20"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "2bb8509888ecc71373a2430e04941266dbdc4724e3f9c1a280d4201a1e63debc"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "156bc5fae508ee7d2f1dc60edbc7ffb9e9ac4d7c1340e98a80c50eb3ed6c0f52"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "7fbf48ef89ee91a454866f3d167ed5d28ca509f1ea511c6fe8911e26949817ef"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "8ca2c40515b77d3ca06a93b27479c37609ebcb1bd7b5e3c1262f4af2660aa17f"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "a71a63066afc53497785366f41ff4df65fd957c8167d1b2651b1b051ec32ce8b"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 1,
+              "sourceSha256": "fb1b83f6a4d9ad1dd1bdf982b420d056739b430f0c4cd235e426f629b1c5230b"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 1,
+              "sourceSha256": "31d84d9374bf17a1748ea4affb7c2e7de7bfb7e31eabba0d48a29152fb47972a"
+            }
+          ]
+        }
+      },
+      {
+        "id": "rgba8-coherent",
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/report.json",
+          "sha256": "cfb39fe8197625b0543768d6fb03ca6e1d4ddef75e530787527377b2e4fe8e11",
+          "bytes": 4277335
+        },
+        "phaseCount": 10,
+        "reviewedFiles": [
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/01-main.png",
+            "sha256": "2aee9cd6b18958e74ef659edcd9d72b58fe4e0ac4b6b6283e0b2b143aca753f4",
+            "bytes": 424588
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/02-main-later.png",
+            "sha256": "966a8fd877f8253d7cae4902cf9534578c7c1047f21986fb24b60e2ff6e88daf",
+            "bytes": 411761
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/03-atlas-b-sway.png",
+            "sha256": "9e4c4cff95610b9a42beff92593eb9812b1f952f9269297d3b346192bac2c1ee",
+            "bytes": 407750
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/04-atlas-b-sway-later.png",
+            "sha256": "5c3bd257570be0ba81d7ef1bd69321ae50b852b4a7f43dbde4013145e4c94ba1",
+            "bytes": 407033
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/05-atlas-b-bow.png",
+            "sha256": "36357042d46b5fd46e74811953f8cb1237182138cf3d1490f36c4c49e9787dfa",
+            "bytes": 410428
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/06-atlas-b-bow-later.png",
+            "sha256": "12e7c545e2fd76c4e469fb191234060d84841c1303649714e0d1a2892889135a",
+            "bytes": 423713
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/07-main-restored.png",
+            "sha256": "ee48fb6818ab7db86f32357ef6dc1430a02c275ac86a0d08c1be616cf2b24b2d",
+            "bytes": 413835
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/08-realtime.png",
+            "sha256": "a7deafafde00c89446caf345ad80d3d4c1aa4aacd3beb5566617e2003534bb0d",
+            "bytes": 409788
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/09-realtime-later.png",
+            "sha256": "5de7ae6b128ed5303a5dd6a2d331e8832f2cecd7f38166df6b7f9f1876383253",
+            "bytes": 412550
+          },
+          {
+            "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/10-baked-restored.png",
+            "sha256": "5232b5694d3733ea7ae5fa9382c30c1e9a2977a357c38fbe95f2e42917e202c7",
+            "bytes": 426768
+          }
+        ],
+        "completed": true,
+        "originalCleanup": {
+          "faultRestore": {
+            "restored": true
+          },
+          "closed": true
+        },
+        "subsequentClosureCheck": {
+          "reportPath": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-coherent/report.json",
+          "tabId": "D073F1B70B8805E1B72D352850573E8C",
+          "originalCleanupClosed": true,
+          "observedAbsent": true,
+          "checkedAt": "2026-09-21T23:25:25.627Z"
+        },
+        "shaderProof": {
+          "pipelineFloatTextureMacro": 0,
+          "actualCompiledStages": [
+            {
+              "type": 1,
+              "floatTextureMacro": 0,
+              "sourceSha256": "8855cb97571ea581d004a027933971e574a542b502cc62688cfefac520926dfd"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 0,
+              "sourceSha256": "53bfdb8a36ef0f3bbef60b75d7840dc85a5a1a6ce256cfc345881eb4fd9f8602"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 0,
+              "sourceSha256": "f9dab83842dc1e1c958822824d54fd8a36d08e76744acb3201e86d2de0d88765"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 0,
+              "sourceSha256": "856db23b5bfa3d4b6996778b51f76450b132056c102246c827e324ecc3b42d8d"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 0,
+              "sourceSha256": "d4b33ea50521135fcc43851e31112ca777a163fa44aaa6bb539693b24b5a9b46"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 0,
+              "sourceSha256": "af17fc04092242685f213d9e3503f467bc3c6c80c5bfeb652a36cceb1fe831dd"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 0,
+              "sourceSha256": "1a3f12bcbea62e798eefa3885e3bfbf09b673112bb33919e4e240e24dc96ae99"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 0,
+              "sourceSha256": "c7756121007d2140e62dd152aaa2763b23c80106d6ad88e49c293247399ec316"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 0,
+              "sourceSha256": "66b6e49a3f81fec394ada1861d4d0b82c8c77d3c97bb612e6491655c2091f85c"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 0,
+              "sourceSha256": "7a644b72b7fb496aef7de2783615e3a5a5ce086875f02574f6ef58c672717ffe"
+            },
+            {
+              "type": 1,
+              "floatTextureMacro": 0,
+              "sourceSha256": "c3c5e7bb766505370c2c7fd5f48f154eef2b7f8117f07e2f45238e896ce43a27"
+            },
+            {
+              "type": 16,
+              "floatTextureMacro": 0,
+              "sourceSha256": "7df95a101a5627c09618dc76c5c79ab59663677e1d402db7c00640a6dd66484c"
+            }
+          ],
+          "engine": {
+            "device": "WebGLDevice",
+            "rgba32fFormat": 44,
+            "rgba32fFeatures": 16,
+            "rgba32fSampled": false,
+            "rgba32fRenderTarget": false,
+            "pipelineFloatTextureMacro": 0,
+            "pipelineFloatTextureMacroLine": "#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0",
+            "pipelineFloatTextureMacroSource": "Creator 3.8.8 WebPipeline.constantMacros (read only)",
+            "rgba8Format": 35,
+            "rgba8Features": 7,
+            "rgba8Sampled": true
+          }
+        }
+      }
+    ],
+    "closureEvidence": {
+      "file": ".cache/stage3d/closeup-final-tab-closure.json",
+      "sha256": "3def6ed83e178781ef18ca216cad972bae8c636f7dff0ab03c31a07e9cadcb56",
+      "bytes": 877
+    },
+    "closureNote": "Original GL2 cleanup.closed=false remains unchanged. Later independent exact-tab queries confirm all three owned close-up tabs absent.",
+    "imageProcessing": "This review modified no images. Root reviewed target comparison views and the stated full frame; no pixel-diff claim."
+  },
+  "historicalEvidence": {
+    "status": "superseded-failed-evidence-retained",
+    "notAcceptanceEvidence": true,
+    "priorAcceptanceStatus": "blocked-by-rgba8-baked-skinning-visual-failure",
+    "priorVisualReview": {
+      "status": "failed",
+      "reviewedBy": "root agent",
+      "source": "Explicit root-agent handoff after viewing all ten RGBA8 close-up screenshots.",
+      "findings": [
+        "RGBA8 baked main, alternate and restored poses are severely distorted.",
+        "RGBA8 realtime skinning is visually normal.",
+        "Float WebGL2 and WebGL1 are visually normal according to root review."
+      ],
+      "closeupReport": {
+        "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/report.json",
+        "sha256": "4470272429ef8536cae78dccfa20480c590dbedcf493c8dd71597ec24683db17",
+        "bytes": 3310920
+      },
+      "reviewedFiles": [
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/01-main.png",
+          "sha256": "259f6a74d2c5811b6e41c2484bedc64fc15bfe17d759a7c3fd6897262e810f02",
+          "bytes": 507578
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/02-main-later.png",
+          "sha256": "8c1feabd785f5dcb70a0e2bdb9a1e14999bd90d121c27174f27c8f9d75437fc1",
+          "bytes": 495962
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/03-atlas-b-sway.png",
+          "sha256": "4ee9de5a31411ec4a423109b8c2013d4fc7d77f7e965c1c693198cfb5389e49b",
+          "bytes": 509714
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/04-atlas-b-sway-later.png",
+          "sha256": "c5e25cdcfaca5624940e9694d531debda3fbc7da24a43e82e5d26572e33c3fdb",
+          "bytes": 507941
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/05-atlas-b-bow.png",
+          "sha256": "7323a1ba79ed05c2aca24a201303ada3b556063569ac68d92fc6fab24ecc266a",
+          "bytes": 501137
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/06-atlas-b-bow-later.png",
+          "sha256": "5e2984537b743bbf43c3b3338f7e2a053031c80df116d557b3c6aab91ee7ccfc",
+          "bytes": 506144
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/07-main-restored.png",
+          "sha256": "74dcac3ad7fe83eff90b8d6473516cd80613b2bde1f9e38f6880085d0def029a",
+          "bytes": 507408
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/08-realtime.png",
+          "sha256": "8f32f905b180673ee23621302622849a807e015cbab55acb09016a8aa09dcdfd",
+          "bytes": 482930
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/09-realtime-later.png",
+          "sha256": "12634be971339887d93b1594db4f43df490a31b753b106f637910ba42fef7f44",
+          "bytes": 492783
+        },
+        {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8/10-baked-restored.png",
+          "sha256": "ed7d7588f56f2d1bec787b7701b4d48b5200eb9cb3a39de05fa867223ae95229",
+          "bytes": 495787
+        }
+      ],
+      "imageProcessing": "None; screenshots were neither cropped nor modified.",
+      "requiredResolution": "Identify and fix the RGBA8 baked-skinning defect, then rerun actual runtime/close-up visual evidence before accepting B3."
+    },
+    "priorInvalidation": {
+      "finding": "Custom texture widths 64 (RGBA32F) and 128 (RGBA8) can split a joint across rows, but Creator 3.8.8 LBS shader samples the full joint at one y coordinate with CLAMP. The former numeric validators did not check this invariant.",
+      "affectedEvidence": "All three historical fixture runs used the invalid custom layout. Float screenshots being normal at sampled instants does not establish row safety.",
+      "localCorrection": "Custom layout changed to 72 for RGBA32F and engine-doubled 144 for RGBA8. Runtime validator now requires actual width alignment and observed jointTexturePixelOffset alignment.",
+      "status": "local-source-and-regression-tests-passed-real-engine-rerun-required",
+      "oldRawReportsChanged": false
+    },
+    "priorContexts": [
+      {
+        "id": "webgl2",
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl2-07/report.json",
+          "sha256": "8266c75d1796ec9f826500d64635b75c2c3fff738580d3f619e9298dda319eee",
+          "bytes": 31184835
+        },
+        "executedOk": true,
+        "sourceExitCode": 2,
+        "startup": {
+          "sampleFrames": 600,
+          "frameIntervals": {
+            "count": 600,
+            "p50Ms": 17,
+            "p95Ms": 33.799999952316284,
+            "maxMs": 131.29999995231628,
+            "meanMs": 19.563499999841053
+          },
+          "gfxPeak": {
+            "drawCalls": 9,
+            "triangles": 16068,
+            "instances": 650,
+            "bufferBytes": 308580,
+            "textureBytes": 41628444,
+            "totalBytes": 41937024
+          },
+          "readyAtMs": 2331.2999999523163
+        },
+        "steady": {
+          "warmupFrames": 60,
+          "sampleFrames": 240,
+          "frameIntervals": {
+            "count": 240,
+            "p50Ms": 16.800000071525574,
+            "p95Ms": 19.100000023841858,
+            "maxMs": 21.799999952316284,
+            "meanMs": 16.67750000009934
+          },
+          "gfxPeak": {
+            "drawCalls": 9,
+            "triangles": 16068,
+            "instances": 650,
+            "bufferBytes": 311140,
+            "textureBytes": 41628444,
+            "totalBytes": 41939584
+          },
+          "lastFrameGfx": {
+            "drawCalls": 9,
+            "triangles": 16066,
+            "instances": 649,
+            "bufferBytes": 311140,
+            "textureBytes": 41628444,
+            "totalBytes": 41939584
+          }
+        }
+      },
+      {
+        "id": "webgl1",
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-webgl1-final/report.json",
+          "sha256": "a058cc4055b1cdd69b4490a62eebca9e1c11956abdcd4d7c3267dbf896c266b1",
+          "bytes": 31194250
+        },
+        "executedOk": true,
+        "sourceExitCode": 2,
+        "startup": {
+          "sampleFrames": 600,
+          "frameIntervals": {
+            "count": 600,
+            "p50Ms": 16.800000071525574,
+            "p95Ms": 33.39999997615814,
+            "maxMs": 760.1999999284744,
+            "meanMs": 20.060333333214125
+          },
+          "gfxPeak": {
+            "drawCalls": 9,
+            "triangles": 16068,
+            "instances": 650,
+            "bufferBytes": 308580,
+            "textureBytes": 41628444,
+            "totalBytes": 41937024
+          },
+          "readyAtMs": 2984.7999999523163
+        },
+        "steady": {
+          "warmupFrames": 60,
+          "sampleFrames": 240,
+          "frameIntervals": {
+            "count": 240,
+            "p50Ms": 16.700000047683716,
+            "p95Ms": 19.299999952316284,
+            "maxMs": 20.899999976158142,
+            "meanMs": 16.676249999801318
+          },
+          "gfxPeak": {
+            "drawCalls": 9,
+            "triangles": 16068,
+            "instances": 650,
+            "bufferBytes": 311140,
+            "textureBytes": 41628444,
+            "totalBytes": 41939584
+          },
+          "lastFrameGfx": {
+            "drawCalls": 9,
+            "triangles": 16066,
+            "instances": 649,
+            "bufferBytes": 311140,
+            "textureBytes": 41628444,
+            "totalBytes": 41939584
+          }
+        }
+      },
+      {
+        "id": "rgba8-fault-injection",
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-fixture-rgba8-final/report.json",
+          "sha256": "05b8a0d0b56147fac9c386656faa7c94a53aadadfa77bb06233c8439085e7b4c",
+          "bytes": 31425842
+        },
+        "executedOk": true,
+        "sourceExitCode": 2,
+        "startup": {
+          "sampleFrames": 600,
+          "frameIntervals": {
+            "count": 600,
+            "p50Ms": 16.700000047683716,
+            "p95Ms": 32.700000047683716,
+            "maxMs": 395.89999997615814,
+            "meanMs": 18.450333333412807
+          },
+          "gfxPeak": {
+            "drawCalls": 9,
+            "triangles": 16068,
+            "instances": 650,
+            "bufferBytes": 308580,
+            "textureBytes": 41628444,
+            "totalBytes": 41937024
+          },
+          "readyAtMs": 8093.600000023842
+        },
+        "steady": {
+          "warmupFrames": 60,
+          "sampleFrames": 240,
+          "frameIntervals": {
+            "count": 240,
+            "p50Ms": 16.700000047683716,
+            "p95Ms": 19.5,
+            "maxMs": 21.100000023841858,
+            "meanMs": 16.67125000009934
+          },
+          "gfxPeak": {
+            "drawCalls": 9,
+            "triangles": 16068,
+            "instances": 650,
+            "bufferBytes": 311140,
+            "textureBytes": 41628444,
+            "totalBytes": 41939584
+          },
+          "lastFrameGfx": {
+            "drawCalls": 9,
+            "triangles": 16066,
+            "instances": 649,
+            "bufferBytes": 311140,
+            "textureBytes": 41628444,
+            "totalBytes": 41939584
+          }
+        }
+      }
+    ],
+    "alignedStillFailed": {
+      "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-aligned-02/report.json",
+      "sha256": "d0e0c48237e5177d5b9141375cc8186da8646c38d80a65343164c4ce0f267a4e",
+      "bytes": 3362218
+    },
+    "macroDiagnosis": {
+      "file": "docs/evidence/creator-2026-09-22/stage3d-skinning-closeup-rgba8-macro-diagnosis/report.json",
+      "sha256": "5e809ba764d37ac4310525106dad515fe1a47f328f0a24f36b1c1835fdbebf77",
+      "bytes": 4277589
+    },
+    "resolvedCauses": [
+      {
+        "cause": "Custom 64/128 widths can split a joint over rows while shader reads one y coordinate.",
+        "fix": "Custom 72 gives actual float72 / RGBA8 144; actual widths/offsets validated."
+      },
+      {
+        "cause": "Incomplete old injection retained float render-target: features17 and shader macro1 with RGBA8.",
+        "fix": "Mask OES float/linear plus dependent WEBGL/EXT float color-buffer aliases; actual features16 and pipeline/compiled shader macro0."
+      }
+    ],
+    "originalEvidenceModified": false
+  },
+  "suggestedDocumentStatus": "B3 desktop fixture, Snake input and visual evidence plus candidate verify:all passed. This remains an SC0 prototype, not SC1 framework delivery.",
+  "fullVerification": {
+    "command": "TMPDIR=/Volumes/KimData/.codex-stage3d-tests npm run verify:all",
+    "status": "passed",
+    "exitCode": 0,
+    "candidate": "B3 plus already committed prerequisites only; later batch sources hidden",
+    "recordedAt": "2026-09-22T00:05:44.979620+00:00",
+    "evidence": {
+      "file": ".cache/stage3d/verify-all-sc0-b3.log",
+      "bytes": 420949,
+      "sha256": "14fab57bf373933bdd881adec4fb4c79dc2b55c0e75adc6b044cf1dcaba0c7b1",
+      "storage": "local-only"
+    }
+  }
+}
