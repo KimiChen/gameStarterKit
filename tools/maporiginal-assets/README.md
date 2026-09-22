@@ -42,6 +42,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `build_name_map.py` | 全量反查 → `out/name_map.json`（路径 → hash/容器/下标/扩展名/大小）+ `out/coverage.json`。⚠ **多根**（APK + CDN），双根下命名率 37.8%（108,927/287,967） |
 | `fetch_cdn_assets.py` | ★ 按发行商清单从 CDN 全量取 APK 没带的那部分（2,712 条 / 9.56 GB，断点续传+大小校验） |
 | `verify_root_res.py` | ★ 用根资源清单核对本地到位率（含**追加式 `.bin`** 规则，⛔ 少了它 prefab 全判缺失） |
+| `prefab_bin.py` | ★★ ejoy2dx **二进制 prefab 解析器** → JSON（节点树 / 变换 / 贴图 / 多边形顶点索引）；`--scan <前缀>` 批量 |
 | `decode_ktx.py` / `decode_batch.py` | KTX(ETC2/ASTC/R8) → PNG；`--name` 走 name_map 按真名取 |
 | `slice_atlas.py` | `<TextureAtlas>` XML 切片（含 `r="y"` 旋转与 `oW/oH/oX/oY` 去裁边还原）→ `out/png/` + `out/sprites.jsonl` |
 | `build_terrain.py` | ★ 原版层 → `terrain.bytes`（**直接存原版 res 值**，`res==0` 用 `res_multi` 顶替）+ 3 类通行层 + 61 条调色板 |
@@ -245,6 +246,59 @@ python3 tools/maporiginal-assets/verify_root_res.py          # 全量
 ⛔ 包里**没有**合并好的地表 diffuse/splat 图集（`merge`/`splat`/`diffuse` 关键词 0 命中）——
 原版 3D 地表是按 splat 权重实时混合可平铺贴图的，所以近档菱形贴片要由这些可平铺 albedo
 **合成**（`pack-atlas.py` 的活），⛔ 不存在「直接拿来就是一张地块图」的素材。
+
+### 4.2·一·六 ★★★ 二进制 prefab 格式已破（`prefab_bin.py`）
+
+**怎么破的**：包里有 155 个**文本（JSON）形态**的 prefab（`*_easset.prefab`），它们是**同一个
+序列化器的文本模式输出** ⇒ 字段顺序逐项照抄，⛔ 不用猜；二进制侧再用同尺寸对照组
+（`mountain2m_x_01` vs `_x_02`，502 B 对 502 B）差分定位变量字段。
+
+```
+字符串 = [u32 LE 长度][ASCII]            ⚠ 空串就是长度 0，⛔ 无终止符
+节点   = [str class][u32 blockSize][类特有前缀][u32 node3dVersion=1][str tag][i16 render_level]
+         [str name][u32 components_size][component…]
+         [3f position][3f angle][3f scale][4B color][4B add_color]
+         [i16 high_z][i16 low_z][u8 faceToCamera][u8 ignoreParentFTC]
+         [u8 inheritColor][u8 inheritAlpha][u8 inheritBlend]
+         [u32 blendMode][i16 prefab_type][u32 prefab_id]
+         [str render_layer][u8 polygonOffset][u32 poly_block_size][u32 children_size][child…]
+         可绘制类再接：[u16][2f size][u16][2f pivot][15 B][str "material"][u32 4][u32 0][u16 0]
+                       polygon_2d 在此多一段几何：
+                         [u32 nv][2f × nv 顶点][u32 ni][u16 × ni 索引]
+                         [u32 n2][u16 × n2][u32 nuv][2f × nuv UV][u32 nc][u32 × nc 顶点色]
+                         [3 B][2f uvScale][12 B]
+                       [str 贴图路径]
+组件   = [str class][u32 blockSize][u16 version][…]   ★ 有块长 ⇒ 未知组件整块跳过
+```
+
+⚠ 四条坑（⛔ 别重蹈）：
+1. **字节紧凑、不按 4 对齐**：`render_level/high_z/low_z/prefab_type` 是 i16、五个继承开关是 u8
+   ⇒ f32 常落在非 4 倍偏移。按 4 对齐读会满屏 denormal。
+2. **`blockSize` 是重同步的命根**：下一个兄弟就从「块起点 + 块长」开始。局部解析失败时跳到边界
+   继续，整棵树不会被带歪。
+3. **文件末尾那 ~30 B 是根节点的尾巴、整个文件只有一份** —— 挂到每个可绘制节点上会吃掉
+   下一个兄弟的头（实测因此错位 26%）。
+4. **个别节点在 `children_size` 与首个子节点之间多 1~3 个字节** ⇒ 读子节点前要对齐探测，
+   否则 class 会读成 `"\x00polygon_2d…"`。
+
+**成果**（`scene/ground/**` 1,872 个 prefab 全量）：
+
+| 量 | 数 |
+|---|---:|
+| 解析成功 / 剩余字节 | **1872 / 1872，0 B** |
+| 节点 | 7,385（sprite_2d 4,807 / node_2d 2,038 / polygon_2d 447 / frame_sprite_2d 93） |
+| 内部重同步（未完全解出的子块） | 524（7.1%） |
+| 多边形 / 顶点 | 447 / 19,637 |
+| 引用到的不同贴图 | 415 张 |
+
+一块地表长这样（`10_1_top_group`）：6 个 sprite 各带位置 / 贴图 / 尺寸，
+配 `10_1_polygon_group` 的多边形底层（7 顶点 5 三角形 + `ground_down/underground3.png` 平铺）
+⇒ **逐块地表可以原样重建**。
+
+```bash
+python3 tools/maporiginal-assets/prefab_bin.py scene/ground/desert/10_1_top_group.prefab.bin
+python3 tools/maporiginal-assets/prefab_bin.py --scan scene/ground/      # 批量 + 成功率
+```
 
 ### 4.3 ★ `res` 的「类型 / 等级」读反过一次（2026-09-22 更正）
 
