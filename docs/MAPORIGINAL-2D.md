@@ -160,7 +160,7 @@ QORLQ_WIDTU  → WORLD_WIDTH     JOGIV_FRAMX → LOGIC_FRAME
 | 后缀 | 结构 | 角色 |
 |---|---|---|
 | `_group` | 一个 `node_2d` 挂**一个** `sprite_2d` | **立体件本体**（山、树、资源田）。⚠ 该形态对山/树成立（mountain_new 13/13、senlin 10/10），但 scene/ground 全量 1,162 个 `_group` 里严格同构的约 61%（zhaoze/grass 等有多节点/动画帧变体） |
-| `_polygon_group` + `_top_group` | 前者 = `polygon_2d` 铺一张底图（177/177 零例外）；后者 = 若干个 `sprite_2d`（desert 5–17、snow 12–23、**river 仅 0–4**），各带独立 pos/scale/angle 与**互不相同的** `low_z`（约 2/3 按子序递增——原写「6+ 个、逐个递增」，补核轮按实测收窄） | **区域底色多边形 + 手摆细节**。⚠ **只出现在 snow/desert/river 三族 block 级地貌带**（desert 60+60、snow 60+60、river 57+57；river 系另有 bohai/longriver/yellowriver 变体目录；**`river_hean` 有 8 个 `_top_group` 无 polygon 对**，「永远成对」不绝对） |
+| `_polygon_group` + `_top_group` | 前者 = `polygon_2d` 铺一张底图（177/177 零例外）；后者 = 若干个 `sprite_2d`（desert 5–17、snow 12–23、**river 仅 0–4**——⚠ 2026-09-23 实测收窄：这条只对 `scene/ground/river/` 的 57 个成立；同族的 `river_yellowriver` 是 **0–30**（中位 21）、`river_longriver` 是 **0–19**（中位 6），⛔ 别读成整个 river 族），各带独立 pos/scale/angle 与**互不相同的** `low_z`（约 2/3 按子序递增——原写「6+ 个、逐个递增」，补核轮按实测收窄） | **区域底色多边形 + 手摆细节**。⚠ **只出现在 snow/desert/river 三族 block 级地貌带**（desert 60+60、snow 60+60、river 57+57；river 系另有 bohai/longriver/yellowriver 变体目录；**`river_hean` 有 8 个 `_top_group` 无 polygon 对**，「永远成对」不绝对） |
 | `_polygon_mask_group` | `sprite_2d`（带 `comp_mask`，222/222）+ `polygon_2d` | 足迹形多边形用填充贴图（`tt_02` 占 150/224）、遮罩做**软边**。遮罩 sprite 名 = 其贴图基名（`tt_03` 只是 63/222）、`comp_mask` 的 `scale 2.42` 仅 36/222——两者都是**示例值不是定义**（原写成了定义，已收窄）。挂 `MAP_ZORDER.TERRAIN_MASK`（证据在 disasm 的 `terrain_layer_view`） |
 
 ★ `[实测]` desert 的 60 个 `*_polygon_group` 铺 `ground_down/underground3.png`、
@@ -347,8 +347,30 @@ uptcross / downtcross / xcross`，另有 1 片 `mask`），原文档只列了 6 
 三套皮肤：`road` / `road_ash` / `road_snow`（**共用** `road.xml`，58 片）
 + `road_official` / `ss_road`（图集实名 `road_direct.xml`）/ `road_liangdao`。
 
-> ⇒ 本 kit **完全没有道路层**，而数据（`road_info.bytes` 半文本未解 / `logic_road.bytes`）
-> 与素材（三套 road 图集）**都在手**。
+> ⇒ 本 kit **完全没有道路层**，而数据与素材（三套 road 图集）**都在手**。
+>
+> ★ `[实测]` **`road_info.bytes` 的结构已解开**（2026-09-23 补；⛔ 推翻「半文本未解」的旧说法
+> —— 可打印字节只占 **15.6%**，它是二进制）：
+>
+> ```
+> [u8 组数 = 37]
+> [37 × {u8 a（70..87，= ASCII 'F'..'W'）, u8 b（0/1）}]   ← 75 B 前缀
+> [u16 BE rows = 1125][u16 BE cols = 1125]                 ← 与其它层同款网格头
+> [42,018 × {u16 BE row, u16 BE col, u8 组号 1..37}]
+> ```
+>
+> **75 + 4 + 42018×5 = 210,169 B，与文件长度精确相等**。判据：组号**非降序**且恰好 1..37、
+> 与前缀里的组数一致；row ≤ 1124 / col ≤ 1114 都 < 1125；42,018 个格**互不重复**。
+> 复现：`tools/maporiginal-assets/recon_road.py`。
+>
+> ⚠ `[实测]` **坐标系仍未定**：1125² 不是逻辑格网格（地图 1500²，1500/1125 = 4/3 非整数）。
+> 1:1 与 ×4/3 两种换算（各试 ±1 偏移）落在 `res==1` 的比例分别是 0.3768 / 0.3793，
+> 而全图 `res==1` 本来就占 **0.3752** ⇒ **没有信号**，两种换算都未被证实。
+> ⇒ 道路层卡在这里，⛔ 别凭 4/3 硬做。
+>
+> ⚠ **上面「机制与河同构（制图期烘死）」这条推断要回头改**：数据里每条记录只带一个**组号**，
+> ⛔ **没有片号** —— 片的选择只能是**运行时按邻接算**（`line / 各种 turn / end / tcross /
+> xcross` 正是自动拼接的经典分类）。河是「制图期烘死」、路是「运行时拼接」，**两套机制**。
 > ⚠ ★ `[干净集]` `logic_road.bytes` 是 **3D 地形 PCG 的压平遮罩源**（补核轮**升格**：
 > 消费者在干净集 `pcg_assembly_standard_mask_map.lua:110-118` 与
 > `pcg_assembly_standard_splat_map.lua:84-98`，链为 logic_road → mask_logic_road → mask_flat_map）；

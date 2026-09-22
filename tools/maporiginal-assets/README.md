@@ -51,6 +51,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `mountain_forms.py` | ★ 「山」族 14 形的**单一真源**：值 ↔ prefab ↔ 贴图 ↔ 足迹；足迹按 odd-row offset 生成并**逐锚点回代校验** |
 | `pack_regions.py` | ★ 山族件图集（13 形各一格，**格 id = 原版 res 值**，682×409 大格，**基础季**）；贴图与 `scale`/`pos`/`angle`/`pivot` 全从 prefab 读出，⛔ 不按面积/绿度挑、⛔ 不裁 bbox |
 | `build_ground.py` | ★ 地表底：`ground_down/underground1.png` → `ground-base.png`（256² POT）+ 块/REPEAT 常量；校验 POT、满幅不透明、整周期 |
+| `recon_road.py` | ⏸ `road_info.bytes` 结构勘察（**只勘察不出产物**）：结构已解（75B 前缀 + 1125² 头 + 42,018×5B），⛔ 坐标系未定 |
 | `build_blocks.py` | ★ snow / desert 块层：`ground_{desert,snow}.bytes`（152² **行主序**）+ 路径表 51/52 条 → 几何库 + 摆放表 + 两张底纹；校 POT / 贴图归属 / 单位阵 transform |
 | `build_rivers.py` | ★ 河流几何层：`river.bytes`（504² 列主序 / 3×3 逻辑格 / 偏移 −6）+ `river_path.json` 102 条 → 几何库 `river-geo.bin` + 摆放表 `rivers.bin` + 填充色图 `river-fill.png`；带对位校验（覆盖 100.0% 的 `res==47`） |
 | `build_regions.py` | ★ 件摆放表 `regions.bin`：`res.bytes` 的 55,127 个锚点 + `mountain_patch` 的 3,942 条补件，按画家序落盘 |
@@ -108,7 +109,8 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 | `river` / `river_area_id` / `waterway.bytes` | **504×504** | 103 / 6 / 1 | 河道在 **1/3 分辨率**网格（1500/3=500，四周各留 2 → 504）。`waterway` 本图全 0 |
 
 **⚠ 不是网格层**（头 4 字节不是尺寸，是记录表，格式另解）：
-`birth_point` / `city` / `logic_road` / `mountain_patch` / `piers` / `road_info`（后者内容是半文本）。
+`birth_point` / `city` / `logic_road` / `mountain_patch` / `piers` / `road_info`
+（⚠ **`road_info` 不是半文本**，可打印只占 15.6%——是二进制，结构已解，见 `recon_road.py`）。
 
 配套 JSON：`river_path` / `ground_snow_path` / `ground_desert_path`（**group 资源名表**）、
 `river_area_info`、`mountain_effect`（大整数即 `(row<<16)|col` 客户端格键）。
