@@ -5,5 +5,5 @@
   1024,
   512
  ],
- "note": "由 terrain.bytes 按世界包围盒烘焙，逐格精确对齐；⛔ 不读此文件定位，落位用 mapoWorldBounds() 同式算出"
+ "note": "由 terrain.bytes（覆盖格按 res_multi 补成概览）按世界包围盒烘焙，逐格精确对齐；⛔ 不读此文件定位，落位用 mapoWorldBounds() 同式算出"
 }

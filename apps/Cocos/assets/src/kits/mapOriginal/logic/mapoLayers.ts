@@ -29,8 +29,12 @@ interface LayerGate {
 
 export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     { id: "terrain", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true },
-    // ⚠ 网格线只在最近两档；线宽按「屏幕像素 / scale」折算，⛔ 不是世界常量
-    { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: true },
+    // ⚠ 网格线：**尚未实现**（M1-B1 止血）。此前写着 implemented: true 而渲染器里一行都没有，
+    //   违反本文件抬头立的规矩，还会向状态行与真机重放证据谎报。
+    //   ⚠ 另：原版 2D 的逐格三层是 res / terrain / grid_state（MAPORIGINAL-2D §2），
+    //   `grid_state` 是 AOI 驱动的**归属态叠图**，⛔ 不是线框网格；
+    //   「原版有没有线框网格层」目前**无证据** ⇒ 要做之前先补证据，⛔ 别照 sgzzmap 抄了当原版。
+    { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: false },
     { id: "plate", hideAtLod: MAPO_LOD_MAX, showFromLod: 3, streamed: false, implemented: true },
     // ★ 摆件：**原版切片**（城/营/建筑/资源地物）立在格上。超出菱形，必须画在地表之上、按画家序排。
     // ★ 区域件（多格地形：山脉/林丛/散落）。⚠ 比逐格摆件多盖一档：远档看山林轮廓最有用。
@@ -42,6 +46,23 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     // banner 目标旗要服务端的归属数据。
     { id: "banner", hideAtLod: 1, showFromLod: 0, streamed: false, implemented: false },
 ] as const);
+
+/**
+ * 每个层由**哪个渲染器字段**负责；`null` = 尚无渲染器。
+ *
+ * ★ 这张表是 M1-B1 的止血闸：机检拿它去扫 `MapOriginalWorldView.ts`，要求
+ *   ① `implemented` ⟺ 这里非 null；② 非 null 的字段名在视图里真的有 `.render(` 调用。
+ *   ⛔ 新增层若写了 `implemented: true` 却没渲染器，用例立刻红 —— 将来的层自动受管。
+ */
+export const MAPO_LAYER_RENDERER: Readonly<Record<MapoLayerId, string | null>> = Object.freeze({
+    terrain: "renderer",
+    grid: null,
+    plate: "farRenderer",
+    region: "regionRenderer",
+    decor: "decorRenderer",
+    label: "labelRenderer",
+    banner: null,
+});
 
 /** 表里写着但还没实现的层。⚠ 加实现时把 implemented 翻成 true，这个列表会自动缩短。 */
 export const MAPO_PLANNED_LAYERS: readonly MapoLayerId[] =

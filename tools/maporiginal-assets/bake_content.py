@@ -12,7 +12,8 @@
    它描述的其实是 minimap 落位、全仓零消费，且 `calibrate_plate.py` 在 palette 升到
    schemaVersion 2（无 `name`/无 `water`）后重跑必 KeyError，落盘的数字是死数。
 
-★ 近档贴片由**原版 2D 侧**的可平铺地表底纹合成（2026-09-22 换源，⛔ 不再用 scene_3d）：
+★ 近档贴片由**原版 2D 侧**的可平铺地表底纹合成（2026-09-22 换源，⛔ 不再用 scene_3d）。
+   ⚠ 「2D 侧素材」成立、「S1 画面上真用」**不成立**（§1.7）—— 详见下面 `TEXTURE_OF` 上方的口径注：
    `ground_down/underground1` + 七个 `scene/ground/<生物群系>/png/tt_02`，见下面的 `TEXTURE_OF`
    与 README §4.8 的归属判据。⚠ 包里 ⛔ 没有现成的等距地块图，所以仍是**合成**而非直取。
 ⚠ 原版 2D 的地表真身（`*_group.prefab` 根资源，1,873 条）**两版 APK 都没打进包**（README §4.2），
@@ -42,8 +43,14 @@ KINDS = ["plain", "resource", "gold", "river", "mountain", "grove", "scatter", "
 #
 # ⚠ 判据不是「路径里有没有 3d」，是 2D 地表组预制体的**直接引用**：
 #   `scene/ground/<生物群系>/` 下各有 10 个 `*_polygon_mask_group.prefab`，其中的 `polygon_2d`
-#   节点直引本目录的 `tt_02`（各 10 次）—— 这是原版 2D 铺该地貌时真正用的底纹。
+#   节点直引本目录的 `tt_02`（各 10 次）。
 #   desert / snow 另有各 60 个 `*_polygon_group` 直引 `ground_down/underground{3,2}`。
+#
+# ⚠⚠ **口径修正（M1-B3，MAPORIGINAL-2D §1.7）**：上面这条只证明「这七张是**2D 侧素材**」，
+#   ⛔ **不证明「S1 画面上真在用」**。驱动 `_polygon_mask` 那层的四张 `multi_grid_*` 表在
+#   S1 **是空表**（`NEWTABLE` + `RETURN`、nk=0）⇒ 那一层在 S1 **一格都不画**。
+#   ⇒ 本 kit 这 8 张粗类底纹是**自创的**（原版 2D 的地表底是 block 级「一张底纹整数次
+#   GL_REPEAT」，见 §1.4，那是 M2-B1 才做的事）。⛔ 别把这里写成「原版就是这么铺的」。
 # ⚠ `plain` 是八条里**唯一带推断**的：`underground1` 的 2D 归属是实证（赛季配置表里登记名
 #   「草1」、且是 `all_root_res_list.cw` 的常驻根资源、无 scene_3d 对位），但「它被 polygon 平铺
 #   成草地底」没有直接证据 —— grass 的四个 `middlelevel_0N_group.prefab` 在手且只引 a1..a8。
@@ -76,8 +83,22 @@ def load_pack(mid: str):
     return d, rows, cols, cls, info
 
 
+def summary_layer(d, cls):
+    """远档**概览**用的填充层：覆盖格填上它所属件的值（`res_multi`）。
+
+    ⚠ **只给远档底图 / 缩略图用**，⛔ 绝不回写 `terrain.bytes`、⛔ 绝不用来出件 ——
+      M0-B1 删掉的正是「把覆盖格填成锚点值」那一步（它销毁了锚点信息）。
+      这里重新填一次是因为远档是**概览**：不填的话 142,958 个覆盖格变平地，
+      LOD 4–5 上 19 格的大山只剩 2,299 个锚点格、山脉整片消失。
+    """
+    raw = open(os.path.join(d, "raw", "multi.bytes"), "rb").read()
+    multi = np.frombuffer(raw, np.uint8, offset=4, count=cls.size).reshape(cls.shape)
+    return np.where(cls == 0, multi, cls).astype(np.uint8)
+
+
 def bake_plate(d, rows, cols, cls, info, sizes=((2048, 1024, 4), (1024, 512, 5))):
     """按世界包围盒烘远档底图（**逐格精确对齐**，⛔ 无标定误差）。"""
+    cls = summary_layer(d, cls)          # ★ 远档概览：覆盖格按所属件取色（见 summary_layer）
     # 远档底图按**原版值**直接取色（调色板是按值建的，⛔ 不用再折算 kind）
     pal = np.zeros((64, 3), np.uint8)
     for e in info["palette"]:
@@ -96,7 +117,7 @@ def bake_plate(d, rows, cols, cls, info, sizes=((2048, 1024, 4), (1024, 512, 5))
         p = os.path.join(d, "plate-lod%d.png" % lod)
         Image.fromarray(img).save(p)
         json.dump({"schemaVersion": 1, "lod": lod, "size": [W, H],
-                   "note": "由 terrain.bytes 按世界包围盒烘焙，逐格精确对齐；"
+                   "note": "由 terrain.bytes（覆盖格按 res_multi 补成概览）按世界包围盒烘焙，逐格精确对齐；"
                            "⛔ 不读此文件定位，落位用 mapoWorldBounds() 同式算出"},
                   open(os.path.join(d, "plate-lod%d.info.json" % lod), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=1)
@@ -130,7 +151,12 @@ def diamond_mask(w: int, h: int, bleed: int) -> np.ndarray:
 
 
 def kind_style(info):
-    """kind -> (cn, 颜色)。取该 kind 下格数最多的那条调色板项的颜色。"""
+    """kind -> (cn, 颜色)。取该 kind 下格数最多的那条调色板项的颜色。
+
+    ⚠ 自 M0-B1 起 `unknown` **在调色板里已无对应项**（值 0 改归「多格地形覆盖」= 平地）⇒
+      它落到下面的兜底 `(kind, [128,128,128])`，是一行**死哨兵**（0 格会用到）。
+      留着是给 `MAPO_VALUE_KIND_ID` 的越界兜底用，⛔ 别因为「没人用」就删掉那一行。
+    """
     best = {}
     for e in info["palette"]:
         k = e["kind"]

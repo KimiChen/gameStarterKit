@@ -309,7 +309,7 @@
    "kindId": 5,
    "kind": "grove",
    "variant": 0,
-   "cn": "林丛·59",
+   "cn": "林丛·52",
    "cell": [
     996,
     260,
@@ -323,7 +323,7 @@
    "kindId": 5,
    "kind": "grove",
    "variant": 1,
-   "cn": "林丛·59",
+   "cn": "林丛·52",
    "cell": [
     1244,
     260,
@@ -337,7 +337,7 @@
    "kindId": 5,
    "kind": "grove",
    "variant": 2,
-   "cn": "林丛·59",
+   "cn": "林丛·52",
    "cell": [
     1492,
     260,
@@ -351,7 +351,7 @@
    "kindId": 5,
    "kind": "grove",
    "variant": 3,
-   "cn": "林丛·59",
+   "cn": "林丛·52",
    "cell": [
     1740,
     260,
@@ -421,7 +421,7 @@
    "kindId": 7,
    "kind": "unknown",
    "variant": 0,
-   "cn": "未定性·0",
+   "cn": "unknown",
    "cell": [
     996,
     388,
@@ -435,7 +435,7 @@
    "kindId": 7,
    "kind": "unknown",
    "variant": 1,
-   "cn": "未定性·0",
+   "cn": "unknown",
    "cell": [
     1244,
     388,
@@ -449,7 +449,7 @@
    "kindId": 7,
    "kind": "unknown",
    "variant": 2,
-   "cn": "未定性·0",
+   "cn": "unknown",
    "cell": [
     1492,
     388,
@@ -463,7 +463,7 @@
    "kindId": 7,
    "kind": "unknown",
    "variant": 3,
-   "cn": "未定性·0",
+   "cn": "unknown",
    "cell": [
     1740,
     388,

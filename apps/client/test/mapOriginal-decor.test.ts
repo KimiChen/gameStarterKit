@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { MAPO_LOD_MAX } from "../src/shared/kits/mapOriginal/api/hexmap/index";
+import {
+    MAPO_LAYERS, MAPO_LAYER_RENDERER, MAPO_PLANNED_LAYERS, mapoLayerVisible,
+} from "../src/kits/mapOriginal/logic/mapoLayers";
 import {
     MAPO_CITY_CELL_COUNTS, MAPO_CITY_CELL_KEYS, MAPO_CITY_SITES,
 } from "../src/shared/kits/mapOriginal/content/labels.data";
@@ -42,4 +47,38 @@ test("mapOriginal 摆件：占格表自洽（249 座 / 2,689 格 / 计数和相�
         at += MAPO_CITY_CELL_COUNTS[i];
     }
     assert.equal(new Set(MAPO_CITY_CELL_KEYS).size, MAPO_CITY_CELL_KEYS.length, "占格有重复");
+});
+
+test("mapOriginal 分层：implemented 的层必须真有渲染器（⛔ 不许门控与渲染两张皮）", () => {
+    // ⚠ 这条是 M1-B1 的止血闸，且是**通用**的：将来新增层自动受管。
+    //   `grid` 曾写着 implemented: true 而渲染器里一行都没有 —— 会向状态行与真机重放证据谎报。
+    const view = readFileSync(
+        new URL("../src/kits/mapOriginal/view/MapOriginalWorldView.ts", import.meta.url), "utf8");
+    for (const gate of MAPO_LAYERS) {
+        const field = MAPO_LAYER_RENDERER[gate.id];
+        assert.equal(gate.implemented, field !== null,
+            `层 ${gate.id}：implemented=${gate.implemented} 与渲染器 ${field} 不一致`);
+        if (field === null) {
+            for (let lod = 0; lod <= MAPO_LOD_MAX; lod += 1) {
+                assert.equal(mapoLayerVisible(gate.id, lod), false,
+                    `未实现的层 ${gate.id} 在 lod ${lod} 却可见`);
+            }
+            continue;
+        }
+        assert.ok(view.includes(`this.${field}?.render(`) || view.includes(`this.${field}?.render (`),
+            `层 ${gate.id} 说由 ${field} 负责，但视图里找不到 this.${field}?.render(`);
+    }
+});
+
+test("mapOriginal 分层：未实现的层就是 grid 与 banner（⛔ 改了要同步 kit README 层表）", () => {
+    assert.deepEqual([...MAPO_PLANNED_LAYERS], ["grid", "banner"]);
+});
+
+test("mapOriginal 画质：⛔ 不再有「分帧建格步长」这个没人调的旋钮（M1-B2）", () => {
+    const settings = readFileSync(
+        new URL("../src/kits/mapOriginal/logic/mapoSettings.ts", import.meta.url), "utf8");
+    assert.ok(!settings.includes("export function mapoCreateStepFor"), "mapoCreateStepFor 又回来了");
+    const logic = readFileSync(
+        new URL("../src/kits/mapOriginal/logic/MapOriginalWorldLogic.ts", import.meta.url), "utf8");
+    assert.ok(!logic.includes("createStep"), "MapOriginalWorldLogic 还留着 createStep");
 });

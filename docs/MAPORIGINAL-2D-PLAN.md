@@ -62,6 +62,12 @@ npm --workspace @game/server run test
 
 **风险**　中。产物字节会变（`terrain.bytes` / `regions.bin` / `display.data.ts`），
 `.meta` 不变（路径与确定性 uuid 不变）。⚠ 山林件的分布会明显变化，需要真机重放看一眼。
+⚠ **施工时发现的连带项（已一并修）**：远档底图 `bake_plate` 是**按值取色**的，
+覆盖格变 0 之后 LOD 4–5 上 19 格的大山只剩 2,299 个锚点格 —— **山脉整片消失**。
+修法 = 远档**概览**层单独按 `res_multi` 补填（`bake_content.summary_layer`），
+⛔ 绝不回写 `terrain.bytes`、⛔ 绝不用来出件。补填后的 plate/minimap 与 M0-B1 前**逐像素相同**。
+⚠ 另：`kind_style` 取「该 kind 下格数最多的调色板项」，值 0 改归平地后 `unknown`
+**在调色板里没有项了**，落到兜底 128 灰 ⇒ 它自此是一行**死哨兵**（留给越界兜底，⛔ 别删）。
 
 **依赖**　无。**这是全单的第一批。**
 
@@ -221,9 +227,9 @@ npm run verify:protected-paths
 | M0-B2 件的 transform | ✅ 已完成 | （本轮） | 2026-09-22 |
 | M0-B3 山体换基础季 | ✅ 已完成（**先于 B2**，见其「依赖」注） | （本轮） | 2026-09-22 |
 | M0-B4 城格抑制资源件 | ✅ 已完成 | （本轮） | 2026-09-22 |
-| M1-B1 grid 层止血 | ☐ 未开工 | | |
-| M1-B2 createStep 空头 | ☐ 未开工 | | |
-| M1-B3 TEXTURE_OF 口径 | ☐ 未开工 | | |
+| M1-B1 grid 层止血 | ✅ 已完成（选 `implemented: false` + 通用守门用例） | （本轮） | 2026-09-22 |
+| M1-B2 createStep 空头 | ✅ 已完成（选「删掉」） | （本轮） | 2026-09-22 |
+| M1-B3 TEXTURE_OF 口径 | ✅ 已完成 | （本轮） | 2026-09-22 |
 | M2-B1 地表底 REPEAT | ☐ 未排期 | | |
 | M2-B2 snow/desert 块层 | ☐ 未排期 | | |
 | M3-B1 道路层 | ☐ 未排期 | | |

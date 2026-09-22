@@ -33,15 +33,12 @@ export const MAPO_QUALITY_LABELS: Readonly<Record<MapoQuality, string>> = {
     smooth: "流畅", normal: "普通", high: "高清", ultra: "超高",
 };
 
-/** 画质档 -> 分帧建格步长（越高一帧建越多格）。⚠ 与 `mapoLayers` 的门控合用。 */
-export function mapoCreateStepFor(q: MapoQuality): number {
-    switch (q) {
-        case "smooth": return 64;
-        case "normal": return 160;
-        case "high": return 320;
-        default: return 640;
-    }
-}
+/*
+ * ⚠ 这里**故意没有**「分帧建格步长」（M1-B2 删除）：`mapoCreateStepFor` / `createStep`
+ *   曾经存在但**一个消费方都没有**，README 还写着「画质映射到分帧建格步长」—— 是空头。
+ *   近档一屏本来只有几十格（一格 300×150 世界像素），⛔ 不需要分帧建格。
+ *   真要做再加，⛔ 别再留没人调的旋钮。
+ */
 
 /**
  * 画质档 -> 建不建摆件层。

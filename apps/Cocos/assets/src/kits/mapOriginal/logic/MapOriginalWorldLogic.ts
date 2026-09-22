@@ -9,7 +9,7 @@ import { MapoCamera, type MapoCellRef } from "./mapoCamera";
 import { mapoIsNearField, mapoVisibleLayers, type MapoLayerId } from "./mapoLayers";
 import { mapoValueAt, mapoPassClassAt, mapoHasDisplayTerrain } from "./mapoTerrain";
 import {
-    MAPO_DEFAULT_GRAPHICS, mapoCreateStepFor, mapoNormalizeGraphics, type IMapoGraphicsSettings,
+    MAPO_DEFAULT_GRAPHICS, mapoNormalizeGraphics, type IMapoGraphicsSettings,
 } from "./mapoSettings";
 
 export interface IMapoTileInfo {
@@ -38,7 +38,6 @@ export class MapOriginalWorldLogic {
     get nearField(): boolean { return mapoIsNearField(this.camera.lod); }
     get layers(): MapoLayerId[] { return mapoVisibleLayers(this.camera.lod); }
     /** 一帧最多建多少格 —— 由画质档决定。 */
-    get createStep(): number { return mapoCreateStepFor(this.graphicsValue.quality); }
 
     setGraphics(next: unknown): IMapoGraphicsSettings {
         this.graphicsValue = mapoNormalizeGraphics(next);
