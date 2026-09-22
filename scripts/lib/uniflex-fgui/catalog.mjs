@@ -4,7 +4,6 @@ import { COMMON_PACKAGE } from "./constants.mjs";
 
 /** Same tile order / sizes / colors as UniFlex PreviewHome. */
 export const CATALOG_TILES = Object.freeze([
-    { id: "prompt", title: "提示弹窗", width: 300, height: 102, background: "#e6c15a" },
     { id: "small-popup", title: "小弹窗底板", width: 300, height: 102, background: "#7dcc63" },
     { id: "backpack", title: "背包界面", width: 300, height: 102, background: "#53657d" },
     { id: "mail", title: "邮件战报", width: 300, height: 102, background: "#72558f" },

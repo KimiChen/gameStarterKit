@@ -1,13 +1,22 @@
 import { defineView } from '@uniflex/compiler';
-import { fontRef } from '../../../../kits/uniflex/api/core/index';
-import { CancelButton } from '../../../components/button/CancelButton';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
-import type { ConfirmLogic } from '../../../../logic/page/ConfirmLogic';
+import { ConfirmButton } from '../../../components/button/ConfirmButton';
+import { CancelButton } from '../../../components/button/CancelButton';
+import { theme } from '../../../themes/active';
 
+/** Optional presentation overrides; normal pages use the shared active theme. */
+export interface ConfirmTheme {
+    readonly messageColor?: string;
+}
 export interface ConfirmParams {
-    readonly logic: ConfirmLogic;
-    readonly isActive: () => boolean;
+    readonly title?: string;
+    readonly message: string;
+    readonly confirmText?: string;
+    readonly cancelText?: string | null;
+    readonly theme?: ConfirmTheme;
+    readonly onConfirm: () => void;
+    readonly onCancel?: () => void;
+    readonly onClose?: () => void;
 }
 
 const PANEL_LEFT = 21;
@@ -15,50 +24,26 @@ const PANEL_TOP = 624;
 const PANEL_WIDTH = 708;
 const PANEL_HEIGHT = 375;
 
-export const Confirm = defineView<ConfirmParams, boolean>(
-    { zIndex: 'window' },
-    (context) => {
-        const params = context.params.logic;
-        const hasCancel = params.noText !== null;
-        const close = () => {
-            if (context.params.isActive()) params.no();
-        };
-        const yes = () => {
-            if (context.params.isActive()) params.yes();
-        };
-        const no = () => {
-            if (context.params.isActive()) params.no();
-        };
-        const font = fontRef('fonts/regular', 700);
-        const contentTop = PANEL_TOP + 96;
-        const contentHeight = PANEL_HEIGHT - 96;
-        return (
-            <view name="Confirm" style={{ width: 750, height: 1624 }}>
-                <PopupFrame title={params.title ?? '提示'} left={PANEL_LEFT} top={PANEL_TOP}
-                    width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={close} />
-                <view name="Confirm/Content"
-                    style={{ position: 'absolute', left: PANEL_LEFT, top: contentTop, width: PANEL_WIDTH, height: contentHeight }}>
-                    <text name="Confirm/Message" value={params.content}
-                        style={{
-                            position: 'absolute',
-                            left: 40,
-                            top: 36,
-                            width: 628,
-                            height: 48,
-                            font: font,
-                            fontSize: 28,
-                            color: '#3f3254',
-                            horizontalAlign: 'center',
-                            verticalAlign: 'center',
-                        }} />
-                    <view visible={hasCancel} style={{ position: 'absolute', left: 397, top: 137 }}>
-                        <CancelButton label={params.noText ?? '取消'} onClick={no} />
-                    </view>
-                    <view style={{ position: 'absolute', left: 55, top: 137 }}>
-                        <ConfirmButton label={params.yesText ?? '确定'} onClick={yes} />
+export const Confirm = defineView<ConfirmParams, void>({ zIndex: 'window' }, (context) => {
+    const params = context.params;
+    return (
+        <view name="Confirm" style={{ width: 750, height: 1624 }}>
+            <PopupFrame title={params.title ?? '提示'} left={PANEL_LEFT} top={PANEL_TOP}
+                width={PANEL_WIDTH} height={PANEL_HEIGHT} onClose={params.onClose} />
+            <view name="Confirm/Content"
+                style={{ position: 'absolute', left: PANEL_LEFT + 40, top: PANEL_TOP + 108, width: 628, height: 229 }}>
+                <text name="Confirm/Message" value={params.message}
+                    style={{ width: '100%', height: 104, font: theme.font, fontSize: 28,
+                        color: params.theme?.messageColor ?? theme.text,
+                        horizontalAlign: 'center', verticalAlign: 'center', wrap: true, overflow: 'shrink' }} />
+                <view name="Confirm/Actions" style={{ position: 'absolute', bottom: 0, width: '100%',
+                    flexDirection: 'row', justifyContent: 'center', gap: 87 }}>
+                    <ConfirmButton label={params.confirmText} onClick={params.onConfirm} />
+                    <view visible={params.cancelText !== null}>
+                        <CancelButton label={params.cancelText ?? '取消'} onClick={params.onCancel} />
                     </view>
                 </view>
             </view>
-        );
-    },
-);
+        </view>
+    );
+});

@@ -32,6 +32,17 @@ function rect(x, y, width, height) {
     return { x, y, width, height };
 }
 
+function promptScreen() {
+    return {
+        id: "prompt",
+        aliases: ["prompt"],
+        canvas: { width: 750, height: 1624 },
+        componentName: "Prompt",
+        rootName: "Prompt/Content",
+        source: "fixture://prompt",
+    };
+}
+
 function promptSnapshot() {
     const nodes = [
         node(1, null, "PromptPage", "view", rect(0, 0, 750, 1624)),
@@ -65,6 +76,7 @@ function promptSnapshot() {
         schemaVersion: 1,
         kind: "uniflex-design-snapshot",
         screenId: "prompt",
+        screen: promptScreen(),
         canvas: { width: 750, height: 1624 },
         nodes,
     };
@@ -102,7 +114,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         const catalog = await loadScreenCatalog(root);
         const images = await loadImageCatalog(root);
         const snapshot = promptSnapshot();
-        const screen = catalog.screens.find((entry) => entry.id === "prompt");
+        const screen = promptScreen();
         const { ir } = await exportFgui({ snapshot, out, root, screen, catalog, images });
 
         const commonXml = readFileSync(join(out, "assets/UniFlex_Common/package.xml"), "utf8");
@@ -137,7 +149,7 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(previewHtml, /get\("psd"\)/);
         assert.match(previewHtml, /FairyGUI 预览/);
         assert.match(previewHtml, /id="catalog"/);
-        assert.match(previewHtml, /提示弹窗/);
+        assert.match(previewHtml, /小弹窗底板/);
         assert.match(previewHtml, />目录</);
         assert.match(previewHtml, /bindLabeled/);
         assert.match(previewHtml, /enableElementHit/);
@@ -246,7 +258,7 @@ test("parent-local inspect rects become FairyGUI component-space xy", async () =
         };
         const { ir } = await exportFgui({
             snapshot, out, root,
-            screen: catalog.screens.find((entry) => entry.id === "prompt"),
+            screen: promptScreen(),
             catalog, images,
         });
         const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
@@ -349,7 +361,7 @@ test("multi-page export shares Common PopupFrame", async () => {
             snapshots: [
                 {
                     snapshot: promptSnapshot(),
-                    screen: catalog.screens.find((entry) => entry.id === "prompt"),
+                    screen: promptScreen(),
                 },
                 {
                     snapshot: smallPopupSnapshot(),
@@ -378,7 +390,7 @@ test("multi-page export shares Common PopupFrame", async () => {
         assert.match(preview, /"id":"confirm"/);
         assert.match(preview, /id="catalog"/);
         assert.match(preview, /catalogId/);
-        assert.equal(CATALOG_TITLES["提示弹窗"], "prompt");
+        assert.equal(CATALOG_TITLES["小弹窗底板"], "small-popup");
         assert.equal(catalogIdFor([{ id: "prompt" }]), "catalog");
         assert.equal(catalogIdFor([{ id: "preview-home" }]), "preview-home");
         assert.equal(JSON.parse(readFileSync(join(out, "mapping.json"), "utf8")).Confirm.package, "UniFlex_Confirm");
@@ -417,7 +429,7 @@ test("export-fgui --snapshot twice builds one catalog project", async () => {
 
 test("export-fgui --all rejects --screen", async () => {
     await assert.rejects(
-        () => runCli(["export-fgui", "--all", "--screen", "prompt", "--out", "x"], {
+        () => runCli(["export-fgui", "--all", "--screen", "confirm", "--out", "x"], {
             root,
             env: {},
             execute: () => { throw new Error("should not run"); },
@@ -716,7 +728,7 @@ test("ConfirmButton instances override nested ActionButton title", async () => {
             snapshots: [
                 {
                     snapshot: promptSnapshot(),
-                    screen: catalog.screens.find((entry) => entry.id === "prompt"),
+                    screen: promptScreen(),
                 },
                 {
                     snapshot: create,
@@ -1013,8 +1025,8 @@ test("preview server catalog page lists merged screens", async () => {
     const b = mkdtempSync(join(tmpdir(), "fgui-serve-b-"));
     try {
         writeFakeExport(a, "popups", {
-            Prompt: { package: "UniFlex_Prompt", component: "Prompt" },
-        }, ["prompt"]);
+            Confirm: { package: "UniFlex_Confirm", component: "Confirm" },
+        }, ["confirm"]);
         writeFakeExport(b, "home-shop", {
             PreviewHome: { package: "UniFlex_PreviewHome", component: "PreviewHome" },
         }, ["preview-home"]);
@@ -1025,7 +1037,7 @@ test("preview server catalog page lists merged screens", async () => {
             assert.deepEqual(server.lanUrls, []);
             const html = await (await fetch(server.url)).text();
             assert.match(html, /FairyGUI 预览/);
-            assert.match(html, /"id":"prompt"/);
+            assert.match(html, /"id":"confirm"/);
             assert.match(html, /"id":"preview-home"/);
             assert.match(html, /bindCatalogClicks/);
             assert.match(html, /bindLabeled/);
@@ -1034,9 +1046,9 @@ test("preview server catalog page lists merged screens", async () => {
             assert.match(html, /__catalogHitsBound/);
             assert.match(html, /bindPageInteractions/);
             assert.match(html, /currentId, go/);
-            const pkg = await fetch(`${server.url}${basename(a)}/UniFlex_Prompt/package.xml`);
+            const pkg = await fetch(`${server.url}${basename(a)}/UniFlex_Confirm/package.xml`);
             assert.equal(pkg.status, 200);
-            assert.match(await pkg.text(), /UniFlex_Prompt/);
+            assert.match(await pkg.text(), /UniFlex_Confirm/);
         } finally {
             await server.close();
         }

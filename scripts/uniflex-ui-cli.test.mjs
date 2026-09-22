@@ -16,7 +16,7 @@ const capture = () => {
 };
 
 test("screen catalog resolves aliases without falling through to a default page", () => {
-    assert.equal(findScreen(catalog, "prompt")?.componentName, "Prompt");
+    assert.equal(findScreen(catalog, "confirm")?.componentName, "Confirm");
     assert.equal(findScreen(catalog, "small-popup")?.id, "small-popup");
     assert.equal(findScreen(catalog, "missing"), null);
     assert.equal(findScreen(catalog, null)?.id, "preview-home");
@@ -42,7 +42,7 @@ test("export-psd injects UniFlex adapter defaults and an unscaled preview URL", 
 test("export-psd --screen injects that screen's canvas and does not require a running preview URL", async () => {
     const { calls, execute } = capture();
     let started = 0;
-    await runCli(["export-psd", "--screen", "prompt", "--out", "x"], {
+    await runCli(["export-psd", "--screen", "confirm", "--out", "x"], {
         root, env: { WEB_UI_TO_PSD_CLI: fakeCli }, execute,
         startPreview: async () => {
             started += 1;
@@ -52,7 +52,7 @@ test("export-psd --screen injects that screen's canvas and does not require a ru
     assert.equal(started, 0);
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0][1], [fakeCli, "export",
-        "--url", "http://127.0.0.1:9/?screen=prompt&psd=1",
+        "--url", "http://127.0.0.1:9/?screen=confirm&psd=1",
         "--adapter", "uniflex",
         "--selector", "#ui",
         "--ready-selector", "html[data-uniflex-ready='true']",
@@ -123,7 +123,7 @@ test("export-fgui requires --out and does not call the PSD converter", async () 
 
 test("roundtrip from a preview screen exports, packages and checks without writing the project", async () => {
     const { calls, execute } = capture();
-    await runCli(["roundtrip", "--screen", "prompt", "--out", ".cache/psd/cli-test-roundtrip"], {
+    await runCli(["roundtrip", "--screen", "confirm", "--out", ".cache/psd/cli-test-roundtrip"], {
         root, env: { WEB_UI_TO_PSD_CLI: fakeCli }, execute,
         startPreview: async () => ({ url: "http://127.0.0.1:9/", dispose: async () => {} }),
         readText: async (file) => {
@@ -139,7 +139,7 @@ test("roundtrip from a preview screen exports, packages and checks without writi
     assert.ok(exported[0].includes("--adapter"));
     assert.deepEqual(exported[1].slice(0, 3), ["psd-import", "--file", resolve(output, "export/web-ui.psd")]);
     assert.deepEqual(exported[2].slice(0, 7), ["uniflex-package", "--design",
-        resolve(output, "design/design.json"), "--name", "Prompt", "--source-root", root]);
+        resolve(output, "design/design.json"), "--name", "Confirm", "--source-root", root]);
     assert.equal(calls[3][1][0], resolve(root, "scripts/verify-uniflex-ui.mjs"));
     assert.equal(calls.length, 4);
 });
@@ -154,14 +154,14 @@ test("roundtrip --file requires --name and does not export a webpage", async () 
 });
 
 test("injectUniflexExportArgs keeps caller viewport flags", () => {
-    const prompt = findScreen(catalog, "prompt");
+    const confirm = findScreen(catalog, "confirm");
     assert.deepEqual(
         injectUniflexExportArgs(["--width", "100"], {
-            url: resolvePreviewUrl("http://127.0.0.1:9/", prompt),
-            screen: prompt,
+            url: resolvePreviewUrl("http://127.0.0.1:9/", confirm),
+            screen: confirm,
         }),
         ["--width", "100",
-            "--url", "http://127.0.0.1:9/?screen=prompt&psd=1",
+            "--url", "http://127.0.0.1:9/?screen=confirm&psd=1",
             "--adapter", "uniflex",
             "--selector", "#ui",
             "--ready-selector", "html[data-uniflex-ready='true']",

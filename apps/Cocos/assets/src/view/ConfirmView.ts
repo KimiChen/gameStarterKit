@@ -39,7 +39,16 @@ export class ConfirmView extends CocosView {
             loadUI: loadGameUI,
         });
         this.runtime = runtime;
-        await runtime.start(Confirm, { logic, isActive: () => context.isActive() && this.acceptsInput });
+        const active = () => context.isActive() && this.acceptsInput;
+        await runtime.start(Confirm, {
+            title: logic.title,
+            message: logic.content,
+            confirmText: logic.yesText,
+            cancelText: logic.noText,
+            onConfirm: () => { if (active()) logic.yes(); },
+            onCancel: () => { if (active()) logic.no(); },
+            onClose: () => { if (active()) logic.no(); },
+        });
     }
 
     protected onCloseLifecycle(): void {

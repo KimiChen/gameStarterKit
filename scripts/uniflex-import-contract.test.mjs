@@ -566,7 +566,7 @@ test("editing Confirm PSD text rewrites ?? fallbacks and reports pure bindings",
         ], { cwd: root, env });
         const restored = await readFile(join(packageDir, "ConfirmRestored.authoring.tsx"), "utf8");
         assert.match(restored, /title=\{params\.title \?\? "UniFlex 本地预览"\}/);
-        assert.match(restored, /value=\{params\.content\}/);
+        assert.match(restored, /value=\{params\.message\}/);
         assert.ok(!restored.includes("本地运行预览"),
             "pure binding without a ?? fallback must not be rewritten");
         const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");

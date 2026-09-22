@@ -86,12 +86,12 @@ npm run build:uniflex-ui
 npm run import:uniflex-ui -- /path/to/project-package
 npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001
 npm run ui:export-psd -- --url <url> --out <dir>
-npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt
-npm run ui:export-fgui -- --screens prompt,small-popup,confirm --out .cache/fgui/popups
+npm run ui:export-fgui -- --screen confirm --out .cache/fgui/confirm
+npm run ui:export-fgui -- --screens small-popup,confirm --out .cache/fgui/popups
 npm run ui:export-fgui -- --all --out .cache/fgui/catalog
 npm run ui:preview-fgui -- --out .cache/fgui/prompt
 npm run ui:verify-fgui-dom -- --out .cache/fgui/catalog
-npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001
+npm run ui:roundtrip -- --screen confirm --out .cache/psd/roundtrip-001
 npm run ui:art-export -- --screen backpack
 npm run ui:art-import -- --changed
 npm run ui:art-sync

@@ -1,10 +1,9 @@
 import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
-import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, ComponentGallery, ComponentSpecimen, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, Prompt, PromptRestored, RestoredPreviewHome, Settings, SettingsRestored, Shop, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored } from "../client/src/ui-uniflex/generated/ui";
+import { Alliance, AllianceAnnounce, AllianceAnnounceRestored, AllianceBoard, AllianceBoardRestored, AllianceCreate, AllianceCreateRestored, AllianceGift, AllianceGiftRestored, AllianceHelp, AllianceHelpRestored, AllianceInvite, AllianceInviteRestored, AllianceJoin, AllianceJoinRestored, AllianceMarchBoost, AllianceMarchBoostRestored, AllianceMemberSettings, AllianceMemberSettingsRestored, AllianceRestored, AllianceTech, AllianceTechRestored, AllianceTerritory, AllianceTerritoryRestored, AllianceWar, AllianceWarRestored, Backpack, BackpackEditedRestored, BackpackRestored, CharacterManage, CharacterManageRestored, ComponentGallery, ComponentSpecimen, Confirm, ConfirmRestored, HeroDetail, HeroDetailRestored, HeroScreen, HeroScreenRestored, HeroStarUpgrade, HeroStarUpgradeRestored, MailBattleReport, MailBattleReportRestored, PreviewHome, PreviewHomeRestored, RestoredPreviewHome, Settings, SettingsRestored, Shop, ShopGetItem, ShopGetItemRestored, SmallPopup, SmallPopupRestored } from "../client/src/ui-uniflex/generated/ui";
 import type { BackpackAction } from "../client/src/ui-uniflex/generated/Backpack";
 import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
-import { ConfirmLogic } from "../client/src/logic/page/ConfirmLogic";
 import type { ScreenEntry } from "./screens";
 
 const previewParams = new URLSearchParams(location.search);
@@ -98,33 +97,21 @@ export async function startPreview(session: PreviewSession, entry: ScreenEntry):
         case "preview-home-restored":
             await session.runtime.start(PreviewHomeRestored, { onNavigate: (target) => { location.href = `?ui=${target}`; } });
             return;
-        case "prompt":
-            await session.runtime.start(Prompt, {
+        case "small-popup":
+            await session.runtime.start(SmallPopup, { title: "标题", onClose: session.back });
+            return;
+        case "confirm":
+            await session.runtime.start(Confirm, {
                 theme: { messageColor: "#3f3254" },
                 title: "创建角色",
                 message: "在该服务器创建1名新角色?",
                 confirmText: "确定",
-                cancelText: "取消",
-                onConfirm: () => console.info("[UniFlex Prompt] result=true"),
+                cancelText: previewParams.get("cancel") === "0" ? null : "取消",
+                onConfirm: () => console.info("[UniFlex Confirm] result=true"),
                 onCancel: session.back,
                 onClose: session.back,
             });
             return;
-        case "small-popup":
-            await session.runtime.start(SmallPopup, { title: "标题", onClose: session.back });
-            return;
-        case "confirm": {
-            const logic = new ConfirmLogic({
-                title: "UniFlex Confirm",
-                content: "这是 UniFlex 在 gameStarterKit 中的本地运行预览。",
-                noText: previewParams.get("cancel") === "0" ? null : "取消",
-                onYes: () => console.info("[UniFlex Confirm] result=true"),
-                onNo: () => console.info("[UniFlex Confirm] result=false"),
-            });
-            logic.onClose = session.dispose;
-            await session.runtime.start(Confirm, { logic, isActive: () => !session.stopped() });
-            return;
-        }
         case "backpack": {
             const onAction = (action: BackpackAction) => {
                 console.info("[UniFlex Backpack] action", action);
@@ -315,30 +302,18 @@ export async function startPreview(session: PreviewSession, entry: ScreenEntry):
                 onAction: (id) => console.info("[UniFlex Shop] action", id),
             });
             return;
-        case "prompt-restored":
-            await session.runtime.start(PromptRestored, {
+        case "confirm-restored":
+            await session.runtime.start(ConfirmRestored, {
                 theme: { messageColor: "#3f3254" },
                 title: "创建角色",
                 message: "在该服务器创建1名新角色?",
                 confirmText: "确定",
-                cancelText: "取消",
-                onConfirm: () => console.info("[UniFlex PromptRestored] result=true"),
+                cancelText: previewParams.get("cancel") === "0" ? null : "取消",
+                onConfirm: () => console.info("[UniFlex ConfirmRestored] result=true"),
                 onCancel: session.restored,
                 onClose: session.restored,
             });
             return;
-        case "confirm-restored": {
-            const logic = new ConfirmLogic({
-                title: "UniFlex Confirm",
-                content: "这是 UniFlex 在 gameStarterKit 中的本地运行预览。",
-                noText: previewParams.get("cancel") === "0" ? null : "取消",
-                onYes: () => console.info("[UniFlex ConfirmRestored] result=true"),
-                onNo: () => console.info("[UniFlex ConfirmRestored] result=false"),
-            });
-            logic.onClose = session.dispose;
-            await session.runtime.start(ConfirmRestored, { logic, isActive: () => !session.stopped() });
-            return;
-        }
         case "small-popup-restored":
             await session.runtime.start(SmallPopupRestored, { title: "标题", onClose: session.restored });
             return;

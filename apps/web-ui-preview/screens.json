@@ -26,14 +26,6 @@
       "source": "apps/client/src/ui-uniflex/modules/preview/RestoredPreviewHome/RestoredPreviewHome.tsx"
     },
     {
-      "id": "prompt",
-      "aliases": ["prompt"],
-      "canvas": { "width": 750, "height": 1624 },
-      "componentName": "Prompt",
-      "rootName": "Prompt/Content",
-      "source": "apps/client/src/ui-uniflex/modules/popup/Prompt/Prompt.tsx"
-    },
-    {
       "id": "small-popup",
       "aliases": ["small-popup"],
       "canvas": { "width": 750, "height": 1624 },
@@ -240,14 +232,6 @@
       "componentName": "Shop",
       "rootName": "ShopPage",
       "source": "apps/client/src/ui-uniflex/modules/shop/Shop/Shop.tsx"
-    },
-    {
-      "id": "prompt-restored",
-      "aliases": ["prompt-restored", "promptRestored"],
-      "canvas": { "width": 750, "height": 1624 },
-      "componentName": "PromptRestored",
-      "rootName": "PromptRestored/Content",
-      "source": "apps/client/src/ui-uniflex/modules/popup/PromptRestored/PromptRestored.tsx"
     },
     {
       "id": "confirm-restored",

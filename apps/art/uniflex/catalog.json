@@ -3,13 +3,6 @@
   "applyTarget": "restored",
   "pages": [
     {
-      "screen": "prompt",
-      "componentName": "Prompt",
-      "restoredName": "PromptRestored",
-      "source": "apps/client/src/ui-uniflex/modules/popup/Prompt/Prompt.tsx",
-      "canvas": { "width": 750, "height": 1624 }
-    },
-    {
       "screen": "small-popup",
       "componentName": "SmallPopup",
       "restoredName": "SmallPopupRestored",

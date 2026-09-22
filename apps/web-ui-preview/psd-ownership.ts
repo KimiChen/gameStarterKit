@@ -57,37 +57,6 @@ function authorPath(
     return parts.join('/');
 }
 
-/** Explicit author paths for this preview. Never infer components from a group name alone. */
-export function promptPsdOwnership(values: readonly unknown[]) {
-    const nodes = readNodes(values);
-    function resolve(names: readonly string[]): number {
-        let parent: number | null = null;
-        for (const name of names) {
-            const matches = nodes.filter(node => node.parent === parent && node.name === name && node.kind === 'view');
-            if (matches.length !== 1) throw new Error(`Ambiguous or missing Prompt PSD author path: ${names.join(' > ')}`);
-            parent = matches[0]!.id;
-        }
-        if (parent === null) throw new Error('Empty PSD author path');
-        return parent;
-    }
-    const actions = ['PopupFrame', 'PopupFrame/Panel', 'PopupFrame/Content', 'Prompt/Content', 'Prompt/Actions'];
-    return {
-        schemaVersion: 1,
-        kind: 'uniflex-component-declarations',
-        definitions: [
-            { key: 'Prompt', source: 'apps/client/src/ui-uniflex/modules/popup/Prompt/Prompt.tsx' },
-            { key: 'ActionButton', source: 'apps/client/src/ui-uniflex/components/button/ActionButton.tsx' },
-        ],
-        instances: [
-            { key: 'prompt.actions.layout', definitionKey: 'Prompt', role: 'layout', rootRecordId: resolve(actions) },
-            { key: 'prompt.confirm.action', definitionKey: 'ActionButton', role: 'component',
-                rootRecordId: resolve([...actions, 'ActionButton']) },
-            { key: 'prompt.cancel.action', definitionKey: 'ActionButton', role: 'component',
-                rootRecordId: resolve([...actions, '', 'ActionButton']) },
-        ],
-    };
-}
-
 /**
  * Page definition plus every registered component whose named root is in the
  * snapshot. Duplicate sibling names are distinguished by author path index.

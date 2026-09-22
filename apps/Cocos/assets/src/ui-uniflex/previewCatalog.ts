@@ -1,7 +1,6 @@
 import { Node, UITransform, view } from "cc";
 import { DESIGN_HEIGHT } from "../designSpec";
 import { UniFlexCocosRuntime } from "../kits/uniflex/api/cocos/index";
-import { ConfirmLogic } from "../logic/page/ConfirmLogic";
 import type { BackpackAction } from "./generated/Backpack";
 import type { BackpackEditedRestoredAction } from "./generated/BackpackEditedRestored";
 import type { BackpackRestoredAction } from "./generated/BackpackRestored";
@@ -52,8 +51,6 @@ import {
     MailBattleReportRestored,
     PreviewHome,
     PreviewHomeRestored,
-    Prompt,
-    PromptRestored,
     RestoredPreviewHome,
     Settings,
     SettingsRestored,
@@ -194,34 +191,21 @@ async function startPreviewScreen(
         case "component-gallery":
             await runtime.start(ComponentGallery, { onBack: back });
             return;
-        case "prompt":
-            await runtime.start(Prompt, {
+        case "small-popup":
+            await runtime.start(SmallPopup, { title: "标题", onClose: back });
+            return;
+        case "confirm":
+            await runtime.start(Confirm, {
                 theme: { messageColor: "#3f3254" },
                 title: "创建角色",
                 message: "在该服务器创建1名新角色?",
                 confirmText: "确定",
                 cancelText: hasCancel ? "取消" : null,
-                onConfirm: () => console.info("[UniFlex Prompt] result=true"),
+                onConfirm: () => console.info("[UniFlex Confirm] result=true"),
                 onCancel: back,
                 onClose: back,
             });
             return;
-        case "small-popup":
-            await runtime.start(SmallPopup, { title: "标题", onClose: back });
-            return;
-        case "confirm": {
-            const logic = new ConfirmLogic({
-                title: "UniFlex Confirm",
-                content: "这是 UniFlex 在 gameStarterKit 中的本地运行预览。",
-                yesText: "确定",
-                noText: hasCancel ? "取消" : null,
-                onYes: () => console.info("[UniFlex Confirm] result=true"),
-                onNo: () => console.info("[UniFlex Confirm] result=false"),
-            });
-            logic.onClose = back;
-            await runtime.start(Confirm, { logic, isActive: () => true });
-            return;
-        }
         case "backpack": {
             const onAction = (action: BackpackAction): void => {
                 console.info("[UniFlex Backpack] action", action);
@@ -386,30 +370,18 @@ async function startPreviewScreen(
                 onAction: (actionId) => console.info("[UniFlex Shop] action", actionId),
             });
             return;
-        case "prompt-restored":
-            await runtime.start(PromptRestored, {
+        case "confirm-restored":
+            await runtime.start(ConfirmRestored, {
                 theme: { messageColor: "#3f3254" },
                 title: "创建角色",
                 message: "在该服务器创建1名新角色?",
                 confirmText: "确定",
-                cancelText: "取消",
-                onConfirm: () => console.info("[UniFlex PromptRestored] result=true"),
+                cancelText: hasCancel ? "取消" : null,
+                onConfirm: () => console.info("[UniFlex ConfirmRestored] result=true"),
                 onCancel: back,
                 onClose: back,
             });
             return;
-        case "confirm-restored": {
-            const logic = new ConfirmLogic({
-                title: "UniFlex Confirm",
-                content: "这是 UniFlex 在 gameStarterKit 中的本地运行预览。",
-                noText: hasCancel ? "取消" : null,
-                onYes: () => console.info("[UniFlex ConfirmRestored] result=true"),
-                onNo: () => console.info("[UniFlex ConfirmRestored] result=false"),
-            });
-            logic.onClose = back;
-            await runtime.start(ConfirmRestored, { logic, isActive: () => true });
-            return;
-        }
         case "small-popup-restored":
             await runtime.start(SmallPopupRestored, { title: "标题", onClose: back });
             return;

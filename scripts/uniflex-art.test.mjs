@@ -191,24 +191,14 @@ test("shop and backpack component PSDs share the same ItemSlot file", async () =
     assert.doesNotMatch(originalShop, /restored/);
 });
 
-test("prompt, confirm, and shop share the same ConfirmButton file", async () => {
+test("confirm and shop share the same ConfirmButton file", async () => {
     const confirmId = componentGuid("ConfirmButton");
     const cancelId = componentGuid("CancelButton");
     const actionId = componentGuid("ActionButton");
-    const closeId = componentGuid("CloseButton");
-    const prompt = await readArtPsd(resolve(root, "apps/art/uniflex/Prompt/Prompt.psd"));
     const confirm = await readArtPsd(resolve(root, "apps/art/uniflex/Confirm/Confirm.psd"));
     const shopPanel = await readArtPsd(artComponentPsdPath(root, "ShopGetItemPanel"));
     const confirmBtn = await readArtPsd(artComponentPsdPath(root, "ConfirmButton"));
     const cancelBtn = await readArtPsd(artComponentPsdPath(root, "CancelButton"));
-    assert.equal(linkedPaths(prompt).get(confirmId)?.relativePath,
-        "../components/ConfirmButton/ConfirmButton.psd");
-    assert.equal(linkedPaths(prompt).get(cancelId)?.relativePath,
-        "../components/CancelButton/CancelButton.psd");
-    assert.equal(linkedPaths(prompt).get(closeId)?.relativePath,
-        "../components/CloseButton/CloseButton.psd");
-    assert.equal(linkedPaths(prompt).get(confirmId)?.childDocumentID, "");
-    assert.equal(collectPlaced(prompt).some((item) => item.id === actionId), false);
     assert.equal(linkedPaths(confirm).get(confirmId)?.relativePath,
         "../components/ConfirmButton/ConfirmButton.psd");
     assert.equal(linkedPaths(confirm).get(cancelId)?.relativePath,
@@ -216,23 +206,15 @@ test("prompt, confirm, and shop share the same ConfirmButton file", async () => 
     assert.equal(linkedPaths(shopPanel).get(confirmId)?.relativePath, "../ConfirmButton/ConfirmButton.psd");
     assert.equal(linkedPaths(confirmBtn).get(actionId)?.relativePath, "../ActionButton/ActionButton.psd");
     assert.equal(linkedPaths(cancelBtn).get(actionId)?.relativePath, "../ActionButton/ActionButton.psd");
-    const promptRestored = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/modules/popup/PromptRestored/PromptRestored.tsx"), "utf8");
     const confirmRestored = await readFile(
         resolve(root, "apps/client/src/ui-uniflex/modules/popup/ConfirmRestored/ConfirmRestored.tsx"), "utf8");
     const shopPanelSrc = await readFile(
         resolve(root, "apps/client/src/ui-uniflex/restored/modules/shop/ShopGetItem/ShopGetItemPanel.tsx"), "utf8");
-    const originalPrompt = await readFile(
-        resolve(root, "apps/client/src/ui-uniflex/modules/popup/Prompt/Prompt.tsx"), "utf8");
     const originalConfirm = await readFile(
         resolve(root, "apps/client/src/ui-uniflex/modules/popup/Confirm/Confirm.tsx"), "utf8");
-    assert.match(promptRestored, /from '\.\.\/\.\.\/\.\.\/restored\/components\/button\/ConfirmButton'/);
-    assert.match(promptRestored, /from '\.\.\/\.\.\/\.\.\/restored\/components\/popup\/PopupFrame'/);
     assert.match(confirmRestored, /from '\.\.\/\.\.\/\.\.\/restored\/components\/button\/ConfirmButton'/);
     assert.match(shopPanelSrc, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
-    assert.match(originalPrompt, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
     assert.match(originalConfirm, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
-    assert.doesNotMatch(originalPrompt, /restored/);
     assert.doesNotMatch(originalConfirm, /restored/);
 });
 

@@ -15,13 +15,13 @@ import { servePreview } from "./lib/uniflex-fgui/preview.mjs";
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const help = `Usage:
   npm run ui:import-psd -- --file artwork.psd --name Backpack --out .cache/psd/job-001 [--font-dir fonts] [--update]
-  npm run ui:export-psd -- --screen prompt --out .cache/psd/export-001
-  npm run ui:export-psd -- --url http://127.0.0.1:8000/?screen=prompt --out .cache/psd/export-001
-  npm run ui:roundtrip -- --screen prompt --out .cache/psd/roundtrip-001
+  npm run ui:export-psd -- --screen confirm --out .cache/psd/export-001
+  npm run ui:export-psd -- --url http://127.0.0.1:8000/?screen=confirm --out .cache/psd/export-001
+  npm run ui:roundtrip -- --screen confirm --out .cache/psd/roundtrip-001
   npm run ui:roundtrip -- --file artwork.psd --name Prompt --out .cache/psd/from-psd
   npm run ui:check-source [-- --package .cache/psd/job-001/project-package --strict]
-  npm run ui:export-fgui -- --screen prompt --out .cache/fgui/prompt
-  npm run ui:export-fgui -- --screens prompt,small-popup,confirm --out .cache/fgui/popups
+  npm run ui:export-fgui -- --screen confirm --out .cache/fgui/confirm
+  npm run ui:export-fgui -- --screens small-popup,confirm --out .cache/fgui/popups
   npm run ui:export-fgui -- --all --out .cache/fgui/catalog
   npm run ui:export-fgui -- --snapshot path/to/snapshot.json --out .cache/fgui/prompt
   npm run ui:preview-fgui -- --out .cache/fgui/prompt
@@ -319,7 +319,7 @@ async function loadFguiPages(args, { root, env, catalog, startPreview, readText 
             let screen = findScreen(catalog, snapshot.screenId ?? snapshot.screen?.id);
             if (!screen && screenId) screen = findScreen(catalog, screenId);
             if (!screen && snapshot.screen) screen = snapshot.screen;
-            if (!screen) screen = findScreen(catalog, "prompt");
+            if (!screen) screen = findScreen(catalog, "confirm");
             pages.push({ snapshot, screen });
         }
         return pages;

@@ -3,7 +3,12 @@ import type { ScreenEntry } from "./screens";
 
 export type PreviewLine = "original" | "restored";
 
-const HIDDEN_SCREENS = new Set(["preview-home", "component-gallery", "restored-home", "preview-home-restored"]);
+const HIDDEN_SCREENS = new Set([
+    "preview-home",
+    "component-gallery",
+    "restored-home",
+    "preview-home-restored",
+]);
 
 export interface CatalogLeaf {
     readonly id: string;
@@ -46,7 +51,6 @@ const SCREEN_LABEL: Record<string, string> = {
     "component-gallery": "通用组件",
     "restored-home": "还原首页",
     "preview-home-restored": "还原首页稿",
-    prompt: "提示弹窗",
     "small-popup": "小弹窗底板",
     confirm: "确认弹窗",
     backpack: "背包界面",
