@@ -6,8 +6,19 @@
 ★ 已解开的部分（2026-09-23，MAPORIGINAL-2D §11-1 的最大缺口）：
 
     [0]  u32  串池偏移（实测 0x02ee49fc = 49,170,940，其后 17.6 MB 是 NUL 分隔的串池）
-    [4]  u32  串索引偏移（实测 0xae0f4；其后是 114,752 个 u32「池内偏移」，递增）
-    [8..] u32 递增的偏移表（首项 0，次项 0x5458 = 第一段数据的起点）
+    [4]  u32  **对象总数**（实测 712,948）
+    [8..] u32 **对象偏移表**（712,948 项，句柄 → 文件偏移，递增）
+
+  ⚠ 早先把 `[4]` 读成「串索引偏移」是**错的** —— 它是对象数；在 0xae0f4 处读到的
+  「池内偏移」其实是偏移表的表项（值恰好落在数据区、被 `s()` 当池偏移误解了）。
+
+★ **顶层表目录**：一段按**字母序**排的「表名 → 句柄」键值对（实测 1,339 项，
+  `build` … `zhongshuling_market_level_cfg`），就是 `get_cfg("<名>")` 的落点。
+  ⚠ 判据用「池里前一字节是 NUL」（真键必指向串**起点**），⛔ 别用「像标识符」那种软判据
+  —— 软判据会在 `IER_1` / `RY_6` 这类池内巧合上停住、把目录截断。
+⛔ **「对象按表分组、目录值是句柄」是错的**（2026-09-23 实测反证）：
+  `client_res` 的行落在句柄 ~214,746 而目录值是 164,841；`land` 是 ~505,131 vs 460,421，
+  差值还不是常数。⇒ **目录的 u32 语义未知**，⛔ 别拿它去定位表的行。
 
   **行是 `[u32 键池偏移][u32 值]` 的键值对序列**，值要么是池偏移（串），要么是整数。
   同一张表的行**定长且对齐**（`client_res` 实测 100 B / 25 个 u32：6 对键值 +
@@ -61,6 +72,44 @@ class BaseCw:
         self.pool = self.buf[self.pool_off:]
         self.words = np.frombuffer(self.buf[: len(self.buf) // 4 * 4], "<u4")
         self._key_cache: dict = {}
+
+    # ── 对象表与表目录 ──────────────────────────────────────
+    def obj_offset(self, handle: int) -> int:
+        """句柄 → 文件偏移。"""
+        return struct.unpack_from("<I", self.buf, 8 + handle * 4)[0]
+
+    def tables(self) -> dict:
+        """顶层表目录：表名 → **一个语义未知的 u32**。⚠ 以 `land_shape` 为锚向两头扩。
+
+        ⛔ 那个 u32 **不是对象句柄**（已反证，见模块注释）。这张表目前只用来
+        **确认某张表存在 / 拿到全部表名**，⛔ 别拿它定位行。
+        """
+        if getattr(self, "_tables", None) is not None:
+            return self._tables
+        w = self.words
+        anchor = self.key_off("land_shape")
+        i = int(np.nonzero(w == anchor)[0][0])
+        k = i
+        while k > 2 and self.pool_key(int(w[k - 2])):
+            k -= 2
+        j = i
+        while j + 1 < len(w) and self.pool_key(int(w[j])):
+            j += 2
+        self._tables = {self.pool_key(int(w[k + t])): int(w[k + t + 1])
+                        for t in range(0, j - k, 2)}
+        return self._tables
+
+    # ⛔ **曾有一个 `owner_of(file_off)`，已删** ——它建在「对象按表分组、目录值是句柄」
+    #   这个假设上，而该假设**已被反证**：`client_res` 的行实测落在句柄 ~214,746，
+    #   目录里写的却是 164,841；`land` 是 ~505,131 vs 460,421，差值还不是常数。
+    #   ⇒ 目录的 u32 **不是对象句柄**，语义未知。⛔ 别再按「句柄区间 = 表」去归属地址。
+
+    def pool_key(self, off: int) -> str | None:
+        """池偏移 → 键名；⚠ 必须指向串**起点**（前一字节是 NUL），⛔ 否则是巧合。"""
+        if off <= 0 or off >= len(self.pool) or self.pool[off - 1] != 0:
+            return None
+        st = self.s(off)
+        return st if st and st.isascii() and 0 < len(st) < 64 else None
 
     def s(self, off: int) -> str | None:
         """池偏移 → 串；越界或太长回 None。"""
