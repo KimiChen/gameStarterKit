@@ -21,7 +21,7 @@
 | [spikeInput.ts](../apps/client/src/view/scene3d/spikeInput.ts)、[spikeFguiInput.ts](../apps/client/src/view/scene3d/spikeFguiInput.ts) | SC1-B9：迁入正式 `view/input/` 适配器和 owner 绑定 raw-input 订阅 / 取消端口，再移除 spike 文件 | 当前单个 world 订阅者和 FairyGUI 1.2.2 实例处理器适配；只验证固定夹具所需分流 |
 | [ViewMgr.ts](../apps/client/src/view/ViewMgr.ts)、[AppRuntime.ts](../apps/client/src/app/AppRuntime.ts)、[SnakeWorldView.ts](../apps/client/src/view/rooms/snake/SnakeWorldView.ts) | SC1-B9：替换 `hasSpikeHud`、hide 取消与 Snake 全局触摸旁路；所有 presentation 接入同一适配器 | pointer 必须在玩法 router 前归属；`dispatchInput` 后置业务过滤不能替代原始输入分流 |
 | [Stage3dFixtureView.ts 的 loader](../apps/client/src/view/Stage3dFixtureView.ts) | SC1-B2/B4：成功回调即经真实同步 retainer 持有；SC3-B1/B4：换完整 AssetLease | 当前 `resources.load` + 直接 addRef/decRef 没有 bundle 寻址、15 秒 deadline 或正式批量失败语义 |
-| [spikeOwnedInstancing.ts](../apps/client/src/view/scene3d/spikeOwnedInstancing.ts) | SC1-B2/B3 封装引擎适配；SC3-B3、SC4-B1 延续实体 / 蒙皮生命周期断言，完成替换后删除 spike 文件 | 私有结构只绑定 Creator 3.8.8 WebPipeline；不得直接成为 kit API，不得清全局共享池 |
+| [spikeOwnedInstancing.ts](../apps/client/src/view/scene3d/spikeOwnedInstancing.ts) | SC1-B3 先交空舞台生产适配；SC1-B4 封装 owned rendering 退休与夹具资源持有顺序；SC3-B3、SC4-B1 延续实体 / 蒙皮生命周期断言，完成替换后删除 spike 文件 | 私有结构只绑定 Creator 3.8.8 WebPipeline；不得直接成为 kit API，不得清全局共享池 |
 | [spikeSkinning.ts](../apps/client/src/view/scene3d/spikeSkinning.ts) | SC4-B1：迁移布局、实际 jointTexture 分组、跨图切换与实时初始化修正 | 固定两骨、四 clip、两图集；72/144 行宽不是任意骨架通用配置 |
 | [Stage3dFixtureView.ts 的粒子初始化](../apps/client/src/view/Stage3dFixtureView.ts) | SC4-B2：迁入 Vfx 生命周期与池管理 | 仅一个 capacity=50 的粒子实例；尚无池、LOD 门、定时回收或并发上限 |
 | [builtin/plugin.json](../apps/plugins/builtin/plugin.json)、[navigation.test.ts](../apps/client/test/navigation.test.ts) | SC1-B4/B9：按正式夹具调整路由与退出取消回归，再生成注册表和镜像 | `stage3dFixture` / `stage3dSpikeHud` 入口登记不代表正式舞台或输入能力 |
@@ -36,7 +36,7 @@ FGUI 空白不保证传到全局 `input`；SC0 已验证从 UI/GRoot 明确分�
 
 | 修正 | 已验证的处理 | 移交与限制 |
 | --- | --- | --- |
-| 精确回收本 owner 的 instancing 缓冲 | 模型销毁 / 替换前记录 descriptorSet；AFTER_DRAW 区分本帧活动队列与缓存队列，仅销毁本 owner 已退出渲染的 VB/IA；仍活动则继续持有资源 | SC1-B2/B3、SC3-B3、SC4-B1；保护外来 owner 复用、源 mesh 缓冲和全局 PassPool；引擎升级重验 |
+| 精确回收本 owner 的 instancing 缓冲 | 模型销毁 / 替换前记录 descriptorSet；AFTER_DRAW 区分本帧活动队列与缓存队列，仅销毁本 owner 已退出渲染的 VB/IA；仍活动则继续持有资源 | SC1-B4、SC3-B3、SC4-B1；B3 空舞台接线不代表已验证资产退休，lease 取消不等于允许 decRef；保护外来 owner 复用、源 mesh 缓冲和全局 PassPool；引擎升级重验 |
 | 粒子容量在激活前配置 | inactive 节点添加组件并设 capacity=50，再挂入场景激活，避免 3.8.8 已初始化模型重建时丢失旧缓冲引用 | SC4-B2；不能据此允许任意运行时容量变更 |
 | 回收粒子 processor 默认材质 | 经公开 `processor.getDefaultMaterial()` 记录此实例材质，等旧渲染引用退出后销毁 | SC4-B2；不能销毁共享外来材质 |
 | 首次实时模式重建动画状态 | 先挂非 instancing 材质，再切 `useBakedAnimation=false`，只调用一次 `addClip(existingMainClip)` 重建无 evaluator 的旧状态；之后复用 | SC4-B1；不改私有状态、不复制 clip、不反复重建；恢复时先切 baked 再恢复共享材质 |

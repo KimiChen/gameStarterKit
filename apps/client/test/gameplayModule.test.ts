@@ -12,6 +12,8 @@
  *     pages/Home/catalog 手写文件字节不动（独立注入 registry，⛔ 不改生产 catalog）；
  *  6. §7.8：宿主输入闸拒绝的输入不产生 ballMove adapter seq（暂停不跳变）。
  */
+
+import { createFakeStage3D, loadAppHost } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -178,7 +180,7 @@ test("registerGameplayModule：module/bridge 形状 fail-fast；plugin.id 必须
 
 test("validateLaunch：ballMove/idle 只接受 exact {} 或 {profile ∈ catalog.profiles}", () => {
     const controller = new RoomController<any, any>();
-    const services = createGameplayServices({ controllerBridge: bridgeFor(controller) });
+    const services = createGameplayServices({ stage3d: createFakeStage3D(), controllerBridge: bridgeFor(controller) });
     for (const module of [createBallMoveModule(services), createIdleModule(services)] as const) {
         assert.deepEqual(module.validateLaunch(undefined), {});
         assert.deepEqual(module.validateLaunch({}), {});
@@ -329,4 +331,21 @@ test("§7.8：宿主输入闸拒绝的输入不产生 ballMove adapter seq（暂
         off();
         ecs.clear();
     }
+});
+
+test("SC1-B3：GameplayServicesContext.stage3d 与 AppPorts.stage3d 共享同一舞台和占用状态", async () => {
+    const { appRuntime, makeNode } = await loadAppHost();
+    const stage3d = createFakeStage3D();
+    const runtime = new appRuntime.AppRuntime({ node: makeNode(), stage3d });
+    try {
+        const services = (runtime as unknown as { gameplayServices: import("../src/gameplay/services").GameplayServicesContext }).gameplayServices;
+        assert.equal(services.stage3d, runtime.ports.stage3d);
+        assert.equal(services.stage3d, stage3d);
+        const owner = { signal: new AbortController().signal, isActive: () => true };
+        const lease = services.stage3d.acquire(owner);
+        assert.equal(runtime.ports.stage3d.active, true);
+        assert.throws(() => runtime.ports.stage3d.acquire(owner), /already has a stage lease/);
+        lease.release();
+        assert.equal(runtime.ports.stage3d.active, false);
+    } finally { runtime.dispose(); }
 });

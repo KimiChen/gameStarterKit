@@ -12,6 +12,8 @@
 import { DEV_SERVER_URL } from "../core/devEnv";
 import { initHttp, initPortal } from "../core/http";
 import { AppRuntime } from "./AppRuntime";
+import { Stage3D } from "../view/scene3d/Stage3D";
+import { CocosStage3DEngine } from "../view/scene3d/cocosStage3DEngine";
 import { installCocosLifecycleBridge } from "./CocosLifecycleBridge";
 import { lifecycleBus, wireConnectionEvents } from "./wiring";
 import type { Node } from "cc";
@@ -46,21 +48,32 @@ export interface AppBootstrapOptions {
  * Main.update/onDestroy 分别转发 runtime.tick/dispose。
  */
 export function createAppRuntime(options: AppBootstrapOptions): AppRuntime {
-    const runtime = new AppRuntime({
-        node: options.node,
-        gameplayId: options.gameplayId,
-    });
-    const serverUrl = options.serverUrl || serverUrlFromQuery() || DEV_SERVER_URL;
-    initHttp(serverUrl);
-    // portal 空串时跟随同一游戏服地址（dev 下 portal 即游戏服自身）。
-    initPortal(options.portalUrl || serverUrl);
-    // Register before opening pages so transport loss always tears down the
-    // gameplay generation before the navigation layer mounts Login again.
-    runtime.wireSessionLifecycle();
-    // Transport 连接事件 → LifecycleBus → SessionCoordinator 派生：必须先于任何
-    // 页面挂载接通（应用级接线跨场景保持）。
-    wireConnectionEvents();
-    runtime.trackDisposer(installCocosLifecycleBridge(lifecycleBus));
-    void runtime.startNavigation();
-    return runtime;
+    // 惰性引擎适配器：启动 2D 页面不占舞台、不读取当前 Scene.globals。
+    const stage3d = new Stage3D(new CocosStage3DEngine());
+    let runtime: AppRuntime | undefined;
+    try {
+        runtime = new AppRuntime({
+            node: options.node,
+            gameplayId: options.gameplayId,
+            stage3d,
+        });
+        const serverUrl = options.serverUrl || serverUrlFromQuery() || DEV_SERVER_URL;
+        initHttp(serverUrl);
+        // portal 空串时跟随同一游戏服地址（dev 下 portal 即游戏服自身）。
+        initPortal(options.portalUrl || serverUrl);
+        // Register before opening pages so transport loss always tears down the
+        // gameplay generation before the navigation layer mounts Login again.
+        runtime.wireSessionLifecycle();
+        // Transport 连接事件 → LifecycleBus → SessionCoordinator 派生：必须先于任何
+        // 页面挂载接通（应用级接线跨场景保持）。
+        wireConnectionEvents();
+        runtime.trackDisposer(installCocosLifecycleBridge(lifecycleBus));
+        void runtime.startNavigation();
+        return runtime;
+    } catch (error) {
+        // Runtime 构造失败时没有返回对象；仍回收 bootstrap 创建的唯一 service。
+        try { if (runtime) runtime.dispose(); else stage3d.dispose(); }
+        catch (cleanupError) { console.error("[bootstrap] 启动失败后的清理失败：", cleanupError); }
+        throw error;
+    }
 }

@@ -35,6 +35,7 @@ import type {
     IUserView,
 } from "../shared/index";
 import type { PluginLaunchTarget } from "./builtinPlugin";
+import type { Stage3DPort } from "../view/scene3d/Stage3D";
 import type { FrameScheduler } from "./FrameScheduler";
 import type { LifecycleBus, HostLifecycleEvent } from "./LifecycleBus";
 import type { NavigationService, NavRouteHandle } from "./NavigationService";
@@ -105,6 +106,8 @@ export interface LaunchPort {
 }
 
 export interface AppPorts {
+    /** 页面与 gameplay 共用的应用级 3D 舞台；消费者只持租约。 */
+    readonly stage3d: Stage3DPort;
     readonly navigation: NavigationPort;
     readonly lobbyRpc: LobbyRpcPort;
     readonly session: SessionReadPort;
@@ -122,6 +125,7 @@ function isResultUnknownError(error: unknown): boolean {
 }
 
 export interface AppPortsDeps {
+    readonly stage3d: Stage3DPort;
     readonly navigation: NavigationService;
     readonly journal: PendingOperationJournal;
     readonly frameScheduler: FrameScheduler;
@@ -137,6 +141,7 @@ export interface AppPortsDeps {
 export function createAppPorts(deps: AppPortsDeps): AppPorts {
     const now = deps.now ?? (() => Date.now());
     return {
+        stage3d: deps.stage3d,
         navigation: {
             open: (routeId) => deps.navigation.open(routeId),
             replace: (routeId) => deps.navigation.replace(routeId),

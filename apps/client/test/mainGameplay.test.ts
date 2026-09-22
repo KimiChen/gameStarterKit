@@ -6,6 +6,8 @@
  * bootstrap 顺序不变量（WeChat compat / init→导航次序）保留为源文本断言
  * （与掏空 Main 同批改写，⛔ 未先删后补）。
  */
+
+import { createFakeStage3D } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -77,7 +79,7 @@ function deferred<T>(): Deferred<T> {
 
 interface HostRuntime {
   Main: new () => object;
-  AppRuntime: new (options: { node: object; gameplayId?: string }) => object;
+  AppRuntime: new (options: { node: object; gameplayId?: string; stage3d: ReturnType<typeof createFakeStage3D> }) => object;
   clearSession(): void;
   makeNode(): object;
 }
@@ -182,7 +184,7 @@ async function assertLateStartIsolated(
   const { AppRuntime, clearSession, makeNode } = await loadHostRuntime();
   clearSession();
 
-  const runtime = new AppRuntime({ node: makeNode() }) as Record<string, any>;
+  const runtime = new AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() }) as Record<string, any>;
   let closeLobbyCalls = 0;
   try {
     // 只替换导航面：closeGroup("authenticated") 是原 closeLobby 的等价入口。

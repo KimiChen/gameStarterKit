@@ -12,6 +12,9 @@
  *   覆写，框架靠鸭子类型调用，声明了反而与子类覆写修饰符冲突（Arthur 实测教训）。
  */
 declare module "cc" {
+    /** SC1-B3: strict mode rejects objects already queued for destruction (cc.d.ts:23415). */
+    export function isValid(value: unknown, strictMode?: boolean): boolean;
+    export const screen: { readonly windowSize: { width: number; height: number } };
     export class Vec2 { constructor(x?: number, y?: number); x: number; y: number; }
     /** ⚠ 给 Material.setProperty 设 vec4 uniform 用：⛔ 传 JS 数组设不进去（静默失败）。 */
     export class Vec4 { constructor(x?: number, y?: number, z?: number, w?: number);
@@ -215,6 +218,8 @@ declare module "cc" {
         /** 引擎内置资源表；⚠ `default-spriteframe` 是共用的 2×2 全白图，见 view/uiPlate.ts。 */
     export const builtinResMgr: { get<T>(name: string): T };
     export const director: {
+      on(type: string, callback: () => void, target?: unknown): void;
+      off(type: string, callback: () => void, target?: unknown): void;
       root: { dataPoolManager: { jointTexturePool: {
         registerCustomTextureLayouts(layouts: { textureLength: number; contents: { skeleton: number; clips: number[] }[] }[]): void;
       } } } | null;
@@ -227,6 +232,10 @@ declare module "cc" {
         off(type: string, callback: () => void, target?: unknown): void;
         setDesignResolutionSize(width: number, height: number, policy: unknown): void;
         getVisibleSize(): { width: number; height: number };
+        getVisibleOrigin(): Vec2;
+        getViewportRect(): Rect;
+        getScaleX(): number;
+        getScaleY(): number;
     };
     export const ResolutionPolicy: { FIXED_WIDTH: unknown };
     export const sys: {
@@ -455,6 +464,8 @@ declare module "cc" {
     }
     /** cc.d.ts:27003–27247. Component ray arguments differ from renderer.scene.Camera. */
     export class Camera extends Component {
+        /** SC1-B3: same-frame picks refresh the public renderer camera (cc.d.ts:27090,11313). */
+        readonly camera: { update(forceUpdate?: boolean): void };
         static ProjectionType: typeof renderer.scene.CameraProjection;
         static ClearFlag: { SKYBOX: number; SOLID_COLOR: gfx.ClearFlagBit; DEPTH_ONLY: gfx.ClearFlagBit; DONT_CLEAR: gfx.ClearFlagBit };
         projection: renderer.scene.CameraProjection; priority: number; visibility: number; fov: number; orthoHeight: number;
@@ -567,5 +578,5 @@ declare module "cc" {
         static stopAllByTarget<T extends object>(target?: T): void;
     }
     export function tween<T extends object = object>(target?: T): Tween<T>;
-    export const Director: { EVENT_AFTER_DRAW: string };
+    export const Director: { EVENT_AFTER_DRAW: string; EVENT_AFTER_UPDATE: string; EVENT_BEFORE_SCENE_LAUNCH: string };
 }

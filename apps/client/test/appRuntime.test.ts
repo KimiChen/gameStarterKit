@@ -8,11 +8,11 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadAppHost } from "./appHostHarness";
+import { createFakeStage3D, loadAppHost } from "./appHostHarness";
 
 test("AppRuntime.dispose：顺序行为断言 disposePages→battleAbort→unsubs→unregisterGameplay→controller.dispose，且幂等", async () => {
   const { appRuntime, makeNode } = await loadAppHost();
-  const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() }) as unknown as Record<string, any>;
   const realDisposePages = runtime.disposePages as () => void;
   const order: string[] = [];
   runtime.disposePages = () => order.push("disposePages");
@@ -47,7 +47,7 @@ test("AppRuntime.dispose：顺序行为断言 disposePages→battleAbort→unsub
 test("AppRuntime：app generation 构造递增、dispose 冻结（取代 pageLifecycleGeneration）", async () => {
   const { appRuntime, appGeneration, makeNode } = await loadAppHost();
   const before = appGeneration.currentAppGeneration();
-  const first = new appRuntime.AppRuntime({ node: makeNode() });
+  const first = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() });
   assert.ok(first.generation > before, "构造必须递增 app generation");
   const firstScope = (first as unknown as Record<string, any>).pageScope as {
     isActive(): boolean;
@@ -60,7 +60,7 @@ test("AppRuntime：app generation 构造递增、dispose 冻结（取代 pageLif
   assert.equal(firstScope.isActive(), false, "dispose 后旧 scope 失活");
   assert.equal(first.isDisposed, true);
 
-  const second = new appRuntime.AppRuntime({ node: makeNode() });
+  const second = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() });
   assert.ok(second.generation > first.generation, "新宿主必须拿到更新的世代");
   assert.equal(firstScope.isActive(), false, "新宿主不复活旧 scope");
   second.dispose();
@@ -68,7 +68,7 @@ test("AppRuntime：app generation 构造递增、dispose 冻结（取代 pageLif
 
 test("AppRuntime.tick：转发 RoomController.tick 与 FrameScheduler；dispose 后不再驱动", async () => {
   const { appRuntime, makeNode } = await loadAppHost();
-  const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() }) as unknown as Record<string, any>;
   const controllerTicks: number[] = [];
   const schedulerTicks: number[] = [];
   runtime.roomController = {
@@ -97,6 +97,7 @@ test("§7.8 宿主前后台：hide 停喂 tick + 拒新输入；show 按 ready/d
   // battle 快照 seam：可变对象驱动三态（生产缺省读 roomClient 派生快照）。
   const battle = { state: "ready" as "idle" | "joining" | "ready" | "dropped", connGeneration: 1 };
   const runtime = new appRuntime.AppRuntime({
+    stage3d: createFakeStage3D(),
     node: makeNode(),
     battleConnection: () => ({ ...battle }),
   }) as unknown as Record<string, any>;
@@ -160,7 +161,7 @@ test("§7.8 宿主前后台：hide 停喂 tick + 拒新输入；show 按 ready/d
 
 test("wireSessionLifecycle：transport 失效先拆玩法 generation；journal/ticker 生命周期接线", async () => {
   const { appRuntime, session, wiring, makeNode } = await loadAppHost();
-  const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() }) as unknown as Record<string, any>;
   const stopReasons: unknown[] = [];
   runtime.roomController = {
     stop: (reason: unknown) => {
@@ -242,6 +243,7 @@ test("launch 统一启动通道经 PluginHost 闸：failed 不启动、userInten
     },
   ];
   const runtime = new appRuntime.AppRuntime({
+    stage3d: createFakeStage3D(),
     node: makeNode(),
     hostedPlugins,
     launchPluginMap: new Map([["ballMove", "builtin"], ["fxGame", "fx"]]),
@@ -294,6 +296,7 @@ test("launch 闸 await 窗口的活性复验：换代/dispose 后迟到的 insta
       },
     ];
     const runtime = new appRuntime.AppRuntime({
+      stage3d: createFakeStage3D(),
       node: makeNode(),
       hostedPlugins,
       launchPluginMap: new Map([["ballMove", "builtin"], ["fxGame", "fx"]]),
@@ -349,7 +352,7 @@ test("deriveLaunchPluginIds：生产派生 ballMove→builtin；多贡献者取�
 
   // ① 生产派生（杀 M4）：不注入任何 seam 构造 AppRuntime，内部映射必须含
   // ballMove → builtin；纯函数喂真实 menuContributions() 得到同一结果。
-  const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() }) as unknown as Record<string, any>;
   try {
     assert.equal(runtime.launchPluginIds.get("ballMove"), "builtin",
       "生产派生必须以 gameplayId 为键映射到贡献 plugin");
@@ -385,6 +388,7 @@ test("launch 点击恒为 userIntent：连续点击不计入自动重试上限�
     { id: "fx", load: () => ({ install: () => { throw new Error("install always fails"); } }) },
   ];
   const runtime = new appRuntime.AppRuntime({
+    stage3d: createFakeStage3D(),
     node: makeNode(),
     hostedPlugins,
     launchPluginMap: new Map([["fxGame", "fx"]]),
@@ -415,6 +419,7 @@ test("launch 闸对未托管 pluginId 的裁定与渲染侧一致：不误伤、
   // 修复后闸侧经 hosts() 与渲染侧同款裁定：未托管即直通，不进闸。
   const { appRuntime, makeNode } = await loadAppHost();
   const runtime = new appRuntime.AppRuntime({
+    stage3d: createFakeStage3D(),
     node: makeNode(),
     hostedPlugins: [{ id: "builtin", resident: true }],
     launchPluginMap: new Map([["fxGame", "ghost"]]),
@@ -433,6 +438,7 @@ test("launch 统一启动通道：disabled(app-generation) 的 plugin 同样不�
     { id: "fx", load: () => ({ install: () => { throw new Error("always fails"); } }) },
   ];
   const runtime = new appRuntime.AppRuntime({
+    stage3d: createFakeStage3D(),
     node: makeNode(),
     hostedPlugins,
     launchPluginMap: new Map([["fxGame", "fx"]]),
@@ -488,7 +494,7 @@ test("玩法侧退出（controllerBridge.requestStop）后恢复 authenticated b
   // 2026-09-05 Creator 预览实测：结算/离开经 host.requestExit → controller.stop 后整屏黑——closed{voluntary}
   // 不触发导航、stop 也不导航，没人把 launchGameplay 进战斗前关掉的 authenticated 组恢复回来。
   const { appRuntime, makeNode } = await loadAppHost();
-  const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() }) as unknown as Record<string, any>;
   const restores: unknown[] = [];
   let hasBase = true;
   runtime.navigation = Object.assign(Object.create(runtime.navigation), {
@@ -524,5 +530,183 @@ test("玩法侧退出（controllerBridge.requestStop）后恢复 authenticated b
     assert.equal(restores.length, 1, "dispose 后不恢复");
   } finally {
     runtime.dispose();
+  }
+});
+
+test("SC1-B3：ports.stage3d 可达，宿主 dispose 回收漏还的舞台与独立 globals 租约", async () => {
+  const { appRuntime, makeNode } = await loadAppHost();
+  const stage3d = createFakeStage3D();
+  const runtime = new appRuntime.AppRuntime({ node: makeNode(), stage3d });
+  const owner = { signal: new AbortController().signal, isActive: () => true };
+  assert.equal(runtime.ports.stage3d, stage3d);
+  const globals = runtime.ports.stage3d.acquireGlobals(owner, { fog: { enabled: true } });
+  const stage = runtime.ports.stage3d.acquire(owner);
+  assert.equal(stage3d.active, true);
+  runtime.dispose();
+  assert.equal(stage.signal.aborted, true);
+  assert.equal(globals.signal.aborted, true);
+  assert.equal(stage.root.isValid, false);
+  assert.equal(stage3d.active, false);
+  assert.throws(() => stage3d.acquire(owner), /no longer active/);
+  runtime.dispose();
+});
+
+test("SC1-B3：某个宿主 disposer 抛错仍清理其余订阅和舞台，重复 dispose 不重做已完成项", async () => {
+  const { appRuntime, makeNode } = await loadAppHost();
+  const stage3d = createFakeStage3D();
+  const runtime = new appRuntime.AppRuntime({ node: makeNode(), stage3d });
+  const owner = { signal: new AbortController().signal, isActive: () => true };
+  const globals = stage3d.acquireGlobals(owner, { ambient: { skyIllum: 4 } });
+  const stage = stage3d.acquire(owner);
+  const failure = new Error("fixture disposer failed");
+  const calls: string[] = [];
+  runtime.trackDisposer(() => { calls.push("first"); throw failure; });
+  runtime.trackDisposer(() => { calls.push("second"); });
+  assert.throws(() => runtime.dispose(), (error) => error === failure);
+  assert.deepEqual(calls, ["first", "second"]);
+  assert.equal(globals.signal.aborted, true);
+  assert.equal(stage.signal.aborted, true);
+  runtime.dispose();
+  assert.deepEqual(calls, ["first", "second"]);
+});
+
+test("SC1-B3：Stage3D dispose 回滚失败后宿主允许重试，不重复清理其它宿主组件", async () => {
+  const { appRuntime, makeNode } = await loadAppHost();
+  const stage3d = createFakeStage3D();
+  const actualDispose = stage3d.dispose.bind(stage3d);
+  let stageAttempts = 0;
+  stage3d.dispose = () => {
+    stageAttempts++;
+    if (stageAttempts === 1) throw new Error("fixture globals rollback failed");
+    actualDispose();
+  };
+  const runtime = new appRuntime.AppRuntime({ node: makeNode(), stage3d });
+  let hostDisposals = 0;
+  runtime.trackDisposer(() => { hostDisposals++; });
+  const owner = { signal: new AbortController().signal, isActive: () => true };
+  const globals = stage3d.acquireGlobals(owner, { fog: { enabled: true } });
+  assert.throws(() => runtime.dispose(), /fixture globals rollback failed/);
+  assert.equal(globals.signal.aborted, false);
+  runtime.dispose();
+  runtime.dispose();
+  assert.equal(globals.signal.aborted, true);
+  assert.equal(stageAttempts, 2);
+  assert.equal(hostDisposals, 1);
+});
+
+test("SC1-B3：AppRuntime 拒绝漏注入；构造中途失败回收已有租约与页面 scope", async () => {
+  const { appRuntime, appGeneration, makeNode } = await loadAppHost();
+  assert.throws(() => new appRuntime.AppRuntime({ node: makeNode(), stage3d: undefined as never }), /requires stage3d/);
+  const stage3d = createFakeStage3D();
+  const lease = stage3d.acquireGlobals({ signal: new AbortController().signal, isActive: () => true }, { toneMapping: "linear" });
+  const generation = appGeneration.currentAppGeneration();
+  assert.throws(() => new appRuntime.AppRuntime({
+    node: makeNode(), stage3d,
+    hostedPlugins: [{ id: "duplicate", resident: true }, { id: "duplicate", resident: true }],
+  }), /重复 plugin id/);
+  assert.equal(lease.signal.aborted, true);
+  assert.ok(appGeneration.currentAppGeneration() >= generation + 2, "失败构造必须 claim 后再 dispose scope");
+});
+
+test("SC1-B3：bootstrap 创建生产 Stage3D 并注入两个入口，2D 启动不抓取场景", async () => {
+  const { bootstrap, makeNode } = await loadAppHost();
+  const { Stage3D } = await import("../src/view/scene3d/Stage3D");
+  // harness director.getScene 返回 null；若 bootstrap 偷跑 acquire，本调用会失败。
+  const runtime = bootstrap.createAppRuntime({ node: makeNode(), serverUrl: "", portalUrl: "" });
+  try {
+    assert.ok(runtime.ports.stage3d instanceof Stage3D);
+    const services = (runtime as unknown as { gameplayServices: { stage3d: unknown } }).gameplayServices;
+    assert.equal(services.stage3d, runtime.ports.stage3d);
+    assert.equal(runtime.ports.stage3d.active, false);
+  } finally { runtime.dispose(); }
+});
+
+test("SC1-B3：bootstrap 初始化或 bridge 注册失败回收唯一舞台及已注册监听", async () => {
+  const { bootstrap, wiring, cocosHost, makeNode } = await loadAppHost();
+  const { Stage3D } = await import("../src/view/scene3d/Stage3D");
+  wiring.wireConnectionEvents(); // 应用级共享桥的生命周期独立于本次 runtime。
+  const baseline = (["host", "connection", "battle"] as const).map((channel) => wiring.lifecycleBus.listenerCount(channel));
+  const hostBaseline = cocosHost.listenerCount();
+  const originalDispose = Stage3D.prototype.dispose;
+  const disposed = new Set<InstanceType<typeof Stage3D>>();
+  Stage3D.prototype.dispose = function () { disposed.add(this); originalDispose.call(this); };
+  try {
+    assert.throws(() => bootstrap.createAppRuntime({ node: makeNode(), serverUrl: "", portalUrl: "invalid" }), /origin|http/);
+    cocosHost.failNextShowRegistration();
+    assert.throws(() => bootstrap.createAppRuntime({ node: makeNode(), serverUrl: "", portalUrl: "" }), /fake lifecycle registration failed/);
+    assert.equal(disposed.size, 2, "每次失败都回收本次唯一 Stage3D");
+    assert.equal(cocosHost.listenerCount(), hostBaseline);
+    assert.deepEqual((["host", "connection", "battle"] as const).map((channel) => wiring.lifecycleBus.listenerCount(channel)), baseline);
+  } finally { Stage3D.prototype.dispose = originalDispose; }
+});
+
+test("SC1-B3：异步导航启动失败也释放舞台与宿主订阅", async () => {
+  const { appRuntime, loginFlow, wiring, makeNode } = await loadAppHost();
+  const stage3d = createFakeStage3D();
+  const runtime = new appRuntime.AppRuntime({ node: makeNode(), stage3d });
+  const baseline = wiring.lifecycleBus.listenerCount("host");
+  runtime.wireSessionLifecycle();
+  const lease = stage3d.acquireGlobals({ signal: new AbortController().signal, isActive: () => true }, { fog: { enabled: true } });
+  const originalOpen = loginFlow.appNavigation.open;
+  const originalFetch = globalThis.fetch;
+  const originalError = console.error;
+  try {
+    globalThis.fetch = async () => { throw new Error("fixture directory unavailable"); };
+    loginFlow.appNavigation.open = async () => { throw new Error("fixture navigation unavailable"); };
+    console.error = () => {};
+    await runtime.startNavigation();
+    assert.equal(runtime.isDisposed, true);
+    assert.equal(lease.signal.aborted, true);
+    assert.equal(wiring.lifecycleBus.listenerCount("host"), baseline);
+  } finally {
+    loginFlow.appNavigation.open = originalOpen;
+    globalThis.fetch = originalFetch;
+    console.error = originalError;
+    runtime.dispose();
+  }
+});
+
+test("SC1-B3：旧导航启动迟到失败只清理旧舞台，保留新宿主导航 observer 和租约", async () => {
+  const { appRuntime, loginFlow, makeNode } = await loadAppHost();
+  const firstStage = createFakeStage3D();
+  const first = new appRuntime.AppRuntime({ node: makeNode(), stage3d: firstStage });
+  const owner = { signal: new AbortController().signal, isActive: () => true };
+  const firstLease = firstStage.acquire(owner);
+  const originalOpen = loginFlow.appNavigation.open;
+  const originalFetch = globalThis.fetch;
+  const originalError = console.error;
+  let markOpened!: () => void;
+  const opened = new Promise<void>((resolve) => { markOpened = resolve; });
+  let rejectOpen!: (error: Error) => void;
+  let second: InstanceType<typeof appRuntime.AppRuntime> | undefined;
+  try {
+    globalThis.fetch = async () => { throw new Error("fixture directory unavailable"); };
+    console.error = () => {};
+    loginFlow.appNavigation.open = () => {
+      markOpened();
+      return new Promise((_resolve, reject) => { rejectOpen = reject; });
+    };
+    const starting = first.startNavigation();
+    await opened;
+    const secondStage = createFakeStage3D();
+    second = new appRuntime.AppRuntime({ node: makeNode(), stage3d: secondStage });
+    const secondLease = secondStage.acquire(owner);
+    const navigation = loginFlow.appNavigation as unknown as { routeObserver: unknown };
+    const observer = navigation.routeObserver;
+    assert.ok(observer);
+    rejectOpen(new Error("fixture late navigation failure"));
+    await starting;
+    assert.equal(first.isDisposed, true);
+    assert.equal(firstLease.signal.aborted, true);
+    assert.equal(second.isDisposed, false);
+    assert.equal(secondLease.signal.aborted, false);
+    assert.equal(secondStage.active, true);
+    assert.equal(navigation.routeObserver, observer, "旧 runtime 的解绑不得清除新宿主 observer");
+  } finally {
+    loginFlow.appNavigation.open = originalOpen;
+    globalThis.fetch = originalFetch;
+    console.error = originalError;
+    first.dispose();
+    second?.dispose();
   }
 });

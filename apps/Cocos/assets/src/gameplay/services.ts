@@ -12,6 +12,7 @@
  * 转发目标，由 AppRuntime 绑定其当前 controller 注入）。
  */
 import type { Node } from "cc";
+import type { Stage3DPort } from "../view/scene3d/Stage3D";
 import type { GameplayControllerBridge, GameplayRegistry } from "../logic/gameplay/index";
 import type { SessionReadPort } from "../app/ports";
 import {
@@ -51,6 +52,8 @@ export interface GameplayJoinOptions {
 }
 
 export interface GameplayServicesContext {
+    /** 与 AppPorts.stage3d 同一实例；玩法借用舞台或独立 globals 租约。 */
+    readonly stage3d: Stage3DPort;
     /** 通用战斗房客户端（生产注入 RoomClient.inst）。 */
     readonly roomClient: RoomClient;
     /** 只读会话视图（凭证生命周期归 SessionCoordinator，⛔ 无写入面）。 */
@@ -70,6 +73,7 @@ export interface GameplayServicesContext {
 }
 
 export interface GameplayServicesDeps {
+    readonly stage3d: Stage3DPort;
     readonly controllerBridge: GameplayControllerBridge;
     readonly presentationHost?: GameplayPresentationHost;
     /** 测试替身注入面；生产缺省 RoomClient.inst。 */
@@ -80,6 +84,7 @@ export interface GameplayServicesDeps {
 export function createGameplayServices(deps: GameplayServicesDeps): GameplayServicesContext {
     const roomClient = deps.roomClient ?? RoomClient.inst;
     return {
+        stage3d: deps.stage3d,
         roomClient,
         session: {
             getUserId,

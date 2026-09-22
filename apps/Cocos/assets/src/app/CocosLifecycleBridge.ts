@@ -25,13 +25,22 @@ let hostEventSeq = 0;
 export function installCocosLifecycleBridge(bus: LifecycleBus, host: CocosGameLike = game): () => void {
     const onHide = (): void => { bus.publish("host", { kind: "hide", seq: ++hostEventSeq }); };
     const onShow = (): void => { bus.publish("host", { kind: "show", seq: ++hostEventSeq }); };
-    host.on(Game.EVENT_HIDE, onHide);
-    host.on(Game.EVENT_SHOW, onShow);
+    try {
+        host.on(Game.EVENT_HIDE, onHide);
+        host.on(Game.EVENT_SHOW, onShow);
+    } catch (error) {
+        // 第二次注册失败时，也撤回第一次；只解除本次 callbacks。
+        for (const [type, callback] of [[Game.EVENT_HIDE, onHide], [Game.EVENT_SHOW, onShow]] as const) {
+            try { host.off(type, callback); }
+            catch (cleanupError) { console.error("[CocosLifecycleBridge] 注册失败后的清理失败：", cleanupError); }
+        }
+        throw error;
+    }
     let disposed = false;
     return () => {
         if (disposed) return;
         disposed = true;
-        host.off(Game.EVENT_HIDE, onHide);
-        host.off(Game.EVENT_SHOW, onShow);
+        try { host.off(Game.EVENT_HIDE, onHide); }
+        finally { host.off(Game.EVENT_SHOW, onShow); }
     };
 }

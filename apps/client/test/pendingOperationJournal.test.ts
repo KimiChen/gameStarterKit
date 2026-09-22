@@ -4,6 +4,8 @@
  * fail-closed（⛔ 不淘汰未决条目）、重发字节等同（canonical 不动点）、uid 边界同步
  * 清空；以及 auth-invalid 清空 / final-loss 保留的生命周期分叉与 onDrop 只做状态迁移。
  */
+
+import { createFakeStage3D } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { canonicalJsonString } from "../src/shared/index";
@@ -18,6 +20,7 @@ import { WebSocketClient } from "../src/net/WebSocketClient";
 
 function makePorts(journal: PendingOperationJournal) {
   return createAppPorts({
+    stage3d: createFakeStage3D(),
     navigation: {
       open: async () => { throw new Error("unused"); },
       replace: async () => { throw new Error("unused"); },

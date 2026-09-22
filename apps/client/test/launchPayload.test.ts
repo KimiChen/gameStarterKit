@@ -21,7 +21,7 @@ import { createGameplayModule as createSnakeModule } from "../src/gameplay/modes
 import { createGameplayModule as createTallyModule } from "../src/gameplay/modes/tally/index";
 import { createGameplayModule as createArenaCaptureModule } from "../src/gameplay/modes/arenaCapture/index";
 import { createGameplayModule as createArenaDuelModule } from "../src/gameplay/modes/arenaDuel/index";
-import { loadAppHost } from "./appHostHarness";
+import { createFakeStage3D, loadAppHost } from "./appHostHarness";
 
 function bridgeFor(controller: RoomController<any, any>): GameplayControllerBridge {
     return {
@@ -105,7 +105,7 @@ test("joinGameRoom / services.joinGameRoom：options.profile 覆盖缺省 defaul
         joinGameRoom(fakeClient, adapter, signal);
         joinGameRoom(fakeClient, adapter, signal, {});
         joinGameRoom(fakeClient, adapter, signal, { profile: "private" });
-        const services = createGameplayServices({ controllerBridge: bridgeFor(new RoomController<any, any>()), roomClient: fakeClient });
+        const services = createGameplayServices({ stage3d: createFakeStage3D(), controllerBridge: bridgeFor(new RoomController<any, any>()), roomClient: fakeClient });
         services.joinGameRoom(adapter, signal, { profile: "vip" });
         services.joinGameRoom(adapter, signal);
         assert.deepEqual(joins.map((options) => (options as { profile: string; sId: number }).profile), ["default", "default", "private", "vip", "default"]);
@@ -117,7 +117,7 @@ test("joinGameRoom / services.joinGameRoom：options.profile 覆盖缺省 defaul
 
 test("AppRuntime.launch(target)：payload / profile 透传为 { ...payload, profile } 到 controller.startRegistered；enterBattle ⇒ {}", async () => {
     const { appRuntime, makeNode } = await loadAppHost();
-    const runtime = new appRuntime.AppRuntime({ node: makeNode(), launchPluginMap: new Map() }) as unknown as Record<string, any>;
+    const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode(), launchPluginMap: new Map() }) as unknown as Record<string, any>;
     const calls: unknown[][] = [];
     runtime.roomController = {
         status: "idle",
@@ -143,7 +143,7 @@ test("AppRuntime.launch(target)：payload / profile 透传为 { ...payload, prof
 });
 
 test("仓内全部玩法 module 的 validateLaunch 拒未知字段（exact 校验是 module 约定，带参 launch 依赖它）", () => {
-    const services = createGameplayServices({ controllerBridge: bridgeFor(new RoomController<any, any>()) });
+    const services = createGameplayServices({ stage3d: createFakeStage3D(), controllerBridge: bridgeFor(new RoomController<any, any>()) });
     const modules = [
         createBallMoveModule(services), createIdleModule(services), createSnakeModule(services),
         createTallyModule(services), createArenaCaptureModule(services), createArenaDuelModule(services),

@@ -1,3 +1,4 @@
+import { createFakeStage3D } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
@@ -60,6 +61,7 @@ function servicesFor(
     presentationHost?: GameplayPresentationHost,
 ) {
     return createGameplayServices({
+        stage3d: createFakeStage3D(),
         controllerBridge: bridgeFor(controller),
         ...(presentationHost ? { presentationHost } : {}),
     });

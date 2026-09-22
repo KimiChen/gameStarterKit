@@ -10,6 +10,8 @@
  *    显式重试成功 → 可用（叠加层可变、catalog 不可变）；
  *  - LaunchPort.launch：注入专用 launch 通道即走它；未注入回退 enterBattle。
  */
+
+import { createFakeStage3D } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -41,6 +43,7 @@ function makePorts(overrides: {
   launch?: (target: PluginLaunchTarget) => Promise<void>;
 } = {}): AppPorts {
   return createAppPorts({
+    stage3d: createFakeStage3D(),
     navigation: {
       open: async () => { throw new Error("unused"); },
       replace: async () => { throw new Error("unused"); },

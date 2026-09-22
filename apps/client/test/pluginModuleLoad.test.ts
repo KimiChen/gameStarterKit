@@ -13,7 +13,7 @@ import { test } from "node:test";
 import { PluginHost } from "../src/app/PluginHost";
 import type { AppPorts } from "../src/app/ports";
 import { GENERATED_PLUGINS, GENERATED_MENU_CONTRIBUTIONS } from "../src/generated/plugins.generated";
-import { loadAppHost } from "./appHostHarness";
+import { createFakeStage3D, loadAppHost } from "./appHostHarness";
 
 const loadable = GENERATED_PLUGINS.filter((plugin) => typeof plugin.load === "function");
 const routeEntries = GENERATED_MENU_CONTRIBUTIONS.filter((entry) => entry.launch.kind === "route");
@@ -56,7 +56,7 @@ test("route 形态入口：AppRuntime.launch 先经 PluginHost 装载归属 plug
     const route = loginFlow.appPluginRegistry.routeOf(routeId);
     assert.equal(route.pluginId, entry.pluginId, `入口 ${entry.entryId} 引用的 route 必须归属同一 plugin`);
 
-    const runtime = new appRuntime.AppRuntime({ node: makeNode() }) as unknown as Record<string, any>;
+    const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() }) as unknown as Record<string, any>;
     const opened: string[] = [];
     // 以原 NavigationService 为原型只覆盖 open：其余方法（setRouteObserver 等）仍走原型，⛔ 不用展开（会丢掉原型方法）。
     runtime.navigation = Object.assign(Object.create(runtime.navigation), {

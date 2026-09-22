@@ -8,6 +8,8 @@
  *  - MK1-B3 两图交接：传送输入只在传送门半径内发；transferReady ⇒ 提示 + 请求退出，stop 时把凭据交给 onTransfer；端口 transfer 发 clientReqId；
  *    joiner 有交接凭据 ⇒ 跳过 enter、transfer strategy；enter 解析出在途交接（transferId 非 null）⇒ 同样 transfer strategy；launch.transfer 校验。
  */
+
+import { createFakeStage3D } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GameplayRegistry, RoomController, registerGameplayModule, type GameplayContext } from "../src/logic/gameplay/index";
@@ -388,7 +390,7 @@ test("MMO 模块真实装配：首次进入与切换角色的身份按房间隔�
     };
     const release = setMmoRuntime(runtime);
     t.after(async () => { await controller.dispose(); release(); });
-    const module = createGameplayModule(createGameplayServices({ controllerBridge: bridge }));
+    const module = createGameplayModule(createGameplayServices({ stage3d: createFakeStage3D(), controllerBridge: bridge }));
     registerGameplayModule(registry, module, bridge);
     for (const characterId of ["c1", "c2"]) {
         assert.equal((await controller.startRegistered(registry, "mmoWorld", undefined, { characterId, mapId: "greybox" })).status, "started");

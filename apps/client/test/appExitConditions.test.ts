@@ -13,7 +13,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-import { loadAppHost } from "./appHostHarness";
+import { createFakeStage3D, loadAppHost } from "./appHostHarness";
 import { createCounterPlugin } from "./fixtures/counterPlugin";
 import { PluginHost } from "../src/app/PluginHost";
 
@@ -48,7 +48,7 @@ test("fixture plugin：全部失效场景下旧响应不回写，健康路径可
   const { appRuntime, session, wiring, webSocketClient, makeNode } = await loadAppHost();
   const socketAny = webSocketClient.WebSocketClient.inst as unknown as Record<string, any>;
   const originalRpc = socketAny.rpc;
-  const runtime = new appRuntime.AppRuntime({ node: makeNode() });
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() });
   const runtimeAny = runtime as unknown as Record<string, any>;
   runtime.wireSessionLifecycle();
   const counter = createCounterPlugin();
@@ -122,7 +122,7 @@ test("fixture plugin：全部失效场景下旧响应不回写，健康路径可
 test("late subscriber：订阅即回放当前连接状态（Lobby 已 ready 后加载的 plugin 不错过 ready）", async () => {
   const { appRuntime, webSocketClient, session, makeNode } = await loadAppHost();
   const socketAny = webSocketClient.WebSocketClient.inst as unknown as Record<string, any>;
-  const runtime = new appRuntime.AppRuntime({ node: makeNode() });
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() });
   const runtimeAny = runtime as unknown as Record<string, any>;
   try {
     socketAny.publishConnectionEvent({ kind: "ready", connGeneration: 7, seq: 91_001 });
@@ -150,7 +150,7 @@ test("app destroy：connection/session/route/ticker 订阅计数归零", async (
   const hostBaseline = wiring.lifecycleBus.listenerCount("host");
   const busConnBaseline = wiring.lifecycleBus.listenerCount("connection");
 
-  const runtime = new appRuntime.AppRuntime({ node: makeNode() });
+  const runtime = new appRuntime.AppRuntime({ stage3d: createFakeStage3D(), node: makeNode() });
   const runtimeAny = runtime as unknown as Record<string, any>;
   runtime.wireSessionLifecycle();
   runtime.ports.lifecycle.subscribeConnection(() => {});

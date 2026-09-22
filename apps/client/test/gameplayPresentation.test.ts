@@ -1,3 +1,4 @@
+import { createFakeStage3D } from "./appHostHarness";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
@@ -186,6 +187,7 @@ test("gameplay catalog：正向动态 presentation factory 可挂载并在 stop 
         const controller = new RoomController<any, any>();
         // §7.7：View 输入回流经 generation-fenced GameplayInstanceHost → controller 桥。
         const services = createGameplayServices({
+            stage3d: createFakeStage3D(),
             controllerBridge: {
                 currentGeneration: () => controller.currentGeneration,
                 dispatchInput: (input) => {

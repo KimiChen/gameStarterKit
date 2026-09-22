@@ -6,11 +6,50 @@
  * 全部宿主模块在补丁窗口内一次性装载并缓存；补丁随后卸除。
  */
 import { createRequire } from "node:module";
+import type { Camera, DirectionalLight, Node } from "cc";
+import { Stage3D, type Stage3DScene } from "../src/view/scene3d/Stage3D";
+import { cloneGlobals, type Stage3DGlobalsState } from "../src/view/scene3d/stage3dGlobals";
 
 export class FakeNode {
   readonly children: FakeNode[] = [];
-  readonly isValid = true;
+  isValid = true;
+  active = true;
   constructor(readonly name = "node") {}
+}
+
+/** 真实租约协调器 + 内存引擎；依赖由每个测试显式注入，生产路径不回落到此处。 */
+export function createFakeStage3D(): Stage3D {
+  let globals: Stage3DGlobalsState = {
+    toneMapping: "default",
+    fog: { enabled: false, type: "linear", density: 0, start: 0, end: 100 },
+    ambient: { skyIllum: 1 },
+    shadows: { enabled: false, kind: "planar" },
+  };
+  const scene: Stage3DScene = {
+    isValid: () => true,
+    isNodeValid: (node) => node.isValid,
+    createNode: (name) => new FakeNode(name) as unknown as Node,
+    addCamera: (node) => ({ node }) as Camera,
+    addLight: (node) => ({ node }) as DirectionalLight,
+    destroyNode: (node) => { (node as unknown as FakeNode).isValid = false; },
+    setCameraPose: () => {},
+    setCameraViewport: () => {},
+    setCameraClear: () => {},
+    screenPointToRay: () => ({ origin: { x: 0, y: 0, z: 1 }, direction: { x: 0, y: 0, z: -1 } }),
+    setLightDirection: () => {},
+    setLightColor: () => {},
+    readViewportMetrics: () => ({
+      design: { x: 0, y: 0, width: 750, height: 1624 },
+      screen: { width: 750, height: 1624 },
+      content: { x: 0, y: 0, width: 750, height: 1624 },
+    }),
+    globals: {
+      read: () => cloneGlobals(globals),
+      apply: (value) => { globals = cloneGlobals(value); },
+    },
+    subscribe: () => () => {},
+  };
+  return new Stage3D({ captureScene: () => scene });
 }
 
 type LoaderModule = {
@@ -27,6 +66,10 @@ export interface AppHostModules {
   appGeneration: typeof import("../src/app/appGeneration");
   webSocketClient: typeof import("../src/net/WebSocketClient");
   http: typeof import("../src/core/http");
+  cocosHost: {
+    listenerCount(): number;
+    failNextShowRegistration(): void;
+  };
   /** 返回 never 便于直接充当 cc Node 形参（最小 cc 桩，无引擎属性面）。 */
   makeNode(): never;
 }
@@ -43,6 +86,12 @@ export function loadAppHost(): Promise<AppHostModules> {
     class FakeComponent {
       readonly node = new FakeNode();
     }
+    const hostListeners = new Map<string, Set<() => void>>();
+    let failShow = false;
+    const cocosHost = {
+      listenerCount: () => [...hostListeners.values()].reduce((sum, set) => sum + set.size, 0),
+      failNextShowRegistration: () => { failShow = true; },
+    };
     const cc = {
       Component: FakeComponent,
       Node: FakeNode,
@@ -59,7 +108,18 @@ export function loadAppHost(): Promise<AppHostModules> {
       },
       Canvas: class {},
       Layers: { Enum: {} },
-      game: { on: () => {}, off: () => {} },
+      game: {
+        on: (type: string, callback: () => void) => {
+          if (type === "game_on_show" && failShow) {
+            failShow = false;
+            throw new Error("fake lifecycle registration failed");
+          }
+          const listeners = hostListeners.get(type) ?? new Set<() => void>();
+          listeners.add(callback);
+          hostListeners.set(type, listeners);
+        },
+        off: (type: string, callback: () => void) => hostListeners.get(type)?.delete(callback),
+      },
       Game: { EVENT_HIDE: "game_on_hide", EVENT_SHOW: "game_on_show" },
     };
 
@@ -93,6 +153,7 @@ export function loadAppHost(): Promise<AppHostModules> {
         appGeneration,
         webSocketClient,
         http,
+        cocosHost,
         makeNode: () => new FakeNode() as never,
       };
     } finally {

@@ -19,6 +19,7 @@ import { cancelSpikeWorldInput } from "../view/scene3d/spikeInput";
  * 本类 ⛔ 不新增第二个玩法世代计数；app generation 只服务页面/导航作用域。
  */
 import type { Node } from "cc";
+import type { Stage3DPort } from "../view/scene3d/Stage3D";
 import { GameplayRegistry } from "../logic/gameplay/GameplayRegistry";
 import {
     recoverGameplayStartFailure,
@@ -62,6 +63,9 @@ import {
 } from "./loginFlow";
 import type { NavigationService } from "./NavigationService";
 
+/** 共享导航的单个 observer 槽位：旧宿主迟到失败不能清除新宿主的绑定。 */
+const routeObserverOwners = new WeakMap<NavigationService, object>();
+
 /**
  * launch target(gameplayId) → 贡献它的 plugin id：menu contribution 是唯一映射源
  * （§7.4）。codegen:plugins 已闸「一 gameplayId 一贡献者」（PLUGIN-REVIEW F17），映射不再
@@ -81,6 +85,8 @@ export function deriveLaunchPluginIds(
 }
 
 export interface AppRuntimeOptions {
+    /** bootstrap 唯一创建；dispose 能力仅宿主持有，不暴露给消费者。 */
+    readonly stage3d: Stage3DPort & { dispose(): void };
     /** 玩法 presentation 挂载节点（Main 传入；本类不 import cc 值）。 */
     readonly node: Node;
     /** 要进入的已登记玩法 id；缺省 = 宿主 apps/plugins/host.json 的 defaultLaunch（DEFAULT_LAUNCH_GAMEPLAY_ID）。 */
@@ -105,6 +111,8 @@ export class AppRuntime {
     private battleTransition: Promise<void> | null = null;
     private battleAbort: AbortController | null = null;
     private disposed = false;
+    private stage3dDisposed = false;
+    private readonly stage3d: Stage3DPort & { dispose(): void };
     /** §7.8：宿主 hide 期间为 true——停喂玩法 tick、拒绝新输入意图（seq 不跳变）。 */
     private hostHidden = false;
     /** §7.8 show 三态之 drop 宽限：等 reconnect（battle 通道 ready/reconnected/closed 解除）。 */
@@ -123,6 +131,8 @@ export class AppRuntime {
     readonly ports: AppPorts;
 
     constructor(options: AppRuntimeOptions) {
+        if (!options.stage3d) throw new TypeError("AppRuntime requires stage3d");
+        this.stage3d = options.stage3d;
         this.gameplayId = resolveLaunchGameplayId(options.gameplayId);
         this.battleConnection = options.battleConnection ?? null;
         // Claim page/session ownership：构造即递增 app generation；旧场景的 scope 被
@@ -132,54 +142,67 @@ export class AppRuntime {
         this.generation = scope.generation;
         this.disposePages = scope.dispose;
         this.navigation = appNavigation;
-        this.configureGameplay(options.node);
-        this.ports = createAppPorts({
-            navigation: this.navigation,
-            journal: this.journal,
-            frameScheduler: this.frameScheduler,
-            lifecycleBus,
-            enterBattle: () => this.enterBattle(),
-            launch: (target) => this.launch(target),
-            track: (unsubscribe) => this.track(unsubscribe),
-        });
-        const hostedPlugins: readonly HostedPlugin[] = options.hostedPlugins
-            ?? appPluginRegistry.pluginIds().map((id) => ({
-                id,
-                resident: appPluginRegistry.pluginOf(id)?.resident ?? false,
-                // plugin.json 的 dependencies：PluginHost 按它先装依赖、逆序拆（codegen 已查环）。
-                dependencies: appPluginRegistry.pluginOf(id)?.dependencies ?? [],
-                // plugin.json 的 module：generated 静态字面量 loader（无 = 静态常驻，与 built-in 同形）。
-                ...(appPluginRegistry.pluginOf(id)?.load ? { load: appPluginRegistry.pluginOf(id)!.load } : {}),
-            }));
-        this.pluginHost = new PluginHost(hostedPlugins, {
-            ports: this.ports,
-            appGeneration: this.generation,
-        });
-        // 生产派生见 deriveLaunchPluginIds 文档注释（多贡献者取菜单排序最前者）。
-        this.launchPluginIds = options.launchPluginMap
-            ?? deriveLaunchPluginIds(appPluginRegistry.menuContributions());
-        // route refcount → PluginHost 停用判定（§7.2；built-in 常驻豁免）。
-        this.navigation.setRouteObserver((pluginId, openCount) => {
-            void this.pluginHost.releaseIfIdle(pluginId, openCount).catch((error) => {
-                console.error("[AppRuntime] plugin 停用失败：", error);
+        try {
+            this.configureGameplay(options.node);
+            this.ports = createAppPorts({
+                stage3d: this.stage3d,
+                navigation: this.navigation,
+                journal: this.journal,
+                frameScheduler: this.frameScheduler,
+                lifecycleBus,
+                enterBattle: () => this.enterBattle(),
+                launch: (target) => this.launch(target),
+                track: (unsubscribe) => this.track(unsubscribe),
             });
-        });
-        this.unsubs.push(() => this.navigation.setRouteObserver(null));
-        // §7.4：Home 菜单接线——点击唯一出口 LaunchPort.launch(target)，可用性查询
-        // PluginHost（disabled/failed 叠加层）。注销器身份守卫，随 dispose 强制释放。
-        this.unsubs.push(setHomeMenuRuntime({
-            launch: (target) => this.ports.launch.launch(target),
-            availabilityOf: (pluginId) => this.pluginAvailability(pluginId),
-        }));
-        // 设置面板的档案写接线：走 ports.lobbyRpc.sendIdempotent（clientReqId +
-        // PendingOperationJournal write-ahead 都在那条通道里），⛔ 不直调 rpcIdem。
-        // ok=false 是服务端的确定性拒绝，必须当失败抛出去让面板回滚 UI。
-        this.unsubs.push(setProfileWriteRuntime({
-            updateProfile: async (patch) => {
-                const result = await this.ports.lobbyRpc.sendIdempotent(UserRpc.UpdateProfile, patch);
-                if (!result.ok) throw new Error("[AppRuntime] user.updateProfile 被拒绝（ok=false）");
-            },
-        }));
+            const hostedPlugins: readonly HostedPlugin[] = options.hostedPlugins
+                ?? appPluginRegistry.pluginIds().map((id) => ({
+                    id,
+                    resident: appPluginRegistry.pluginOf(id)?.resident ?? false,
+                    // plugin.json 的 dependencies：PluginHost 按它先装依赖、逆序拆（codegen 已查环）。
+                    dependencies: appPluginRegistry.pluginOf(id)?.dependencies ?? [],
+                    // plugin.json 的 module：generated 静态字面量 loader（无 = 静态常驻，与 built-in 同形）。
+                    ...(appPluginRegistry.pluginOf(id)?.load ? { load: appPluginRegistry.pluginOf(id)!.load } : {}),
+                }));
+            this.pluginHost = new PluginHost(hostedPlugins, {
+                ports: this.ports,
+                appGeneration: this.generation,
+            });
+            // 生产派生见 deriveLaunchPluginIds 文档注释（多贡献者取菜单排序最前者）。
+            this.launchPluginIds = options.launchPluginMap
+                ?? deriveLaunchPluginIds(appPluginRegistry.menuContributions());
+            // route refcount → PluginHost 停用判定（§7.2；built-in 常驻豁免）。
+            const routeObserverOwner = {};
+            this.navigation.setRouteObserver((pluginId, openCount) => {
+                void this.pluginHost.releaseIfIdle(pluginId, openCount).catch((error) => {
+                    console.error("[AppRuntime] plugin 停用失败：", error);
+                });
+            });
+            routeObserverOwners.set(this.navigation, routeObserverOwner);
+            this.unsubs.push(() => {
+                if (routeObserverOwners.get(this.navigation) !== routeObserverOwner) return;
+                routeObserverOwners.delete(this.navigation);
+                this.navigation.setRouteObserver(null);
+            });
+            // §7.4：Home 菜单接线——点击唯一出口 LaunchPort.launch(target)，可用性查询
+            // PluginHost（disabled/failed 叠加层）。注销器身份守卫，随 dispose 强制释放。
+            this.unsubs.push(setHomeMenuRuntime({
+                launch: (target) => this.ports.launch.launch(target),
+                availabilityOf: (pluginId) => this.pluginAvailability(pluginId),
+            }));
+            // 设置面板的档案写接线：走 ports.lobbyRpc.sendIdempotent（clientReqId +
+            // PendingOperationJournal write-ahead 都在那条通道里），⛔ 不直调 rpcIdem。
+            // ok=false 是服务端的确定性拒绝，必须当失败抛出去让面板回滚 UI。
+            this.unsubs.push(setProfileWriteRuntime({
+                updateProfile: async (patch) => {
+                    const result = await this.ports.lobbyRpc.sendIdempotent(UserRpc.UpdateProfile, patch);
+                    if (!result.ok) throw new Error("[AppRuntime] user.updateProfile 被拒绝（ok=false）");
+                },
+            }));
+        } catch (error) {
+            try { this.dispose(); }
+            catch (cleanupError) { console.error("[AppRuntime] 装配失败后的清理失败：", cleanupError); }
+            throw error;
+        }
     }
 
     /** PluginHost 运行时可用性叠加（未托管的贡献者不误伤为占位）。 */
@@ -316,6 +339,8 @@ export class AppRuntime {
             await openLogin(() => this.enterBattle(), this.pageScope);
         } catch (error) {
             console.error("[AppRuntime] 大厅初始化失败（FairyGUI 扩展/资源包是否就绪？）：", error);
+            try { this.dispose(); }
+            catch (cleanupError) { console.error("[AppRuntime] 导航启动失败后的清理失败：", cleanupError); }
         }
     }
 
@@ -337,26 +362,47 @@ export class AppRuntime {
      * controller.dispose；5b 新增件（ticker/plugin host）的清理跟在其后。
      */
     dispose(): void {
-        if (this.disposed) return;
-        this.disposed = true;
-        this.disposePages?.();
-        this.disposePages = null;
-        this.battleAbort?.abort();
-        this.battleAbort = null;
-        for (const unsubscribe of this.unsubs.splice(0)) unsubscribe();
-        this.unregisterGameplay?.();
-        this.unregisterGameplay = null;
-        this.gameplayRegistry = null;
-        this.gameplayServices = null;
-        const controller = this.roomController;
-        this.roomController = null;
-        void controller?.dispose().catch((error) => {
-            console.error("[AppRuntime] gameplay dispose 失败：", error);
+        const failures: unknown[] = [];
+        const release = (action: () => void): void => {
+            try { action(); } catch (error) { failures.push(error); }
+        };
+        if (!this.disposed) {
+            this.disposed = true;
+            const disposePages = this.disposePages;
+            this.disposePages = null;
+            release(() => disposePages?.());
+            const battleAbort = this.battleAbort;
+            this.battleAbort = null;
+            release(() => battleAbort?.abort());
+            for (const unsubscribe of this.unsubs.splice(0)) release(unsubscribe);
+            const unregisterGameplay = this.unregisterGameplay;
+            this.unregisterGameplay = null;
+            release(() => unregisterGameplay?.());
+            this.gameplayRegistry = null;
+            this.gameplayServices = null;
+            const controller = this.roomController;
+            this.roomController = null;
+            release(() => {
+                void controller?.dispose().catch((error) => {
+                    console.error("[AppRuntime] gameplay dispose 失败：", error);
+                });
+            });
+            release(() => this.frameScheduler.clear());
+            // 构造中途失败时 pluginHost 可能尚未赋值。
+            release(() => {
+                void this.pluginHost?.disposeAll().catch((error) => {
+                    console.error("[AppRuntime] plugin dispose 失败：", error);
+                });
+            });
+        }
+        // 页面/玩法先释放自己的租约，最后兜底漏还的舞台及独立 globals。
+        // globals 回滚若失败，保留 Stage3D 的重试机会；其它宿主清理不重复执行。
+        if (!this.stage3dDisposed) release(() => {
+            this.stage3d.dispose();
+            this.stage3dDisposed = true;
         });
-        this.frameScheduler.clear();
-        void this.pluginHost.disposeAll().catch((error) => {
-            console.error("[AppRuntime] plugin dispose 失败：", error);
-        });
+        for (const failure of failures.slice(1)) console.error("[AppRuntime] additional dispose failure：", failure);
+        if (failures.length) throw failures[0];
     }
 
     private configureGameplay(node: Node): void {
@@ -388,6 +434,7 @@ export class AppRuntime {
             },
         };
         const services = createGameplayServices({
+            stage3d: this.stage3d,
             controllerBridge,
             presentationHost,
         });

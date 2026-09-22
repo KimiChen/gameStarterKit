@@ -79,8 +79,8 @@ test("pages.ts 保持零状态纯转发 façade（模块级状态与注册全部
 
 test("AppRuntime：宿主装配保留 flight/scope/session 世代的迁移前判别力", () => {
   const source = readFileSync(RUNTIME_SOURCE, "utf8");
-  assert.match(source, /this\.disposePages\?\.\(\)/,
-    "AppRuntime.dispose 必须释放 pages 组合根");
+  assert.match(source, /const disposePages = this\.disposePages;\s*this\.disposePages = null;\s*release\(\(\) => disposePages\?\.\(\)\);/,
+    "AppRuntime.dispose 必须捕获并释放 pages 组合根，清空句柄以避免重复清理");
   assert.match(source, /createPageSessionScope\(\)/,
     "AppRuntime 必须为每个宿主生命周期取得 owner scope");
   assert.match(source, /openLogin\(\(\) => this\.enterBattle\(\), this\.pageScope\)/,
