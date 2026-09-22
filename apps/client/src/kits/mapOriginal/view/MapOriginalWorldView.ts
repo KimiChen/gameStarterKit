@@ -28,8 +28,8 @@ import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
 import { mapoSetRegions } from "../logic/mapoRegions";
 import {
-    MAPO_COLOR_LABELS, MAPO_QUALITY_LABELS,
-    type MapoColorMode, type MapoQuality,
+    MAPO_QUALITY_LABELS,
+    type MapoQuality,
     mapoDecorEnabledFor,
 } from "../logic/mapoSettings";
 import type { MapoRgb } from "../logic/mapoPalette";
@@ -221,7 +221,12 @@ export class MapOriginalWorldView extends CocosView {
         this.selection = sel;
     }
 
-    /** 画面设置：沙盘模式 / 镜头视角 / 色彩模式 / 画质。不可用的档位置灰并写明原因。 */
+    /**
+     * 画面设置：**只有画质一项**（沙盘模式 / 镜头视角 / 鸟瞰 / 色彩模式 四项都是 3D 侧，
+     * 已随 3D 迁出本 kit，见 `logic/mapoSettings.ts` 抬头）。
+     * ⚠ 置灰**机制**（`IMapoChip.enabled` + 点击闸 + 灰化）仍是活代码，只是当前没有档位用它 ——
+     * ⛔ 别顺手把它删了。
+     */
     private buildSettings(w: number): void {
         const panel = new Node("mapo-settings");
         panel.layer = this.root.layer;
@@ -261,14 +266,9 @@ export class MapOriginalWorldView extends CocosView {
             const l = this.logic; if (!l) return;
             l.setGraphics({ ...l.graphics, ...patch });
         };
-        // ★ 本 kit 只承载原版 2D 沙盘 ⇒ 面板里**没有**沙盘模式与镜头视角两行（2026-09-22 拍板）。
-        //   3D 沙盘另开 kit `mapOriginal3d`；镜头视角（fov/angle/distance）与鸟瞰是 3D 独占
-        //   （`viewport_3d_cfg.lua`；7 条 `birdview_*` 显示层全部且仅在 `ShowLayers3d`）。
+        // ★ 本 kit 只承载原版 2D 沙盘 ⇒ 面板里**只有画质一行**（2026-09-22 拍板）。
+        //   沙盘模式 / 镜头视角 / 鸟瞰 / 色彩模式（LUT）四项都是 3D 侧，归 `mapOriginal3d`。
         //   ⛔ 别再在这里放一个永远选不动的 3D 档位当「契约占位」。
-        row("色彩模式", "color", (["standard", "vivid", "muted"] as MapoColorMode[]).map((m) => ({
-            text: MAPO_COLOR_LABELS[m], apply: () => set({ colorMode: m }),
-            on: () => this.logic?.graphics.colorMode === m, enabled: () => true,
-        })));
         row("画质", "quality", (["smooth", "normal", "high", "ultra"] as MapoQuality[]).map((m) => ({
             text: MAPO_QUALITY_LABELS[m], apply: () => set({ quality: m }),
             on: () => this.logic?.graphics.quality === m, enabled: () => true,
@@ -383,7 +383,7 @@ export class MapOriginalWorldView extends CocosView {
 
         const centre = cam.centreCell();
         const near = mapoIsNearField(cam.lod);
-        const key = `${cam.lod}|${l.graphics.colorMode}|${l.graphics.quality}|${centre.row}|${centre.col}`;
+        const key = `${cam.lod}|${l.graphics.quality}|${centre.row}|${centre.col}`;
         if (!force && key === this.lastKey) return;
         this.lastKey = key;
 
@@ -430,7 +430,7 @@ export class MapOriginalWorldView extends CocosView {
             const g = l.graphics;
             // ⚠ 画面设置写进**渲染出来的文本**：真引擎重放据此判定档位是否真的生效，
             //   ⛔ 不让重放去调 Logic 读内部状态。
-            const graphics = `${MAPO_COLOR_LABELS[g.colorMode]}/${MAPO_QUALITY_LABELS[g.quality]}`;
+            const graphics = MAPO_QUALITY_LABELS[g.quality];
             // ★ 摆件数进状态行：原版每个资源格都有 res_field ⇒ 近档这个数应该接近可视格的四成，
             //   ⛔ 掉到 0 或个位数就说明「按原版值查表」这条链断了（重放据此判定）。
             const decor = near ? ` · 摆件 ${this.decorCount}/${this.visibleCount}` : "";

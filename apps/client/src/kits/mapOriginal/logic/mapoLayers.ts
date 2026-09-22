@@ -1,8 +1,11 @@
 /**
  * 分层门控：每一档 LOD 建哪些层。⛔ 改了要同步改 kit README 的层表。
- * 取自原作 viewport_lod 的逐档 gate（LOD_4 起切远档底图）。
+ * ⚠ 档界是**本仓自建**的（按 scale 分档 + 滞回），⛔ 不是原作 viewport_lod：
+ *   原作按相机距离分档，且 `LOD_4` 那条路在 2D 下永远触发不到（`on_vp_scale_change`
+ *   第一条就是 `GETFIELD self.is_in_2d_scene → TEST → RETURN`）。
+ *   本 kit 的远档底图实为 `showFromLod: 3`（见下表 plate 行），⛔ 不是「LOD_4 起」。
  *
- * ⚠ v1 只有「看得见的地图」这几层：⛔ 无领地/描边/行军/鸟瞰聚合（那些要服务端）。
+ * ⚠ v1 只有「看得见的地图」这几层：⛔ 无领地/描边/行军/远档聚合（那些要服务端）。
  */
 import { MAPO_LOD_MAX } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 

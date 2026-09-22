@@ -74,3 +74,6 @@ apps/website/
 #    仅框架维护团队显式升级时运行 `npm run fetch:colyseus` / `fetch:fgui`（拉新版 + 验完整性）后提交 diff
 tools/sgzzmap-maps/out/
 tools/maporiginal-assets/out/
+
+# mapOriginal 管线的目检探针（⛔ 源码目录不收 png；要留档落已 ignored 的 out/）
+tools/maporiginal-assets/*.png

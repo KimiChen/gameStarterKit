@@ -60,10 +60,11 @@ export class MapoMapRenderer {
         return { material: this.material, textured };
     }
 
-    private ensurePalette(logic: MapOriginalWorldLogic): void {
-        const key = `${logic.graphics.colorMode}|${this.tone}`;
+    /** ⚠ 调色板只随管线 tonemapping 档位变（色彩模式已随 3D 迁出），所以 key 只有 tone。 */
+    private ensurePalette(): void {
+        const key = `${this.tone}`;
         if (key === this.paletteKey) return;
-        this.palette = mapoBuildPalette(this.baseColors, logic.graphics.colorMode, this.tone);
+        this.palette = mapoBuildPalette(this.baseColors, this.tone);
         this.paletteKey = key;
     }
 
@@ -71,7 +72,7 @@ export class MapoMapRenderer {
         if (this.disposed) return;
         const lod = logic.camera.lod;
         const { material, textured } = this.ensureMaterial(lod);
-        this.ensurePalette(logic);
+        this.ensurePalette();
 
         const quads: MapoQuadInput[] = [];
         const limit = Math.min(cells.length, MAPO_MAX_QUADS_PER_MESH);

@@ -42,7 +42,6 @@
 | 20 | `regions.bin` | （合成，见说明） | `71f5c0cbeb51e529911df54eab77cbb9c154c3641b3580cf9a33ae2af7332b90` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/regions.bin` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 21 | `regions.info.json` | （合成，见说明） | `e797e912416288b410088747d928b0cb8e618ff4284f566c5dc943c36d4d8ff5` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/regions.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 22 | `labels.json` | （合成，见说明） | `ab7b38af0f076d74f43446c280d8f2468de1b8be6a733773bda7cd09e1720cf8` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/labels.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 23 | `plate.calib.json` | （合成，见说明） | `21b1afd3a7489756781ddcb963569e6e920cb2f62e42d7bcf7d368e7d1d0e4b4` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/plate.calib.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 
 ## B. 源素材清单（仓外只读，⛔ 不入库）
 

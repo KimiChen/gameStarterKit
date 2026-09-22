@@ -7,10 +7,17 @@
    原版 `noexpo_birdview_map_1.ktx` 是 **3D 相机的透视渲染**，与本仓的正交等距投影
    ⛔ 不存在可靠的 2D 对齐 —— 实测相似变换 IoU 0.62、河网 NCC 0.30、全仿射拟合退化成
    竖条纹假峰（NCC 0.51）。逐格对齐的层（plate 参与点选与视窗指示）必须自己烘。
-   原版鸟瞰图改作**装饰性缩略图**，落位只做近似（plate.calib.json）。
+   原版鸟瞰图改作**装饰性缩略图**，落位由客户端 `mapoFar.ts` 按 `mapoWorldBounds()` 现算
+   （与 `bake_minimap` 的 resize+paste 构造同式）。⛔ 早先那份 `plate.calib.json` 已删：
+   它描述的其实是 minimap 落位、全仓零消费，且 `calibrate_plate.py` 在 palette 升到
+   schemaVersion 2（无 `name`/无 `water`）后重跑必 KeyError，落盘的数字是死数。
 
-⚠ 近档贴片由**原版可平铺 3D 地表 albedo** 合成（仍是原版像素）：包里 ⛔ 没有现成的
-   等距地块图，原版 2D 档的 .group 地表也不在基础包内（见 README §4.2）。
+★ 近档贴片由**原版 2D 侧**的可平铺地表底纹合成（2026-09-22 换源，⛔ 不再用 scene_3d）：
+   `ground_down/underground1` + 七个 `scene/ground/<生物群系>/png/tt_02`，见下面的 `TEXTURE_OF`
+   与 README §4.8 的归属判据。⚠ 包里 ⛔ 没有现成的等距地块图，所以仍是**合成**而非直取。
+⚠ 原版 2D 的地表真身（`*_group.prefab` 根资源，1,873 条）**两版 APK 都没打进包**（README §4.2），
+   已从发行商 CDN 取回 1,784/1,873 = 95.2%；上面八条源的字节也都只在 `cdn-unpacked` 里
+   （如 `underground1.ktx` 在容器 `7cc5137e33e0…`）⇒ ⛔ 别写成「贴图本身在基础包里」。
 """
 from __future__ import annotations
 
@@ -159,7 +166,7 @@ def phase_crop(src, px, py, wW, wH):
 
 
 def pack_atlas(d, info, lods=(0, 1, 2)):
-    """每档一张 POT 图集：4x4 的 256x128 菱形贴片 + 4px 出血带。
+    """每档一张 POT 图集：8 列 × 4 行的 240×120 菱形贴片（8 粗类 × 4 变体 = 32 格）+ 4px 出血带。
 
     ⚠ 出血带是**边缘复制**，⛔ 不靠 UV 内缩（内缩会把画面往里压、菱形边缘少一圈）。
     """

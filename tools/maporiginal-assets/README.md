@@ -84,7 +84,7 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 | `river_path` / `river_area_info` / `mountain_effect` / `ground_*_path` .json | — | 路径与效果元数据 |
 
 另有**各赛季鸟瞰世界底图** `fairy/ui/ui_common_map/map/map_<赛季>/image/noexpo_birdview_map_1.ktx`
-（每张 4,194,372 B），可直接作远档 plate 与缩略图的来源。
+（每张 4,194,372 B），**仅**作装饰性缩略图来源；⛔ **不能**作远档 plate —— 它是 3D 相机的透视渲染，与正交等距不存在可靠 2D 对齐（实测相似变换 IoU 0.62、河网 NCC 0.30），判据见 kit README §四。
 
 ## 四、原版数据层与素材来源实况（P2 逐层定性，2026-09-22 实测）
 
@@ -441,7 +441,7 @@ group 预制体。
 原版 2D 一格 300×150 px（`config_2d` 的 TILE_WIDTH/HEIGHT 是半值）⇒
 「图多少像素宽」= 「它在原版里占几格」。实测：资源件 0.53–1.10 格、山体 0.94–2.25 格、
 树簇 0.12–0.45 格、草丛 0.82–2.03 格。所以图集里逐格记 `native`（原图像素），
-客户端按它定世界尺寸。⛔ 别按格宽或连通区跨度拉伸（两版都踩过，见 kit README §六·五）。
+客户端按它定世界尺寸。⛔ 别按格宽或连通区跨度拉伸（两版都踩过，见 `apps/kits/mapOriginal/README.md` 的「件的大小也是原版参数，⛔ 不按格拉伸」一节）。
 
 ### 4.8 ★ 本 kit 只收原版 **2D 沙盘**素材（2026-09-22 拍板）
 

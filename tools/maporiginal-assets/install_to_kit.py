@@ -7,7 +7,8 @@
 （uuid 撞车会静默弄坏场景/预制体引用）。
 
 ⚠ 与 sgzzmap 的**唯一形态差别**：`terrain.bytes`（16 类显示层）**要进 Cocos**，
-   因为它塞不进 shared 模块（熵太高，见 README §4.3），客户端用 BufferAsset 加载。
+   因为它塞不进 shared 模块（一阶熵 2.95 bit/格，varint-RLE 反而胀到 125.6%），
+   客户端用 BufferAsset 加载。判据见 `apps/kits/mapOriginal/README.md` 的「地形数据：**两层**」一节。
    4 类通行层走 shared TS，`terrain.pass.bytes` 只留 kit 数据目录供机检比对。
 """
 from __future__ import annotations
@@ -38,10 +39,8 @@ FILES = {
     "region-atlas.png": "region-atlas.png", "region-atlas.info.json": "region-atlas.info.json",
     "regions.bin": "regions.bin", "regions.info.json": "regions.info.json",
     "labels.json": "labels.json",
-    "plate.calib.json": "plate.calib.json",
 }
-KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "plate.calib.json", "labels.json",
-            "regions.info.json"}
+KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。

@@ -139,7 +139,7 @@ export interface MapoPolyInput {
     readonly uvs?: readonly (readonly [number, number])[];
 }
 
-/** 由任意四边形（四角，顺时针或逆时针）铺 mesh；给行军线、鸟瞰色块与过渡片共用。 */
+/** 由任意四边形（四角，顺时针或逆时针）铺 mesh；给行军线、远档色块与过渡片共用。 */
 export function buildMapoPolyMesh(polys: readonly MapoPolyInput[]): MapoGeometry {
     if (polys.length > MAPO_MAX_QUADS_PER_MESH) {
         throw new RangeError(`SGZZ poly quads ${polys.length} > ${MAPO_MAX_QUADS_PER_MESH}`);

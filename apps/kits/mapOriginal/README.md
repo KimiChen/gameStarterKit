@@ -25,7 +25,7 @@
 ## 二、v1 范围：只做「看得见的原版地图」
 
 有：原版地形 + 原版美术 + 相机（拖拽/捏合/惯性/钳位）+ 6 档 LOD + 远档底图 + 缩略图 +
-点选详情 + **画面设置四项**。
+点选详情 + **画面设置（现只剩画质一项）**。
 ⛔ 没有：占领、连地、行军、同盟、鸟瞰聚合、AOI —— 那些要服务端，抄 sgzzmap 的现成面即可，
 但 ⛔ 不在 v1 里留半套。
 
@@ -68,12 +68,15 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
    `scene/_output_atlas_scene/atlas_tex/` 下的 62 个图集里有**逐格地皮精灵、小建筑、城、营、道路、
    鸟瞰图标**共 3,510 张。找不到它们的原因是图集页扩展名：XML 的 `imagePath` 写 `.png`、
    包里是构建期转出的 `.ktx`。⇒ **摆件层直接用原版切片**；底下那层菱形由原版 **2D** 地表底纹合成
-   （2026-09-22 换源，见 §四·六；早先用的是 `scene_3d/**` 的 3D albedo，已随「只用 2D 素材」拍板换掉）。
+   （2026-09-22 换源，见本文「★ 地表图集的源已换成原版 **2D 沙盘**侧」一节；
+   早先用的是 `scene_3d/**` 的 3D albedo，已随「只用 2D 素材」拍板换掉）。
 2. **原版鸟瞰底图不能当远档 plate**。`noexpo_birdview_map_1.ktx`（4096×2048 ETC2）是
    **3D 相机的透视渲染**，与本仓正交等距 ⛔ 不存在可靠 2D 对齐 ——
    实测相似变换 IoU 0.62、河网 NCC 0.30、全仿射拟合退化成竖条纹假峰（NCC 0.51）。
    逐格对齐的层必须自己烘（`bake_content.py`，与 `mapoWorldBounds()` 同式 ⇒ **对齐是构造出来的**）。
-   原版那张改作**装饰性缩略图**，落位只做近似（`plate.calib.json`）。
+   原版那张改作**装饰性缩略图**，落位由客户端现算（`mapoFar.ts` 的 `mapoWorldBounds()` +
+   `0.25 + v*0.5`，与 `bake_minimap` 的 resize→paste 构造同式）。
+   ⛔ 早先那份 `plate.calib.json` 已删（全仓零消费、生成脚本在 palette schemaVersion 2 后必崩）。
 
 素材授权按九字段登记在 [`art/LICENSES.md`](art/LICENSES.md)（⚠ 法务 load-bearing，⛔ 不得删改）。
 
@@ -123,7 +126,7 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
 
 | 来源 | 条数 | 依据 |
 |---|---:|---|
-| ① **原版锚点** | 3,942 | `map/s1/cn/mountain_patch.bytes` —— 本轮逆出来的原版大件摆放表，见 §四·三 |
+| ① **原版锚点** | 3,942 | `map/s1/cn/mountain_patch.bytes` —— 原版大件摆放表，格式见 `tools/maporiginal-assets/README.md` 的「`mountain_patch.bytes` = 原版的**大件摆放表**」一节 |
 | ② 无锚连通区兜底 | 23,869 | 八邻连通域，**每区一件**，锚在区内**屏幕最低格**（`row+col` 最大） |
 
 ⚠ 有原版锚点的区**只用原版的**，⛔ 不再叠自己的 —— 原版在 3,578 格的大山区摆了 14 件，
@@ -170,7 +173,8 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
 
 ### 六·六 ★ 地表图集的源已换成原版 **2D 沙盘**侧（2026-09-22）
 
-本 kit 只承载原版 2D 沙盘 ⇒ 八个粗类的底纹全部从 `scene_3d/**` 换成 2D 侧（机检见 §八·二）：
+本 kit 只承载原版 2D 沙盘 ⇒ 八个粗类的底纹全部从 `scene_3d/**` 换成 2D 侧
+（机检实体在 `apps/server/test/mapOriginal-content.test.ts`，两条：产物 `source` 白/黑名单、`select.json` 入口）：
 
 | 粗类 | 2D 源 | 依据 |
 |---|---|---|
@@ -188,7 +192,7 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
 
 ### 六·七 顺带修掉的三个烘焙缺陷（换任何源都得先修）
 
-1. **透明区被读成黑**：`bake_content.py` 原来是 `.convert("RGB")`。现役 3D 源里 6 张带 alpha
+1. **透明区被读成黑**：`bake_content.py` 原来是 `.convert("RGB")`。**换源前**的 3D 源里 6 张带 alpha
    （`albedo_river_v2` 不透明率仅 **0.177**、`xiaobujian_d` 仅 **0.003**）⇒ 透明区 `lum≈0`、被压成
    `0.62×底色` 的暗块。⇒ 改成**合成到中性灰 128** 再转 RGB（`lum=0.5` ⇒ 增益 1.0 = 调色板原色，
    是唯一不改色相的中性值）。
@@ -296,10 +300,14 @@ npm --workspace @game/server run codegen:plugins && npm run sync:shared
   （地表按 8 粗类 × 4 变体）、**摆件图集按原版值建格**（45 资源 + 8 城址）、原版地名三级。
 - ✅ **P3** kit 骨架 + `hexmap` 面（抄改 700 行）+ shared 内容模块。
 - ✅ **P4** 客户端地图页 `mapOriginalWorld`（首屏菜单「原版大地图」）+ 画面设置面板。
-- ✅ **P5 真引擎验收**：`node tools/creator-preview/run.mjs mapOriginal --out <dir>` 十一步全绿
-  （进入 → 近档地表 → 点选含坐标换算判据 → 色彩模式生效 → **3D 沙盘断言切不过去** →
-  拉远换远档底图 → 缩略图跳转 → 推回近档）。实测 LOD0 近档 48 FPS / 130 draw call / 4234 三角形。
-  ⚠ 真机重放抓出的**两条**缺陷（673 条绿单测一条没抓到，见下）已修并有回归。
+- ✅ **P5 真引擎验收**：`node tools/creator-preview/run.mjs mapOriginal --out <dir>` 全绿。
+  覆盖：进入 → 近档地表 → 点选（含坐标换算判据）→ **逐格摆件 + 多格地形区域件 + 郡名** →
+  **画面设置只剩画质一行（否定判据：出现沙盘模式/镜头视角/鸟瞰/色彩模式任一即红）** →
+  拉远换远档底图 → 缩略图跳转 → 推回近档。
+  ⚠ **步数按真跑一次的 `report.json` 计**，⛔ 别在文档里写死：`maporiginal.mjs` 自有的
+  `runner.step` 数与 `run.mjs` 的前置步（scenarioSettings/scenarioHome）会随 `--reuse` 浮动。
+  ⚠ 帧率/draw call 以最近一次证据目录为准，⛔ 别把历次数字并列在文里（曾出现 48/130 与
+  50/136 两组互斥的数）。
 - ⛔ **3D 沙盘不再是本 kit 的 P6**（2026-09-22 拍板）：原版 3D 沙盘（`asset/scene_3d/**`、
   `config_3d.lua`、`mapview/3d/**`、鸟瞰与镜头视角）整体归新 kit **`mapOriginal3d`**。
   ⚠ 框架 `docs/3d.md` 的 Stage3D（SC0–SC5）仍是它的前置，本 kit ⛔ 不再登记 3D 阶段。

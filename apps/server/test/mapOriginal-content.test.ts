@@ -365,17 +365,23 @@ const MAPO_2D_SOURCE_PREFIXES = [
     "ground_down/",      // 2D 地面底（underground1/2/3）
     "map/",              // 数据层，两版共用
     "asset/config/",     // 数值/语义配置，无维度分支
-    "fairy/ui/",         // 2D UI 皮肤
-    "fairy/atlas/",      // 2D UI 图集
-    "fairy/atlas_common/", // 两套 UI 皮肤共用
+    // ⚠ UI 树只放行**共用包**，⛔ 不整棵 `fairy/ui/` 与 `fairy/atlas/` 放行：
+    //   按本文件抬头同一条判据（UI 维度与沙盘维度正交），2D UI 皮肤树也是 UI 维度，
+    //   不该拿来当沙盘地表。当前 173 条 source 里这三条命中 0，是**预授权**闸门，收窄零代价。
+    "fairy/ui/ui_common",   // 共用 UI 包（`fairy/ui_3d/` 下无 ui_common_map ⇒ 无 3D 对偶）
+    "fairy/atlas_common/",  // 两套 UI 皮肤共用
 ];
 /** ⛔ 出现即红。⚠ 前缀要**带斜杠**，否则 `scene/` 会把 `scene_3d/` 也放过去。 */
 const MAPO_BANNED_SOURCE_PREFIXES = ["scene_3d/", "fairy/ui_3d/", "fairy/atlas_3d/", "ui_3d/"];
 
 test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2D 侧**（⛔ 无 scene_3d）", () => {
-    const files = ["atlas-lod0.info.json", "atlas-lod1.info.json", "atlas-lod2.info.json",
+    // ⚠ 跟着 `MAPO_ATLAS_LODS` 走，⛔ 不硬编码档数 —— 新增一档图集会静默逃逸出校验集。
+    // ⚠ 也 ⛔ 不用 readdirSync 全枚举：那会把「这几个必须被校」的显式契约换成
+    //   「目录里有什么校什么」，产物被删/改名后同样静默退出。
+    const files = [...MAPO_ATLAS_LODS.map((l) => `atlas-lod${l}.info.json`),
                    "decor-atlas.info.json", "region-atlas.info.json"];
     let checked = 0;
+    const perFile = new Map<string, number>();
     for (const name of files) {
         const meta = JSON.parse(kit(name).toString("utf8")) as {
             cells?: { id: number; source?: string }[];
@@ -385,6 +391,7 @@ test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2
             // 纯色兜底格没有真实来源，跳过；⛔ 但不许静默跳过「有 source 却不合规」的
             if (!src || src.startsWith("（")) continue;
             checked += 1;
+            perFile.set(name, (perFile.get(name) ?? 0) + 1);
             for (const bad of MAPO_BANNED_SOURCE_PREFIXES) {
                 // ⚠ 判**子串**不只是前缀：原版语料里确有
                 //   `asset/scene/effect/_output_atlas_se/atlas_mutil_assets/asset/ground_down/…`
@@ -398,6 +405,11 @@ test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2
             // ⚠ 本机绝对路径会随机器漂，也让上面的前缀判定失效
             assert.ok(!src.startsWith("/"), `${name} 第 ${c.id} 格的 source 是本机绝对路径`);
         }
+    }
+    // ⚠ 判据是「每个产物都至少产出一条」，⛔ 不是总数阈值 ——
+    //   总数富余时（现有 173 条）某个产物整体不产 source 也能蒙混过去。
+    for (const name of files) {
+        assert.ok((perFile.get(name) ?? 0) > 0, `${name} 一条 source 都没校到`);
     }
     assert.ok(checked >= 100, `只校到 ${checked} 条 source，⛔ 像是白名单没覆盖到产物`);
 });
