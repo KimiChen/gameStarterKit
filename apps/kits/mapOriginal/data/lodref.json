@@ -1,0 +1,1193 @@
+{
+ "schemaVersion": 1,
+ "contentSha256": "3887c273de0c5f0a950ee2ce1509003b3a0c8d9fff0b7b1cd775b9b08602cb63",
+ "source": "base.cw 的 map_layer_lod（旧档 3 档）/ map_layer_lod_cfg（现行 5 档），ctable_cw.py 解码 [实测]",
+ "semantics": "lod_hide_cfg[i]==1 = 该层在第 i 档隐藏；is_lod_0_hide = LOD0 特判。⛔ 档界阈值取不到（birdview_mgr 不在干净集），本表只有『各档隐不隐』。",
+ "authority": "交叉校验只以 cfg 为准：消费方函数名 get_map_layer_lod_cfg（[干净集] forest_grid_layer_view.lua:21）+ 旧档自述过时（birdview_mountain 的 desc）+ 两表 7 层冲突 ⇒ 旧档仅留档。",
+ "legacyOnly": [
+  "barn_decorate",
+  "birdview_mountain"
+ ],
+ "cfgOnly": [
+  "barn_way",
+  "big_city_creature",
+  "birdview_army_mark",
+  "birdview_build_mark",
+  "birdview_grid_blink",
+  "birdview_land_mark",
+  "birdview_my_army_line_mark",
+  "birdview_personal_mark",
+  "city_gate_wall",
+  "civilian_boats",
+  "custom_ground_effect",
+  "custom_ground_effect_layer_1",
+  "custom_ground_effect_layer_2",
+  "custom_ground_effect_layer_3",
+  "custom_ground_effect_layer_4",
+  "custom_ground_effect_layer_5",
+  "custom_ground_effect_layer_6",
+  "custom_ground_effect_layer_above_build",
+  "decorate_bottom",
+  "forest_grid",
+  "ground_decal",
+  "highland",
+  "mountain_3d",
+  "move_city_allot",
+  "province_effect_back",
+  "province_weather_grid",
+  "sandbox_area_name",
+  "sandbox_canton_name",
+  "water_gap_mesh"
+ ],
+ "conflicts": [
+  "birdview_grid_state",
+  "flammable",
+  "map_army",
+  "newbie_army",
+  "official_road",
+  "road",
+  "spot"
+ ],
+ "legacy": [
+  {
+   "key": "barn_decorate",
+   "name": "barn_decorate",
+   "desc": "粮仓蝗灾层",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "big_city_house",
+   "name": "big_city_house",
+   "desc": "大城民居层",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "big_city_wall",
+   "name": "big_city_wall",
+   "desc": "大城城墙层",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview",
+   "name": "birdview",
+   "desc": "过渡层地表",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview_grid_state",
+   "name": "birdview_grid_state",
+   "desc": "过渡层地块格子",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview_mountain",
+   "name": "birdview_mountain",
+   "desc": "过渡层山体层，在PK19改了，mountain配置待删除",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "bullet",
+   "name": "bullet",
+   "desc": "子弹层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "creature",
+   "name": "creature",
+   "desc": "AI活物",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "decorate",
+   "name": "decorate",
+   "desc": "装饰层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "detect_army",
+   "name": "detect_army",
+   "desc": "侦查",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "dynamic_change_bottom",
+   "name": "dynamic_change_bottom",
+   "desc": "场景(地形)动态变更时的表现",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "dynamic_change_top",
+   "name": "dynamic_change_top",
+   "desc": "场景(景物)动态变更时的表现",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "eight_charts_effect_back",
+   "name": "eight_charts_effect_back",
+   "desc": "八阵区背景特效层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "eight_charts_effect_front",
+   "name": "eight_charts_effect_front",
+   "desc": "八阵区前景特效层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "eight_charts_weather_grid",
+   "name": "eight_charts_weather_grid",
+   "desc": "八阵区天气格子层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "fish",
+   "name": "fish",
+   "desc": "AI水上活物",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "flammable",
+   "name": "flammable",
+   "desc": "易燃区域",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "frozen",
+   "name": "frozen",
+   "desc": "冻土层",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "grid_state",
+   "name": "grid_state",
+   "desc": "占领状态层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "ground",
+   "name": "ground",
+   "desc": "背景底图",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "highland_effect",
+   "name": "highland_effect",
+   "desc": "高地特效层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "ice_snow",
+   "name": "ice_snow",
+   "desc": "结冰雪花层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "map_army",
+   "name": "map_army",
+   "desc": "军队",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "map_army_line",
+   "name": "map_army_line",
+   "desc": "行军线",
+   "hide": [
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "key": "map_npc_army",
+   "name": "map_npc_army",
+   "desc": "npc军队",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "mountain",
+   "name": "mountain",
+   "desc": "山体层，目前用在过渡层",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "newbie_army",
+   "name": "newbie_army",
+   "desc": "AI军队（新手?）",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "official_road",
+   "name": "official_road",
+   "desc": "官道层",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "res",
+   "name": "res",
+   "desc": "资源地",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "river",
+   "name": "river",
+   "desc": "河流",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "road",
+   "name": "road",
+   "desc": "道路",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "spot",
+   "name": "spot",
+   "desc": "视野",
+   "hide": [
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "street",
+   "name": "street",
+   "desc": "街道层",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "terrain",
+   "name": "terrain",
+   "desc": "地形",
+   "hide": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "water_gap",
+   "name": "water_gap",
+   "desc": "水分割线",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "waterway",
+   "name": "waterway",
+   "desc": "水路",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "wine_bucket_effect",
+   "name": "wine_bucket_effect",
+   "desc": "酒桶特效层",
+   "hide": [
+    1,
+    1,
+    1
+   ]
+  }
+ ],
+ "cfg": [
+  {
+   "key": "barn_way",
+   "name": "barn_way",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "big_city_creature",
+   "name": "big_city_creature",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "big_city_house",
+   "name": "big_city_house",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "big_city_wall",
+   "name": "big_city_wall",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview",
+   "name": "birdview",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview_army_mark",
+   "name": "birdview_army_mark",
+   "lod0Hide": true,
+   "hide": [
+    1,
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview_build_mark",
+   "name": "birdview_build_mark",
+   "lod0Hide": true,
+   "hide": [
+    1,
+    1,
+    1,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview_grid_blink",
+   "name": "birdview_grid_blink",
+   "lod0Hide": true,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview_grid_state",
+   "name": "birdview_grid_state",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "birdview_land_mark",
+   "name": "birdview_land_mark",
+   "lod0Hide": true,
+   "hide": [
+    1,
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview_my_army_line_mark",
+   "name": "birdview_my_army_line_mark",
+   "lod0Hide": true,
+   "hide": [
+    1,
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "birdview_personal_mark",
+   "name": "birdview_personal_mark",
+   "lod0Hide": true,
+   "hide": [
+    1,
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "bullet",
+   "name": "bullet",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "city_gate_wall",
+   "name": "city_gate_wall",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "civilian_boats",
+   "name": "civilian_boats",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "creature",
+   "name": "creature",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "custom_ground_effect",
+   "name": "custom_ground_effect",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "custom_ground_effect_layer_1",
+   "name": "custom_ground_effect_layer_1",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "custom_ground_effect_layer_2",
+   "name": "custom_ground_effect_layer_2",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "key": "custom_ground_effect_layer_3",
+   "name": "custom_ground_effect_layer_3",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "custom_ground_effect_layer_4",
+   "name": "custom_ground_effect_layer_4",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "custom_ground_effect_layer_5",
+   "name": "custom_ground_effect_layer_5",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "custom_ground_effect_layer_6",
+   "name": "custom_ground_effect_layer_6",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "custom_ground_effect_layer_above_build",
+   "name": "custom_ground_effect_layer_above_build",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "decorate",
+   "name": "decorate",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "decorate_bottom",
+   "name": "decorate_bottom",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "detect_army",
+   "name": "detect_army",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "dynamic_change_bottom",
+   "name": "dynamic_change_bottom",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "dynamic_change_top",
+   "name": "dynamic_change_top",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "eight_charts_effect_back",
+   "name": "eight_charts_effect_back",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "eight_charts_effect_front",
+   "name": "eight_charts_effect_front",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "eight_charts_weather_grid",
+   "name": "eight_charts_weather_grid",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "fish",
+   "name": "fish",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "flammable",
+   "name": "flammable",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "forest_grid",
+   "name": "forest_grid",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "frozen",
+   "name": "frozen",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "grid_state",
+   "name": "grid_state",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "ground",
+   "name": "ground",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "ground_decal",
+   "name": "ground_decal",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "highland",
+   "name": "highland",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "key": "highland_effect",
+   "name": "highland_effect",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "ice_snow",
+   "name": "ice_snow",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "map_army",
+   "name": "map_army",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "map_army_line",
+   "name": "map_army_line",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "map_npc_army",
+   "name": "map_npc_army",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "mountain",
+   "name": "mountain",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "mountain_3d",
+   "name": "mountain_3d",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "key": "move_city_allot",
+   "name": "move_city_allot",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "newbie_army",
+   "name": "newbie_army",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "official_road",
+   "name": "official_road",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "province_effect_back",
+   "name": "province_effect_back",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "province_weather_grid",
+   "name": "province_weather_grid",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "res",
+   "name": "res",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "river",
+   "name": "river",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "road",
+   "name": "road",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "sandbox_area_name",
+   "name": "sandbox_area_name",
+   "lod0Hide": true,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    0
+   ]
+  },
+  {
+   "key": "sandbox_canton_name",
+   "name": "sandbox_canton_name",
+   "lod0Hide": true,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "spot",
+   "name": "spot",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "street",
+   "name": "street",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "terrain",
+   "name": "terrain",
+   "lod0Hide": false,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "key": "water_gap",
+   "name": "water_gap",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "water_gap_mesh",
+   "name": "water_gap_mesh",
+   "lod0Hide": true,
+   "hide": [
+    0,
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "key": "waterway",
+   "name": "waterway",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  {
+   "key": "wine_bucket_effect",
+   "name": "wine_bucket_effect",
+   "lod0Hide": false,
+   "hide": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  }
+ ]
+}

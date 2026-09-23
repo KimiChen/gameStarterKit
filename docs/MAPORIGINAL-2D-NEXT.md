@@ -222,7 +222,25 @@ npm run sync:shared && npm run sync:client && npm run verify:all
 
 ---
 
-## 5. N3 · LOD 门控对齐原版（需要先补证据）
+## 5. N3 · LOD 门控对齐原版（✅ **已退出**，2026-09-23）
+
+**结论**　档界**找到了，但它是 3D 的**：写在 `util/viewport_lod/camera_{default,01,02,03}{,_v}.lua`
+的 `lod_zoom_{in,out}_divide_defind_cfg`（比率 0.55/0.94/1.76/3.29/6.11 × `lod_0_cam_dis`，
+双方向表 = 原版滞回；竖屏 `_v` 后缀）。而整套 `viewport_lod` 在 2D 被 `is_in_2d_scene`
+短路、`_lod` 恒 0（MAPORIGINAL-2D §8.1/§8.2）⇒ **2D 沙盘没有运行时 LOD 门控可对齐**，
+本 kit 自建档界是正确拍板（⛔ 拿 3D 相机距离比套 2D 缩放是跨维度套用）。
+已对齐并机检落地的是：档数 6、层结构（LOD_0 特判 + LOD_1..5 表）、方向（档大=远）、
+**各层隐藏模式** —— `apps/kits/mapOriginal/data/lodref.json` + shared `lodref.data.ts` +
+`apps/client/test/mapOriginal-lodref.test.ts`：11 层映射全带依据、相对次序零矛盾
+（唯一豁免 = river：原版恒隐、本 kit §1.6 自建）。⛔ 现有档界一个数没动。
+意外收获：原版大区名只在最远档出（`sandbox_area_name` [1,1,1,1,0]）——与 N2 三带同向坐实。
+另坐实：`map_layer_lod`（37 层 3 档）是旧档（与现行 cfg 表 7 层冲突 + 旧档自述待删 +
+消费方函数名三证），仅留档。
+
+<details><summary>N3 原始施工单（已退出，留档）</summary>
+
+**为什么**　本 kit 的 `hideAtLod` / `showFromLod` 是**自建**的（`mapoLayers.ts` 抬头已诚实标注）。
+原版在 `base.cw` 里有真表：
 
 **为什么**　本 kit 的 `hideAtLod` / `showFromLod` 是**自建**的（`mapoLayers.ts` 抬头已诚实标注）。
 原版在 `base.cw` 里有真表：
@@ -247,6 +265,8 @@ npm run sync:shared && npm run sync:client && npm run verify:all
 3. 档界拿到了再谈对齐。
 
 **风险**　⚠ 高（会动所有层的可见性）。**依赖**　N0；第 1 步是独立的调研，可以并行。
+
+</details>
 
 ---
 

@@ -243,6 +243,7 @@ npm run verify:protected-paths
 | N0 真机重放 | ✅ 已完成（交接单 N0）：15 步全绿、console 0、城 218 sprite 在屏、肉眼四项全过；抓出并修掉 2 条真机回归 —— ① 层容器未继承 layer 致全部 mesh 层黑屏（188c59dd 引入）；② 重放解析器漂移（STATUS_RE 段序 / `mapo-terrain` 旧名 / 缩略图 y 翻号）。证据 `docs/evidence/creator-2026-09-23/maporiginal-n0/`（不入库） | （本轮） | 2026-09-23 |
 | N2 城名标注 | ✅ 已完成（交接单 N2）：地名三档分带 LOD 0–1 城名 / 2 郡 / ≥3 大区；城名按 `cityType`/`level` 分字号（大 24 / 中 20 / 小 16、洛阳 28）；渲染层零改动；重放洛阳步断言「洛阳」在屏。证据 `docs/evidence/creator-2026-09-23/maporiginal-n2/`（不入库） | （本轮） | 2026-09-23 |
 | N1 季/地貌变体换件 | ✅ 已完成（交接单 N1）：带归属 = cell 级 `logic_background`（`check_ground_type` 同链，⛔ 不看块带）；decor 三套件 4096×2048、region 基础季+雪山 2048×4096（沙漠山 2D=基础季件，无沙件格）；`bands.data.ts` 入 shared；顺带坐实资源类型次序真值 木/石/粮/铁（land.name × src_name 互证，旧轮转假设已修）。机检 + 重放回归 + 带区抽验截图全绿。证据 `docs/evidence/creator-2026-09-23/maporiginal-n1/`（不入库） | （本轮） | 2026-09-23 |
+| N3 LOD 门控 | ✅ 已完成（交接单 N3）：档界查明是 **3D 侧**（相机表 `lod_zoom_*_divide_defind_cfg`，比率 0.55/0.94/1.76/3.29/6.11 × lod_0_cam_dis，双方向表=滞回；MAPORIGINAL-2D §8.2）；2D 被 `is_in_2d_scene` 短路恒 0 ⇒ **无档界可对齐**，自建档界维持（⛔ 一个数没动）。交叉校验落地：`lodref.json` + `lodref.data.ts` + `mapOriginal-lodref.test.ts`（11 层映射带依据、相对次序零矛盾，river 唯一豁免）；旧档 `map_layer_lod` 判过时仅留档 | （本轮） | 2026-09-23 |
 
 ---
 

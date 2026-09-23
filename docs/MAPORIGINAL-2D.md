@@ -594,6 +594,30 @@ vp_scale_default = vp_scale_max        ← 默认值就是 max
 ⚠ 「鸟瞰」在原版是**三义**，⛔ 不可一刀切：3D 专属的鸟瞰**视角** / 两版共用的无极缩放
 `birdview_mode` / 两版共用的**小地图 UI**。
 
+### 8.2 LOD 档界找到了，但它是 3D 的（2026-09-23 N3）
+
+★ `[disasm]` 档界**不在 `base.cw`、也不硬编码在判定函数里**，而在 8 个相机配置文件
+`util/viewport_lod/camera_{default,01,02,03}{,_v}.lua`（竖屏由 `dimension_mgr:get_camera_type()`
+追加 `_v` 后缀）：每文件 `lod_flag_define_cfg`（LOD_0..LOD_5 共 6 档）+ `lod_0_cam_dis` +
+**双方向**分档表 `lod_zoom_{in,out}_divide_defind_cfg`（条目 = `{LOD_n, 分子 / lod_0_cam_dis}`；
+两表同边界、返回值错一档 ⇒ 原版的「滞回」是双方向表，不是数值滞回）。
+`_scale_to_lod` 按方向对表做区间查找（`viewport_lod.lua.disasm:955-1007`）。
+档界比率（四个相机互证稳定；分子有 ±1 级不确定 `[推断]`，比率是 `[disasm]`）：
+**0.55 / 0.94 / 1.76 / 3.29 / 6.11 × lod_0_cam_dis**，最远 ≈37.6 硬夹；
+`camera_default.lod_0_cam_dis=170`、`camera_default_v=350`（竖屏）；鸟瞰从 LOD_2 起
+（`bv_mode_start_lod`）。
+
+⇒ 但整套 `viewport_lod` 在 2D 被 §8.1 的 `is_in_2d_scene` 短路 ⇒ **2D 沙盘没有任何运行时
+LOD 门控**，档界只服务 3D/无极缩放路径。所以对 2D：**没有原版档界可对齐**，本 kit 的
+自建档界是正确拍板（⛔ 拿 3D 相机距离比套 2D 缩放是跨维度套用）。已对齐并由
+`lodref.data.ts` 交叉校验落地的是：**档数 6**（`MAPO_LOD_MAX=5`）、层结构
+（LOD_0 特判 `is_lod_0_hide` + LOD_1..5 表 `lod_hide_cfg`，1=隐）、方向（档大=远）、
+**各层隐藏模式**（11 层映射全部带依据、相对次序零矛盾，唯一豁免 = river：原版恒隐、
+本 kit §1.6 自建）。⚠ 极性陷阱：kit 的 scale **大=近**，原版 3D 的 scale **大=远**，
+对照任何数字前必须先换算。另：`map_layer_lod`（37 层 3 档）是**旧档** ——
+与现行 `map_layer_lod_cfg`（64 层 5 档）7 层冲突、旧档自述「待删除」、消费方函数名就是
+`get_map_layer_lod_cfg` 三证 ⇒ 以 cfg 为准，旧档仅留档。
+
 ---
 
 ## 9. 本 kit 与原版对照表
