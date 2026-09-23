@@ -20,7 +20,7 @@ export const CloseButton = defineComponent<CloseButtonProps>((p) => {
     const closeHit = p.hit ?? p.theme?.popup.closeHit ?? activeTheme.popup.closeHit;
     const closeIcon = p.iconSize ?? p.theme?.popup.closeIcon ?? activeTheme.popup.closeIcon;
     const closeIconInset = (closeHit - closeIcon) / 2;
-    const source = p.source ?? (p.theme ?? activeTheme).popup.close;
+    const source = p.source ?? p.theme?.button.skins.close.source ?? activeTheme.button.skins.close.source;
     return (<view name="CloseButton" interaction="press" onClick={() => p.onClick?.()}
         style={{ position: 'absolute', right: closeRight, top: closeTop, width: closeHit, height: closeHit }}>
         <image source={source}

@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import type { ImageRef } from '../../../kits/uniflex/api/core/index';
-import { BackButton } from '../button/BackButton';
+import { ActionButton } from '../button/ActionButton';
+import { backButton } from '../button/buttonSkins';
 import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface ScreenFooterProps {
@@ -22,13 +23,16 @@ export const ScreenFooter = defineComponent<ScreenFooterProps>((p) => {
     const footerHeight = p.theme?.chrome.footerHeight ?? activeTheme.chrome.footerHeight;
     const backLeft = p.backLeft ?? p.theme?.chrome.backLeft ?? activeTheme.chrome.backLeft;
     const backTop = p.theme?.chrome.backTop ?? activeTheme.chrome.backTop;
+    const backWidth = p.theme?.chrome.backWidth ?? activeTheme.chrome.backWidth;
+    const backHeight = p.theme?.chrome.backHeight ?? activeTheme.chrome.backHeight;
     const onBack = p.onBack;
     const backSource = p.backSource;
     return (
         <view name="ScreenFooter" style={{ position: 'absolute', left: 0, bottom: 0, width: footerWidth, height: footerHeight }}>
             <image source={source}
                 style={{ position: 'absolute', left: 0, top: 0, width: footerWidth, height: footerHeight, sizeMode: 'sliced' }} />
-            <BackButton theme={theme} left={backLeft} top={backTop} source={backSource} onClick={onBack} />
+            <ActionButton skin={backButton} source={backSource} left={backLeft} top={backTop}
+                width={backWidth} height={backHeight} accessibilityLabel="返回" onClick={onBack} />
         </view>
     );
 });

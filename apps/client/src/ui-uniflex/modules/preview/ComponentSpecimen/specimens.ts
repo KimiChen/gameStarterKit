@@ -10,12 +10,15 @@ export interface ComponentSpecimenSpec {
 
 /** One card per shared component. Sizes match the gallery specimens. */
 export const componentSpecimens: readonly ComponentSpecimenSpec[] = [
-    { id: "cmp-confirm", group: "cmp-buttons", groupLabel: "按钮与操作", label: "确定", width: 210, height: 92, wide: false },
-    { id: "cmp-cancel", group: "cmp-buttons", groupLabel: "按钮与操作", label: "取消", width: 210, height: 92, wide: false },
-    { id: "cmp-cyan", group: "cmp-buttons", groupLabel: "按钮与操作", label: "前往", width: 210, height: 92, wide: false },
-    { id: "cmp-action", group: "cmp-buttons", groupLabel: "按钮与操作", label: "操作", width: 210, height: 92, wide: false },
-    { id: "cmp-icon", group: "cmp-buttons", groupLabel: "按钮与操作", label: "图标按钮", width: 210, height: 74, wide: false },
-    { id: "cmp-menu", group: "cmp-buttons", groupLabel: "按钮与操作", label: "宽菜单", width: 326, height: 114, wide: false },
+    { id: "cmp-confirm", group: "cmp-buttons", groupLabel: "按钮", label: "确定", width: 210, height: 92, wide: false },
+    { id: "cmp-cancel", group: "cmp-buttons", groupLabel: "按钮", label: "取消", width: 210, height: 92, wide: false },
+    { id: "cmp-cyan", group: "cmp-buttons", groupLabel: "按钮", label: "前往", width: 210, height: 92, wide: false },
+    { id: "cmp-red", group: "cmp-buttons", groupLabel: "按钮", label: "红色", width: 210, height: 92, wide: false },
+    { id: "cmp-yellow", group: "cmp-buttons", groupLabel: "按钮", label: "黄色", width: 210, height: 92, wide: false },
+    { id: "cmp-back", group: "cmp-buttons", groupLabel: "按钮", label: "返回", width: 64, height: 56, wide: false },
+    { id: "cmp-close", group: "cmp-buttons", groupLabel: "按钮", label: "关闭", width: 72, height: 72, wide: false },
+    { id: "cmp-icon", group: "cmp-buttons", groupLabel: "按钮", label: "图标按钮", width: 210, height: 74, wide: false },
+    { id: "cmp-menu", group: "cmp-buttons", groupLabel: "按钮", label: "宽菜单", width: 326, height: 114, wide: false },
     { id: "cmp-badge", group: "cmp-feedback", groupLabel: "反馈、输入与状态", label: "数字角标", width: 48, height: 48, wide: false },
     { id: "cmp-dot", group: "cmp-feedback", groupLabel: "反馈、输入与状态", label: "红点", width: 36, height: 36, wide: false },
     { id: "cmp-check", group: "cmp-feedback", groupLabel: "反馈、输入与状态", label: "勾选", width: 210, height: 60, wide: false },

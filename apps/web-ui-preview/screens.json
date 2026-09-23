@@ -425,11 +425,6 @@
       "source": "apps/client/src/ui-uniflex/components/popup/PopupFrame.tsx"
     },
     {
-      "key": "CloseButton",
-      "rootName": "CloseButton",
-      "source": "apps/client/src/ui-uniflex/components/button/CloseButton.tsx"
-    },
-    {
       "key": "ItemSlot",
       "rootName": "ItemSlot",
       "source": "apps/client/src/ui-uniflex/gamecomponents/item/ItemSlot.tsx"

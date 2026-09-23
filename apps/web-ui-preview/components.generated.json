@@ -158,11 +158,6 @@
       "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceWar/AllianceWarPanel.tsx"
     },
     {
-      "key": "BackButton",
-      "rootName": "BackButton",
-      "source": "apps/client/src/ui-uniflex/components/button/BackButton.tsx"
-    },
-    {
       "key": "BackpackItemCard",
       "rootName": "BackpackItemCard",
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackItemCard.tsx"
@@ -191,11 +186,6 @@
       "key": "CheckBox",
       "rootName": "CheckBox",
       "source": "apps/client/src/ui-uniflex/components/checkbox/CheckBox.tsx"
-    },
-    {
-      "key": "CloseButton",
-      "rootName": "CloseButton",
-      "source": "apps/client/src/ui-uniflex/components/button/CloseButton.tsx"
     },
     {
       "key": "EmptyState",

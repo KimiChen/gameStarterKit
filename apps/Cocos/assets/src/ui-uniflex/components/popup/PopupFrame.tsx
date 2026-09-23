@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import type { FontRef, ImageRef } from '../../../kits/uniflex/api/core/index';
-import { CloseButton } from '../button/CloseButton';
+import { ActionButton } from '../button/ActionButton';
+import { closeButton } from '../button/buttonSkins';
 import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
 export interface PopupFrameProps {
@@ -50,6 +51,11 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
     const titleColor = p.titleColor ?? theme.popup.title;
     const titleOutline = p.titleOutline ?? theme.popup.outline;
     const maskColor = p.maskColor ?? theme.popup.mask;
+    const closeRight = p.closeRight ?? p.theme?.popup.closeRight ?? activeTheme.popup.closeRight;
+    const closeTop = p.closeTop ?? p.theme?.popup.closeTop ?? activeTheme.popup.closeTop;
+    const closeHit = p.closeHit ?? p.theme?.popup.closeHit ?? activeTheme.popup.closeHit;
+    const closeIcon = p.closeIcon ?? p.theme?.popup.closeIcon ?? activeTheme.popup.closeIcon;
+    const closeInset = (closeHit - closeIcon) / 2;
     return (
         <view name="PopupFrame" style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
             <view name="PopupFrame/Mask" interaction="press"
@@ -62,8 +68,8 @@ export const PopupFrame = defineComponent<PopupFrameProps>((p) => {
                         font: font, fontSize: titleSize, bold: true,
                         color: titleColor, outlineColor: titleOutline,
                         outlineWidth: titleOutlineWidth, horizontalAlign: titleAlign, verticalAlign: 'center', overflow: 'shrink' }} />
-                <CloseButton theme={theme} source={p.closeSource} right={p.closeRight} top={p.closeTop}
-                    hit={p.closeHit} iconSize={p.closeIcon} onClick={onClose} />
+                <ActionButton skin={closeButton} source={p.closeSource} right={closeRight} top={closeTop}
+                    width={closeHit} height={closeHit} imageInset={closeInset} onClick={onClose} />
             </view>
         </view>
     );

@@ -1,8 +1,7 @@
 import { defineView, useMemo, useState } from '@uniflex/compiler';
 import { ActionButton } from '../../../components/button/ActionButton';
-import { cancelButton, confirmButton, cyanButton } from '../../../components/button/buttonSkins';
+import { backButton, cancelButton, confirmButton, cyanButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { BackButton } from '../../../components/button/BackButton';
 import { IconCaptionButton } from '../../../components/button/IconCaptionButton';
 import { WideMenuButton } from '../../../components/button/WideMenuButton';
 import { CheckBox } from '../../../components/checkbox/CheckBox';
@@ -125,7 +124,8 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
             }}>
                 <view style={{ width: 702, height: 56, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <view style={{ width: 64, height: 56 }}>
-                        <BackButton theme={theme} left={0} top={0} onClick={onBack} />
+                        <ActionButton skin={backButton} theme={theme} width={64} height={56}
+                            accessibilityLabel="返回" onClick={onBack} />
                     </view>
                     <text value="通用组件目录" style={{
                         width: 626, height: 56, font: font, fontSize: 34, color: pageText,
@@ -171,7 +171,7 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                         padding: { left: 18, right: 18, top: 16, bottom: 20 },
                         flexDirection: 'column', gap: ITEM_GAP,
                     }}>
-                        <text value="01  按钮与操作" style={{
+                        <text value="01  按钮" style={{
                             width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
                             verticalAlign: 'center',
                         }} />
@@ -182,8 +182,8 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                                 onClick={() => console.info('[ComponentGallery] cancel')} />
                             <ActionButton skin={cyanSkin} theme={theme} label="前往" width={210} height={92}
                                 onClick={() => console.info('[ComponentGallery] cyan')} />
-                            <ActionButton theme={theme} label="操作" width={210} height={92}
-                                onClick={() => console.info('[ComponentGallery] action')} />
+                            <ActionButton skin={backButton} theme={theme} width={64} height={56}
+                                accessibilityLabel="返回" onClick={() => console.info('[ComponentGallery] image')} />
                             <view style={{ width: 210, height: 74 }}>
                                 <IconCaptionButton theme={theme} icon={gearIcon} label="图标按钮"
                                     left={0} top={0} width={210} iconWidth={48} iconHeight={48}

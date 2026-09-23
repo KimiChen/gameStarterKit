@@ -13,6 +13,8 @@ export const classicTheme = defineTheme({
             cyan: { source: imageRef('ui/button/cyan'), outline: '#2e5a68' },
             red: { source: imageRef('ui/button/red'), outline: '#6a2a28' },
             yellow: { source: imageRef('ui/button/yellow'), outline: '#643e14' },
+            back: { source: imageRef('ui/mail/back') },
+            close: { source: imageRef('ui/popup/close') },
         },
         width: 255, height: 102, fontSize: 40,
         labelLeft: 8, labelRight: 8, labelTop: 4, labelBottom: 12, iconGap: 16,
@@ -26,7 +28,6 @@ export const classicTheme = defineTheme({
     },
     popup: {
         prompt: imageRef('ui/popup/prompt'), small: imageRef('ui/popup/small'),
-        close: imageRef('ui/popup/close'),
         title: '#ffffff', outline: '#593d84', mask: '#00000099',
         font: fontRef('fonts/regular', 400),
         width: 708, height: 510,
@@ -106,7 +107,7 @@ export const classicTheme = defineTheme({
         valueLeft: 44, valueTop: 5, valueWidth: 101, valueHeight: 32, valueSize: 22,
     },
     chrome: {
-        header: imageRef('ui/mail/header'), footer: imageRef('ui/mail/footer'), back: imageRef('ui/mail/back'),
+        header: imageRef('ui/mail/header'), footer: imageRef('ui/mail/footer'),
         font: fontRef('fonts/regular', 700), title: '#ffffff', outline: '#593d84',
         headerWidth: 750, headerHeight: 90,
         titleLeft: 38, titleInset: 16, titleWidth: 200, titleHeight: 58, titleSize: 40,

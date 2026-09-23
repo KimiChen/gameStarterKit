@@ -1,6 +1,6 @@
 import { defineView, useMemo, useState } from '@uniflex/compiler';
 import { ActionButton } from '../../../components/button/ActionButton';
-import { cancelButton, confirmButton, cyanButton } from '../../../components/button/buttonSkins';
+import { backButton, cancelButton, closeButton, confirmButton, cyanButton, redButton, yellowButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { IconCaptionButton } from '../../../components/button/IconCaptionButton';
 import { WideMenuButton } from '../../../components/button/WideMenuButton';
@@ -104,11 +104,33 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
         source: theme.button.skins.cyan.source,
         outline: theme.button.skins.cyan.outline,
     }), [theme]);
+    const redSkin = useMemo(() => ({
+        ...redButton,
+        source: theme.button.skins.red.source,
+        outline: theme.button.skins.red.outline,
+    }), [theme]);
+    const yellowSkin = useMemo(() => ({
+        ...yellowButton,
+        source: theme.button.skins.yellow.source,
+        outline: theme.button.skins.yellow.outline,
+    }), [theme]);
+    const backSkin = useMemo(() => ({
+        ...backButton,
+        source: theme.button.skins.back.source,
+    }), [theme]);
+    const closeSkin = useMemo(() => ({
+        ...closeButton,
+        source: theme.button.skins.close.source,
+    }), [theme]);
+    const closeInset = (theme.popup.closeHit - theme.popup.closeIcon) / 2;
     const onClick = () => console.info('[ComponentSpecimen]', part);
     const showConfirm = part === 'cmp-confirm';
     const showCancel = part === 'cmp-cancel';
     const showCyan = part === 'cmp-cyan';
-    const showAction = part === 'cmp-action';
+    const showRed = part === 'cmp-red';
+    const showYellow = part === 'cmp-yellow';
+    const showBack = part === 'cmp-back';
+    const showClose = part === 'cmp-close';
     const showIcon = part === 'cmp-icon';
     const showMenu = part === 'cmp-menu';
     const showBadge = part === 'cmp-badge';
@@ -139,8 +161,17 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
         <view visible={showCyan} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <ActionButton skin={cyanSkin} theme={theme} label="前往" width={210} height={92} onClick={onClick} />
         </view>
-        <view visible={showAction} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
-            <ActionButton theme={theme} label="操作" width={210} height={92} onClick={onClick} />
+        <view visible={showRed} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ActionButton skin={redSkin} theme={theme} label="删除已读" width={210} height={92} onClick={onClick} />
+        </view>
+        <view visible={showYellow} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ActionButton skin={yellowSkin} theme={theme} label="确定" width={210} height={92} onClick={onClick} />
+        </view>
+        <view visible={showBack} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ActionButton skin={backSkin} theme={theme} width={64} height={56} accessibilityLabel="返回" onClick={onClick} />
+        </view>
+        <view visible={showClose} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ActionButton skin={closeSkin} theme={theme} width={72} height={72} imageInset={closeInset} onClick={onClick} />
         </view>
         <view visible={showIcon} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <IconCaptionButton theme={theme} icon={gearIcon} label="图标按钮" left={0} top={0} width={210} iconWidth={48} iconHeight={48} onClick={onClick} />

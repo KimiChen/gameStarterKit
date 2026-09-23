@@ -9,3 +9,8 @@ export const cancelButton: ButtonSkin = { ...theme.button.skins.cancel, ...slice
 export const cyanButton: ButtonSkin = { ...theme.button.skins.cyan, ...sliced };
 export const redButton: ButtonSkin = { ...theme.button.skins.red, ...sliced };
 export const yellowButton: ButtonSkin = { ...theme.button.skins.yellow, ...sliced };
+
+const simple: Pick<ButtonSkin, 'sizeMode'> = { sizeMode: 'simple' };
+
+export const backButton: ButtonSkin = { ...theme.button.skins.back, ...simple };
+export const closeButton: ButtonSkin = { ...theme.button.skins.close, ...simple };
