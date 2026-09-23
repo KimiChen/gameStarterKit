@@ -1,4 +1,4 @@
-import { defineComponent } from '@uniflex/compiler';
+import { defineComponent, ScopedSlot } from '@uniflex/compiler';
 import type { ImageRef } from '../../../kits/uniflex/api/core/index';
 import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
@@ -13,6 +13,8 @@ export interface ScreenHeaderProps {
     readonly titleHeight?: number;
     readonly titleColor?: string;
     readonly titleOutline?: string;
+    /** Optional header content, positioned relative to the header's top-left corner. */
+    readonly children?: () => unknown;
 }
 
 /** Mail header + outlined title. `titleLeft`/`titleTop` are page-absolute so assembled values paste through. */
@@ -44,6 +46,9 @@ export const ScreenHeader = defineComponent<ScreenHeaderProps>((p) => {
                     font: font, fontSize: titleSize, color: titleColor, bold: true,
                     outlineColor: titleOutline, outlineWidth: titleOutlineWidth,
                     horizontalAlign: titleAlign, verticalAlign: 'center' }} />
+            <ScopedSlot args={[]}>
+                <view visible={false} />
+            </ScopedSlot>
         </view>
     );
 });

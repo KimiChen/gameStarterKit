@@ -90,11 +90,14 @@ export const HeroScreen = defineView<HeroScreenParams | void>({ zIndex: 'screen'
                 style={{ position: 'absolute', left: 0, top: -144, width: 750, height: 1624 }} />
             <view visible={tab === 'bonds'}
                 style={{ position: 'absolute', left: 0, top: -144, width: 750, height: 1624, backgroundColor: '#00000099' }} />
-            <ScreenHeader title={params.title ?? '英雄'} titleLeft={20} />
-            <view interaction="press" onClick={() => params.onRecruit?.()}
-                style={{ position: 'absolute', left: 518, top: 21, width: 217, height: 51 }}>
-                <image source={imageRef('ui/hero/recruit')} style={{ width: 217, height: 51 }} />
-            </view>
+            <ScreenHeader title={params.title ?? '英雄'} titleLeft={20}>
+                {() => (
+                    <view interaction="press" onClick={() => params.onRecruit?.()}
+                        style={{ position: 'absolute', left: 518, top: 21, width: 217, height: 51 }}>
+                        <image source={imageRef('ui/hero/recruit')} style={{ width: 217, height: 51 }} />
+                    </view>
+                )}
+            </ScreenHeader>
 
             <HeroListPanel visible={tab === 'hero'} cards={cards} onSelectCard={params.onSelectCard} />
             <HeroBondsPanel visible={tab === 'bonds'} bonds={bonds} members={members}

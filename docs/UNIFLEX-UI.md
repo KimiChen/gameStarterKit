@@ -77,6 +77,11 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 
 按钮不要抄错皮：领地「驻防」和要塞「前往」不是同一张图；对照 assembled 量尺寸。
 
+`ScreenHeader` 提供可选内容插槽，内容用 `() => <view ... />` 作为子项传入（单个 JSX 根节点），
+坐标相对标题栏左上角；图片与点击回调由调用页提供。示例见 `HeroScreen` 的招募按钮。
+未传内容时保持原有标题栏用法。内部用 `ScopedSlot args={[]}` + 隐藏空节点兜底，
+因为当前 UniFlex 的普通 `Slot` 要求调用方必须传入一个 JSX 子节点。
+
 ## 4. VirtualList
 
 可滚动、重复行必须包 `VirtualList` + `ArrayVirtualListDataSource`。
