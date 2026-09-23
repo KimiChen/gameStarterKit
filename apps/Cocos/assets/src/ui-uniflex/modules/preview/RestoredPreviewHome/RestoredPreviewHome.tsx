@@ -1,5 +1,6 @@
 import { defineView } from '@uniflex/compiler';
-import { CancelButton } from '../../../components/button/CancelButton';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { cancelButton } from '../../../components/button/buttonSkins';
 import { theme } from '../../../themes/active';
 
 export type RestoredPreviewTarget =
@@ -38,7 +39,7 @@ export const RestoredPreviewHome = defineView<RestoredPreviewHomeParams, void>({
         <text value="还原 UI 预览" style={{ width: 650, height: 72, font: theme.font, fontSize: 42, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
         <text value="选择还原界面" style={{ width: 650, height: 50, font: theme.font, fontSize: 24, color: '#aab4c4', horizontalAlign: 'center', verticalAlign: 'center' }} />
         <view style={{ width: 616, padding: { top: 36 }, gap: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flexStart', alignItems: 'flexStart' }}>
-            <CancelButton label="小弹窗底板" width={300} onClick={() => go('small-popup-restored')} />
+            <ActionButton skin={cancelButton} label="小弹窗底板" width={300} onClick={() => go('small-popup-restored')} />
             <view interaction="press" onClick={() => go('backpack-restored')} style={{ width: 300, height: 102, backgroundColor: '#53657d', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="背包界面" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>

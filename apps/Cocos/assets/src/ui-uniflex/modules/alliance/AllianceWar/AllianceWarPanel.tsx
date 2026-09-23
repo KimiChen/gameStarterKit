@@ -1,7 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { confirmButton, cyanButton } from '../../../components/button/buttonSkins';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { CyanButton } from '../../../components/button/CyanButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { TabBar } from '../../../components/tab/TabBar';
@@ -45,10 +45,10 @@ export const AllianceWarPanel = defineComponent<AllianceWarPanelProps>((p) => {
 
             <ScreenFooter onBack={back} />
             <view style={{ position: 'absolute', left: 111.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
-                <CyanButton label="自动集结" onClick={() => p.onAction?.('auto_rally')} />
+                <ActionButton skin={cyanButton} label="自动集结" onClick={() => p.onAction?.('auto_rally')} />
             </view>
             <view style={{ position: 'absolute', left: 384.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
-                <ConfirmButton label="发起集结" onClick={() => p.onAction?.('start_rally')} />
+                <ActionButton skin={confirmButton} label="发起集结" onClick={() => p.onAction?.('start_rally')} />
             </view>
         </view>
     );

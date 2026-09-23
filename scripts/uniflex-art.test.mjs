@@ -271,7 +271,8 @@ test("confirm and shop share the same ConfirmButton file", async () => {
         resolve(root, "apps/client/src/ui-uniflex/modules/popup/Confirm/Confirm.tsx"), "utf8");
     assert.match(confirmRestored, /from '\.\.\/\.\.\/\.\.\/restored\/components\/button\/ConfirmButton'/);
     assert.match(shopPanelSrc, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
-    assert.match(originalConfirm, /from '\.\.\/\.\.\/\.\.\/components\/button\/ConfirmButton'/);
+    assert.match(originalConfirm, /skin=\{confirmButton\}/);
+    assert.match(originalConfirm, /from '\.\.\/\.\.\/\.\.\/components\/button\/buttonSkins'/);
     assert.doesNotMatch(originalConfirm, /restored/);
 });
 

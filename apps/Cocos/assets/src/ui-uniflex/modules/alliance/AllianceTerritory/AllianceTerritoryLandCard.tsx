@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { cyanButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { CyanButton } from '../../../components/button/CyanButton';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
 
 export interface AllianceTerritoryLandCardProps {
@@ -79,7 +80,7 @@ export const AllianceTerritoryLandCard = defineComponent<AllianceTerritoryLandCa
                 <ProgressBar left={208} top={214} width={514} height={28}
                     track={progressTrack} fill={progressFill} fillWidth={fillWidth} />
                 <view style={{ position: 'absolute', left: 273, top: 248, width: 204, height: 81 }}>
-                    <CyanButton label="驻防" width={204} height={81} onClick={() => p.onGarrison?.()} />
+                    <ActionButton skin={cyanButton} label="驻防" width={204} height={81} onClick={() => p.onGarrison?.()} />
                 </view>
             </view>
 

@@ -173,11 +173,6 @@
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackQuantityControl.tsx"
     },
     {
-      "key": "CancelButton",
-      "rootName": "CancelButton",
-      "source": "apps/client/src/ui-uniflex/components/button/CancelButton.tsx"
-    },
-    {
       "key": "CharacterManageTab",
       "rootName": "CharacterManageTab",
       "source": "apps/client/src/ui-uniflex/modules/character/CharacterManage/CharacterManageTab.tsx"
@@ -201,11 +196,6 @@
       "key": "CloseButton",
       "rootName": "CloseButton",
       "source": "apps/client/src/ui-uniflex/components/button/CloseButton.tsx"
-    },
-    {
-      "key": "ConfirmButton",
-      "rootName": "ConfirmButton",
-      "source": "apps/client/src/ui-uniflex/components/button/ConfirmButton.tsx"
     },
     {
       "key": "EmptyState",

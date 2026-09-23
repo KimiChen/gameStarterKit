@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { confirmButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
 import { STAR_ROW_HEIGHT, STAR_ROW_WIDTH, StarRow } from '../../../gamecomponents/star/StarRow';
@@ -129,7 +130,7 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
                             horizontalAlign: 'center', verticalAlign: 'center' }} />
                 </view>
                 <view style={{ position: 'absolute', left: 226, top: 728, width: 255, height: 102 }}>
-                    <ConfirmButton label="升星" onClick={p.onUpgrade} />
+                    <ActionButton skin={confirmButton} label="升星" onClick={p.onUpgrade} />
                 </view>
             </view>
         </view>

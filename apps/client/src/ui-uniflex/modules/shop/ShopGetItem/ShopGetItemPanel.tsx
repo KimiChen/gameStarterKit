@@ -1,6 +1,7 @@
 import { defineComponent, useEffect, useState } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { confirmButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { getItemConfig, ItemSlot } from '../../../gamecomponents/item/ItemSlot';
 import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
@@ -84,7 +85,7 @@ export const ShopGetItemPanel = defineComponent<ShopGetItemPanelProps>((p) => {
                     onChange={setSafe} skin={qtySkin} />
 
                 <view style={{ position: 'absolute', left: 226, top: 477, width: 255, height: 102 }}>
-                    <ConfirmButton label={price} icon={payIcon} iconWidth={payIconWidth} iconHeight={payIconHeight}
+                    <ActionButton skin={confirmButton} label={price} icon={payIcon} iconWidth={payIconWidth} iconHeight={payIconHeight}
                         onClick={() => p.onBuy?.(quantity)} />
                 </view>
             </view>

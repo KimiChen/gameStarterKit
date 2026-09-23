@@ -1,9 +1,7 @@
 import { defineView, useMemo, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ActionButton } from '../../../components/button/ActionButton';
-import { CancelButton } from '../../../components/button/CancelButton';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { CyanButton } from '../../../components/button/CyanButton';
+import { cancelButton, confirmButton, cyanButton } from '../../../components/button/buttonSkins';
+import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { IconCaptionButton } from '../../../components/button/IconCaptionButton';
 import { WideMenuButton } from '../../../components/button/WideMenuButton';
 import { CheckBox } from '../../../components/checkbox/CheckBox';
@@ -91,6 +89,21 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const onQuantity = (value: number) => setQuantity(value);
     const onInput = (value: string) => setInput(value);
     const onNav = (slot: MainNavSlot) => setNavigation(slot);
+    const confirmSkin = useMemo(() => ({
+        ...confirmButton,
+        source: theme.button.skins.confirm.source,
+        outline: theme.button.skins.confirm.outline,
+    }), [theme]);
+    const cancelSkin = useMemo(() => ({
+        ...cancelButton,
+        source: theme.button.skins.cancel.source,
+        outline: theme.button.skins.cancel.outline,
+    }), [theme]);
+    const cyanSkin = useMemo(() => ({
+        ...cyanButton,
+        source: theme.button.skins.cyan.source,
+        outline: theme.button.skins.cyan.outline,
+    }), [theme]);
     const onClick = () => console.info('[ComponentSpecimen]', part);
     const showConfirm = part === 'cmp-confirm';
     const showCancel = part === 'cmp-cancel';
@@ -118,13 +131,13 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showPopup = part === 'cmp-popup';
     return <view name="ComponentSpecimen" style={{ width: width, height: height, position: 'relative' }}>
         <view visible={showConfirm} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
-            <ConfirmButton theme={theme} label="确定" width={210} height={92} onClick={onClick} />
+            <ActionButton skin={confirmSkin} theme={theme} label="确定" width={210} height={92} onClick={onClick} />
         </view>
         <view visible={showCancel} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
-            <CancelButton theme={theme} label="取消" width={210} height={92} onClick={onClick} />
+            <ActionButton skin={cancelSkin} theme={theme} label="取消" width={210} height={92} onClick={onClick} />
         </view>
         <view visible={showCyan} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
-            <CyanButton theme={theme} label="前往" width={210} height={92} onClick={onClick} />
+            <ActionButton skin={cyanSkin} theme={theme} label="前往" width={210} height={92} onClick={onClick} />
         </view>
         <view visible={showAction} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <ActionButton theme={theme} label="操作" width={210} height={92} onClick={onClick} />

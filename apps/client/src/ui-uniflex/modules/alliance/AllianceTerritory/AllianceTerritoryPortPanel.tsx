@@ -1,7 +1,7 @@
 import { defineComponent, useEffect, useMemo, useRef, VirtualList } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { cancelButton, confirmButton } from '../../../components/button/buttonSkins';
 import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
-import { CancelButton } from '../../../components/button/CancelButton';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { AllianceTerritoryPortRow, PORT_ROW_SIZE } from './AllianceTerritoryPortRow';
 
 export interface AllianceTerritoryPortEffect {
@@ -54,10 +54,10 @@ export const AllianceTerritoryPortPanel = defineComponent<AllianceTerritoryPortP
                 {(item) => <AllianceTerritoryPortRow stripe={item.stripe} label={item.label} value={item.value} />}
             </VirtualList>
             <view style={{ position: 'absolute', left: 77, top: 1262, width: 255, height: 102 }}>
-                <ConfirmButton label="港口列表" onClick={() => p.onAction?.('open_port_list')} />
+                <ActionButton skin={confirmButton} label="港口列表" onClick={() => p.onAction?.('open_port_list')} />
             </view>
             <view style={{ position: 'absolute', left: 419, top: 1262, width: 255, height: 102 }}>
-                <CancelButton label="取消" onClick={() => p.onAction?.('cancel')} />
+                <ActionButton skin={cancelButton} label="取消" onClick={() => p.onAction?.('cancel')} />
             </view>
         </view>
     );

@@ -1,10 +1,8 @@
 import { defineView, useMemo, useState } from '@uniflex/compiler';
-import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ActionButton } from '../../../components/button/ActionButton';
+import { cancelButton, confirmButton, cyanButton } from '../../../components/button/buttonSkins';
+import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { BackButton } from '../../../components/button/BackButton';
-import { CancelButton } from '../../../components/button/CancelButton';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { CyanButton } from '../../../components/button/CyanButton';
 import { IconCaptionButton } from '../../../components/button/IconCaptionButton';
 import { WideMenuButton } from '../../../components/button/WideMenuButton';
 import { CheckBox } from '../../../components/checkbox/CheckBox';
@@ -94,6 +92,21 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
         badgeSource: theme.tab.badge,
         noticeSource: theme.tab.notice,
     }), [theme]);
+    const confirmSkin = useMemo(() => ({
+        ...confirmButton,
+        source: theme.button.skins.confirm.source,
+        outline: theme.button.skins.confirm.outline,
+    }), [theme]);
+    const cancelSkin = useMemo(() => ({
+        ...cancelButton,
+        source: theme.button.skins.cancel.source,
+        outline: theme.button.skins.cancel.outline,
+    }), [theme]);
+    const cyanSkin = useMemo(() => ({
+        ...cyanButton,
+        source: theme.button.skins.cyan.source,
+        outline: theme.button.skins.cyan.outline,
+    }), [theme]);
     const selectTab = (id: string) => setSelectedTab(id);
     const selectClassic = () => setMode('classic');
     const selectMidnight = () => setMode('midnight');
@@ -163,11 +176,11 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                             verticalAlign: 'center',
                         }} />
                         <view style={{ width: INNER_WIDTH, flexDirection: 'row', flexWrap: 'wrap', gap: ITEM_GAP }}>
-                            <ConfirmButton theme={theme} label="确定" width={210} height={92}
+                            <ActionButton skin={confirmSkin} theme={theme} label="确定" width={210} height={92}
                                 onClick={() => console.info('[ComponentGallery] confirm')} />
-                            <CancelButton theme={theme} label="取消" width={210} height={92}
+                            <ActionButton skin={cancelSkin} theme={theme} label="取消" width={210} height={92}
                                 onClick={() => console.info('[ComponentGallery] cancel')} />
-                            <CyanButton theme={theme} label="前往" width={210} height={92}
+                            <ActionButton skin={cyanSkin} theme={theme} label="前往" width={210} height={92}
                                 onClick={() => console.info('[ComponentGallery] cyan')} />
                             <ActionButton theme={theme} label="操作" width={210} height={92}
                                 onClick={() => console.info('[ComponentGallery] action')} />

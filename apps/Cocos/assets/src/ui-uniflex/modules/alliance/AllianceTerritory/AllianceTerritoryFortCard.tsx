@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { cyanButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { CyanButton } from '../../../components/button/CyanButton';
 
 export interface AllianceTerritoryFortCardProps {
     readonly name: string;
@@ -108,7 +109,7 @@ export const AllianceTerritoryFortCard = defineComponent<AllianceTerritoryFortCa
         </view>
 
         <view style={{ position: 'absolute', left: 552, top: 73, width: 140, height: 75 }}>
-            <CyanButton label="前往" width={140} height={75} onClick={() => p.onGo?.()} />
+            <ActionButton skin={cyanButton} label="前往" width={140} height={75} onClick={() => p.onGo?.()} />
         </view>
     </view>
 ));

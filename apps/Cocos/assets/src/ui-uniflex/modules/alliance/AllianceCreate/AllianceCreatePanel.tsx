@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { confirmButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { InputText } from '../../../components/input/InputText';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 
@@ -78,7 +79,7 @@ export const AllianceCreatePanel = defineComponent<AllianceCreatePanelProps>((p)
                     style={{ position: 'absolute', left: 325, top: 805, width: 90, height: 38,
                         font: fontRef('fonts/regular', 700), fontSize: 32, color: LABEL, bold: true, verticalAlign: 'center' }} />
                 <view style={{ position: 'absolute', left: 227, top: 850, width: 255, height: 102 }}>
-                    <ConfirmButton label="创建" onClick={p.onCreate} />
+                    <ActionButton skin={confirmButton} label="创建" onClick={p.onCreate} />
                 </view>
             </view>
         </view>

@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { confirmButton } from '../../../components/button/buttonSkins';
 import { imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { InputText } from '../../../components/input/InputText';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
@@ -44,10 +45,10 @@ export const AllianceInvitePanel = defineComponent<AllianceInvitePanelProps>((p)
                     labelLeft={12} labelTop={583} labelWidth={684} />
 
                 <view style={{ position: 'absolute', left: 56, top: 850, width: 255, height: 102 }}>
-                    <ConfirmButton label={p.inviteLabel ?? '邀请'} onClick={p.onInvite} />
+                    <ActionButton skin={confirmButton} label={p.inviteLabel ?? '邀请'} onClick={p.onInvite} />
                 </view>
                 <view style={{ position: 'absolute', left: 397, top: 850, width: 255, height: 102 }}>
-                    <ConfirmButton label={p.publicLabel ?? '公开邀请'} onClick={p.onPublicInvite} />
+                    <ActionButton skin={confirmButton} label={p.publicLabel ?? '公开邀请'} onClick={p.onPublicInvite} />
                 </view>
             </view>
         </view>

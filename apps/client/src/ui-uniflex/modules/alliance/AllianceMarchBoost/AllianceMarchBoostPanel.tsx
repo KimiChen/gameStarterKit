@@ -1,7 +1,7 @@
 import { defineComponent, For } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { cancelButton, confirmButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { CancelButton } from '../../../components/button/CancelButton';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
 import { RewardItem, type RewardItemData } from '../../../gamecomponents/item/RewardItem';
@@ -125,12 +125,12 @@ export const AllianceMarchBoostPanel = defineComponent<AllianceMarchBoostPanelPr
                         horizontalAlign: 'center', verticalAlign: 'center' }} />
 
                 <view style={{ position: 'absolute', left: 55, top: 729, width: 255, height: 102 }}>
-                    <ConfirmButton label={payGem}
+                    <ActionButton skin={confirmButton} label={payGem}
                         icon={payGemIcon} iconWidth={51} iconHeight={49}
                         onClick={p.onPayGem} />
                 </view>
                 <view style={{ position: 'absolute', left: 397, top: 729, width: 255, height: 102 }}>
-                    <CancelButton label={payCoin}
+                    <ActionButton skin={cancelButton} label={payCoin}
                         icon={payCoinIcon} iconWidth={54} iconHeight={55}
                         onClick={p.onPayCoin} />
                 </view>

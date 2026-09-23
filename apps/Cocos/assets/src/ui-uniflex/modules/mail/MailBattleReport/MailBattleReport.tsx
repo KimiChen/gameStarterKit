@@ -1,6 +1,7 @@
 import { defineView, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
-import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { ActionButton } from '../../../components/button/ActionButton';
+import { redButton, yellowButton } from '../../../components/button/buttonSkins';
+import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { TabBar } from '../../../components/tab/TabBar';
@@ -77,8 +78,6 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
     const listController = useRef<VirtualCollectionController | null>(null);
     useEffect(() => () => source.dispose(), [source]);
     useEffect(() => listController.current?.scrollToIndex(0, 'start', 0), [activeTab, source]);
-    const redButton = imageRef('ui/button/red');
-    const yellowButton = imageRef('ui/button/yellow');
     const unreadCounts = tabGroups.map((tab) => tab.items.reduce(
         (count, item) => count + (!deletedById[item.id] && !item.read && !openedById[item.id] ? 1 : 0),
         0,
@@ -118,10 +117,10 @@ export const MailBattleReport = defineView<MailBattleReportParams | void>({ zInd
             <text value={`邮件数:${params.countText ?? `${items.length}/200`}`} style={{ position: 'absolute', left: 300, top: 1166, width: 184, height: 40, font: fontRef('fonts/regular', 700), fontSize: 24, color: '#584871', bold: true, horizontalAlign: 'center', verticalAlign: 'center' }} />
             <ScreenFooter onBack={() => params.onBack?.()} />
             <view style={{ position: 'absolute', left: 111.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
-                <ActionButton label="删除已读" source={redButton} outlineColor="#6A2A28" onClick={deleteRead} />
+                <ActionButton skin={redButton} label="删除已读" onClick={deleteRead} />
             </view>
             <view style={{ position: 'absolute', left: 384.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
-                <ActionButton label="确定" source={yellowButton} outlineColor="#643E14" onClick={params.onConfirm} />
+                <ActionButton skin={yellowButton} label="确定" onClick={params.onConfirm} />
             </view>
         </view>
     );

@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { confirmButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 
@@ -60,7 +61,7 @@ export const AllianceHelpPanel = defineComponent<AllianceHelpPanelProps>((p) => 
                     labelLeft={23} labelTop={610} labelWidth={663} />
 
                 <view style={{ position: 'absolute', left: 227, top: 850, width: buttonWidth, height: buttonHeight }}>
-                    <ConfirmButton label={p.actionLabel ?? '创建'} width={buttonWidth} height={buttonHeight}
+                    <ActionButton skin={confirmButton} label={p.actionLabel ?? '创建'} width={buttonWidth} height={buttonHeight}
                         onClick={create} />
                 </view>
             </view>

@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { confirmButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 
 export interface AllianceAnnouncePanelProps {
@@ -68,7 +69,7 @@ export const AllianceAnnouncePanel = defineComponent<AllianceAnnouncePanelProps>
                 style={{ position: 'absolute', left: BODY_LEFT, top: 533, width: BODY_WIDTH, height: 68,
                     font: fontRef('fonts/regular', 700), fontSize: 24, lineHeight: LINE, color: GRAY, bold: true, wrap: true }} />
             <view style={{ position: 'absolute', left: 227, top: 789, width: 255, height: 102 }}>
-                <ConfirmButton label="确定" onClick={p.onClose} />
+                <ActionButton skin={confirmButton} label="确定" onClick={p.onClose} />
             </view>
         </view>
     </view>

@@ -1,6 +1,7 @@
 import { defineComponent, useState } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { confirmButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
@@ -74,7 +75,7 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
 
             <ScreenFooter onBack={back} />
             <view style={{ position: 'absolute', left: 280, bottom: 16, width: claimWidth, height: claimHeight }}>
-                <ConfirmButton label={p.claimLabel ?? '一键领取'} width={claimWidth} height={claimHeight}
+                <ActionButton skin={confirmButton} label={p.claimLabel ?? '一键领取'} width={claimWidth} height={claimHeight}
                     onClick={claim} />
             </view>
         </view>

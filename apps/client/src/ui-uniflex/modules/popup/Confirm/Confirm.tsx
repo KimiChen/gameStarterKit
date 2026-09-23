@@ -1,7 +1,7 @@
 import { defineView } from '@uniflex/compiler';
+import { ActionButton } from '../../../components/button/ActionButton';
+import { cancelButton, confirmButton } from '../../../components/button/buttonSkins';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
-import { ConfirmButton } from '../../../components/button/ConfirmButton';
-import { CancelButton } from '../../../components/button/CancelButton';
 import { theme } from '../../../themes/active';
 
 /** Optional presentation overrides; normal pages use the shared active theme. */
@@ -38,9 +38,9 @@ export const Confirm = defineView<ConfirmParams, void>({ zIndex: 'window' }, (co
                         horizontalAlign: 'center', verticalAlign: 'center', wrap: true, overflow: 'shrink' }} />
                 <view name="Confirm/Actions" style={{ position: 'absolute', bottom: 0, width: '100%',
                     flexDirection: 'row', justifyContent: 'center', gap: 87 }}>
-                    <ConfirmButton label={params.confirmText} onClick={params.onConfirm} />
+                    <ActionButton skin={confirmButton} label={params.confirmText ?? '确定'} onClick={params.onConfirm} />
                     <view visible={params.cancelText !== null}>
-                        <CancelButton label={params.cancelText ?? '取消'} onClick={params.onCancel} />
+                        <ActionButton skin={cancelButton} label={params.cancelText ?? '取消'} onClick={params.onCancel} />
                     </view>
                 </view>
             </view>
