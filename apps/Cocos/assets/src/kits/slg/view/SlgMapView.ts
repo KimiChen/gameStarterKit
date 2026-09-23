@@ -1,6 +1,7 @@
 /** Fullscreen map route: foreground multi-pointer input, chunk meshes, and a selected-tile action bar. */
 import { Color, EventMouse, EventTouch, Game, game, Label, Node, UITransform, Vec3 } from "cc";
 import { CocosView } from "../../../view/CocosView";
+import { OwnedRenderingRetirement } from "../../../view/scene3d/ownedRendering";
 import { createSolidPlate } from "../../../view/uiPlate";
 import { SLG_DEFAULT_MAP_ID, gridFromTileId, terrainAt, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
 import { SLG_FAR_LOD, slgFarOwnershipVersion } from "../logic/farLayerMesh";
@@ -14,6 +15,7 @@ import { SlgFarLayerRenderer } from "./SlgFarLayerRenderer";
 import { SlgMapSwitcher } from "./SlgMapSwitcher";
 import { SlgWorldOverview } from "./SlgWorldOverview";
 import { loadSlgArtResources, type SlgArtResources } from "./SlgArtResources";
+import { getSlgStage3D } from "./slgStage3D";
 
 const BACK = new Color(19, 29, 32, 255);
 const PANEL = new Color(19, 28, 38, 255);
@@ -51,6 +53,7 @@ export class SlgMapView extends CocosView {
     private touchAt = -Infinity;
     private mouseDown = false;
     private assetGeneration = 0;
+    private assetController: AbortController | undefined;
     private inputBlockedUntil = -Infinity;
     private farActive = false;
     private uninstallDebug: (() => void) | null = null;
@@ -124,6 +127,7 @@ export class SlgMapView extends CocosView {
     }
 
     protected onCloseLifecycle(): void {
+        this.assetController?.abort(); this.assetController = undefined;
         this.active = false; this.assetGeneration += 1; this.bindInput(false); this.cancelInput(); this.offTick?.(); this.offTick = null;
         this.uninstallDebug?.(); this.uninstallDebug = null;
         this.switcher?.dispose(); this.switcher = null;
@@ -135,18 +139,24 @@ export class SlgMapView extends CocosView {
     }
 
     private async loadTerrain(): Promise<void> {
+        this.assetController?.abort();
+        const controller = this.assetController = new AbortController();
         const generation = ++this.assetGeneration;
         const mapId = this.mapId;
         this.resourceFailed = false;
         try {
-            const art = await loadSlgArtResources(mapId);
+            const art = await loadSlgArtResources(mapId, { signal: controller.signal });
             if (!this.active || generation !== this.assetGeneration || mapId !== this.mapId
                 || !this.world || !this.terrainLayer || !this.decorationLayer || !this.logic) {
                 art.release(); return;
             }
             this.disposeArt();
             this.art = art; this.terrain = art.terrain;
-            this.renderer = new SlgTilemapRenderer(this.terrainLayer, this.terrain, art.tiles, art.tileIndex, art.tileset, art.sea);
+            this.renderer = new SlgTilemapRenderer(this.terrainLayer, this.terrain, art.tiles, art.tileIndex, art.tileset, art.sea, () => {
+                const owner = this.lifecycleContext;
+                if (!owner) throw new Error("SLG map opening is no longer active");
+                return getSlgStage3D().acquireGlobals(owner, { toneMapping: "linear" });
+            });
             this.decorationRenderer = new SlgDecorationRenderer(this.decorationLayer, this.terrain, art.decorations, art.layout);
             this.farRenderer = new SlgFarLayerRenderer(this.world, this.terrain, art.layout, art.decorations, art.island, art.sea);
             this.overview = new SlgWorldOverview(this.root, this.terrain, art.layout.landmarks, art.island, art.overview, art.decorations,
@@ -188,11 +198,16 @@ export class SlgMapView extends CocosView {
     }
 
     private disposeArt(): void {
+        const art = this.art;
+        this.art = null;
+        const retirement = new OwnedRenderingRetirement();
+        if (art && this.world) retirement.capture(this.world);
+        if (art && this.overview) retirement.capture(this.overview.node);
         this.overview?.dispose(); this.overview = null;
         this.farRenderer?.dispose(); this.farRenderer = null;
         this.decorationRenderer?.dispose(); this.decorationRenderer = null;
         this.renderer?.dispose(); this.renderer = null;
-        this.art?.release(); this.art = null;
+        if (art) retirement.finish(() => art.release());
     }
 
     private render(): void {

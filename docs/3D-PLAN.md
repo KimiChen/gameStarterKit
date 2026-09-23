@@ -273,10 +273,13 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
 - [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [x] SC2-B5
-- [x] SC3-B1 [x] SC3-B2 [x] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
+- [x] SC3-B1 [x] SC3-B2 [x] SC3-B3 [x] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
-- 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [ ] slg 资源 / 全局设置（SC3）
+- 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [x] slg 资源 / 全局设置（SC3）
+
+- 2026-09-23 SC3-B4 完成：SLG 八件套与 mini 改走 AssetLease，保留公开返回形状、收齐结果后校验与既有错误信息；页面关闭 / 切图取消在途加载，旧图节点退出后于 AFTER_DRAW 归还资源。mini 每次成功对应一次 `releaseSlgMapMini`，面板重复加载归还多余租约。两个 Renderer 经页面注入同一安装端口，取得各自的 linear tone mapping 租约，SLG 已无 `director.getScene`。Stage3D 接入 skybox 当前 HDR/LDR 槽的 envmap / diffuseMap / reflectionMap / lighting，基线与每份被覆盖 patch 仍独立持有；替换先持有再应用、恢复场景后归还旧引用，应用与回滚双故障则保留候选至成功重放。真实适配器处理 envmap setter 的连带清空并校验 TextureCube，HDR 模式仍归项目设置。两份框架夹具均迁入正式 AssetLease，临时 loader 已删除；保护面锁按实际三份源文件重钉。
+  新增 18 项回归，146 项定向测试通过；SLG 资源 / 输入的 9 个既有顶层测试体逐字不变，仅补 FakeAsset.isValid、空 renderer 遍历与 AFTER_DRAW 桩，新增一项关闭时序测试，未改既有断言或加载 / 输入语义。去掉被覆盖资源持有、提前归还双故障候选的变异分别打红 7 / 1 项。9 份相关模块对照 Creator 3.8.8 真实声明为 0 诊断；独立 typecheck（含两套客户端配置）、1285 项客户端与隔离检出的 `verify:all` 全过（Node 26.5.0；合计 2963 项，基线 `71ca02cb`，排除当时尚未提交的 mapOriginal 并行改动）。并行改动提交为 `e218ab53` 后，最新工作区的 typecheck、1287 项客户端、24 项相关服务端地图测试与 inventory 检查亦通过。Creator WebGL2 / 实际 WebGL1 各通过 7 组检查、各 20 次夹具开关，节点与引用回基线、运行时诊断为 0；正常登录 / 设置入口的 SLG 流程通过 28 步、24 张截图，另以注入舞台的生产 ViewMgr 页面测 3 次关闭，五张贴图引用均为当前帧 1 → AFTER_DRAW 后 0。源码 / 镜像 / source map、既有测试体哈希、日志及本地证据见 [B4 验收摘要](perf/stage3d/2026-09-23-sc3-b4.json)。生命周期夹具保留真实宿主等价的 UI 相机，桌面证据不代替正式帧时 / GFX 稳定性或微信真机缓存；SC3 未退出，下一批 SC3-B5。
 
 - 2026-09-23 SC3-B3 完成：新增 `EntityPool` 与 Cocos 适配器，按 pool / prefab / instancing 模式复用 inactive 节点，整个池共用逐帧激活预算（4 / 8 / 16）；同帧重复 step 不增额度，失败尝试同样计数。capacity 同时限制逻辑名额与跨 LOD 的 active + inactive 节点，降档保留最早请求；过期加载按桶身份隔离，despawn / 切档 / close 取消旧队列、迟到租约只归还。抽出 B2 的 `AssetCatalog` 供计划与池共用，detail-layers.json 新增可选 `hideAtLod` 地址表，过滤先于选变体，低档 details 不加载、不激活；现有 B2 用例保持原文全绿。Cocos 按源材质与能力共享副本、实时蒙皮禁 instancing，闲置节点保留 AssetLease，淘汰先毁节点、AFTER_DRAW 再退渲染缓存与引用；补齐 Billboard 复用后启用的回收与 onDisable 重入保护。独立 Stage3dDevScene 提供 500 spawn 开关，旧 SC0 页面不改。新增 34 项测试、124 项定向回归、两套客户端类型检查及真实 Creator 3.8.8 声明编译通过；临时副本移除预算 / details 门控分别打红 6 / 1 项。最终 `verify:all` 全过（Node 26.5.0；客户端 1267 / UniFlex 契约 80 / 服务端 1382，加其余门禁合计 2945 项）。WebGL2 / 实际 WebGL1 各 7 项检查与 20 次完整 500 灰盒开关通过，节点均回到 8、探针最终 Prefab 引用为 0，浏览器运行时诊断为 0；medium / high 分别验证每帧 ≤ 8 / 16、300 / 500 实例与一份共享材质，实际 GFX 快照均为 3 draw calls、3614 / 6014 triangles。两张最终截图已目检。源码 / 镜像 / source map、日志、变异及双上下文证据哈希见 [B3 验收摘要](perf/stage3d/2026-09-23-sc3-b3.json)。这是桌面功能与激活证据，WebGL1 的 medium / high 为开发覆写；正式各画质帧时 / 内存证据留 B5，离线简模保真留 SC5，真机缓存留 SC4。镜像经 sync:client、meta 由 Creator 生成；SC3 未退出，下一批 SC3-B4。
 

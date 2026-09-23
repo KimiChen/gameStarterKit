@@ -1,5 +1,7 @@
 /** A route owns one reference to every loaded asset; stale/failed loads release the entire bundle. */
-import { JsonAsset, resources, Texture2D } from "cc";
+import { JsonAsset, Texture2D } from "cc";
+import { assetLease } from "../../../view/scene3d/cocosAssetLoader";
+import type { AssetAcquireOptions, AssetBatch, AssetRequest } from "../../../view/scene3d/AssetLease";
 import { validateSlgTerrain, type ISlgTerrain } from "../../../shared/kits/slg/api/worldmap/index";
 import { buildSlgLayoutIndex, validateSlgForestLayout, type SlgLayoutIndex } from "../logic/mapArt";
 import { buildSlgTileIndex, type SlgChunkTileBucket, type SlgTilesData } from "../logic/tilemapMesh";
@@ -42,24 +44,24 @@ function validateSlgTiles(input: unknown, mapId: string): input is SlgTilesData 
 }
 
 /** 按地图加载整套资源：resources/kits/slg/maps/<mapId>/ 下八件套。 */
-export async function loadSlgArtResources(mapId: string): Promise<SlgArtResources> {
-    const owned: (JsonAsset | Texture2D)[] = [];
+export async function loadSlgArtResources(mapId: string, options: AssetAcquireOptions = {}): Promise<SlgArtResources> {
+    const owned: { release(): void }[] = [];
     let released = false;
     const release = (): void => {
         if (released) return;
         released = true;
-        for (const asset of owned) asset.decRef();
+        for (const lease of owned) lease.release();
         owned.length = 0;
     };
-    // Resolve failures instead of rejecting early: every in-flight callback must finish
-    // before we release acquired references, including when the route has already closed.
-    const load = <T extends JsonAsset | Texture2D>(path: string, kind: new () => T): Promise<T | null> =>
-        new Promise((resolve) => {
-            resources.load(path, kind, (error, asset) => {
-                if (error || !asset) { resolve(null); return; }
-                asset.addRef(); owned.push(asset); resolve(asset);
-            });
-        });
+    // Preserve SLG's all-settled contract: successful siblings stay held until
+    // every request completes (or reaches the framework deadline/cancellation).
+    const load = async <T extends JsonAsset | Texture2D>(path: string, kind: new () => T): Promise<T | null> => {
+        try {
+            const lease = await assetLease.acquire([{ bundle: "resources", path, type: kind }] as const, options);
+            owned.push(lease);
+            return lease.assets[0];
+        } catch { return null; }
+    };
     const base = `kits/slg/maps/${mapId}`;
     try {
         const [data, decorations, overview, layoutData, island, tilesData, tileset, sea] = await Promise.all([
@@ -95,13 +97,24 @@ export async function loadSlgArtResources(mapId: string): Promise<SlgArtResource
     } catch (error) { release(); throw error; }
 }
 
+/** Legacy texture-returning API: each successful call must pair with releaseSlgMapMini. */
+const miniLeases = new WeakMap<Texture2D, AssetBatch<readonly AssetRequest<Texture2D>[]>[]>();
+
 /** 切换面板的五图缩略图：只加载 256² mini，不进全量 bundle。 */
 export async function loadSlgMapMini(mapId: string): Promise<Texture2D | null> {
-    return new Promise((resolve) => {
-        resources.load(`kits/slg/maps/${mapId}/world-overview-mini/texture`, Texture2D, (error, asset) => {
-            if (error || !asset) { resolve(null); return; }
-            asset.addRef();
-            resolve(asset);
-        });
-    });
+    try {
+        const lease = await assetLease.acquire([{ bundle: "resources", path: `kits/slg/maps/${mapId}/world-overview-mini/texture`, type: Texture2D }] as const);
+        const texture = lease.assets[0];
+        const holds = miniLeases.get(texture) ?? [];
+        holds.push(lease); miniLeases.set(texture, holds);
+        return texture;
+    } catch { return null; }
+}
+
+/** Return one successful call's hold; callers guard their own close/late-load paths. */
+export function releaseSlgMapMini(texture: Texture2D): void {
+    const holds = miniLeases.get(texture);
+    const hold = holds?.shift();
+    if (holds?.length === 0) miniLeases.delete(texture);
+    hold?.release();
 }

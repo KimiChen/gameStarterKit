@@ -7,6 +7,7 @@ type LoaderModule = { _load: (request: string, parent: unknown, isMain: boolean)
 type Subject = typeof import("../src/kits/slg/view/SlgArtResources");
 
 class FakeAsset {
+    readonly isValid = true;
     // Two references represent other consumers sharing the resource cache.
     refs = 2;
     acquired = 0;

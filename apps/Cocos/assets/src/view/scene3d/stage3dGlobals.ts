@@ -1,8 +1,16 @@
-/**
- * Fields managed by the SC1 global-token table. Colors and resource references
- * deliberately stay outside this snapshot until their engine ownership and
- * conversion boundaries are implemented.
- */
+import type { TextureCube } from "cc";
+import type { LoadedAsset } from "./AssetLease";
+
+/** The active HDR/LDR skybox slot. HDR mode itself remains a project setting. */
+export interface Stage3DSkyboxState {
+    enabled: boolean;
+    envmap: TextureCube | null;
+    diffuseMap: TextureCube | null;
+    reflectionMap: TextureCube | null;
+    lighting: "hemisphere" | "reflection" | "diffuse";
+}
+
+/** Values are copied, but loaded resource identities are preserved. */
 export interface Stage3DGlobalsState {
     toneMapping: "default" | "linear";
     fog: {
@@ -14,6 +22,7 @@ export interface Stage3DGlobalsState {
     };
     ambient: { skyIllum: number };
     shadows: { enabled: boolean; kind: "planar" | "shadowMap" };
+    skybox: Stage3DSkyboxState;
 }
 
 export interface Stage3DGlobalsPatch {
@@ -21,6 +30,7 @@ export interface Stage3DGlobalsPatch {
     fog?: Partial<Stage3DGlobalsState["fog"]>;
     ambient?: Partial<Stage3DGlobalsState["ambient"]>;
     shadows?: Partial<Stage3DGlobalsState["shadows"]>;
+    skybox?: Partial<Stage3DSkyboxState>;
 }
 
 function record(value: unknown, path: string, keys: readonly string[]): Record<string, unknown> {
@@ -60,7 +70,7 @@ function numberValue(value: unknown, path: string, nonnegative = false): number 
 
 /** Copy and validate a patch. An undefined field means it is not overridden. */
 export function normalizeGlobalsPatch(patch: Stage3DGlobalsPatch): Stage3DGlobalsPatch {
-    const source = record(patch, "globals", ["toneMapping", "fog", "ambient", "shadows"]);
+    const source = record(patch, "globals", ["toneMapping", "fog", "ambient", "shadows", "skybox"]);
     const result: Stage3DGlobalsPatch = {};
     if (source.toneMapping !== undefined) {
         result.toneMapping = enumValue(source.toneMapping, "globals.toneMapping", ["default", "linear"] as const);
@@ -88,6 +98,23 @@ export function normalizeGlobalsPatch(patch: Stage3DGlobalsPatch): Stage3DGlobal
         if (shadows.kind !== undefined) normalized.kind = enumValue(shadows.kind, "globals.shadows.kind", ["planar", "shadowMap"] as const);
         result.shadows = normalized;
     }
+    if (source.skybox !== undefined) {
+        const skybox = record(source.skybox, "globals.skybox", ["enabled", "envmap", "diffuseMap", "reflectionMap", "lighting"]);
+        const normalized: Partial<Stage3DSkyboxState> = {};
+        if (skybox.enabled !== undefined) normalized.enabled = booleanValue(skybox.enabled, "globals.skybox.enabled");
+        if (skybox.lighting !== undefined) normalized.lighting = enumValue(skybox.lighting, "globals.skybox.lighting", ["hemisphere", "reflection", "diffuse"] as const);
+        for (const key of ["envmap", "diffuseMap", "reflectionMap"] as const) {
+            const asset = skybox[key];
+            if (asset === undefined) continue;
+            if (asset !== null && (typeof asset !== "object"
+                || typeof (asset as LoadedAsset).addRef !== "function" || typeof (asset as LoadedAsset).decRef !== "function"
+                || (asset as LoadedAsset).isValid !== true)) {
+                throw new TypeError(`globals.skybox.${key} requires a live loaded TextureCube or null`);
+            }
+            normalized[key] = asset as TextureCube | null;
+        }
+        result.skybox = normalized;
+    }
     return result;
 }
 
@@ -102,6 +129,7 @@ export function cloneGlobals(state: Stage3DGlobalsState): Stage3DGlobalsState {
     const fog = required(normalized.fog, "fog");
     const ambient = required(normalized.ambient, "ambient");
     const shadows = required(normalized.shadows, "shadows");
+    const skybox = required(normalized.skybox, "skybox");
     return {
         toneMapping: required(normalized.toneMapping, "toneMapping"),
         fog: {
@@ -115,6 +143,13 @@ export function cloneGlobals(state: Stage3DGlobalsState): Stage3DGlobalsState {
         shadows: {
             enabled: required(shadows.enabled, "shadows.enabled"),
             kind: required(shadows.kind, "shadows.kind"),
+        },
+        skybox: {
+            enabled: required(skybox.enabled, "skybox.enabled"),
+            envmap: required(skybox.envmap, "skybox.envmap"),
+            diffuseMap: required(skybox.diffuseMap, "skybox.diffuseMap"),
+            reflectionMap: required(skybox.reflectionMap, "skybox.reflectionMap"),
+            lighting: required(skybox.lighting, "skybox.lighting"),
         },
     };
 }
@@ -131,6 +166,15 @@ export function resolveGlobals(
         if (normalized.fog !== undefined) Object.assign(result.fog, normalized.fog);
         if (normalized.ambient !== undefined) Object.assign(result.ambient, normalized.ambient);
         if (normalized.shadows !== undefined) Object.assign(result.shadows, normalized.shadows);
+        if (normalized.skybox !== undefined) Object.assign(result.skybox, normalized.skybox);
     }
+    if (result.skybox.lighting !== "hemisphere" && !result.skybox.envmap) throw new TypeError("Skybox reflection lighting requires envmap");
+    if (result.skybox.lighting === "diffuse" && !result.skybox.diffuseMap) throw new TypeError("Skybox diffuse lighting requires diffuseMap");
     return result;
+}
+
+/** One hold per resource per baseline/patch, including patches hidden by later tokens. */
+export function globalsAssets(patch: Stage3DGlobalsPatch): readonly TextureCube[] {
+    return [...new Set([patch.skybox?.envmap, patch.skybox?.diffuseMap, patch.skybox?.reflectionMap]
+        .filter((asset): asset is TextureCube => asset !== undefined && asset !== null))];
 }

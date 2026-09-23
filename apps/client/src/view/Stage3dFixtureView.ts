@@ -1,13 +1,22 @@
 /** DEV acceptance page for the production Stage3D port; content remains fixed greybox. */
-import { Billboard, instantiate, Material, MeshRenderer, Node, ParticleSystem, SkeletalAnimation } from "cc";
+import { Billboard, instantiate, Material, MeshRenderer, Node, ParticleSystem, Prefab, SkeletalAnimation } from "cc";
 import { DEV } from "cc/env";
 import { CocosView } from "./CocosView";
 import type { ViewLifecycleContext } from "./ViewBase";
 import type { Stage3DPort } from "./scene3d/Stage3D";
-import { beginFixtureSession } from "./scene3d/fixtureSession";
-import { FixturePrefabLoader } from "./scene3d/fixturePrefabLoader";
+import { beginFixtureSession, countFixtureReference } from "./scene3d/fixtureSession";
+import { AssetLease } from "./scene3d/AssetLease";
+import type { AssetBatch, AssetRequest } from "./scene3d/AssetLease";
+import { cocosAssetLoader } from "./scene3d/cocosAssetLoader";
 import { createSpikeRealtimeSwitcher, createSpikeSkinningSwitcher, prepareSpikeSkinningLayouts } from "./scene3d/spikeSkinning";
 import { captureOwnedBillboard, OwnedRenderingRetirement } from "./scene3d/ownedRendering";
+
+/** Observe the production lease boundary, including cancelled/late callbacks. */
+const fixtureAssets = new AssetLease({
+    ...cocosAssetLoader,
+    addRef: (asset) => { cocosAssetLoader.addRef(asset); countFixtureReference(1); },
+    decRef: (asset) => { try { cocosAssetLoader.decRef(asset); } finally { countFixtureReference(-1); } },
+});
 
 export class Stage3dFixtureView extends CocosView {
     private opening: ViewLifecycleContext | undefined;
@@ -25,7 +34,7 @@ export class Stage3dFixtureView extends CocosView {
         const lease = ports.stage3d.acquire(context, { clearColor: { r: 28, g: 40, b: 58, a: 255 } });
         const session = beginFixtureSession(), logic = session.logic, world = lease.root;
         const owner = { generation: context.generation, signal: lease.signal, isActive: () => context.isActive() && !lease.signal.aborted };
-        const loader = new FixturePrefabLoader(owner);
+        let assets: AssetBatch<readonly AssetRequest<Prefab>[]> | undefined;
         const retirement = new OwnedRenderingRetirement();
         const materials = new Map<Material, Material>();
         const atlasBMaterials = new Map<Material, Material>();
@@ -36,7 +45,6 @@ export class Stage3dFixtureView extends CocosView {
         // Stage3D aborts its signal BEFORE destroying nodes, including host/scene
         // disposal. Capture old descriptors here, not in the later View close hook.
         lease.signal.addEventListener("abort", () => {
-            loader.cancel();
             detachInput?.();
             session.switchSkinningClip = null;
             session.switchRealtimeSkinning = null;
@@ -48,7 +56,7 @@ export class Stage3dFixtureView extends CocosView {
                 releaseBillboard?.();
                 for (const material of [...materials.values(), ...atlasBMaterials.values(), ...realtimeMaterials.values()]) material.destroy();
                 materials.clear(); atlasBMaterials.clear(); realtimeMaterials.clear();
-                loader.release();
+                assets?.release(); assets = undefined;
             });
         }, { once: true });
         try {
@@ -66,12 +74,14 @@ export class Stage3dFixtureView extends CocosView {
                 wheel: () => { logic.wheels++; },
                 cancel: () => logic.cancelAll(),
             });
-            const [plane, cube, biped, atlasB, baked] = await loader.load([
+            const acquired = await fixtureAssets.acquire([
                 ...["greybox-plane", "greybox-cube", "greybox-biped", "greybox-biped-atlas-b"]
                     .map((name) => `stage3d/${name}/${name}`),
                 "stage3d/P_Stage3d_Baked",
-            ]);
-            if (!owner.isActive()) throw new Error("Fixture setup cancelled");
+            ].map((path) => ({ bundle: "resources", path, type: Prefab })), { signal: owner.signal });
+            if (!owner.isActive()) { acquired.release(); throw new Error("Fixture setup cancelled"); }
+            assets = acquired;
+            const [plane, cube, biped, atlasB, baked] = acquired.assets;
             // Register before any instance can request a baked joint texture.
             const skinning = prepareSpikeSkinningLayouts(biped!, atlasB!);
             session.skinning = skinning.summary;

@@ -255,7 +255,7 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 
 业务判定、排序、时间规则、错误分支和网络编排不进入 View。
 
-### 3D 舞台、资源与画质（SC1 / SC3-B1）
+### 3D 舞台、资源与画质（SC1 / SC3）
 
 3D 页面仍用 `kind:"cocos"`，其 UI 根只承载页面；3D 内容挂在框架舞台的 `lease.root` 下。
 kit / 插件从 `PluginInstallContext.ports.stage3d` 注入端口，在本次打开的 setup / `onOpen` 中调用
@@ -270,8 +270,13 @@ gameplay 则从 `GameplayServicesContext.stage3d` 取得同一端口，在 prese
 后取得者覆盖自己声明的字段，更新不改变优先级，乱序释放按仍有效的 patch 重算，最后恢复基线。
 `setGlobals` 替换整份 patch，省略字段即撤回该覆盖，不直接写 `director.getScene().globals`。
 
-SC1 已开放 `toneMapping`、fog 的 `enabled/type/density/start/end`、`ambient.skyIllum` 和
-shadows 的 `enabled/kind`。资源型 skybox 等全局字段及引用接线留 SC3-B4。
+已开放 `toneMapping`、fog 的 `enabled/type/density/start/end`、`ambient.skyIllum` 和
+shadows 的 `enabled/kind`。SC3-B4 增加 `skybox.enabled`、`envmap/diffuseMap/reflectionMap`
+（已加载的 `TextureCube | null`）与 `lighting: "hemisphere" | "reflection" | "diffuse"`。
+只管理项目当前 HDR/LDR 槽，HDR 模式仍由项目设置决定；调用方先用 AssetLease 加载并持有资源，
+`setGlobals` 不异步加载。框架为基线与每份 patch 各持有引用，被覆盖的 patch 仍持有；
+成功替换后先更新场景再归还旧引用，失败恢复旧状态，双重失败保留可能仍被场景使用的资源直至重放成功。
+同一 patch 内相同资源去重，不同 token 仍独立持有。`undefined` 撤回字段，`null` 明确清空纹理。
 SC3-B1 的通用加载入口是 `view/scene3d/cocosAssetLoader.ts` 的 `assetLease`：
 `await assetLease.acquire([{ bundle, path, type }], { signal, deadlineMs })` 返回 `{ assets, release }`，
 `assets` 按请求顺序保留具体资产类型与身份；重复地址仍逐请求持有一份引用。`resources` 也是 bundle 名，
@@ -283,7 +288,12 @@ SC3-B1 的通用加载入口是 `view/scene3d/cocosAssetLoader.ts` 的 `assetLea
 无头测试通过 `new AssetLease(loader, { scheduler, onError })` 注入 transport、时钟与迟到清理错误观察者；
 同步 retainer 仍是框架内部引用边界，不是 kit 的额外 retain API。
 
-`Stage3dFixtureView` 的临时 loader 仅服务固定灰盒验收，随 SC3-B4 与 SLG 一起迁移。
+`Stage3dFixtureView` 与 `Stage3dDevScene` 均使用正式 AssetLease，临时 loader 已删除。
+SLG 的八件套包装逐件取得租约、收齐结果后统一校验，保留既有失败等待与错误信息；
+页面关闭 / 切图取消在途加载，卸下旧图节点后于 AFTER_DRAW 归还八件套，迟到成功仍由框架回收。
+缩略图保留 `loadSlgMapMini` 的纹理返回值，
+每次成功对应 `releaseSlgMapMini(texture)` 一次，不裸调 decRef；面板关闭在绘制退休后统一归还。
+两个 SLG Renderer 接收由页面注入的 globals 获取函数，随 dispose 归还各自的 linear tone mapping 租约。
 释放遵循先取消输入、撤下节点
 及其渲染引用，再归还材质和资产的顺序；迟到加载也必须成对归还。kit 不复制 loader 或裸调资源引用计数。
 

@@ -155,6 +155,14 @@ class FakeShadowsInfo extends FakeSwitchInfo {
     constructor() { super(2); }
 }
 
+class FakeCube {
+    isValid = true;
+    toDestroy = false;
+    refs = 1;
+    addRef(): void { this.refs++; }
+    decRef(): void { this.refs--; }
+}
+const baselineCube = new FakeCube();
 function rawGlobals() {
     return {
         postSettings: { toneMappingType: 0 },
@@ -162,7 +170,7 @@ function rawGlobals() {
         ambient: { skyIllum: 100, skyLightingColor: new FakeColor(21, 22, 23),
             groundLightingColor: new FakeColor(31, 32, 33) },
         shadows: new FakeShadowsInfo(),
-        skybox: { enabled: true, useHDR: true, envmap: { name: "caller-owned-cubemap" } },
+        skybox: { enabled: true, useHDR: true, envmap: baselineCube, diffuseMap: null as FakeCube | null, reflectionMap: null as FakeCube | null, envLightingType: 0 },
     };
 }
 class FakeScene extends FakeNode { globals = rawGlobals(); }
@@ -177,10 +185,10 @@ const metrics = {
     screen: { width: 750, height: 1624 },
 };
 const cc = {
-    Node: FakeNode, Camera: FakeCamera, DirectionalLight: FakeLight, Vec3: FakeVec3, Color: FakeColor, Rect: FakeRect,
+    TextureCube: FakeCube, Node: FakeNode, Camera: FakeCamera, DirectionalLight: FakeLight, Vec3: FakeVec3, Color: FakeColor, Rect: FakeRect,
     isValid: (value: unknown, strict?: boolean): boolean => {
         validityCalls.push({ value, strict });
-        return value instanceof FakeNode && value.isValid && (!strict || !value.toDestroy);
+        return (value instanceof FakeNode || value instanceof FakeCube) && value.isValid && (!strict || !value.toDestroy);
     },
     director: {
         getScene: (): FakeScene | null => { sceneReads++; return currentScene; },
@@ -247,6 +255,7 @@ function watchWrites(target: object, keys: readonly string[], prefix: string, wr
 
 function expectedGlobals(): Stage3DGlobalsState {
     return {
+        skybox: { enabled: true, envmap: baselineCube as unknown as import("cc").TextureCube, diffuseMap: null, reflectionMap: null, lighting: "hemisphere" },
         toneMapping: "default",
         fog: { enabled: false, type: "linear", density: 0.1, start: -10, end: -20 },
         ambient: { skyIllum: 100 }, shadows: { enabled: false, kind: "planar" },
@@ -647,4 +656,35 @@ test("Cocos Stage3D rolls back its own subscriptions when an on call fails befor
         for (const removed of [...directorEvents.offCalls, ...viewEvents.offCalls]) removed.callback.call(removed.target);
         assert.equal(callbacks, 0, "failed subscription callbacks must become inert before rollback");
     }
+});
+
+test("Cocos Stage3D restores reflection/diffuse maps after the envmap setter clears them", async () => {
+    const original = reset(), { CocosStage3DEngine } = await loadAdapter(), scope = new CocosStage3DEngine().captureScene();
+    const reflection = new FakeCube(), diffuse = new FakeCube(), fresh = new FakeCube();
+    const sky = original.globals.skybox;
+    let environment = sky.envmap;
+    Object.defineProperty(sky, "envmap", { get: () => environment, set: (value: FakeCube) => {
+        environment = value; sky.reflectionMap = null;
+        if (!value) { sky.diffuseMap = null; sky.envLightingType = 0; }
+    } });
+    const next = scope.globals.read();
+    next.skybox = { enabled: true, envmap: fresh as unknown as import("cc").TextureCube,
+        diffuseMap: diffuse as unknown as import("cc").TextureCube, reflectionMap: reflection as unknown as import("cc").TextureCube, lighting: "diffuse" };
+    scope.globals.apply(next);
+    assert.equal(sky.envmap, fresh); assert.equal(sky.reflectionMap, reflection); assert.equal(sky.diffuseMap, diffuse);
+    assert.equal(sky.envLightingType, 2);
+    scope.globals.apply({ ...next, skybox: { enabled: false, envmap: null, diffuseMap: null, reflectionMap: null, lighting: "hemisphere" } });
+    assert.equal(sky.envmap, null); assert.equal(sky.reflectionMap, null); assert.equal(sky.diffuseMap, null);
+    assert.equal(sky.enabled, false); assert.equal(sky.envLightingType, 0); assert.equal(sky.useHDR, true);
+});
+
+test("Cocos Stage3D rejects non-cubemap resources even in patches hidden by another token", async () => {
+    reset(); const { CocosStage3DEngine } = await loadAdapter();
+    const { Stage3D } = await import("../src/view/scene3d/Stage3D");
+    const controller = new AbortController(), owner = { signal: controller.signal, isActive: () => true };
+    const stage = new Stage3D(new CocosStage3DEngine()), world = stage.acquire(owner);
+    const cover = stage.acquireGlobals(owner, { skybox: { envmap: baselineCube as unknown as import("cc").TextureCube } });
+    const foreign = { isValid: true, addRef: () => assert.fail("reject before holding foreign asset"), decRef: () => {} };
+    assert.throws(() => world.setGlobals({ skybox: { envmap: foreign as unknown as import("cc").TextureCube } }), /live Creator TextureCube/u);
+    assert.equal(baselineCube.refs, 3); world.release(); cover.release(); assert.equal(baselineCube.refs, 1);
 });

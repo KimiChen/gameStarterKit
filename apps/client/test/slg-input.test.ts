@@ -32,6 +32,7 @@ const globalInput = new EventHub();
 const gameEvents = new EventHub();
 class FakeNode extends EventHub {
     static readonly EventType = EVENTS;
+    getComponentsInChildren(): never[] { return []; }
     getComponent(): { convertToNodeSpaceAR: (point: FakeVec3) => FakeVec3 } {
         // UI origin is bottom-left; this fullscreen root's origin is its center.
         return { convertToNodeSpaceAR: (point) => new FakeVec3(point.x - 400, point.y - 600, point.z) };
@@ -72,6 +73,8 @@ async function loadSubject(): Promise<Subject> {
     const cc = {
         Color: class {}, Node: FakeNode, Vec3: FakeVec3, UITransform: class {}, Label: class {},
         input: globalInput, Input: { EventType: EVENTS }, game: gameEvents, Game: { EVENT_HIDE: "hide" },
+        Director: { EVENT_AFTER_DRAW: "after-draw" },
+        director: { once: (_type: string, callback: () => void) => { setImmediate(callback); } },
     };
     moduleApi._load = function patchedLoad(request, parent, isMain): unknown {
         if (request === "cc") return cc;
@@ -258,5 +261,21 @@ test("SLG input: overview visibility cancels gestures and blocks click-through u
         advance(351);
         emit(EVENTS.MOUSE_DOWN); emit(EVENTS.MOUSE_UP);
         assert.equal(selections.length, 1);
+    });
+});
+
+test("SLG close retires renderer nodes before returning the art lease after drawing", async () => {
+    await withView(async ({ view }) => {
+        await view.loadTerrain();
+        const art = (view as unknown as { art: { release(): void } }).art;
+        let releases = 0;
+        art.release = () => { assert.equal(view.overview, null); releases++; };
+        view.onCloseLifecycle();
+        assert.equal(releases, 0, "deferred rendering still owns the textures in the closing frame");
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        assert.equal(releases, 1);
+        view.onCloseLifecycle();
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        assert.equal(releases, 1);
     });
 });

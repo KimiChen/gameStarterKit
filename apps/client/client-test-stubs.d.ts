@@ -519,7 +519,7 @@ declare module "cc" {
         skyLightingColor: Color; groundLightingColor: Color; skyIllum: number;
     }
     export class SkyboxInfo {
-        enabled: boolean; useIBL: boolean; useHDR: boolean; applyDiffuseMap: boolean;
+        enabled: boolean; useIBL: boolean; useHDR: boolean; applyDiffuseMap: boolean; envLightingType: number;
         envmap: TextureCube | null; diffuseMap: TextureCube | null; reflectionMap: TextureCube | null;
         skyboxMaterial: Material | null; rotationAngle: number;
     }

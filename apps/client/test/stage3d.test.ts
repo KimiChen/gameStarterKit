@@ -11,10 +11,12 @@ import {
     STAGE3D_CAMERA_MASK, STAGE3D_CAMERA_PRIORITY, STAGE3D_DEFAULT_LAYER,
     STAGE3D_HIDDEN_LAYER, STAGE3D_OVERLAY_LAYER, STAGE3D_PICK_MASK,
 } from "../src/view/scene3d/stage3dLayers";
+import { cloneGlobals } from "../src/view/scene3d/stage3dGlobals";
 import type { RectDesignPx, ViewportMetrics } from "../src/logic/scene3d/viewport";
 
 function baseline(): Stage3DGlobalsState {
     return {
+        skybox: { enabled: false, envmap: null, diffuseMap: null, reflectionMap: null, lighting: "hemisphere" },
         toneMapping: "default",
         fog: { enabled: false, type: "linear", density: 0.01, start: 1, end: 500 },
         ambient: { skyIllum: 10 },
@@ -104,7 +106,7 @@ class FakeScene implements Stage3DScene {
     readonly globals = {
         read: (): Stage3DGlobalsState => this.state,
         apply: (state: Stage3DGlobalsState): void => {
-            this.applied.push(structuredClone(state));
+            this.applied.push(cloneGlobals(state));
             const failure = this.applyFailures.shift() ?? (this.failApplyOnce ? "partial" : undefined);
             this.failApplyOnce = false;
             if (failure === "before") throw new Error("globals before-write failure");
@@ -112,7 +114,7 @@ class FakeScene implements Stage3DScene {
             this.state.toneMapping = state.toneMapping;
             this.state.ambient.skyIllum = state.ambient.skyIllum;
             if (failure === "partial") throw new Error("globals partial failure");
-            this.state = structuredClone(state);
+            this.state = cloneGlobals(state);
             const action = this.onApply;
             this.onApply = undefined;
             action?.();
@@ -270,6 +272,7 @@ test("Stage3D replaces a whole patch, merges nested fields, and preserves acquis
     const higher = stage.acquireGlobals(owner().value, { fog: { density: 0.3 }, shadows: { kind: "shadowMap" } });
     world.setGlobals({ fog: { density: 0.2, start: 5 } });
     assert.deepEqual(scene.state, {
+        skybox: { enabled: false, envmap: null, diffuseMap: null, reflectionMap: null, lighting: "hemisphere" },
         toneMapping: "default", fog: { enabled: false, type: "linear", density: 0.3, start: 5, end: 500 },
         ambient: { skyIllum: 10 }, shadows: { enabled: false, kind: "shadowMap" },
     });
@@ -807,4 +810,146 @@ test("Stage3D cancellation callbacks can read committed occupancy without reente
     assert.deepEqual(failures, []);
     assert.deepEqual(values, [true], "releasing only globals preserves the committed stage occupancy");
     world.release();
+});
+
+class RefCube {
+    isValid = true;
+    refs = 1; adds = 0; returns = 0;
+    failAdd = false;
+    onReturn: (() => void) | undefined;
+    addRef(): void { if (this.failAdd) throw new Error("cube retain failed"); this.refs++; this.adds++; }
+    decRef(): void { this.onReturn?.(); this.refs--; this.returns++; }
+}
+const cube = (asset: RefCube) => asset as unknown as import("cc").TextureCube;
+function resourceStage() {
+    const scene = new FakeScene(), initial = new RefCube();
+    scene.state.skybox.envmap = cube(initial);
+    const applied = scene.globals.apply;
+    scene.globals.apply = (state) => {
+        // Model a resource setter that can fail after publishing the new resource.
+        scene.state.skybox = { ...state.skybox };
+        applied(state);
+    };
+    const errors: unknown[] = [];
+    const stage = new Stage3D({ captureScene: () => scene }, (error) => errors.push(error));
+    return { scene, initial, stage, errors };
+}
+
+test("Stage3D retains baseline and each covered patch, across all three-token release orders", () => {
+    for (const order of [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]) {
+        const { scene, initial, stage } = resourceStage();
+        const assets = [new RefCube(), new RefCube(), new RefCube()];
+        const world = stage.acquire(owner().value);
+        world.setGlobals({ skybox: { envmap: cube(assets[0]) } });
+        const leases = [world, ...assets.slice(1).map((a) => stage.acquireGlobals(owner().value, { skybox: { envmap: cube(a) } }))];
+        assert.equal(initial.refs, 2);
+        assert.deepEqual(assets.map((a) => a.refs), [2, 2, 2]);
+        const alive = new Set([0, 1, 2]);
+        for (const index of order) {
+            alive.delete(index);
+            const expected = alive.size ? cube(assets[Math.max(...alive)]) : cube(initial);
+            assets[index].onReturn = () => assert.equal(scene.state.skybox.envmap, expected, "scene changes before decRef");
+            leases[index].release(); leases[index].release();
+            assert.equal(scene.state.skybox.envmap, expected);
+            assert.equal(assets[index].refs, 1);
+            for (const i of alive) assert.equal(assets[i].refs, 2, "covered token keeps its hold");
+        }
+        assert.equal(initial.refs, 1);
+        assert.deepEqual(assets.map((a) => [a.adds, a.returns]), [[1, 1], [1, 1], [1, 1]]);
+    }
+});
+
+test("Stage3D covered patch replacement keeps order and deduplicates repeated resource fields within a token", () => {
+    const { scene, initial, stage } = resourceStage(), a = new RefCube(), b = new RefCube(), c = new RefCube();
+    const world = stage.acquire(owner().value);
+    world.setGlobals({ skybox: { envmap: cube(a), diffuseMap: cube(a), reflectionMap: cube(a) } });
+    assert.equal(a.refs, 2);
+    const cover = stage.acquireGlobals(owner().value, { skybox: { envmap: cube(b), diffuseMap: null, reflectionMap: null } });
+    world.setGlobals({ skybox: { envmap: cube(c) } });
+    assert.deepEqual([a.refs, b.refs, c.refs], [1, 2, 2]);
+    assert.equal(scene.state.skybox.envmap, cube(b));
+    cover.release(); assert.equal(scene.state.skybox.envmap, cube(c));
+    assert.equal(scene.state.skybox.diffuseMap, null);
+    world.setGlobals({}); assert.equal(scene.state.skybox.envmap, cube(initial));
+    assert.equal(c.refs, 1); world.release(); assert.equal(initial.refs, 1);
+});
+
+test("Stage3D retains independent holds when baseline and multiple tokens share an asset", () => {
+    const { stage, initial } = resourceStage();
+    const a = stage.acquireGlobals(owner().value, { skybox: { envmap: cube(initial) } });
+    const b = stage.acquireGlobals(owner().value, { skybox: { reflectionMap: cube(initial) } });
+    assert.equal(initial.refs, 4); a.release(); assert.equal(initial.refs, 3);
+    b.release(); assert.equal(initial.refs, 1);
+});
+
+test("Stage3D resource retain failure releases partial new holds and preserves old patch", () => {
+    const { scene, initial, stage } = resourceStage(), old = new RefCube(), fresh = new RefCube(), bad = new RefCube();
+    const world = stage.acquire(owner().value); world.setGlobals({ skybox: { envmap: cube(old) } });
+    bad.failAdd = true;
+    assert.throws(() => world.setGlobals({ skybox: { envmap: cube(fresh), reflectionMap: cube(bad) } }), /cube retain failed/u);
+    assert.deepEqual([initial.refs, old.refs, fresh.refs, bad.refs], [2, 2, 1, 1]);
+    assert.equal(scene.state.skybox.envmap, cube(old)); world.release();
+});
+
+test("Stage3D failed resource apply rolls back before returning the candidate's hold", () => {
+    const { scene, stage } = resourceStage(), old = new RefCube(), fresh = new RefCube();
+    const world = stage.acquire(owner().value); world.setGlobals({ skybox: { envmap: cube(old) } });
+    fresh.onReturn = () => assert.equal(scene.state.skybox.envmap, cube(old));
+    scene.failApplyOnce = true;
+    assert.throws(() => world.setGlobals({ skybox: { envmap: cube(fresh) } }), /partial failure/u);
+    assert.deepEqual([old.refs, fresh.refs], [2, 1]);
+    world.release();
+});
+
+test("Stage3D double resource failure keeps candidate holds until a full replay succeeds", () => {
+    const { scene, stage } = resourceStage(), old = new RefCube(), fresh = new RefCube();
+    const world = stage.acquire(owner().value); world.setGlobals({ skybox: { envmap: cube(old) } });
+    scene.applyFailures.push("partial", "before");
+    assert.throws(() => world.setGlobals({ skybox: { envmap: cube(fresh) } }), Stage3DApplyError);
+    assert.deepEqual([old.refs, fresh.refs], [2, 2], "neither possible scene resource may be released");
+    fresh.onReturn = () => assert.equal(scene.state.skybox.envmap, cube(old));
+    assert.equal(stage.active, true); assert.equal(fresh.refs, 1);
+    world.release();
+});
+
+test("Stage3D failed release preserves resource ownership for a later retry", () => {
+    const { scene, initial, stage } = resourceStage(), a = new RefCube();
+    const token = stage.acquireGlobals(owner().value, { skybox: { envmap: cube(a) } });
+    scene.failApplyOnce = true;
+    assert.throws(() => token.release(), /partial failure/u);
+    assert.equal(token.signal.aborted, false); assert.deepEqual([initial.refs, a.refs], [2, 2]);
+    assert.equal(scene.state.skybox.envmap, cube(a));
+    token.release(); assert.deepEqual([initial.refs, a.refs], [1, 1]);
+});
+
+test("Stage3D owner close, scene change and host dispose restore resources and return every hold", () => {
+    for (const mode of ["owner", "scene", "dispose"] as const) {
+        const { scene, initial, stage } = resourceStage(), a = new RefCube(), o = owner();
+        stage.acquireGlobals(o.value, { skybox: { envmap: cube(a) } });
+        if (mode === "owner") o.controller.abort();
+        else if (mode === "scene") scene.emit("destroy");
+        else stage.dispose();
+        assert.equal(scene.state.skybox.envmap, cube(initial));
+        assert.deepEqual([initial.refs, a.refs], [1, 1]);
+        assert.equal(scene.listeners.size, 0);
+    }
+});
+
+test("Stage3D initial resource acquisition failure releases baseline holds and detaches the failed owner", () => {
+    const { scene, initial, stage } = resourceStage(), a = new RefCube(), o = owner();
+    scene.failApplyOnce = true;
+    assert.throws(() => stage.acquireGlobals(o.value, { skybox: { envmap: cube(a) } }), /partial failure/u);
+    assert.deepEqual([initial.refs, a.refs], [1, 1]); assert.equal(o.listeners.size, 0);
+    assert.equal(scene.listeners.size, 0);
+    const token = stage.acquireGlobals(o.value, { skybox: { envmap: cube(a) } }); token.release();
+    assert.deepEqual([initial.refs, a.refs], [1, 1]);
+});
+
+test("Stage3D rejects destroyed and invalid cubemap inputs without changing scene or counts", () => {
+    const { scene, stage } = resourceStage(), a = new RefCube();
+    const token = stage.acquire(owner().value); a.isValid = false;
+    assert.throws(() => token.setGlobals({ skybox: { envmap: cube(a) } }), /live loaded/u);
+    assert.equal(a.adds, 0);
+    assert.throws(() => token.setGlobals({ skybox: { envmap: null, lighting: "reflection" } }), /requires envmap/u);
+    assert.equal(scene.state.skybox.lighting, "hemisphere"); token.release();
 });

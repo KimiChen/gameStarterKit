@@ -1,4 +1,4 @@
-import { assetManager } from "cc";
+import { assetManager, resources } from "cc";
 import type { Asset, AssetManager } from "cc";
 import { AssetLease } from "./AssetLease";
 import type { AssetLoader, AssetLoadCallback, AssetType } from "./AssetLease";
@@ -12,6 +12,8 @@ export const cocosAssetLoader: AssetLoader = {
     addRef: (asset) => asset.addRef(),
     decRef: (asset) => asset.decRef(),
     load<T extends Asset>(name: string, path: string, type: AssetType<T>, callback: AssetLoadCallback<T>): void {
+        // The built-in resources bundle is available without asynchronous bundle discovery.
+        if (name === "resources") { resources.load(path, type, callback); return; }
         const loaded = assetManager.getBundle(name);
         if (loaded) { loaded.load(path, type, callback); return; }
         let completed = false;

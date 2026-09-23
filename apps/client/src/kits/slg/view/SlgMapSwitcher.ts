@@ -2,7 +2,8 @@
 import { Color, EventTouch, Label, Node, Sprite, SpriteFrame, Texture2D, UITransform } from "cc";
 import { SLG_MAPS, slgMapInfo } from "../../../shared/kits/slg/api/worldmap/index";
 import { createSolidPlate } from "../../../view/uiPlate";
-import { loadSlgMapMini } from "./SlgArtResources";
+import { OwnedRenderingRetirement } from "../../../view/scene3d/ownedRendering";
+import { loadSlgMapMini, releaseSlgMapMini } from "./SlgArtResources";
 
 const PANEL = new Color(19, 28, 38, 255);
 const TEXT = new Color(236, 243, 237, 255);
@@ -73,7 +74,8 @@ export class SlgMapSwitcher {
         if (cached) { this.paintMini(cached); return; }
         void loadSlgMapMini(mapId).then((texture) => {
             if (!texture) return;
-            if (this.disposed) { texture.decRef(); return; }
+            if (this.disposed) { releaseSlgMapMini(texture); return; }
+            if (this.minis.has(mapId)) { releaseSlgMapMini(texture); return; }
             this.minis.set(mapId, texture);
             if (this.currentMapId === mapId) this.paintMini(texture);
             this.paint(mapId);
@@ -105,7 +107,8 @@ export class SlgMapSwitcher {
                 if (this.minis.has(info.id)) { this.paint(info.id); continue; }
                 const texture = await loadSlgMapMini(info.id);
                 if (!texture) continue;
-                if (this.disposed) { texture.decRef(); return; }
+                if (this.disposed) { releaseSlgMapMini(texture); return; }
+                if (this.minis.has(info.id)) { releaseSlgMapMini(texture); this.paint(info.id); continue; }
                 this.minis.set(info.id, texture);
                 if (info.id === this.currentMapId) this.paintMini(texture);
                 this.paint(info.id);
@@ -143,12 +146,15 @@ export class SlgMapSwitcher {
     dispose(): void {
         if (this.disposed) return;
         this.disposed = true;
+        this.minimap.active = false; this.panel.active = false;
+        for (const sprite of [...this.minimap.getComponentsInChildren(Sprite), ...this.panel.getComponentsInChildren(Sprite)]) sprite.spriteFrame = null;
         for (const frame of this.frames) frame.destroy();
         this.frames.length = 0;
-        for (const texture of this.minis.values()) texture.decRef();
+        const textures = [...this.minis.values()];
         this.minis.clear();
         this.minimap.destroy();
         this.panel.destroy();
+        new OwnedRenderingRetirement().finish(() => { for (const texture of textures) releaseSlgMapMini(texture); });
     }
 
     private node(name: string, parent: Node, width: number, height: number): Node {

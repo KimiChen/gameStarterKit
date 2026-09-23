@@ -123,7 +123,7 @@ let scene = new FakeNode("scene");
 const stageListeners = new Set<(event: "frame" | "resize" | "destroy") => void>();
 let cameraMoves = 0;
 function makeStage(): Stage3D {
-  let globals = { toneMapping: "default", fog: { enabled: false, type: "linear", density: 0.01, start: 1, end: 500 },
+  let globals = { skybox: { enabled: false, envmap: null, diffuseMap: null, reflectionMap: null, lighting: "hemisphere" }, toneMapping: "default", fog: { enabled: false, type: "linear", density: 0.01, start: 1, end: 500 },
     ambient: { skyIllum: 10 }, shadows: { enabled: false, kind: "planar" } };
   const adapter = {
     isValid: () => true, isNodeValid: (node: FakeNode) => node.isValid,
@@ -295,13 +295,10 @@ test("Stage3D partial load failure releases early successes and safely discards 
   const first = new FakePrefab("first");
   run.loads[0]!.callback(null, first);
   run.loads[1]!.callback(new Error("fixture prefab missing"));
-  let settled = false;
-  void run.open.finally(() => { settled = true; }).catch(() => {});
-  await Promise.resolve();
-  assert.equal(settled, false, "ordinary failure must collect all in-flight loads before cleanup");
+  await assert.rejects(run.open, /ASSET_MISSING/u);
+  assert.equal(first.refCount, 0, "failed batch returns early successes immediately");
   const late = resolveLoads(run.loads.slice(2));
-  await assert.rejects(run.open, /fixture prefab missing/u);
-  assert.equal(fixtureSession.error, "fixture prefab missing");
+  assert.match(fixtureSession.error!, /ASSET_MISSING/u);
   await run.view.closeLifecycle();
   run.view.dispose();
   frame();
@@ -343,7 +340,7 @@ test("Stage3D close during loading releases each late callback without creating 
   await run.view.closeLifecycle();
   run.view.dispose();
   const assets = resolveLoads(run.loads);
-  await assert.rejects(run.open, /cancelled|失效/u);
+  await assert.rejects(run.open, /ASSET_CANCELLED|失效/u);
   frame();
   assert.equal(scene.children.length, 0);
   assert.equal(fixtureSession.businessRefs, 0);
@@ -362,7 +359,7 @@ test("Stage3D late cancellation from a closed opening cannot overwrite a newer f
   assert.equal(fixtureSession.ready, true);
   assert.equal(fixtureSession.error, null);
   resolveLoads(old.loads);
-  await assert.rejects(old.open, /cancelled|失效/u);
+  await assert.rejects(old.open, /ASSET_CANCELLED|失效/u);
   try {
     assert.equal(fixtureSession.error, null, "old cancelled load must not poison the newly ready fixture");
     assert.equal(fixtureSession.ready, true);
@@ -423,17 +420,17 @@ test("Stage3D fixture returns nodes, references and listeners to baseline across
 });
 
 
-test("Stage3D error callback returns its own hold while preserving another asset consumer", async () => {
+test("Stage3D error callback borrows no hold while preserving another asset consumer", async () => {
   await reset();
   const run = await start();
   const shared = new FakePrefab("shared");
   shared.addRef(); // An unrelated owner's pre-existing hold.
   run.loads[0]!.callback(new Error("error with asset"), shared);
   for (const request of run.loads.slice(1)) request.callback(null, shared);
-  await assert.rejects(run.open, /error with asset/);
+  await assert.rejects(run.open, /ASSET_MISSING/);
   frame();
   assert.equal(shared.refCount, 1);
-  assert.deepEqual([shared.adds, shared.removes], [6, 5]);
+  assert.deepEqual([shared.adds, shared.removes], [5, 4]);
   assert.equal(fixtureSession.businessRefs, 0);
   assert.equal(stage.active, false);
   run.view.dispose();

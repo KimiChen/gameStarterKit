@@ -1,0 +1,936 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-23",
+  "batch": "SC3-B4",
+  "status": "complete",
+  "phaseExited": false,
+  "verificationBase": "71ca02cbfc30139a92bdd8bb05648087db95003d",
+  "delivered": [
+    "SLG eight-resource loading delegates reference ownership, deadline and cancellation to AssetLease while preserving all-settled validation, return shape and legacy error messages. Mini textures retain the raw texture API and pair each successful call with releaseSlgMapMini.",
+    "Both SLG renderer constructors accept a globals-lease factory injected by the page through the kit install port. Linear tone mapping composes with stage tokens and other renderers without snapshot revival; no director.getScene remains in SLG.",
+    "Stage3D skybox patches manage enabled, envmap, diffuseMap, reflectionMap and lighting for the active HDR/LDR slot. Baseline and every patch, including covered patches, hold distinct references through AssetRetainer; repeated resources within a patch are deduplicated.",
+    "Resource replacements retain before applying. Successful writes/rollback remove scene references before releasing obsolete holds. Double apply/rollback failures retain candidates until a complete replay or scene teardown. The real adapter handles envmap setter side effects and rejects invalid cubemap classes even in hidden patches.",
+    "Both framework fixture paths use complete AssetLease batches, and the temporary fixturePrefabLoader is removed. SLG map and mini textures retire after drawing; page close and map replacement cancel pending loads."
+  ],
+  "sources": [
+    {
+      "source": "apps/client/src/view/scene3d/Stage3D.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/Stage3D.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/Stage3D.ts",
+      "sha256": "1bf763b5695a6f745d50d2a6a3cb2eb93bdc9a292aa620d4cfaff0d1b6059e5a",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/f8/f868f73551511a6508d9434104cf484b6d3f5d92.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/stage3dGlobals.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/stage3dGlobals.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/stage3dGlobals.ts",
+      "sha256": "f779dcaf7e32e8f27708868470ee5765e25df05a4796e06fe024987897622f62",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/c8/c804af313e22443cd6560e8fc8faa15fa1fe3a12.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/cocosStage3DEngine.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/cocosStage3DEngine.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/cocosStage3DEngine.ts",
+      "sha256": "b910ace69a6faf7cc9a21f730eee57d1e4606e06f22b089311f5d6c3a4532fb7",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/d0/d02cad5a4ab8b860f4c9574789ba6513efdc1073.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/AssetLease.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/AssetLease.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/AssetLease.ts",
+      "sha256": "deb0ab2416eb57edbea355b066f5c13a6a7d0ee82cf7dd49d6e830a6bfc9c852",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/46/465f7deeee0d3cc2a46d8c47aa0393676aedab55.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/cocosAssetLoader.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/cocosAssetLoader.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/cocosAssetLoader.ts",
+      "sha256": "505e1e051b37d74fdc34e781bcc0dd2d79f262462cc0f992739173878735490f",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/39/39f5f9daf0a779bbd8d91f321d34bf46eff37ac2.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/Stage3dDevScene.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/Stage3dDevScene.ts",
+      "sha256": "4cb85e01875037e331dbfcfa9f6a10779619e90ea97a6036e3a05073cde492fb",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js.map"
+    },
+    {
+      "source": "apps/client/src/kits/slg/view/SlgArtResources.ts",
+      "mirror": "apps/Cocos/assets/src/kits/slg/view/SlgArtResources.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/kits/slg/view/SlgArtResources.ts",
+      "sha256": "9394272937f48be50efea74d2fec72626704b1f9a21c734d43aef8afbf960bb5",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/b8/b84fd187ff69e8ecef7e1c95132e323947a4135f.js.map"
+    },
+    {
+      "source": "apps/client/src/kits/slg/view/SlgChunkRenderer.ts",
+      "mirror": "apps/Cocos/assets/src/kits/slg/view/SlgChunkRenderer.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/kits/slg/view/SlgChunkRenderer.ts",
+      "sha256": "e08bc8279b2a1c420a637ce0406f889d5c6f2f49d66cb75553816e687de84b55",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/83/835ce3eecbd7e875589f447d376373461add87fb.js.map"
+    },
+    {
+      "source": "apps/client/src/kits/slg/view/SlgTilemapRenderer.ts",
+      "mirror": "apps/Cocos/assets/src/kits/slg/view/SlgTilemapRenderer.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/kits/slg/view/SlgTilemapRenderer.ts",
+      "sha256": "a7c8e49355ef9a659852f41b97d1e779b5f97ca05c327ec388fe8ad598e8bbd6",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/79/79293f0d1b7915c6dcd326a4a2506305e024da0e.js.map"
+    },
+    {
+      "source": "apps/client/src/view/Stage3dFixtureView.ts",
+      "mirror": "apps/Cocos/assets/src/view/Stage3dFixtureView.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/Stage3dFixtureView.ts",
+      "sha256": "31c3eb27971d7293fc220d25e17a5babd956fbb7f37256dbf4dee72eef1f0d37",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/0c/0cd9c06f79bcd1b0b55bf3ed54af9fb006cd0cb5.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/fixtureSession.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/fixtureSession.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/fixtureSession.ts",
+      "sha256": "8dba2f3588673a278da8b10634c399772d07774ab182bca111114cafda03124b",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/eb/ebfe343946eb5506dbaaa3b986e9eda039e418ff.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/ownedRendering.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/ownedRendering.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/ownedRendering.ts",
+      "sha256": "7606760e02ec4bdcd7f977a30ceaf74ddaa35e120efd98a0eb2a25797f893f3a",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/03/037c5959eb4082a2c24198fcf8968469c1c6b4a3.js.map"
+    },
+    {
+      "source": "apps/client/src/kits/slg/index.ts",
+      "mirror": "apps/Cocos/assets/src/kits/slg/index.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/kits/slg/index.ts",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/61/618b10d5ee8d146695d6813324265620c8aaaf87.js.map",
+      "sha256": "e71746c2da94720174b97443057773a54fba9a17e861f5c1c613c795af256efb"
+    },
+    {
+      "source": "apps/client/src/kits/slg/view/slgStage3D.ts",
+      "mirror": "apps/Cocos/assets/src/kits/slg/view/slgStage3D.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/kits/slg/view/slgStage3D.ts",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/d0/d00581068aec90f0867f35b02e9e9e410d1b0772.js.map",
+      "sha256": "c3f8be70f011ec222ffc836c0c504221e6f50d06e1791e78b73e9b515e4f2e10"
+    },
+    {
+      "source": "apps/client/src/kits/slg/view/SlgMapView.ts",
+      "mirror": "apps/Cocos/assets/src/kits/slg/view/SlgMapView.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/kits/slg/view/SlgMapView.ts",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/b5/b555e8e2c46f9d2396131f82c05f34ddb7e06677.js.map",
+      "sha256": "4849390e04c6558b3547e801f8d7c2d68f40d9885e5a31c9ac5842cc9cec0ec8"
+    },
+    {
+      "source": "apps/client/src/kits/slg/view/SlgMapSwitcher.ts",
+      "mirror": "apps/Cocos/assets/src/kits/slg/view/SlgMapSwitcher.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/kits/slg/view/SlgMapSwitcher.ts",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/74/742a986631ace758a23ab23fcd0c881b1423cef2.js.map",
+      "sha256": "9732a8d9cb8928d7281fb91970a984e3151007476c8f6f4c4ddb8cca797f5dee"
+    }
+  ],
+  "verification": {
+    "node": "v26.5.0",
+    "worktree": "/Users/kimi/.codex/worktrees/sc3-b4-verification/kitVersion",
+    "isolationReason": "Concurrent uncommitted mapOriginal development introduced unrelated type errors in the shared checkout; only SC3-B4 files were copied into a detached verification worktree. Dependencies reuse the installed locked packages, with workspace package links resolved inside the verification tree.",
+    "targeted": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b4/targeted-final.log",
+        "sha256": "6c1cbb17708d7169036cd3b1ddbf530dee9a20caf390bf27df511379fa730ed4"
+      },
+      "testCount": 146,
+      "testGroups": [
+        146
+      ]
+    },
+    "typechecks": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b4/typecheck-isolated-final.log",
+        "sha256": "815400662382d23981044f33a45891d33e84802c2f4fe6c5feab1ad29a3ea430"
+      },
+      "testCount": 0,
+      "testGroups": []
+    },
+    "client": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b4/client-final.log",
+        "sha256": "8667a11f82cb03eeb4fa84257eed5faf26b4732b66e8c3946029f013c05c9248"
+      },
+      "testCount": 1285,
+      "testGroups": [
+        1285
+      ]
+    },
+    "verifyAll": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b4/verify-all-final.log",
+        "sha256": "cdd32c07cc011bef5aeb78a870c552dd2a14242b1fd0d01b548a29809a4b0c07"
+      },
+      "testCount": 2963,
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1285,
+        80,
+        1382
+      ]
+    }
+  },
+  "realEngineTypes": {
+    "diagnostics": 0,
+    "files": [
+      "apps/client/src/view/scene3d/Stage3D.ts",
+      "apps/client/src/view/scene3d/stage3dGlobals.ts",
+      "apps/client/src/view/scene3d/cocosStage3DEngine.ts",
+      "apps/client/src/view/scene3d/cocosAssetLoader.ts",
+      "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+      "apps/client/src/kits/slg/view/SlgArtResources.ts",
+      "apps/client/src/kits/slg/view/SlgChunkRenderer.ts",
+      "apps/client/src/kits/slg/view/SlgTilemapRenderer.ts",
+      "apps/client/src/kits/slg/view/SlgMapSwitcher.ts"
+    ],
+    "declarations": {
+      "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/bin/.declarations/cc.d.ts",
+      "sha256": "88fa33fe074ccd5471fb1bea6779a37d025dbf9570a195fc0d9f684a3608dcc9"
+    },
+    "result": {
+      "path": ".cache/sc3-b4/real-engine-types.json",
+      "sha256": "c83ff49760e47aa6d78c2e1f4665cc7f89efa10eae83bb1ea2a0ec966fee377a"
+    }
+  },
+  "legacyTests": {
+    "assertionsAndExistingTestBodiesUnchanged": true,
+    "audit": [
+      {
+        "file": "apps/client/test/slg-art-resources.test.ts",
+        "baselineTests": 4,
+        "currentTests": 4,
+        "existingTestBodiesUnchanged": true,
+        "baselineBodyHash": "2ef841b613c134cab2088de09bd574ea35c518eae6f2783e595d23051867e641",
+        "currentExistingBodyHash": "2ef841b613c134cab2088de09bd574ea35c518eae6f2783e595d23051867e641",
+        "baselineFileHash": "d3cd28702db6c7d1c4ce26cf24d9632e60a9d2bb1768c62bc0a7a033a3c210f9",
+        "currentFileHash": "ce5dfe5e3e35a5265a26d3977b1af582b40c7c5e8b71aac9a8fc91015979477b"
+      },
+      {
+        "file": "apps/client/test/slg-input.test.ts",
+        "baselineTests": 5,
+        "currentTests": 6,
+        "existingTestBodiesUnchanged": true,
+        "baselineBodyHash": "4c2e14ce7a582312578d432c254d365a064f1a88ed381bff5c015f7c2712edfa",
+        "currentExistingBodyHash": "4c2e14ce7a582312578d432c254d365a064f1a88ed381bff5c015f7c2712edfa",
+        "baselineFileHash": "cc76804425782b2b1230cd8babaf2dcd8227a22d0bda26124489138532333095",
+        "currentFileHash": "d7733fd9b33d5ca80725bacf9a5a9a157b46cecd33228976dede14078e019751"
+      }
+    ],
+    "harnessAdaptation": "Resource FakeAsset adds only isValid=true. Input FakeNode gains empty renderer traversal and a deferred AFTER_DRAW fake. All nine existing top-level test bodies are byte-identical; one new view-retirement test is appended. No legacy assertion or loading semantics changed."
+  },
+  "mutations": [
+    {
+      "name": "missing-covered-holds",
+      "before": "this.retainGlobals([baseline, ...next.map((token) => token.patch)]);",
+      "after": "this.retainGlobals([baseline]);",
+      "exitCode": 1,
+      "failedTests": [
+        "Stage3D retains baseline and each covered patch, across all three-token release orders",
+        "Stage3D covered patch replacement keeps order and deduplicates repeated resource fields within a token",
+        "Stage3D retains independent holds when baseline and multiple tokens share an asset",
+        "Stage3D resource retain failure releases partial new holds and preserves old patch",
+        "Stage3D failed resource apply rolls back before returning the candidate's hold",
+        "Stage3D double resource failure keeps candidate holds until a full replay succeeds",
+        "Stage3D failed release preserves resource ownership for a later retry"
+      ],
+      "log": {
+        "path": ".cache/sc3-b4/mutation-missing-covered-holds.log",
+        "sha256": "e6988a3496051e7f3df5f2bd131026368676291cd3eee9afb305c2faac743db4"
+      }
+    },
+    {
+      "name": "premature-failed-candidate-release",
+      "before": "this.globalsDirty = true;\n                throw new Stage3DApplyError(failure, rollback);",
+      "after": "this.globalsDirty = true;\n                this.releaseUnusedGlobals([baseline, ...this.tokens.map((token) => token.patch)]);\n                throw new Stage3DApplyError(failure, rollback);",
+      "exitCode": 1,
+      "failedTests": [
+        "Stage3D double resource failure keeps candidate holds until a full replay succeeds"
+      ],
+      "log": {
+        "path": ".cache/sc3-b4/mutation-premature-failed-candidate-release.log",
+        "sha256": "cae1c296ee3c7760dba4ce0719cd536543c893f9ba2dd55f13d34bccaf592257"
+      }
+    }
+  ],
+  "runtime": [
+    {
+      "webgl": 2,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b4-webgl2/report.json",
+        "sha256": "2e94d178af0c88ef9e0385561222d30553bd4efff3c6683b3fe699d757e9db1b"
+      },
+      "screenshot": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b4-webgl2/fixture.png",
+        "sha256": "b6d1baa5efb50739fca855d3dcfb696fa16982dc07c404528ec1cebb20e7b607"
+      },
+      "environment": {
+        "version": "3.8.8",
+        "device": "WebGL2Device",
+        "gl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "checks": [
+        {
+          "name": "developer-scene-uses-four-asset-batch-and-retires-after-draw",
+          "passed": true,
+          "detail": {
+            "before": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "after": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "name": "covered-cubemaps-held-across-all-release-orders",
+          "passed": true,
+          "detail": {
+            "orders": [
+              [
+                0,
+                1,
+                2
+              ],
+              [
+                0,
+                2,
+                1
+              ],
+              [
+                1,
+                0,
+                2
+              ],
+              [
+                1,
+                2,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            "traces": [
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        {
+          "name": "cubemap-replacement-failure-owner-close-and-retry",
+          "passed": true,
+          "detail": {
+            "injectedFailures": 2,
+            "refs": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "name": "slg-eight-real-resources-and-mini-independent-holds",
+          "passed": true,
+          "detail": {
+            "mapId": "senzhiguo",
+            "tileset": [
+              4096,
+              4096
+            ],
+            "mini": [
+              256,
+              256
+            ]
+          }
+        },
+        {
+          "name": "real-slg-renderers-interleave-with-stage-in-all-release-orders",
+          "passed": true,
+          "detail": {
+            "orders": [
+              [
+                0,
+                1,
+                2
+              ],
+              [
+                0,
+                2,
+                1
+              ],
+              [
+                1,
+                0,
+                2
+              ],
+              [
+                1,
+                2,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ]
+          }
+        },
+        {
+          "name": "fixture-production-batch-twenty-open-close-cycles",
+          "passed": true,
+          "detail": {
+            "cycles": 20,
+            "baseNodes": 3,
+            "refs": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "nodes": [
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ]
+          }
+        },
+        {
+          "name": "fixture-close-while-loading-no-late-content",
+          "passed": true,
+          "detail": {
+            "refs": 0
+          }
+        }
+      ],
+      "diagnostics": 0,
+      "finalCubeRefs": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "webgl": 1,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b4-webgl1/report.json",
+        "sha256": "46d362ed3c86d8919a5d3dc16b3ddbea35e46a7188e5b110549bbc2f7233382f"
+      },
+      "screenshot": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b4-webgl1/fixture.png",
+        "sha256": "d014874628338e1676b23c414c5e982f6c9a76a92ac6470d89f52a914a60bd8d"
+      },
+      "environment": {
+        "version": "3.8.8",
+        "device": "WebGLDevice",
+        "gl": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "checks": [
+        {
+          "name": "developer-scene-uses-four-asset-batch-and-retires-after-draw",
+          "passed": true,
+          "detail": {
+            "before": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "after": [
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "name": "covered-cubemaps-held-across-all-release-orders",
+          "passed": true,
+          "detail": {
+            "orders": [
+              [
+                0,
+                1,
+                2
+              ],
+              [
+                0,
+                2,
+                1
+              ],
+              [
+                1,
+                0,
+                2
+              ],
+              [
+                1,
+                2,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ],
+            "traces": [
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ]
+            ]
+          }
+        },
+        {
+          "name": "cubemap-replacement-failure-owner-close-and-retry",
+          "passed": true,
+          "detail": {
+            "injectedFailures": 2,
+            "refs": [
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "name": "slg-eight-real-resources-and-mini-independent-holds",
+          "passed": true,
+          "detail": {
+            "mapId": "senzhiguo",
+            "tileset": [
+              4096,
+              4096
+            ],
+            "mini": [
+              256,
+              256
+            ]
+          }
+        },
+        {
+          "name": "real-slg-renderers-interleave-with-stage-in-all-release-orders",
+          "passed": true,
+          "detail": {
+            "orders": [
+              [
+                0,
+                1,
+                2
+              ],
+              [
+                0,
+                2,
+                1
+              ],
+              [
+                1,
+                0,
+                2
+              ],
+              [
+                1,
+                2,
+                0
+              ],
+              [
+                2,
+                0,
+                1
+              ],
+              [
+                2,
+                1,
+                0
+              ]
+            ]
+          }
+        },
+        {
+          "name": "fixture-production-batch-twenty-open-close-cycles",
+          "passed": true,
+          "detail": {
+            "cycles": 20,
+            "baseNodes": 3,
+            "refs": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "nodes": [
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3,
+              3
+            ]
+          }
+        },
+        {
+          "name": "fixture-close-while-loading-no-late-content",
+          "passed": true,
+          "detail": {
+            "refs": 0
+          }
+        }
+      ],
+      "diagnostics": 0,
+      "finalCubeRefs": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "slgUi": {
+    "report": {
+      "path": "docs/evidence/creator-2026-09-23/sc3-b4-slg/report.json",
+      "sha256": "f6bb97d7dcc4c2e09bc478d1ea95c55c54b44e455db608fb851267e0cdfa48fe"
+    },
+    "steps": 28,
+    "screenshots": 24,
+    "diagnostics": 0,
+    "checks": [
+      "加载预览场景（Fetch 改写 settings.js?scene=）",
+      "登录页可见（FGUI btn_login）",
+      "点「开始游戏」",
+      "首屏 PromoHomeView 挂载",
+      "点首屏「设置」",
+      "设置面板：上方系统设置、下方玩法入口",
+      "点设置中的「大地图」卡片（正式 route）",
+      "SlgMapView 加载地表贴图与独立装饰层",
+      "点选可见无主格（不直接调用 Logic 或 RPC）",
+      "免费占领并观察 SQL 结果与奖杯回流",
+      "刷新后同一格仍归我方（权威查询重读）",
+      "中央鼠标拖动平移，后台设置不滚动",
+      "记录 LOD 1 近景（网格稳定后）",
+      "中央滚轮缩放到 LOD 2，后台设置不滚动",
+      "中央滚轮缩放到 LOD 3，后台设置不滚动",
+      "中央滚轮缩放到 LOD 4，后台设置不滚动",
+      "打开世界总览，读取实地图、当前位置框与地标",
+      "山河绘卷可欣赏，点击画面保持位置与总览",
+      "实地图点选命名地标，回到对应局部格并稳定显示",
+      "总览返回只关闭面板，保留当前位置与选格",
+      "小地图展开五图切换面板",
+      "切换到山之国：标题、地块与资源按图重载",
+      "山之国缩到 LOD 4 看远档岛貌",
+      "切换到泽之国并 GM 定位浅滩：涉水装饰目检",
+      "切回森之国并恢复近档",
+      "关闭地图回设置面板",
+      "重新进入地图，地表和装饰重新加载",
+      "完成验收并再次关闭地图"
+    ],
+    "retirementReport": {
+      "path": "docs/evidence/creator-2026-09-23/sc3-b4-slg/retirement.json",
+      "sha256": "476bd450243e7f0d3bcfc3a5b86efdf330a74533b031660bb78a786a49d533e3"
+    },
+    "retirement": {
+      "cycles": 3,
+      "traces": [
+        {
+          "cycle": 0,
+          "before": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "closing": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "after": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "cycle": 1,
+          "before": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "closing": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "after": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "cycle": 2,
+          "before": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "closing": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "after": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "device": "WebGL2Device",
+      "injectedStageForResourceProbe": true
+    }
+  },
+  "probeScripts": [
+    {
+      "path": ".cache/sc3-b4/probe-lifecycle.mjs",
+      "sha256": "63e1b72ee56702020516882633cdf6a4193bb9d423a6bbe4129fb6cc78448aa3"
+    },
+    {
+      "path": ".cache/sc3-b4/probe-slg-retirement.mjs",
+      "sha256": "567aeee8e9e3fa83b5f4cee42390ee4ec42bb84189eb960863ce91325ffe2e29"
+    },
+    {
+      "path": ".cache/sc3-b4/run-mutations.py",
+      "sha256": "531fe6344e077d5cccbfa6727d4532932c209a7f75d2e8bd8e89619cbdc82567"
+    },
+    {
+      "path": ".cache/sc3-b4/engine-types.mjs",
+      "sha256": "84136a1d480092c35f071a692ef4886b46d4ae671d383876980cf61e3f4f755b"
+    }
+  ],
+  "limits": [
+    "Desktop Creator 3.8.8/Chrome evidence. WebGL1 is a real WebGLDevice context selected by refusing WebGL2 before startup; it is not a phone or WeChat device.",
+    "Lifecycle fixtures keep a host-equivalent UI camera while closing the world camera. A camera-less scene leaves the engine culling queue stale; conservative rendering retirement retains assets until that queue is reused. The fixture probe does not claim camera-less host support.",
+    "Cubemaps are runtime TextureCube assets populated from the built-in cube texture. Failure probes inject faults after real setters, not network or disk failures.",
+    "The 28-step SLG replay uses the normal login/settings route and records 24 screenshots. The separate three-cycle reference probe opens the production page via ViewMgr with an injected Stage3D; it isolates rendering retirement rather than revalidating plugin launch.",
+    "Real engine declaration checking covers the nine listed modules; broader view imports also bring in unrelated existing SDK/nullable touch-ID declaration issues, so no whole-app real-engine declaration claim is made.",
+    "Formal frame-time and GFX stability evidence remains SC3-B5; SC3-B6 phase exit, SC4 skinning/WeChat cache acceptance and SC5 offline asset fidelity remain outstanding.",
+    "Raw reports, screenshots and probe scripts are local ignored evidence; this committed summary records their hashes."
+  ],
+  "integration": {
+    "base": "e218ab53796435fadef184a7ae6ef46ed0aa5834",
+    "reason": "The independent mapOriginal work committed after the isolated full gate began. SC3-B4 files are unchanged; the updated shared checkout passes the full typecheck/client suite, the affected server content tests and inventory check.",
+    "typechecks": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 0,
+      "log": {
+        "path": ".cache/sc3-b4/typecheck-integrated.log",
+        "sha256": "815400662382d23981044f33a45891d33e84802c2f4fe6c5feab1ad29a3ea430"
+      }
+    },
+    "client": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 1287,
+      "log": {
+        "path": ".cache/sc3-b4/client-integrated.log",
+        "sha256": "dd2bac4916b72804d1f98d80ec15c9e866316b9f320d284dc06e11999005f975"
+      }
+    },
+    "mapOriginalServer": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 24,
+      "log": {
+        "path": ".cache/sc3-b4/maporiginal-integrated.log",
+        "sha256": "51ef35d34f4e95b15f72fc8036b76a5d4e4c94a3671d58c404e309489132293a"
+      }
+    },
+    "inventory": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 0,
+      "log": {
+        "path": ".cache/sc3-b4/inventory-integrated.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      }
+    }
+  }
+}

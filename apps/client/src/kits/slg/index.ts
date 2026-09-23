@@ -2,8 +2,10 @@ import type { PluginModule } from "../../app/PluginHost";
 import { SlgRpc } from "../../shared/protocol/lobbyRpc/domains/slg";
 import { fetchMapTiles } from "./api/worldmap/index";
 import { setSlgRuntime } from "./logic/slgRuntime";
+import { setSlgStage3D } from "./view/slgStage3D";
 export function createPluginModule(): PluginModule {
     return { install(context) {
+        context.own(setSlgStage3D(context.ports.stage3d));
         context.own(setSlgRuntime({
             selfUid: () => context.ports.session.getUserId(),
             mapTiles: (mapId, rect) => fetchMapTiles(context.ports.lobbyRpc, mapId, rect),

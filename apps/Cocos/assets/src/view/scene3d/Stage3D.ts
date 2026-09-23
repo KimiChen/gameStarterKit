@@ -3,8 +3,10 @@ import { designToScreen, resolveViewport } from "../../logic/scene3d/viewport";
 import { resolveQuality, UNKNOWN_QUALITY_DEVICE } from "../../logic/scene3d/qualityTiers";
 import type { Stage3DQuality } from "../../logic/scene3d/qualityTiers";
 import type { RectDesignPx, ViewportMetrics } from "../../logic/scene3d/viewport";
-import { cloneGlobals, normalizeGlobalsPatch, resolveGlobals } from "./stage3dGlobals";
+import { cloneGlobals, globalsAssets, normalizeGlobalsPatch, resolveGlobals } from "./stage3dGlobals";
 import type { Stage3DGlobalsPatch, Stage3DGlobalsState } from "./stage3dGlobals";
+import { AssetRetainer, AssetReleaseError } from "./AssetLease";
+import type { LoadedAsset, LoadedAssetRetainer, RetainedAsset } from "./AssetLease";
 import { STAGE3D_CAMERA_MASK, STAGE3D_CAMERA_PRIORITY, STAGE3D_DEFAULT_LAYER } from "./stage3dLayers";
 
 export type { RectDesignPx, Stage3DGlobalsPatch, Stage3DGlobalsState };
@@ -63,6 +65,8 @@ export interface Stage3DScene {
     readViewportMetrics(): ViewportMetrics;
     readonly globals: {
         read(): Stage3DGlobalsState;
+        /** Validate resource classes even when a later token hides the patch. */
+        validate?(patch: Stage3DGlobalsPatch): void;
         /** May fail after a partial write; caller will reapply the preceding full state. */
         apply(state: Stage3DGlobalsState): void;
     };
@@ -117,11 +121,13 @@ export class Stage3D implements Stage3DPort {
     private pendingResize = false;
     private pendingDispose = false;
     private globalsDirty = false;
+    private readonly globalHolds = new Map<Stage3DGlobalsPatch, RetainedAsset<LoadedAsset>[]>();
     private readonly pendingReleases = new Set<Token>();
 
     constructor(private readonly engine: Stage3DEngine,
         private readonly onError: (error: unknown) => void = (error) => console.error("[Stage3D] lifecycle cleanup failed", error),
-        private readonly readQuality: () => Stage3DQuality = () => resolveQuality(UNKNOWN_QUALITY_DEVICE)) {}
+        private readonly readQuality: () => Stage3DQuality = () => resolveQuality(UNKNOWN_QUALITY_DEVICE),
+        private readonly retainer: LoadedAssetRetainer = new AssetRetainer()) {}
 
     get quality(): Stage3DQuality { return this.readQuality(); }
 
@@ -262,6 +268,9 @@ export class Stage3D implements Stage3DPort {
         const nextStage = next.find((token) => !!token.stage);
         const previousShadow = previousStage?.stage?.light.shadowEnabled;
         try {
+            for (const token of next) scene.globals.validate?.(token.patch);
+            // Retain every candidate patch before any setter can expose its resources.
+            this.retainGlobals([baseline, ...next.map((token) => token.patch)]);
             scene.globals.apply(cloneGlobals(after));
             if (nextStage?.stage) nextStage.stage.light.shadowEnabled = nextStage.patch.shadows?.enabled ?? false;
             if (!scene.isValid() || this.pendingReset || this.pendingDispose) throw new Stage3DInactive();
@@ -275,12 +284,39 @@ export class Stage3D implements Stage3DPort {
                 try { previousStage.stage.light.shadowEnabled = previousShadow; } catch (error) { rollback.push(error); }
             }
             if (rollback.length) {
+                // A partially applied candidate may still be referenced by the scene.
+                // Keep its holds until a later full replay or scene teardown succeeds.
                 this.globalsDirty = true;
                 throw new Stage3DApplyError(failure, rollback);
             }
+            this.releaseUnusedGlobals([baseline, ...this.tokens.map((token) => token.patch)]);
             throw failure;
         }
         this.tokens = next;
+        this.releaseUnusedGlobals([baseline, ...next.map((token) => token.patch)]);
+    }
+
+    private retainGlobals(patches: readonly Stage3DGlobalsPatch[]): void {
+        for (const patch of patches) {
+            if (this.globalHolds.has(patch)) continue;
+            const holds: RetainedAsset<LoadedAsset>[] = [];
+            this.globalHolds.set(patch, holds);
+            for (const asset of globalsAssets(patch)) holds.push(this.retainer.retain(asset));
+        }
+    }
+
+    /** Only after the corresponding scene references have been replaced/removed. */
+    private releaseUnusedGlobals(patches: readonly Stage3DGlobalsPatch[]): void {
+        const live = new Set(patches), failures: unknown[] = [];
+        for (const [patch, holds] of this.globalHolds) {
+            if (live.has(patch)) continue;
+            this.globalHolds.delete(patch);
+            for (const hold of holds) {
+                try { hold.release(); } catch (error) { failures.push(error); }
+            }
+        }
+        // The table already committed: a cleanup failure must never roll it back.
+        if (failures.length) this.onError(new AssetReleaseError(failures));
     }
 
     private release(token: Token): void {
@@ -318,6 +354,8 @@ export class Stage3D implements Stage3DPort {
         const scene = this.engine.captureScene();
         if (!scene.isValid()) throw new Stage3DInactive();
         const baseline = cloneGlobals(scene.globals.read());
+        try { this.retainGlobals([baseline]); }
+        catch (error) { this.releaseUnusedGlobals([]); throw error; }
         this.scene = scene;
         this.baseline = baseline;
         const subscription = {};
@@ -328,7 +366,10 @@ export class Stage3D implements Stage3DPort {
                 if (this.scene === scene && this.subscription === subscription) this.lifecycle(event);
             });
         }
-        catch (error) { this.subscription = undefined; this.scene = undefined; this.baseline = undefined; throw error; }
+        catch (error) {
+            this.subscription = undefined; this.scene = undefined; this.baseline = undefined;
+            this.releaseUnusedGlobals([]); throw error;
+        }
         return scene;
     }
 
@@ -342,6 +383,7 @@ export class Stage3D implements Stage3DPort {
         this.baseline = undefined;
         this.pendingReset = false;
         this.pendingResize = false;
+        this.releaseUnusedGlobals([]);
         unsubscribe?.();
     }
 
@@ -388,6 +430,7 @@ export class Stage3D implements Stage3DPort {
             const stage = this.tokens.find((token) => !!token.stage);
             if (stage?.stage) stage.stage.light.shadowEnabled = stage.patch.shadows?.enabled ?? false;
             this.globalsDirty = false;
+            this.releaseUnusedGlobals([this.baseline!, ...this.tokens.map((token) => token.patch)]);
             this.closeEmptyScene();
         }
         for (const token of [...this.tokens]) {

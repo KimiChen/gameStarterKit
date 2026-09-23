@@ -52,6 +52,7 @@ try {
         director: { root: { destroyModel: () => { retiredBillboardModels++; } },
             on: (_type: string, cb: () => void) => frames.add(cb), off: (_type: string, cb: () => void) => frames.delete(cb),
             once: (_type: string, cb: () => void) => afterDraw.push(cb) },
+        resources: { load: (_path: string, _type: unknown, cb: (error: null, asset: FakePrefab) => void) => cb(null, prefab) },
         assetManager: { getBundle: () => ({ load: (_path: string, _type: unknown, cb: (error: null, asset: FakePrefab) => void) => cb(null, prefab) }) },
     } : original.call(moduleApi, request, parent, isMain);
     create = createRequire(import.meta.url)("../src/view/scene3d/cocosEntityPool").createCocosEntityPool;

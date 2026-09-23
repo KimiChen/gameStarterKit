@@ -4,12 +4,14 @@
  *  只有 chunk 粒度的绘制序，平移补块时相对序随机，会短暂穿插（slg.md §10.6）。
  *  归属 overlay 是 chunk 内整格 quad、不跨 chunk，保留 per-chunk 建销 + 淡出。
  *  海面 = 整张静态 sea-tile 平铺底（原版 CustomWater 的静态近似），永远垫在瓦片之下。 */
-import { director, EffectAsset, gfx, Material, Mesh, MeshRenderer, Node, Texture2D, UIMeshRenderer, utils, Vec3 } from "cc";
+import { EffectAsset, gfx, Material, Mesh, MeshRenderer, Node, Texture2D, UIMeshRenderer, utils, Vec3 } from "cc";
 import { gridFromTileId, type ISlgTerrain, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
 import { ChunkFadeTracker } from "../logic/chunkFade";
 import { buildSlgFarGround } from "../logic/farLayerMesh";
 import type { SlgMeshGeometry } from "../logic/terrainMesh";
 import { buildSlgOwnershipMesh, buildSlgTileLayerMeshes, type SlgTilesData, type SlgChunkTileBucket } from "../logic/tilemapMesh";
+
+import type { Stage3DGlobalsLease } from "../../../view/scene3d/Stage3D";
 
 interface MeshBatch { node: Node; mesh: Mesh; model: MeshRenderer; capacity: number }
 interface OwnershipBatch { batch: MeshBatch; version: number; lod: number }
@@ -27,7 +29,7 @@ export class SlgTilemapRenderer {
     private readonly ownershipMaterial: Material;
     private readonly seaMaterial: Material;
     private readonly sea: MeshBatch;
-    private readonly toneMapping: { readonly post: { toneMappingType: number }; readonly previous: number } | null;
+    private readonly globalsLease: Stage3DGlobalsLease;
     private lastArgs: LastArgs | null = null;
     private visibleKeys: readonly number[] = [];
     private lod = -1;
@@ -37,7 +39,7 @@ export class SlgTilemapRenderer {
     constructor(private readonly root: Node, private readonly terrain: ISlgTerrain,
         private readonly data: SlgTilesData,
         private readonly tileIndex: ReadonlyMap<number, readonly SlgChunkTileBucket[]>,
-        tilesetTexture: Texture2D, seaTexture: Texture2D) {
+        tilesetTexture: Texture2D, seaTexture: Texture2D, acquireGlobals: () => Stage3DGlobalsLease) {
         const technique = EffectAsset.get("builtin-unlit")?.techniques.findIndex((entry) => entry.name === "alpha-blend") ?? -1;
         if (technique < 0) throw new Error("SLG tilemap requires builtin-unlit alpha-blend");
         this.groundMaterial = new Material();
@@ -54,10 +56,10 @@ export class SlgTilemapRenderer {
             this.seaMaterial.setProperty("mainTexture", seaTexture);
         } catch (error) { this.groundMaterial.destroy(); this.ownershipMaterial.destroy(); this.seaMaterial.destroy(); throw error; }
         // 海底色最先入树（兄弟序 = 绘制序），瓦片/归属永远压在海上。
-        this.sea = this.createBatch("slg-sea-base", buildSlgFarGround(terrain).sea, 1, this.seaMaterial);
-        const post = director.getScene()?.globals?.postSettings;
-        this.toneMapping = post ? { post, previous: post.toneMappingType } : null;
-        if (post) post.toneMappingType = 1;
+        try { this.sea = this.createBatch("slg-sea-base", buildSlgFarGround(terrain).sea, 1, this.seaMaterial); }
+        catch (error) { this.groundMaterial.destroy(); this.ownershipMaterial.destroy(); this.seaMaterial.destroy(); throw error; }
+        try { this.globalsLease = acquireGlobals(); }
+        catch (error) { this.destroyBatch(this.sea); this.groundMaterial.destroy(); this.ownershipMaterial.destroy(); this.seaMaterial.destroy(); throw error; }
     }
 
     render(chunks: ReadonlyMap<number, number>, tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, lod: number): void {
@@ -141,7 +143,7 @@ export class SlgTilemapRenderer {
         this.clear();
         this.destroyBatch(this.sea);
         this.groundMaterial.destroy(); this.ownershipMaterial.destroy(); this.seaMaterial.destroy();
-        if (this.toneMapping?.post.toneMappingType === 1) this.toneMapping.post.toneMappingType = this.toneMapping.previous;
+        this.globalsLease.release();
     }
 
     private rebuildLayers(): void {

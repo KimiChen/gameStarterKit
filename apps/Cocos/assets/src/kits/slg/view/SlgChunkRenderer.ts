@@ -1,7 +1,9 @@
 /** One textured terrain mesh per chunk; sparse ownership uses its own translucent overlay. */
-import { director, EffectAsset, gfx, Material, Mesh, MeshRenderer, Node, Texture2D, UIMeshRenderer, utils, Vec3 } from "cc";
+import { EffectAsset, gfx, Material, Mesh, MeshRenderer, Node, Texture2D, UIMeshRenderer, utils, Vec3 } from "cc";
 import { gridFromTileId, type ISlgTerrain, type ISlgTile } from "../../../shared/kits/slg/api/worldmap/index";
 import { buildSlgTerrainMeshes, type SlgMeshGeometry } from "../logic/terrainMesh";
+
+import type { Stage3DGlobalsLease } from "../../../view/scene3d/Stage3D";
 
 interface MeshBatch { readonly node: Node; readonly mesh: Mesh; readonly model: MeshRenderer }
 interface ChunkBatch { readonly ground: MeshBatch; ownership: MeshBatch | null; version: number; lod: number }
@@ -10,10 +12,10 @@ export class SlgChunkRenderer {
     private readonly batches = new Map<number, ChunkBatch>();
     private readonly groundMaterial: Material;
     private readonly ownershipMaterial: Material;
-    private readonly toneMapping: { readonly post: { toneMappingType: number }; readonly previous: number } | null;
+    private readonly globalsLease: Stage3DGlobalsLease;
     private disposed = false;
 
-    constructor(private readonly root: Node, private readonly terrain: ISlgTerrain, private readonly texture: Texture2D) {
+    constructor(private readonly root: Node, private readonly terrain: ISlgTerrain, private readonly texture: Texture2D, acquireGlobals: () => Stage3DGlobalsLease) {
         const technique = EffectAsset.get("builtin-unlit")?.techniques.findIndex((entry) => entry.name === "alpha-blend") ?? -1;
         if (technique < 0) throw new Error("SLG requires builtin-unlit alpha-blend");
         this.groundMaterial = new Material();
@@ -26,9 +28,8 @@ export class SlgChunkRenderer {
             }
             this.groundMaterial.setProperty("mainTexture", texture);
         } catch (error) { this.groundMaterial.destroy(); this.ownershipMaterial.destroy(); throw error; }
-        const post = director.getScene()?.globals?.postSettings;
-        this.toneMapping = post ? { post, previous: post.toneMappingType } : null;
-        if (post) post.toneMappingType = 1;
+        try { this.globalsLease = acquireGlobals(); }
+        catch (error) { this.groundMaterial.destroy(); this.ownershipMaterial.destroy(); throw error; }
     }
 
     render(chunks: ReadonlyMap<number, number>, tiles: ReadonlyMap<number, ISlgTile>, selfUid: string, lod: number): void {
@@ -60,7 +61,7 @@ export class SlgChunkRenderer {
         this.disposed = true;
         for (const batch of this.batches.values()) { this.destroyBatch(batch.ground); this.destroyBatch(batch.ownership); }
         this.batches.clear(); this.groundMaterial.destroy(); this.ownershipMaterial.destroy();
-        if (this.toneMapping?.post.toneMappingType === 1) this.toneMapping.post.toneMappingType = this.toneMapping.previous;
+        this.globalsLease.release();
     }
 
     private geometry(data: SlgMeshGeometry) {
@@ -82,6 +83,6 @@ export class SlgChunkRenderer {
     }
     private destroyBatch(batch: MeshBatch | null): void {
         if (!batch) return;
-        batch.node.destroy(); batch.mesh.destroy();
+        batch.node.active = false; batch.node.destroy(); batch.mesh.destroy();
     }
 }

@@ -1,8 +1,8 @@
-import { _decorator, Component, instantiate, JsonAsset, Node, Prefab, resources } from "cc";
+import { _decorator, Component, instantiate, JsonAsset, Node, Prefab } from "cc";
 import { DEV } from "cc/env";
 import { parseDetailLayersTable, parsePoolTable, parseQualityTable } from "../../logic/scene3d/qualityData";
-import { AssetRetainer } from "./AssetLease";
-import type { LoadedAsset, RetainedAsset } from "./AssetLease";
+import { assetLease } from "./cocosAssetLoader";
+import { OwnedRenderingRetirement } from "./ownedRendering";
 import { Stage3D } from "./Stage3D";
 import { CocosStage3DEngine } from "./cocosStage3DEngine";
 import { readStage3DQuality } from "./quality";
@@ -20,8 +20,7 @@ export class Stage3dDevScene extends Component {
     private appliedEntities = false;
     private frameEntities: ((enabled: boolean) => void) | undefined;
     private readonly owner = new AbortController();
-    private readonly retainer = new AssetRetainer();
-    private readonly held: RetainedAsset<LoadedAsset>[] = [];
+    private assets: { release(): void } | undefined;
     private stage: Stage3D | undefined;
     private content: Node | undefined;
     status: "idle" | "loading" | "ready" | "failed" | "closed" = "idle";
@@ -31,16 +30,18 @@ export class Stage3dDevScene extends Component {
         if (!DEV) return;
         this.status = "loading";
         try {
-            const quality = await this.loadJson("quality");
-            const pool = parsePoolTable((await this.loadJson("pool")).json);
+            const acquired = await assetLease.acquire([
+                { bundle: "resources", path: "stage3d/data/quality", type: JsonAsset },
+                { bundle: "resources", path: "stage3d/data/pool", type: JsonAsset },
+                { bundle: "resources", path: "stage3d/data/detail-layers", type: JsonAsset },
+                { bundle: "resources", path: "stage3d/P_Stage3d_Baked", type: Prefab },
+            ] as const, { signal: this.owner.signal });
+            if (this.owner.signal.aborted) { acquired.release(); return; }
+            this.assets = acquired;
+            const [quality, poolData, layerData, prefab] = acquired.assets;
+            const pool = parsePoolTable(poolData.json);
             const qualityTable = parseQualityTable(quality.json);
-            const layers = parseDetailLayersTable((await this.loadJson("detail-layers")).json, pool);
-            const prefab = await new Promise<Prefab>((resolve, reject) => resources.load("stage3d/P_Stage3d_Baked", Prefab,
-                (error, asset) => {
-                    if (error) { reject(error); return; }
-                    try { resolve(this.hold(asset)); } catch (error) { reject(error); }
-                }));
-            if (this.owner.signal.aborted) return;
+            const layers = parseDetailLayersTable(layerData.json, pool);
             const stage = this.stage = new Stage3D(new CocosStage3DEngine(), undefined, readStage3DQuality);
             const lease = stage.acquire({ signal: this.owner.signal, isActive: () => !this.owner.signal.aborted },
                 { clearColor: { r: 34, g: 39, b: 46, a: 255 } });
@@ -89,26 +90,16 @@ export class Stage3dDevScene extends Component {
         }
     }
 
-    private loadJson(name: string): Promise<JsonAsset> {
-        if (this.owner.signal.aborted) return Promise.reject(new Error("Stage3dDevScene closed"));
-        return new Promise((resolve, reject) => resources.load(`stage3d/data/${name}`, JsonAsset,
-            (error, asset) => {
-                if (error) { reject(error); return; }
-                try { resolve(this.hold(asset)); } catch (error) { reject(error); }
-            }));
-    }
-    private hold<T extends LoadedAsset>(asset: T): T {
-        const held = this.retainer.retain(asset);
-        if (this.owner.signal.aborted) held.release(); else this.held.push(held);
-        return asset;
-    }
     private close(): void {
         this.entityPool?.close(); this.entityPool = undefined;
         this.entities.length = 0; this.frameEntities = undefined;
+        const retirement = new OwnedRenderingRetirement();
+        if (this.content) retirement.capture(this.content);
         this.owner.abort();
         if (this.content) { this.content.active = false; this.content.removeFromParent(); this.content.destroy(); this.content = undefined; }
         this.stage?.dispose(); this.stage = undefined;
-        for (const held of this.held.splice(0)) held.release();
+        const assets = this.assets; this.assets = undefined;
+        if (assets) retirement.finish(() => assets.release());
         this.status = "closed";
     }
 }

@@ -10,6 +10,7 @@ import {
 
 function baseline(): Stage3DGlobalsState {
     return {
+        skybox: { enabled: false, envmap: null, diffuseMap: null, reflectionMap: null, lighting: "hemisphere" },
         toneMapping: "default",
         fog: { enabled: false, type: "linear", density: 0.1, start: -10, end: -20 },
         ambient: { skyIllum: 20000 },
@@ -34,6 +35,7 @@ test("globals merge each nested field in token order without replacing its sibli
     ];
     const actual = resolveGlobals(original, patches);
     assert.deepEqual(actual, {
+        skybox: baseline().skybox,
         toneMapping: "linear",
         fog: { enabled: true, type: "exp", density: 0.8, start: -30, end: -20 },
         ambient: { skyIllum: 5000 },
@@ -108,14 +110,14 @@ test("globals retain finite negative or reversed fog distances from the engine b
 
 test("globals reject unsupported color, resource and unknown fields even when their value is undefined", () => {
     for (const invalid of [
-        { skybox: { envmap: {} } },
+        { skybox: { unsupported: {} } },
         { fog: { color: {} } },
         { ambient: { skyLightingColor: {} } },
         { shadows: { shadowColor: {} } },
         { fog: { densityy: undefined } },
         { [Symbol("asset")]: undefined },
     ]) assert.throws(() => normalizeUnknown(invalid), /unsupported field/u);
-    assert.throws(() => cloneUnknown({ ...baseline(), skybox: undefined }), /unsupported field/u);
+    assert.throws(() => cloneUnknown({ ...baseline(), skybox: undefined }), /baseline is missing/u);
 });
 
 test("globals reject null, invalid shapes, enums, booleans and non-finite or negative policy values", () => {

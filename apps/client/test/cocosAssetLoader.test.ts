@@ -24,7 +24,7 @@ async function loadSubject() {
     };
     const original = moduleApi._load;
     moduleApi._load = function (request, parent, isMain) {
-        if (request === "cc") return { assetManager: {
+        if (request === "cc") return { resources: { load: (path: string, type: AssetType, callback: AssetLoadCallback<Asset>) => (transport.getBundle("resources") as AssetManager.Bundle).load(path, type, callback) }, assetManager: {
             getBundle: (name: string) => transport.getBundle(name),
             loadBundle: (name: string, callback: (error: unknown, bundle?: unknown) => void) => transport.loadBundle(name, callback),
         } };
@@ -42,7 +42,7 @@ function bundleHarness() {
 const complete = (callback: AssetLoadCallback<Asset>, asset: FakeAsset) => callback(null, asset as unknown as Asset);
 const missing = (error: unknown) => error instanceof AssetLoadError && error.code === "ASSET_MISSING";
 
-test("CocosAssetLoader: resources uses getBundle and typed Bundle.load without a special resources path", async () => {
+test("CocosAssetLoader: resources uses the built-in typed Bundle.load without loading another bundle", async () => {
     const h = bundleHarness(), lookedUp: string[] = [];
     transport = { getBundle: (name) => { lookedUp.push(name); return h.bundle; }, loadBundle: () => assert.fail("already loaded") };
     const { assetLease } = await loadSubject(), asset = new FakeAsset();

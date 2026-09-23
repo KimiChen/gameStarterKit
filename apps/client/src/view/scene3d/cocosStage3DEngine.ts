@@ -1,14 +1,24 @@
-import { Camera, Color, DirectionalLight, Director, Node, Rect, Vec3, director, isValid, screen, view } from "cc";
+import { Camera, Color, DirectionalLight, Director, Node, Rect, TextureCube, Vec3, director, isValid, screen, view } from "cc";
 import { resolveViewport } from "../../logic/scene3d/viewport";
 import type { ViewportMetrics } from "../../logic/scene3d/viewport";
 import { Stage3DApplyError, Stage3DInactive } from "./Stage3D";
 import type { Stage3DEngine, Stage3DScene } from "./Stage3D";
-import { cloneGlobals } from "./stage3dGlobals";
+import { cloneGlobals, globalsAssets } from "./stage3dGlobals";
+import type { Stage3DGlobalsPatch } from "./stage3dGlobals";
 
 // Creator 3.8.8: render-scene/scene/{post-settings,fog,shadows}.ts enum order.
 const TONE_MAPPING = ["default", "linear"] as const;
 const FOG = ["linear", "exp", "expSquared", "layered"] as const;
 const SHADOWS = ["planar", "shadowMap"] as const;
+const SKYBOX_LIGHTING = ["hemisphere", "reflection", "diffuse"] as const;
+
+function validateGlobalAssets(patch: Stage3DGlobalsPatch): void {
+    for (const asset of globalsAssets(patch)) {
+        if (!(asset instanceof TextureCube) || !isValid(asset, true)) {
+            throw new TypeError("Stage3D skybox requires live Creator TextureCube assets");
+        }
+    }
+}
 
 function decode<T extends string>(values: readonly T[], index: number, label: string): T {
     if (!Number.isInteger(index) || index < 0 || index >= values.length) {
@@ -135,6 +145,7 @@ export class CocosStage3DEngine implements Stage3DEngine {
                 return metrics;
             },
             globals: {
+                validate: validateGlobalAssets,
                 read: () => {
                     requireScene();
                     return cloneGlobals({
@@ -146,18 +157,34 @@ export class CocosStage3DEngine implements Stage3DEngine {
                         },
                         ambient: { skyIllum: globals.ambient.skyIllum },
                         shadows: { enabled: globals.shadows.enabled, kind: decode(SHADOWS, globals.shadows.type, "shadow type") },
+                        skybox: {
+                            enabled: globals.skybox.enabled,
+                            envmap: globals.skybox.envmap, diffuseMap: globals.skybox.diffuseMap,
+                            reflectionMap: globals.skybox.reflectionMap,
+                            lighting: decode(SKYBOX_LIGHTING, globals.skybox.envLightingType, "environment lighting"),
+                        },
                     });
                 },
                 apply: (state) => {
                     requireScene();
                     const next = cloneGlobals(state);
-                    const { fog, shadows, ambient, postSettings } = globals;
+                    const { fog, shadows, ambient, postSettings, skybox } = globals;
+                    validateGlobalAssets(next);
                     const tone = TONE_MAPPING.indexOf(next.toneMapping);
                     const fogType = FOG.indexOf(next.fog.type), shadowType = SHADOWS.indexOf(next.shadows.kind);
                     // Info setters can update their readable value before renderer/model work throws.
                     // A failed apply must replay even equal values until the entire render state settles.
                     const force = applyIncomplete;
                     applyIncomplete = true;
+                    // envmap clears reflectionMap (and diffuseMap/lighting when null).
+                    // Restore the entire managed slot before enabling or changing lighting.
+                    if (!next.skybox.enabled && (force || skybox.enabled)) skybox.enabled = false;
+                    if (force || skybox.envmap !== next.skybox.envmap) skybox.envmap = next.skybox.envmap;
+                    if (force || skybox.diffuseMap !== next.skybox.diffuseMap) skybox.diffuseMap = next.skybox.diffuseMap;
+                    if (force || skybox.reflectionMap !== next.skybox.reflectionMap) skybox.reflectionMap = next.skybox.reflectionMap;
+                    const lighting = SKYBOX_LIGHTING.indexOf(next.skybox.lighting);
+                    if (force || skybox.envLightingType !== lighting) skybox.envLightingType = lighting;
+                    if (next.skybox.enabled && (force || !skybox.enabled)) skybox.enabled = true;
                     // These setters can invalidate every model's pipeline state, even for equal values.
                     if (!next.fog.enabled && (force || fog.enabled)) fog.enabled = false;
                     if (force || fog.type !== fogType) fog.type = fogType;

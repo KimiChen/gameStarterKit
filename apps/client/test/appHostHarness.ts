@@ -20,6 +20,7 @@ export class FakeNode {
 /** 真实租约协调器 + 内存引擎；依赖由每个测试显式注入，生产路径不回落到此处。 */
 export function createFakeStage3D(): Stage3D {
   let globals: Stage3DGlobalsState = {
+    skybox: { enabled: false, envmap: null, diffuseMap: null, reflectionMap: null, lighting: "hemisphere" },
     toneMapping: "default",
     fog: { enabled: false, type: "linear", density: 0, start: 0, end: 100 },
     ambient: { skyIllum: 1 },
