@@ -1,6 +1,6 @@
 # `lvr` kit 的 3D 场景管线 —— 需求文档
 
-> - 日期：2026-09-22。状态：**需求 v1.5（2026-09-22），未开工**；⛔ 本次仅修订文档，未实施任何 3D 能力、未冻结候选数字。
+> - 日期：2026-09-22。状态：**需求 v1.5（2026-09-22），lvr 接入未开工**；框架 SC0 / SC1 已退出，2026-09-23 先例通知见 §8；不代表 lvr 内容已交付。
 > - 归属：本文是 [lvr.md](lvr.md) §9.1 拍板「走 B：自建 3D 管线，用 Cocos 的 3D 能力」之后拆出的独立需求，
 >   **由单独的人/单独的排期实现**，⛔ 不占 lvr.md §7 的 100–200 人月核心工程估算。
 > - 逆向源：`../sourceVersion/lvr-1.0.0/`（仓外，只读）。本文引用的类名与目录均为实测。
@@ -19,17 +19,18 @@
 Last Voyage: Rising 是 **3D 游戏**：主城是 3D 俯视角海岛、世界地图是 3D 海面、单位用 GPU skinning、
 建筑有四态模型与特效、相机可自由缩放并按档切换细节。
 
-而本仓客户端是 **全 2D**：UI 空间正交相机，`slg.md` 的框架勘察原话是「无 3D/自由相机/手势缩放先例」，
-`apps/Cocos/assets/resources/kits/` 下只有 png 与 json，**仓内零 3D 资产先例**。
+立项前的客户端基线是 **全 2D**：UI 空间正交相机，`slg.md` 当时的框架勘察为
+「无 3D/自由相机/手势缩放先例」，包资源主要为 png 与 json。该历史描述不代表当前框架能力。
 
 Cocos Creator 3.8 本身是完整 3D 引擎（`MeshRenderer` / `Material` / `EffectAsset` / 骨骼动画 / 后处理都在），
-所以这**不是引擎能力缺口**，而是：**整条 3D 管线的设计、资产转换与踩坑成本，全部落在 `lvr` kit 这一侧，且没有先例可抄。**
+因此需要补的是框架舞台、资源管线与可重复验收；2026-09-19 已将这些职责提升到框架 SC0–SC5，
+lvr 只负责内容、shader、数值与授权，不另建一套框架管线。
 
-⚠ 本仓唯一沾边的先例是 `apps/client/src/kits/slg/view/` 的四个 Renderer
+此前可参考的实现是 `apps/client/src/kits/slg/view/` 的四个 Renderer
 （`SlgChunkRenderer` / `SlgTilemapRenderer` / `SlgDecorationRenderer` / `SlgFarLayerRenderer`）——
 它们已经在用 `Material` / `EffectAsset` / 动态 Mesh / 材质销毁 / LOD / 后处理开关回滚，
 但都是**2D 平面四边形批合并**，不是 3D 场景图。可以抄它们的**资源生命周期与批合并纪律**，⛔ 抄不到 3D 场景组织。
-2026-09-19 起框架先例改为 docs/3d.md 的 `stage3dFixture` 与 `stage3d-dev.scene`（SC1）；场景组织 / LOD / 烘焙 / 画质分档的做法参照 Cocos 官方 Cyberpunk 演示（docs/3D-ASSETS.md §1 对照表），⚠ 其素材许可仅限学习研究，⛔ 不得复用任何文件。
+2026-09-23 框架 `stage3dFixture` 与 `stage3d-dev.scene` 已随 SC1 退出成为正式先例（§8）；场景组织 / LOD / 烘焙 / 画质分档的做法参照 Cocos 官方 Cyberpunk 演示（docs/3D-ASSETS.md §1 对照表），⚠ 其素材许可仅限学习研究，⛔ 不得复用任何文件。
 
 ---
 
@@ -246,4 +247,5 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 > 未立项。每阶段完成在此登记一行（阶段 / 日期 / commit / 实际交付与性能数据 / 偏差）。
 > ⛔ 不向 plan-v5 回写。
 
-- 暂无完成记录。
+- lvr A0–A5 暂无接入完成记录。
+- **2026-09-23 框架 SC1 先例通知**（tag `sc1-exit`，commit 由该 tag 解析）：`Stage3dFixtureView` 与 `stage3d-dev.scene` 已提供正式舞台 / 全局租约、同步资源持有、overlay 原始输入 / cancel、画质与压缩预设先例；bundle 所有权、UUID 依赖闭合和 `verify:assets3d` 已交付。桌面 WebGL2 / 实际 WebGL1 各 20 次关闭后节点 / 业务引用回基线、GFX 增量为 0，p95 为 19.3 / 19.5 ms，完整范围及偏差见 [框架退出记录](docs/3d.md#10-实施状态回写) 与 [SC1 汇总](docs/perf/stage3d/2026-09-23-sc1-review.json)。lvr A1 仍等 SC2 纯数学与 SC3 完整异步 AssetLease / 调度，不能复制 SC1 临时夹具 loader；A3 的 SC4 真机 / 远程缓存门不变。上述固定灰盒不充当 lvr 样本或 low 档容量证据，未实施任何 lvr 内容。

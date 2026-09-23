@@ -38,14 +38,14 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 | 客户端基础页、端口、路由、菜单 | `apps/client/src/kits/<id>/**`，登记面写在 `kit.json` | 与插件登记面同一字段集，但命名空间是 `kits/` |
 | 给插件用的 API | `apps/{shared,server,client}/src/kits/<id>/api/<surface>/index.ts` | §4 |
 | FGUI 包、资源、配表 | `apps/art/fairygui/assets/<Pkg>/`、`resources/kits/<id>/`、配表 `<id>_*` | 与插件同一形态：插件是 `resources/plugins/<id>/`（2026-09-06 起；此前是与宿主目录平级的 `resources/<modeId>/`，见 PLUGIN.md §5.5.3）。⚠ kit 的 mode 资源也归 `resources/kits/<kitId>/`，⛔ 不另给 `resources/<modeId>/` |
-| 3D 重资产（SC1-B7） | `apps/Cocos/assets/bundles/kit-<id>[-<map>]/3d/**` 与各级 `.meta` | 精确包名或合法地图后缀，不能用裸前缀认领；`resources/kits/<id>/3d/data/` 留小数据。根 `isBundle:true`、`bundleName` 等于目录名、`bundleConfigID:"package3d"`；小游戏远程 / Web、native 本地由宿主 builder.json 决定 |
+| 3D 重资产（SC1-B7） | `apps/Cocos/assets/bundles/kit-<id>[-<map>]/3d/**` 与各级 `.meta` | 精确包名或合法地图后缀，不能用裸前缀认领；`resources/kits/<id>/3d/data/` 留小数据。根 `isBundle:true`、`bundleName` 缺省或等于目录名、`bundleConfigID:"package3d"`；小游戏远程 / Web、native 本地由宿主 builder.json 决定 |
 
 bundle 随 pack / install / 锁 / check / changed / uninstall 全链归属；子资产 UUID 与 Prefab、材质、
 动画图等序列化依赖必须在同包闭合（允许同包多 bundle）。对方 kit / plugin 内部资产不因 API 依赖而开放。
 Creator 3.8.8 的精确内置例外由框架单列，详见 [PLUGIN.md §5.2](PLUGIN.md#52-所有权由身份推导allowlistfail-closed)
 与 [干净安装探针](../tools/art3d/bundle-probe/README.md)。
 
-**不可以（硬排除，与插件相同再加四条）**
+**不可以（硬排除，与插件相同，并补充 kit / 3D 边界）**
 
 - 框架保护面：协议信封、`LOBBY_PROTOCOL_VERSION` / `GAME_ROOM_PROTOCOL_VERSION` 语义、`core/infra`、`rooms/core`、`app/**`、
   `apps/server/sql/`（含字节锁的 `schema.sql`）、`protected-paths.json` 登记的一切；
@@ -54,6 +54,20 @@ Creator 3.8.8 的精确内置例外由框架单列，详见 [PLUGIN.md §5.2](PL
 - 别的 kit / 插件的表、键、目录；
 - SQL 里 ⛔ TRIGGER / EVENT / PROCEDURE / FUNCTION / GRANT / USE / 指向非本 kit 表的外键 / 任何 `DROP`；
 - 导入期副作用（模块顶层只允许声明与注册）。
+
+3D 的五条硬排除同步 [3d.md §2](3d.md#2-划线谁能定义什么)：
+
+- 不创建 `Camera` 组件；相机由框架 Stage3D 创建，经租约调整。
+- 不写 `director.getScene().globals`；使用舞台 `setGlobals` 或独立 `acquireGlobals` 租约。
+- 不把 Node 的 `layer` 设为 Stage3D 分配之外的 3D 层位。
+- 不在 `logic/` 之外放相机、LOD、流式数学；通用算法归框架，kit 的手感与阈值常量归自己的 shared API。
+- 不改 `apps/Cocos/settings/**` 与 `scene.scene`；引擎模块、层位、物理分组和压缩预设走框架变更。
+
+kit 保有模型、贴图、材质 / EffectAsset、内容表和授权台账，消费框架舞台、画质与输入端口。
+不得自建资源计数、改框架类型桩，或在包内 `declare module "cc"`。SC1 已交付的同步 retainer 仅供框架内部，
+完整异步 AssetLease / 资源型全局 patch 留 SC3；既有 slg 两处全局写入也在 SC3-B4 迁移，不构成新代码例外。
+当前消费步骤见 [CLIENT.md §3](CLIENT.md#3-view-与-logic-分层)；包仍须通过 B7 的引用闭合检查和
+`verify:assets3d` 的格式、导入、预算与逐资产授权检查，配置见 [资产闸说明](../tools/art3d/assets3d.md)。
 
 ## 3. 包格式：`kit.json`
 

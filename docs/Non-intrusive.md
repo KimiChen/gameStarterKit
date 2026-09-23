@@ -1786,6 +1786,13 @@ catalog 中的 plugin/route/menu/View descriptor 是生成期确定的不可变�
 根 `plugin.json` 只引用这些路径，不复制内容。每条 View metadata 带 `owner` 字段，生成期检查同一 View 只被
 一个 manifest 拥有。
 
+SC1 的输入元数据同样写在 sidecar：`inputMode` 可取 `modal / overlay / passive`，兼容旧
+`interactive:true/false` 对应 modal / passive；两个字段均省略时默认 passive。
+同时声明必须一致，overlay 只允许 `kind:"fgui"` 且不能与 interactive 并用，未知值或矛盾在 codegen /
+`defineView` 拒绝。Cocos 世界页用 passive，FGUI HUD 用 overlay，3D 页面仍是 cocos；具体命中、
+raw-input 与取消语义见 [CLIENT.md §4](CLIENT.md#inputmode-与原始输入) 和
+[view/README](../apps/client/src/view/README.md#inputmode-与世界输入)，不在生成 catalog 中手改。
+
 
 ### 7.2 通用 AppRuntime 与导航
 

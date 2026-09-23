@@ -212,6 +212,45 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 
 业务判定、排序、时间规则、错误分支和网络编排不进入 View。
 
+### 3D 舞台、资源与画质（SC1）
+
+3D 页面仍用 `kind:"cocos"`，其 UI 根只承载页面；3D 内容挂在框架舞台的 `lease.root` 下。
+kit / 插件从 `PluginInstallContext.ports.stage3d` 注入端口，在本次打开的 setup / `onOpen` 中调用
+`acquire(context, options)`；`ViewLifecycleContext` 直接满足 owner 的 `signal / isActive()`。
+gameplay 则从 `GameplayServicesContext.stage3d` 取得同一端口，在 presentation 的 mount / unmount
+绑定当前玩法世代。不要另建 Stage3D 单例、Camera，或把 3D 内容挂到 UI_2D 页面根。
+
+同时只允许一份舞台租约，重复取得抛 `Stage3DBusy`。相机姿态、视口和射线走 `lease.camera` /
+`lease.screenToRay`；视口与拾取输入均用设计像素。关闭、打开失败、owner 失效或场景销毁会自动释放，
+显式 `lease.release()` 也幂等；permanent 页重开必须取得新租约。只需全局设置的 2D 页可用
+`acquireGlobals(owner, patch)`，不占舞台。它与 `lease.setGlobals(patch)` 共用按取得顺序覆盖的 token 表：
+后取得者覆盖自己声明的字段，更新不改变优先级，乱序释放按仍有效的 patch 重算，最后恢复基线。
+`setGlobals` 替换整份 patch，省略字段即撤回该覆盖，不直接写 `director.getScene().globals`。
+
+SC1 已开放 `toneMapping`、fog 的 `enabled/type/density/start/end`、`ambient.skyIllum` 和
+shadows 的 `enabled/kind`。资源型 skybox 等全局字段、完整异步 `AssetLease`（批量加载、deadline、取消）
+留 SC3；当前 `AssetLease.ts` 只实现框架内部已加载资产的同步 retainer。
+`Stage3dFixtureView` 的临时 loader 仅服务固定灰盒验收，不是 kit 加载 API。释放遵循先取消输入、撤下节点
+及其渲染引用，再归还材质和资产的顺序；迟到加载也必须成对归还。kit 不复制 loader 或裸调资源引用计数。
+
+世界页声明 `inputMode:"passive"`，可点击 FGUI HUD 声明 `inputMode:"overlay"`，弹窗用 `modal`；
+原始触摸、wheel 和 cancel 通过 [§4 的框架输入端口](#inputmode-与原始输入) 送给 Logic。
+模态关闭只接受新手势，取消回调清空拖拽、摇杆和持续动作。数学运算继续在 `logic/`；通用相机、LOD、
+流式与拾取求交由 SC2 交付，不把夹具的固定相机移动当作通用相机实现。
+
+读取 `ports.stage3d.quality`（或 `services.stage3d.quality`）取得只读画质快照，不占舞台。
+微信、WebGL1 / GLES2、未知平台或 GPU 默认 low；消费 `details`、`shadows`、`maxUnits`、`maxEffects`、
+纹理及蒙皮能力字段，不自行重新判档。开发预览可用 `?quality=low|medium|high&shadows=0`；生产忽略覆写，
+开发覆写也不能开启硬件缺失的能力。SC1 交付判档、数据表校验和压缩预设，细节层加载门控与每帧激活预算的
+执行仍归 SC3，蒙皮容量与真机缓存验收归 SC4。数据表和保守回退政策见 [画质说明](../tools/art3d/quality.md)。
+
+正式先例为 `Stage3dFixtureView` 与独立 `stage3d-dev.scene`（后者不进构建）；资产路径使用
+`{ bundle, path }`，GLB 取已登记的 Prefab 子路径，不能按 GLB 根路径加载 Prefab。
+包的 3D 重资产归 `bundles/<kit|plugin>-<id>[-<map>]/3d/`，小数据归
+`resources/{kits,plugins}/<id>/3d/data/`。`verify:assets3d` 已进 `verify:core / verify:all`，守格式、
+导入、压缩、预算、授权和 UUID 依赖闭合；配置见 [资产闸说明](../tools/art3d/assets3d.md)，
+设计边界与阶段证据见 [3d.md](3d.md) 及 [SC1 汇总](perf/stage3d/2026-09-23-sc1-review.json)。
+
 #### 纯色矩形一律走 `view/uiPlate.ts`，⛔ 不要用 `Graphics`
 
 手搓 Cocos 页（`kind:"cocos"`，无 FGUI 资源）用色块拼版是允许的，但**每块底板一个 `Graphics`
@@ -542,7 +581,9 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 2. 运行 `codegen:fgui`（生成/更新 View 四个 AUTO 区块；⛔ 禁止手改 `fguiContracts.ts` /
    `viewRegistry.ts`——两者是生成值的稳定 façade）。
 3. 在 View 手写区接入必要事件。
-4. 同目录写 `<Name>View.view.json` sidecar（实例策略、logic 指向与手写契约段）。
+4. 同目录写 `<Name>View.view.json` sidecar（实例策略、logic 指向与手写契约段）；选择 `inputMode`：
+   模态页用 `modal`，非模态 FGUI HUD 用 `overlay`，世界页用 `passive`。未声明 inputMode / interactive
+   时为 passive；overlay 不与 interactive 并用，且只允许 FGUI，空白容器与装饰按 §4 配置命中。
 5. 在 Logic 中实现行为并注入依赖。
 6. 把 sidecar、路由与 Home 入口登记进 `apps/plugins/<id>/plugin.json`，运行
    `npm --workspace @game/server run codegen:plugins` 刷新生成注册表（共享包依赖写在 sidecar）。
@@ -554,6 +595,11 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 10. 纯色底板用 `createSolidPlate()`（`view/uiPlate.ts`），⛔ 不要每块一个 `Graphics`——理由见 §3。
 11. 运行 `sync:client`。
 12. 通过 Cocos Dashboard 打开 Creator 并本地预览。
+
+3D 页另按 §3 注入舞台端口并绑定打开世代，消费 `stage3d.quality`，验证 HUD / 世界双指、跨边界、wheel
+和模态取消；资源依所属包登记 `art3d.config.json` / `LICENSES.md` 后跑 `verify:assets3d`。
+参照正式夹具，在 WebGL2 / 实际 WebGL1 验证加载失败、提前关闭及预热后反复开关的节点 / 引用 / GFX 回收；
+无头测试和类型桩通过不能替代 Creator 证据。SC1 当前可用面及后续资源 / 调度边界以 §3 为准。
 
 ## 10. 范围
 

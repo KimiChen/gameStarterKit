@@ -50,10 +50,33 @@ ensurePackages/挂载/分层/单例/常驻/交互输入全部由注册表元数�
 modal 建立最高输入边界；overlay 控件可点、空白穿透且下层世界保持活动；passive FGUI 不参与命中。
 overlay 的根和槽由框架设 `opaque:false`，内部空白容器与装饰的命中由页面作者配置。
 
+sidecar 的选择与限制如下；它是手写真源，运行 `codegen:plugins` 生成 metadata 后再 `sync:client`：
+
+| 页面 | sidecar 字段 | 限制 |
+| --- | --- | --- |
+| Cocos 世界页 | `kind:"cocos", inputMode:"passive"` | 仍受上层 modal 遮挡；世界输入走 raw-input 端口 |
+| 非模态 HUD | `kind:"fgui", inputMode:"overlay"` | 不与 `interactive` 并用；空白容器 `opaque:false`，装饰 `touchable:false` |
+| 模态页 | `inputMode:"modal"` | Cocos 模态页自行提供全屏输入屏障 |
+| 兼容旧页 | 省略 `inputMode` | `interactive:true` → modal，其余 → passive；两个字段均省略也是 passive |
+
+同时声明 inputMode / interactive 只接受 modal / true 或 passive / false；overlay 与任一布尔别名均矛盾。
+未知 inputMode、非 FGUI overlay 在生成期和运行时均拒绝。3D 页沿用 cocos，没有 `kind:"3d"`。
+
 Cocos 世界页用 `subscribeRawInput(context, subscriber)`；gameplay 通过 services 注入同一 `RawInputPort`，
 以 `GameplayInstanceHost` 为 owner，mount 订阅、unmount 释放。取消回调须清空拖拽 / 摇杆 / 持续动作。
 GRoot 适配器归框架所有，页面不自行安装。完整规则见[客户端文档](../../../../docs/CLIENT.md#inputmode-与原始输入)
 及[input/README](input/README.md)。
+
+## 3D 页面先例（SC1）
+
+`Stage3dFixtureView.ts` 的 setup 接收实际 `ports.stage3d`，以本次打开的 context 取得舞台并把内容挂到
+`lease.root`，关闭归还租约；相机、灯、视口和全局参数只经租约修改。gameplay 从 `services.stage3d`
+取得同一实例，owner 随玩法世代。`stage3d.quality` 提供只读档位与能力，细节内容依这些字段选择。
+
+夹具的 `FixturePrefabLoader` / 同步 retainer 是 SC1 内部验收实现；kit 不复制它，完整异步 AssetLease
+与细节层 / 激活队列留 SC3。GLB 资源取已登记的 Prefab 子路径；释放先撤节点与渲染引用，再释放资产。
+独立 `stage3d-dev.scene` 供资产 / 画质预览，不进构建。租约、画质、资源目录与检查步骤见
+[CLIENT.md §3](../../../../docs/CLIENT.md#3-view-与-logic-分层)。
 
 ## AUTO 区块纪律（docs/CLIENT.md §5）
 

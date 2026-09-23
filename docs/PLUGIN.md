@@ -171,7 +171,8 @@
 缺子资产、悬空引用和借用宿主 / 其它包资源均拒绝，声明 `requires.kits` 也不授权 kit 内部材质。
 内置例外仅来自框架的 `creator-builtins-3.8.8.json`，钉住 UUID、安装版来源与哈希，未知 UUID 不视为内置。
 `check` 持续复核相同依赖；升级 / 卸载仍按锁逐文件执行，`changed` 沿用同一归属规则。
-该核心供 SC1-B5 复用；格式、GLB 数据、压缩、预算和授权完整资产闸仍归 B5。
+SC1-B5 已复用该核心，完整格式、GLB 数据、压缩、预算和逐资产授权闸通过 `verify:assets3d`
+接入 `verify:core / verify:all`；配置与例外规则见 [资产闸说明](../tools/art3d/assets3d.md)。
 真实干净安装的可重复步骤见 [bundle probe](../tools/art3d/bundle-probe/README.md)。
 
 ### 5.3 包格式
