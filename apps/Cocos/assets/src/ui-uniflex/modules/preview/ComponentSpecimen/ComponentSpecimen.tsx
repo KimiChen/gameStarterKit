@@ -8,6 +8,8 @@ import { CheckBox } from '../../../components/checkbox/CheckBox';
 import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { InputText } from '../../../components/input/InputText';
+import { Dropdown, type DropdownItem } from '../../../components/dropdown/Dropdown';
+import { filterDropdown } from '../../../components/dropdown/dropdownSkins';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
 import { QuantityControl } from '../../../components/quantity/QuantityControl';
@@ -30,6 +32,14 @@ const TABS: readonly TabBarItem[] = [
     { id: 'three', label: '资源' },
 ];
 const QUANTITY_LAYOUT = { width: 674, trackWidth: 365, plusLeft: 460, qtyLeft: 553 };
+const DROPDOWN_ITEMS: readonly DropdownItem[] = [
+    { id: 'all', label: '全部' },
+    { id: 'available', label: '可用' },
+    { id: 'locked', label: '未解锁', disabled: true },
+    { id: 'recent', label: '最近获得' },
+    { id: 'favorite', label: '已收藏' },
+    { id: 'extra', label: '更多选项' },
+];
 const GEM_REWARD = { id: 'gem', itemId: 'gem', count: '30000', left: 0, top: 0 };
 const LEAF_REWARD = { id: 'leaf', itemId: 'leaf', count: '30000', left: 211, top: 0 };
 const TICKET_REWARD = { id: 'ticket', itemId: 'ticket', count: '30000', left: 414, top: 0 };
@@ -55,6 +65,11 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const [selectedTab, setSelectedTab] = useState('one');
     const [quantity, setQuantity] = useState(3);
     const [input, setInput] = useState('主题输入');
+    const [dropdownValue, setDropdownValue] = useState('all');
+    const dropdownSkin = useMemo(() => ({ ...filterDropdown, font: theme.font, color: theme.input.color,
+        triggerLabel: { left: 16, top: 8, width: 210, height: 36 },
+        itemLabel: { left: 16, top: 11, width: 230, height: 28 },
+    }), [theme]);
     const [navigation, setNavigation] = useState<MainNavSlot>('hero');
     const checkedLabel = checked ? '已勾选' : '未勾选';
     const radioA = radio === 'a';
@@ -143,6 +158,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showCheck = part === 'cmp-check';
     const showRadio = part === 'cmp-radio';
     const showInput = part === 'cmp-input';
+    const showDropdown = part === 'cmp-dropdown';
     const showProgress = part === 'cmp-progress';
     const showEmpty = part === 'cmp-empty';
     const showTabs = showMailTab || showCharacterTab || showHeroListTab || showHeroDetailTab;
@@ -212,6 +228,12 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
         </view>
         <view visible={showInput} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <InputText theme={theme} left={0} top={0} width={290} height={56} value={input} placeholder="请输入" onInput={onInput} />
+        </view>
+        <view visible={showDropdown} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ActionButton skin={cancelButton} theme={theme} label="重置" left={20} top={280} width={140} height={56}
+                onClick={() => setDropdownValue('all')} />
+            <Dropdown items={DROPDOWN_ITEMS} selected={dropdownValue} skin={dropdownSkin}
+                left={20} top={16} maxVisibleItems={4} onSelect={setDropdownValue} />
         </view>
         <view visible={showProgress} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <ProgressBar theme={theme} left={0} top={0} width={674} height={34} value={72} max={100} label="72%" />

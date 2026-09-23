@@ -65,6 +65,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 | 进度条 | `ProgressBar` |
 | 星级 | `StarRow` |
 | 输入框 | `InputText` |
+| 下拉框 | `Dropdown`（`dropdownSkins.ts` 提供皮肤） |
 | 宽菜单 | `WideMenuButton` |
 | 空态 | `EmptyState` |
 | 资源条 | `ResourceCounter` |
@@ -76,6 +77,14 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 | 底栏 / 红点 | `MainNav` / `NotificationBadge` |
 
 按钮不要抄错皮：领地「驻防」和要塞「前往」不是同一张图；对照 assembled 量尺寸。
+
+`Dropdown` 用 `items`（唯一 `id`、`label`、可选图标与禁用状态）、`selected`、`onSelect`、
+`skin` 和 `left/top` 配置。选中值由调用方持有，组件只管理展开状态；找不到选中项时显示
+`placeholder`，空选项或 `disabled` 时不能展开。皮肤注入底图、箭头、字体和尺寸，
+不把业务筛选规则写进组件。`HeroFilterBar` 只保留英雄选项与页面位置。
+面板使用 `Floating` 定位并处理点外关闭，不依赖整页固定尺寸；超过 `maxVisibleItems`（默认 6）
+的选项通过 `VirtualList` 滚动。图标 `icon` 的位置相对选项行，`triggerIcon` 可覆盖收起时的图标位置。
+组件目录的「下拉框」示例包含禁用选项、滚动和外部重置选中值。
 
 `ScreenHeader` 提供可选内容插槽，内容用 `() => <view ... />` 作为子项传入（单个 JSX 根节点），
 坐标相对标题栏左上角；图片与点击回调由调用页提供。示例见 `HeroScreen` 的招募按钮。

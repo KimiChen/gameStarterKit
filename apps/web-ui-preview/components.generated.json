@@ -188,6 +188,11 @@
       "source": "apps/client/src/ui-uniflex/components/checkbox/CheckBox.tsx"
     },
     {
+      "key": "Dropdown",
+      "rootName": "Dropdown",
+      "source": "apps/client/src/ui-uniflex/components/dropdown/Dropdown.tsx"
+    },
+    {
       "key": "EmptyState",
       "rootName": "EmptyState",
       "source": "apps/client/src/ui-uniflex/gamecomponents/empty/EmptyState.tsx"
@@ -216,11 +221,6 @@
       "key": "HeroDetailSkills",
       "rootName": "HeroDetailSkills",
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailSkills.tsx"
-    },
-    {
-      "key": "HeroFilterBar",
-      "rootName": "HeroFilterBar",
-      "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroFilterBar.tsx"
     },
     {
       "key": "HeroListPanel",
