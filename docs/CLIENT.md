@@ -189,6 +189,22 @@ apps/Cocos/
 
 页面行为通过依赖注入连接 HTTP/RPC/View port，因此可在 Node 环境无头测试。
 
+`logic/scene3d/` 提供投影无关的场景数学，2D 与 3D 消费方共用；双端都需要的 LOD 公式位于
+`apps/shared/src/logic/lodBands.ts`（客户端消费同步后的 `shared/logic/`），不从 shared 反向依赖客户端。
+
+| 模块 | 消费方式与边界 |
+| --- | --- |
+| `shared/logic/lodBands.ts` | `lodForValue` / `lodForValueStable`；消费方传严格升序阈值与 `[0,1)` 滞回比例，0 为最细档，支持一次跨多档。SLG 的 `slgLodForScale` / `slgLodForScaleStable` 已为薄包装，阈值与 8% 滞回仍归 SLG。 |
+| `logic/scene3d/cameraRig.ts` | `CameraRig` 管 pan / pinch / `zoomBy`、惯性、边界、指针及 `version` / `touched`；注入 `projection.offsetAt / halfExtents` 与手感参数，输出 `center / zoom / version`。`follow(target)` 采样目标引用，手动输入或 `cancel` 退出跟随；SLG `MapCamera` 保留 2D 投影和公开 API。 |
+| `logic/scene3d/chunkStreamer.ts` | `ChunkStreamer` 注入地图宽高、chunk 边长、数值 `key / unkey`、加载 / 保留外扩；`update` 产差分，`take / takeBatch` 中心向外调度，`current / accept / reject / defer / reset` 守请求代次。只调度不发请求；`defer` 回队首，重试时机由调用方负责。SLG `MapStreamer` 已为薄包装。 |
+| `logic/scene3d/pickMath.ts` | `rayPlane` 求水平面 `y = height` 交点，`rayAabb` 求闭合实体盒首次相交；前向命中返回 `{ t, point }`，未命中返回 `null`，方向不必归一化。`unprojectDesignPx(x, y, lease.screenToRay, height)` 经当前舞台相机反投影到水平面。 |
+| `logic/scene3d/viewport.ts` | `resolveViewport / designToScreen` 处理设计矩形、留黑边与屏幕像素换算，由 Stage3D 适配器消费。拾取方使用 `lease.screenToRay`，不重复缩放或翻转 Y。 |
+
+`CameraRig` 的指针与缩放锚点是**相对视口中心的设计像素**，`start / move / end` 时间单位为毫秒，
+`step` 为秒；`unprojectDesignPx` 与舞台视口则使用**左下原点的绝对设计像素**，保留已归属拖拽的越界坐标。
+View 接收框架 raw-input，转换坐标后交给 Logic，并在 cancel / hide / 关闭时清空手势；相机姿态和节点更新
+仍由 View 经舞台租约执行。数学模块不自行订阅输入、加载资产或操作节点。
+
 玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
 `RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。组合点采用生成式
 catalog：每个玩法一个 `gameplay/modes/<id>/index.ts` 模块（导出
@@ -235,8 +251,8 @@ shadows 的 `enabled/kind`。资源型 skybox 等全局字段、完整异步 `As
 
 世界页声明 `inputMode:"passive"`，可点击 FGUI HUD 声明 `inputMode:"overlay"`，弹窗用 `modal`；
 原始触摸、wheel 和 cancel 通过 [§4 的框架输入端口](#inputmode-与原始输入) 送给 Logic。
-模态关闭只接受新手势，取消回调清空拖拽、摇杆和持续动作。数学运算继续在 `logic/`；通用相机、LOD、
-流式与拾取求交由 SC2 交付，不把夹具的固定相机移动当作通用相机实现。
+模态关闭只接受新手势，取消回调清空拖拽、摇杆和持续动作。通用相机、LOD、流式与拾取求交已由 SC2 交付，
+消费方式见上方 Logic 模块表；夹具的固定相机移动仍只是验收行为。
 
 读取 `ports.stage3d.quality`（或 `services.stage3d.quality`）取得只读画质快照，不占舞台。
 微信、WebGL1 / GLES2、未知平台或 GPU 默认 low；消费 `details`、`shadows`、`maxUnits`、`maxEffects`、

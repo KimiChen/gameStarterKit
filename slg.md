@@ -452,6 +452,12 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 > 端口、manifest `roster: "hidden"`（D4 名册分离）均已落地；接法见 docs/KIT.md §4「观察者同步 / 名册分离」与 docs/SERVER.md §5，参考接线
 > `apps/server/test/fixtures/viewFixtureMode.ts`（视口 / 视距 / 私有字段过滤在 mode，差分 / baseline / 有界投递归框架）。**2b 可开工**；下文保留为 2026-09-13 的盘点原文。
 
+> **2026-09-23 SC2 消费通知**：框架纯数学阶段已退出（tag `sc2-exit`，见 [3d.md §10](docs/3d.md#10-实施状态回写)）。
+> **2b 可消费 `lodBands / cameraRig / chunkStreamer`**：shared 的 `slgLodForScale / slgLodForScaleStable`、客户端
+> `MapCamera / MapStreamer` 已接入框架通用实现，保留 SLG 阈值、2D 投影、公开 API 与加载 / 保留带策略；既有回归测试原文未改并通过。
+> 这部分可直接沿用，无需重新抽取；`pickMath` 也已可用，接法见 [CLIENT §3](docs/CLIENT.md#3-view-与-logic-分层)。
+> SLG 继续使用 2D 渲染；异步 `AssetLease` 与两处场景全局设置租约迁移留 SC3-B4，2b 自身的房间 / 网络接线与验收仍按下表推进，未因此标记完成。
+
 按 docs/MMO.md §5 MF5 规格逐项核对框架现状（`apps/server/src/rooms/core/` 实列目录 + 全文检索），结论：**MF5 尚未实施，2b 全部 14/15/20–24 条被阻塞**；2a 与 shared 数学已就绪，MF5 的泛化源（snake）质量良好。
 
 **已具备（2b 不需要重做）**：

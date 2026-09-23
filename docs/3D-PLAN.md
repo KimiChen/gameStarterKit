@@ -220,7 +220,7 @@ lvr 侧验收：每阶段 `verify:all` + `test:client`（logic 无头覆盖相�
 
 ### 4.3 `slg` 2b 实时视图
 
-保持 2D（SD7）：SC2 退出后 `MapCamera` / `MapStreamer` 已是薄包装（零改动消费）；SC3 退出后 `SlgArtResources` 走 `AssetLease`、两处场景全局直改归 `acquireGlobals`（由 SC3-B4 实施）。2b 自身仍等 MF5a（slg.md §10.8）。
+保持 2D（SD7）：SC2 已退出，`slgLodForScale / slgLodForScaleStable`、`MapCamera / MapStreamer` 已消费框架纯数学（既有测试零改动）；SC3 退出后 `SlgArtResources` 走 `AssetLease`、两处场景全局直改归 `acquireGlobals`（由 SC3-B4 实施）。MF5a 已于 2026-09-19 退出，2b 可开工；框架就绪不代表 2b 自身接线已完成（slg.md §10.8）。
 
 ## 5. 命令速查
 
@@ -272,11 +272,13 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
-- [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [ ] SC2-B5
+- [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [x] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
-- 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+- 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [ ] slg 资源 / 全局设置（SC3）
+
+- 2026-09-23 SC2-B5 完成：CLIENT §3 补齐 scene3d / shared LOD 模块、投影注入、坐标与时间单位；slg.md §10.8 通知 2b 可直接消费通用数学，并更正本文 §4.3 已过时的 MF5a 等待状态。复核 B1–B4 的 7 份核心源码与批次提交一致，3 份既有 SLG 测试与 `sc1-exit` 原文一致。Creator 3.8.8 的 WebGL2 / 实际 WebGL1 各通过 12 项检查，覆盖通用数学、SLG 适配、真实舞台相机的局部视口反投影、同帧姿态 / FOV / 视口更新、透视缩放锚点及越界拖拽；两种上下文均无运行时警告 / 异常，释放后节点均从 104 回到 104，舞台节点归零。临时副本删除平面 `t < 0` 剔除打红 2 项，正式源码未改；本批 `verify:all` 全过（Node 26.5.0；客户端 1155 / UniFlex 契约 77 / 服务端 1382，加其余门禁合计 2830 项，含两套客户端类型检查）。[SC2 汇总](perf/stage3d/2026-09-23-sc2-review.json) 保留原始报告、源码与日志哈希；阶段退出登记在 3d.md §10，tag `sc2-exit`。本批不新增 cc API 或改动运行时代码；WebGL1 沿用独立页面启动前拒绝 WebGL2 context 的方式，并断言实际设备，未屏蔽纹理能力。此数学接缝验收不代替资源容量 / 性能 / 真机缓存证据；SC3–SC5 与 SLG 2b 自身接线未完成，下一批 SC3-B1。
 
 - 2026-09-23 SC2-B4 完成：`logic/scene3d/pickMath.ts` 提供水平面 `rayPlane`、闭合实体盒 `rayAabb` 与 `unprojectDesignPx`；支持未归一化方向，返回前向 `{ t, point }`，平行共面无唯一交点返回空，盒内 / 表面起点命中 `t=0`，平行轴、擦边与零厚度盒显式覆盖。反投影注入舞台 `screenToRay`，沿用 `viewport.ts` 的左下原点、绝对设计像素、留黑边与局部视口换算，不重复缩放或翻转，保留越界拖拽及当前相机 / 视口更新。新增 20 项回归，连同视口和纯度门共 32 项定向测试通过；临时副本分别删除平面 `t < 0`、AABB `exit < 0` 剔除，2 / 1 项回归转红，正式源码保留完整检查。Creator 3.8.8 实际导入生成 meta，预览 source map 与最终源码逐字一致；独立两套客户端类型探针与 1155 项客户端测试通过。同步上游后刷新过期的 UniFlex AOT 缓存及 Cocos 镜像，无额外入库改动；最终 `verify:all` 全过（Node 26.5.0；客户端 1155 / UniFlex 契约 77 / 服务端 1382，加其余门禁合计 2830 项）。机制细化回写 3d.md §4；既有 SLG 回归原文未改，本批不新增 cc API。SC2 尚未退出，阶段 WebGL1 证据仍在退出时验收，下一批 SC2-B5。
 

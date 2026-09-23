@@ -1,0 +1,345 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-23",
+  "stage": "SC2",
+  "batch": "SC2-B5",
+  "status": "exited",
+  "tag": "sc2-exit",
+  "commit": "resolve refs/tags/sc2-exit",
+  "verificationBase": "e5cadeeb8efdbcc67db8d57049325806aae279d7",
+  "scope": "Documentation and phase exit; no production TypeScript, contracts, rendering assets or existing tests changed in SC2-B5.",
+  "delivered": [
+    "shared/logic/lodBands: projection-independent LOD and hysteresis; SLG shared API stays v1.",
+    "logic/scene3d/cameraRig: injected projection, pan/pinch/wheel, inertia, bounds, version/touched and follow.",
+    "logic/scene3d/chunkStreamer: desired/retained deltas, center-out queue, batch, generation fencing and defer.",
+    "logic/scene3d/pickMath: forward horizontal-plane/AABB hits and absolute design-pixel unprojection.",
+    "CLIENT section 3 records APIs, coordinate/time units and View/Logic ownership; slg section 10.8 records readiness."
+  ],
+  "sourceAudit": {
+    "record": {
+      "path": ".cache/sc2-b5/source-audit.json",
+      "sha256": "91a6802dd4e6e76f431c1f1d127944f0263c1d454aa0d36bb0220bf15cb39eb8"
+    },
+    "method": {
+      "path": ".cache/sc2-b5/audit-sources.py",
+      "sha256": "d34fcad67af2dc2e559de13c0c2373e7138b4661141fd407767509998fea42db"
+    },
+    "unchangedSourceCount": 7,
+    "batches": [
+      {
+        "batch": "SC2-B1",
+        "commit": "15980f0e0df69e8bbd73a2d524dfc321d28587f4",
+        "sources": [
+          {
+            "path": "apps/shared/src/logic/lodBands.ts",
+            "sha256": "abafc3e8ebb22d37451e4970ca2d7a9d9e3af888f9ec1618f7f9a9726cb528ad",
+            "unchangedSinceBatch": true
+          },
+          {
+            "path": "apps/shared/src/kits/slg/api/worldmap/index.ts",
+            "sha256": "ad66fec6843fbb5503ff50bffd50c1d5fb7a4337ecf9329eade43d08791e30cf",
+            "unchangedSinceBatch": true
+          }
+        ]
+      },
+      {
+        "batch": "SC2-B2",
+        "commit": "e4ec3d56392ec6e7bb21085eafc75d440d335eff",
+        "sources": [
+          {
+            "path": "apps/client/src/logic/scene3d/cameraRig.ts",
+            "sha256": "fd2723a1c8dcb90bbeb8cded88813594337fb4583398d22acbc7a80e8e8c8d1a",
+            "unchangedSinceBatch": true
+          },
+          {
+            "path": "apps/client/src/kits/slg/logic/mapCamera.ts",
+            "sha256": "cb32e1d937ba928cb3fe033eb2bd26611f951238d17e5e572fbaa156c5217deb",
+            "unchangedSinceBatch": true
+          }
+        ]
+      },
+      {
+        "batch": "SC2-B3",
+        "commit": "0b54468c783742667c9bfb5424d601ae2782adf3",
+        "sources": [
+          {
+            "path": "apps/client/src/logic/scene3d/chunkStreamer.ts",
+            "sha256": "06768c0942c7471bafd581d33727317e9eb88b44b5cf13a1389244ac715c8df6",
+            "unchangedSinceBatch": true
+          },
+          {
+            "path": "apps/client/src/kits/slg/logic/mapStreamer.ts",
+            "sha256": "397aa4b616c7ca418abcb90a759b896138c1635019f4ef94f777169eeac2678e",
+            "unchangedSinceBatch": true
+          }
+        ]
+      },
+      {
+        "batch": "SC2-B4",
+        "commit": "e5cadeeb8efdbcc67db8d57049325806aae279d7",
+        "sources": [
+          {
+            "path": "apps/client/src/logic/scene3d/pickMath.ts",
+            "sha256": "5940a213492e223e7182cdc6b470d1889851c173a258a8707bc2d9965c4dc4f3",
+            "unchangedSinceBatch": true
+          }
+        ]
+      }
+    ],
+    "unchangedSlgTests": [
+      {
+        "path": "apps/client/test/slg-input.test.ts",
+        "sha256": "cc76804425782b2b1230cd8babaf2dcd8227a22d0bda26124489138532333095",
+        "baseline": "sc1-exit"
+      },
+      {
+        "path": "apps/client/test/slg-map.test.ts",
+        "sha256": "ce6841e8f7c66754da3ab92c5b816a5d3b17f53eab6b8d7f06f30c9195cc7674",
+        "baseline": "sc1-exit"
+      },
+      {
+        "path": "apps/client/test/slg-map-lod.test.ts",
+        "sha256": "a89e722a16c16aa72811d9beb4145cd72aaecfc4ec5a8386340da5bfd508cb9b",
+        "baseline": "sc1-exit"
+      }
+    ]
+  },
+  "previousDifferentialEvidence": [
+    {
+      "baseline": "16cc4feaca67c04113bc29d692839ad15da7fe60",
+      "scenarios": 35,
+      "states": 70035,
+      "calls": 62958,
+      "result": "exact equality",
+      "node": "v26.5.0",
+      "record": {
+        "path": ".cache/sc2-b2/compare-cameras.json",
+        "sha256": "cfcba2285c9313307a2dcbc8e6a64dbd0cd904457b095568732101638c7a7b79"
+      }
+    },
+    {
+      "baseline": "5e0ebd492c78287abab98c7a706ba68a2e5d008e",
+      "scenarios": 36,
+      "states": 54072,
+      "calls": 54036,
+      "loadCount": 12997,
+      "operations": {
+        "update": 18089,
+        "takeBatch": 8854,
+        "accept": 4451,
+        "current": 4538,
+        "defer": 4626,
+        "reject": 4380,
+        "loadedKeys": 3843,
+        "take": 4583,
+        "reset": 672
+      },
+      "result": "exact equality",
+      "node": "v26.5.0",
+      "record": {
+        "path": ".cache/sc2-b3/compare-streamers.json",
+        "sha256": "23fa25e442f0de13638f1f562710410521be79a5825365f3770512baa55148ce"
+      }
+    }
+  ],
+  "creator": {
+    "version": "3.8.8",
+    "method": {
+      "path": ".cache/sc2-b5/probe-math.mjs",
+      "sha256": "e92e6bc6a7b16f07134a5b6b435a807087a6bf18b2df209adad4f7e1e8cb9593"
+    },
+    "compiledSources": [
+      {
+        "source": "apps/client/src/logic/scene3d/cameraRig.ts",
+        "sha256": "fd2723a1c8dcb90bbeb8cded88813594337fb4583398d22acbc7a80e8e8c8d1a",
+        "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/ef/efd3cf102dc4e9323df4d291874d71b43146a406.js.map"
+      },
+      {
+        "source": "apps/client/src/logic/scene3d/chunkStreamer.ts",
+        "sha256": "06768c0942c7471bafd581d33727317e9eb88b44b5cf13a1389244ac715c8df6",
+        "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/7c/7c4f7a8de2588469ce1ea5aa89492753b9760adf.js.map"
+      },
+      {
+        "source": "apps/client/src/logic/scene3d/pickMath.ts",
+        "sha256": "5940a213492e223e7182cdc6b470d1889851c173a258a8707bc2d9965c4dc4f3",
+        "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/90/90bf8a15f16fe379a2a86537deb5a66e3b410785.js.map"
+      },
+      {
+        "source": "apps/shared/src/logic/lodBands.ts",
+        "sha256": "abafc3e8ebb22d37451e4970ca2d7a9d9e3af888f9ec1618f7f9a9726cb528ad",
+        "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/4b/4b2db0f10beab86f630e07073480640dc3c4b804.js.map"
+      },
+      {
+        "source": "apps/client/src/kits/slg/logic/mapCamera.ts",
+        "sha256": "cb32e1d937ba928cb3fe033eb2bd26611f951238d17e5e572fbaa156c5217deb",
+        "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/41/416e5ae108f586491dfc505be9834df548840942.js.map"
+      },
+      {
+        "source": "apps/client/src/kits/slg/logic/mapStreamer.ts",
+        "sha256": "397aa4b616c7ca418abcb90a759b896138c1635019f4ef94f777169eeac2678e",
+        "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/60/60a63d9629e476b45872d5fa279e901b309cdae0.js.map"
+      },
+      {
+        "source": "apps/shared/src/kits/slg/api/worldmap/index.ts",
+        "sha256": "ad66fec6843fbb5503ff50bffd50c1d5fb7a4337ecf9329eade43d08791e30cf",
+        "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/2b/2b81e60e56ccc8d60f8e137e53f054e93a3b72fd.js.map"
+      }
+    ],
+    "contexts": [
+      {
+        "webgl": 2,
+        "passed": true,
+        "checks": 12,
+        "environment": {
+          "version": "3.8.8",
+          "device": "WebGL2Device",
+          "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "pipeline": "WebPipeline",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+        },
+        "contextSelection": "Fresh owned page; actual WebGL2Device and WebGL 2.0 required.",
+        "diagnosticCount": 0,
+        "checkNames": [
+          "actual-engine-and-context",
+          "lod-boundaries-hysteresis-multiple-bands",
+          "camera-pinch-anchor-inertia-clamp-version",
+          "camera-follow-and-manual-cancellation",
+          "slg-adapters-use-framework-and-retain-2d-projection",
+          "streamer-batch-defer-generation-and-reset",
+          "rays-hit-miss-parallel-and-reverse",
+          "real-camera-local-viewport-unprojection-and-aabb",
+          "real-camera-same-frame-pose-and-fov-updates",
+          "real-perspective-camera-rig-wheel-anchor",
+          "real-camera-viewport-replacement-and-outside-drag",
+          "stage-released-and-nodes-return-to-baseline"
+        ],
+        "projectionAnchorMaxError": 2.5437429940211587e-12,
+        "nodes": {
+          "before": 104,
+          "after": 104
+        },
+        "report": {
+          "path": "docs/evidence/creator-2026-09-23/sc2-webgl2/report.json",
+          "sha256": "5f4628a59cea9b2e6848763821fb2b1fd0df4173c0b3723dc790b73de8991d97"
+        }
+      },
+      {
+        "webgl": 1,
+        "passed": true,
+        "checks": 12,
+        "environment": {
+          "version": "3.8.8",
+          "device": "WebGLDevice",
+          "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+          "pipeline": "WebPipeline",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+        },
+        "contextSelection": "Fresh owned page rejects WebGL2 before Cocos boot; actual WebGLDevice and WebGL 1.0 required. No capability masking.",
+        "diagnosticCount": 0,
+        "checkNames": [
+          "actual-engine-and-context",
+          "lod-boundaries-hysteresis-multiple-bands",
+          "camera-pinch-anchor-inertia-clamp-version",
+          "camera-follow-and-manual-cancellation",
+          "slg-adapters-use-framework-and-retain-2d-projection",
+          "streamer-batch-defer-generation-and-reset",
+          "rays-hit-miss-parallel-and-reverse",
+          "real-camera-local-viewport-unprojection-and-aabb",
+          "real-camera-same-frame-pose-and-fov-updates",
+          "real-perspective-camera-rig-wheel-anchor",
+          "real-camera-viewport-replacement-and-outside-drag",
+          "stage-released-and-nodes-return-to-baseline"
+        ],
+        "projectionAnchorMaxError": 2.5437429940211587e-12,
+        "nodes": {
+          "before": 104,
+          "after": 104
+        },
+        "report": {
+          "path": "docs/evidence/creator-2026-09-23/sc2-webgl1/report.json",
+          "sha256": "5c56be819596c58604685e86ac071577b076b4f0f13a06f4be81a043814f12b1"
+        }
+      }
+    ]
+  },
+  "verification": {
+    "node": "v26.5.0",
+    "verifyAll": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 2830,
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1155,
+        77,
+        1382
+      ],
+      "clientTests": 1155,
+      "uniflexContractTests": 77,
+      "serverTests": 1382,
+      "includesBothClientTypechecks": true,
+      "log": {
+        "path": ".cache/sc2-b5/verify-all.log",
+        "sha256": "721d4c97352d82d645d59bd523aab796d740607153d0e2fc68918728b92b4ec0"
+      }
+    },
+    "mutation": {
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-reporter=tap",
+        "../../.cache/sc2-b5/mutant/test/pickMath.test.ts"
+      ],
+      "cwd": "apps/server",
+      "exitCode": 1,
+      "mutation": "Remove rayPlane t < 0 rejection in an ignored copy only",
+      "failures": [
+        "not ok 2 - pickMath plane: crossings behind the origin are misses from either side",
+        "not ok 20 - pickMath unproject: orthographic rays, misses, invalid arguments and lease errors retain their meaning"
+      ],
+      "log": ".cache/sc2-b5/mutation-plane.tap",
+      "sha256": "e5c63a43ac48773d8cbbef5f143892cc68978130af537e65857ebefca2ce271a"
+    },
+    "cacheRefresh": [
+      {
+        "path": ".cache/sc2-b5/uniflex-build.log",
+        "sha256": "9f0f0c02edfe8ef9db21862b8292731e1dfefed8e27579df80db362d799a851a"
+      },
+      {
+        "path": ".cache/sc2-b5/sync-client.log",
+        "sha256": "2b8a06648501d816de14ef7c9fdcc31a491ac322f05fc56591c9c09e676f0371"
+      }
+    ]
+  },
+  "synchronization": {
+    "method": "Scoped stash, git pull --rebase, restore exact stash; refresh ignored UniFlex output and Cocos mirror; rerun verify:all after incoming dropdown refactor.",
+    "upstream": "977d7c87fc7b76d17d927121db55a8c19758b1be",
+    "previousVerificationBase": "c6c5ffd70cfe8992a709616ae10c4d9600f2b7a2",
+    "previousVerifyAll": {
+      "passed": true,
+      "tests": 2830,
+      "log": {
+        "path": ".cache/sc2-b5/verify-all-before-final-sync.log",
+        "sha256": "235f368caf1c9521551ab7363f0dd3dcc114e82f280821575308f61273cc6fa8"
+      }
+    },
+    "coreSourceHashesUnchanged": true
+  },
+  "deviations": [
+    "WebGL1 selected by rejecting WebGL2 creation on a fresh owned page in the existing loopback Chrome instance; actual WebGLDevice/WebGL 1.0 asserted. No extensions or texture formats masked.",
+    "Creator checks exercise pure math and real Stage3D camera projection, including same-frame changes. They are not a new rendering, capacity, frame-time, input replay or 20-cycle asset lifecycle benchmark."
+  ],
+  "remaining": [
+    "SC3: complete asynchronous AssetLease, assetPlan, EntityPool and SLG resource/global-setting migration.",
+    "SC4: skinning, Vfx and real WeChat device/cache evidence; SC5: conversion tools and final freeze.",
+    "SLG 2b room/network integration remains separate; MMO and LVR have not been marked integrated."
+  ]
+}
