@@ -5,8 +5,9 @@
  *   `road_info.lua` 的 `layer_info` 给出网格 1125²、一个路格**半宽 200 / 半高 100**
  *   （逻辑格是 150/75）= **4/3 个逻辑格**；`tiles` 的值就是 `type_info` 下标
  *   ⇒ **选片在制图期就烘死了**，运行时 ⛔ 不做任何邻接判断（与河同构）。
- * ★ 路格**自成一套网格**：⛔ 别用 `mapoGrid2Pos`（那是逻辑格的 150/75），
- *   这里用同一条等距式子但换成路格的半宽/半高。
+ * ★ 路格**自成一套网格**（⛔ 别用 `mapoGrid2Pos`，那是逻辑格的 150/75）：
+ *   位置 = 同一条等距式子换路格的半宽/半高，但**没有奇偶行错位**
+ *   （原版 `ninegrid2pos`；错位会把 (±1,0) 方向的路打碎，2026-09-23 实测纠正，见函数注）。
  * ⚠ 每片带一个**水平翻转**位（`type_info` 的第二列 ±1）：翻转用「UV 宽取负」实现，
  *   ⛔ 别去翻顶点（那会连画家序一起翻）。
  * ⚠ 表**已按 s 升序落盘 = 画家序**，这里只做区间二分 + 矩形裁剪。
@@ -44,13 +45,16 @@ export function mapoHasRoads(): boolean { return view !== null; }
 export function mapoRoadCount(): number { return count; }
 
 /**
- * 路格中心的世界坐标。⚠ 与逻辑格**同式但换半宽/半高**（含奇数行的半格错位），
- * ⛔ 别调用 `mapoGrid2Pos`。
+ * 路格中心的世界坐标。⚠ **没有奇偶行错位**：路格是 8 连通的普通菱形格网 ——
+ * 42,018 条 tiles 的邻居直方图在 (0,±1) / (±1,0) / (±1,±1) 全方向密集（2026-09-23 实测），
+ * 若带奇偶错位，(±1,0) 方向的邻居会被打成 (+0.5hw,−1.5hh) / (+1.5hw,−0.5hh) 交替，
+ * 行方向的路碎成虚线（症状实机复现过）。
+ * ⛔ 别照 `mapoGrid2Pos` 抄错位：逻辑格那条式子带错位，原版的 `ninegrid2pos`
+ * （路/河/官道共用）不带 —— 河格传 `/3` 分数坐标（`river_grid.lua`）也旁证它无奇偶性。
  */
 export function mapoRoadPos(row: number, col: number): { x: number; y: number } {
     const hw = MAPO_ROAD_WORLD_HALF_W, hh = MAPO_ROAD_WORLD_HALF_H;
-    if ((row & 1) === 0) return { x: (row - col) * hw, y: -(row + col + 1) * hh };
-    return { x: (row - col - 0.5) * hw, y: -(row + col + 1.5) * hh };
+    return { x: (row - col) * hw, y: -(row + col + 1) * hh };
 }
 
 export interface IMapoRoadRect {

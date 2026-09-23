@@ -46,19 +46,38 @@ test("mapOriginal 道路：路格自成一套网格（半宽 200 / 半高 100 = 
     }
 });
 
-test("mapOriginal 道路：摆位与逻辑格同式但换半宽/半高（含奇数行错位）", () => {
+test("mapOriginal 道路：摆位 = 等距式子换路格半宽/半高，**无奇偶行错位**", () => {
     for (const [row, col] of [[0, 0], [1, 0], [0, 1], [1, 1], [562, 563], [1124, 1124]] as const) {
         const p = mapoRoadPos(row, col);
-        // 与 mapoGrid2Pos 同式：把 halfW/halfH 换成路格的即可
         const hw = MAPO_ROAD_WORLD_HALF_W, hh = MAPO_ROAD_WORLD_HALF_H;
-        const want = (row & 1) === 0
-            ? { x: (row - col) * hw, y: -(row + col + 1) * hh }
-            : { x: (row - col - 0.5) * hw, y: -(row + col + 1.5) * hh };
+        const want = { x: (row - col) * hw, y: -(row + col + 1) * hh };
         assert.ok(Math.abs(p.x - want.x) < 1e-6 && Math.abs(p.y - want.y) < 1e-6, `(${row}, ${col})`);
         // ⛔ 路格 ≠ 逻辑格：同一对 (row,col) 两者必须给出不同坐标（原点除外）
         if (row + col > 0) {
             const g = mapoGrid2Pos(row, col);
             assert.ok(Math.abs(p.y - g.y) > 1e-6, `(${row}, ${col}) 路格不该与逻辑格同位`);
+        }
+    }
+});
+
+test("mapOriginal 道路：8 个邻居方向全部落在菱形相邻位（⛔ 无奇偶错位）", () => {
+    // ★ 42,018 条 tiles 的邻居直方图（2026-09-23 实测）：(0,±1) / (±1,0) / (±1,±1) 全方向
+    //   密集 ⇒ 路格 8 连通；带奇偶错位会把 (±1,0) 打成 (+0.5hw,−1.5hh)/(+1.5hw,−0.5hh)
+    //   交替 ⇒ 行方向的路碎成虚线（实机症状）。⇒ 每个格的全部 8 邻居位移必须是
+    //   {(±hw,±hh) 边邻} ∪ {(±2hw,0),(0,±2hh) 点邻}，且与奇偶无关。
+    const hw = MAPO_ROAD_WORLD_HALF_W, hh = MAPO_ROAD_WORLD_HALF_H;
+    const want: readonly (readonly [number, number])[] = [
+        [hw, hh], [hw, -hh], [-hw, hh], [-hw, -hh],
+        [2 * hw, 0], [-2 * hw, 0], [0, 2 * hh], [0, -2 * hh],
+    ];
+    for (const [row, col] of [[0, 0], [1, 0], [2, 1], [561, 562], [562, 563], [1123, 1124]] as const) {
+        const p = mapoRoadPos(row, col);
+        for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1],
+                                [1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+            const q = mapoRoadPos(row + dr, col + dc);
+            const dx = q.x - p.x, dy = q.y - p.y;
+            const hit = want.some(([wx, wy]) => Math.abs(dx - wx) < 1e-6 && Math.abs(dy - wy) < 1e-6);
+            assert.ok(hit, `(${row},${col}) → (${row + dr},${col + dc}) 位移 (${dx}, ${dy}) 不是菱形相邻位`);
         }
     }
 });
