@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/reward/banner",
+      "kind": "image",
+      "file": "assets/reward_banner.png",
+      "width": 658,
+      "height": 138,
+      "sha256": "71b611c51afd9a47a83cfec4fbac5ffc010580ee452bfb9270725d474217084f"
+    },
+    {
+      "id": "ui/reward/rays",
+      "kind": "image",
+      "file": "assets/reward_rays.png",
+      "width": 520,
+      "height": 367,
+      "sha256": "5b8ca9620f8717f12bd4a3d25582620b49b275ca5fb295825bc53bc4668beae1"
+    },
+    {
+      "id": "ui/reward/confetti",
+      "kind": "image",
+      "file": "assets/reward_confetti.png",
+      "width": 354,
+      "height": 381,
+      "sha256": "912f67be48ed995bcba274dceae489d6e4adf909c4875735f80c0c7a27a5a6e2"
+    },
+    {
+      "id": "ui/reward/icon-armor",
+      "kind": "image",
+      "file": "assets/reward_icon_armor.png",
+      "width": 117,
+      "height": 125,
+      "sha256": "0bdf321ceb52bdf207568a2d624ac78bb4f20fbe7f960cbfc446e907391e1a01"
+    }
+  ]
+}

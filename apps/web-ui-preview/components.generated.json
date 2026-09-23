@@ -303,6 +303,11 @@
       "source": "apps/client/src/ui-uniflex/gamecomponents/item/RewardItem.tsx"
     },
     {
+      "key": "RewardObtainPanel",
+      "rootName": "RewardObtain",
+      "source": "apps/client/src/ui-uniflex/modules/reward/RewardObtain/RewardObtainPanel.tsx"
+    },
+    {
       "key": "ScreenFooter",
       "rootName": "ScreenFooter",
       "source": "apps/client/src/ui-uniflex/components/chrome/ScreenFooter.tsx"

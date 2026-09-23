@@ -5,7 +5,7 @@ import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 export type ItemQuality = 'green' | 'blue' | 'purple' | 'orange' | 'red';
 
 export type ItemConfigQuality = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-export type ItemConfigIcon = 'egg' | 'meat' | 'book' | 'scroll' | 'gem';
+export type ItemConfigIcon = 'egg' | 'meat' | 'book' | 'scroll' | 'gem' | 'armor';
 
 /** Client projection of the item.json5 contract. Keep item art IDs in this single table. */
 export interface ItemConfig {
@@ -49,6 +49,7 @@ const ITEM_CONFIG: Readonly<Record<string, ItemConfig>> = {
     book: { id: 'book', name: '秘典', description: '提升英雄技能的读物。', icon: 'book', quality: 4 },
     scroll: { id: 'scroll', name: '卷轴', description: '联盟科技所需的研究卷轴。', icon: 'scroll', quality: 4 },
     gem: { id: 'gem', name: '高级钻石', description: '可以购买好多东西', icon: 'gem', quality: 3 },
+    armor: { id: 'armor', name: '盔甲', description: '可用于强化英雄装备。', icon: 'armor', quality: 5 },
 };
 
 export function getItemConfig(itemId: string): ItemConfig {
@@ -74,7 +75,10 @@ const ITEM_ICONS: Readonly<Record<ItemConfigIcon, ImageRef>> = {
     book: imageRef('ui/shop/item-book'),
     scroll: imageRef('ui/shop/item-scroll'),
     gem: imageRef('ui/shop/getitem-icon'),
+    armor: imageRef('ui/reward/icon-armor'),
 };
+
+const DETAIL_BG = imageRef('ui/backpack/detail-count-bg');
 
 /** Item artwork follows the item contract, not the UI theme. */
 export function itemIcon(itemId: string) {
@@ -89,10 +93,12 @@ export interface ItemSlotProps {
     readonly count?: string;
     readonly countColor?: string;
     readonly countOutline?: string;
+    /** Centered plate over the icon. Hidden when empty. */
+    readonly detailCount?: string;
     readonly frames?: Readonly<Record<ItemQuality, ImageRef>>;
 }
 
-/** Shared 154×159 item frame (backpack / shop / hero bond). Icon and count are optional. */
+/** Shared 154×159 item frame (backpack / shop / hero bond). Icon, count, and detail plate are optional. */
 export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
     const theme = p.theme ?? activeTheme;
     const left = p.left;
@@ -120,6 +126,10 @@ export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
     const countOutline = p.countOutline ?? theme.item.outline;
     const outlineWidth = p.theme?.item.outlineWidth ?? activeTheme.item.outlineWidth;
     const font = theme.item.font;
+    const detail = p.detailCount ?? '';
+    const showDetail = detail !== '';
+    const detailColor = theme.item.color;
+    const detailOutline = theme.item.outline;
     return (
         <view name="ItemSlot" style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
             <image name="ItemSlot/Frame" source={frame}
@@ -131,6 +141,13 @@ export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
                     font: font, fontSize: countSize, color: countColor, bold: true,
                     outlineColor: countOutline, outlineWidth: outlineWidth,
                     horizontalAlign: countAlign, verticalAlign: 'center', overflow: 'shrink' }} />
+            <image name="ItemSlot/DetailBg" visible={showDetail} source={DETAIL_BG}
+                style={{ position: 'absolute', left: 8, top: 8, width: 138, height: 40, sizeMode: 'sliced' }} />
+            <text name="ItemSlot/Detail" visible={showDetail} value={detail}
+                style={{ position: 'absolute', left: 8, top: 8, width: 138, height: 40,
+                    font: font, fontSize: 32, color: detailColor, bold: true,
+                    outlineColor: detailOutline, outlineWidth: outlineWidth,
+                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
         </view>
     );
 });

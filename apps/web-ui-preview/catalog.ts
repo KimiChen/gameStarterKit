@@ -32,7 +32,7 @@ export interface CatalogSection {
     readonly groups: readonly CatalogGroup[];
 }
 
-const MODULE_ORDER = ["preview", "popup", "backpack", "mail", "settings", "character", "hero", "alliance", "shop"];
+const MODULE_ORDER = ["preview", "popup", "backpack", "mail", "settings", "character", "hero", "alliance", "shop", "reward"];
 
 const MODULE_LABEL: Record<string, string> = {
     preview: "目录",
@@ -44,6 +44,7 @@ const MODULE_LABEL: Record<string, string> = {
     hero: "英雄",
     alliance: "联盟",
     shop: "商店",
+    reward: "通用",
 };
 
 const SCREEN_LABEL: Record<string, string> = {
@@ -76,6 +77,7 @@ const SCREEN_LABEL: Record<string, string> = {
     "alliance-tech": "联盟科技",
     shop: "商店",
     "shop-getitem": "获取道具",
+    "reward-obtain": "恭喜获得",
 };
 
 export function previewLine(screen: ScreenEntry): PreviewLine {

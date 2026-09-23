@@ -234,6 +234,14 @@
       "source": "apps/client/src/ui-uniflex/modules/shop/Shop/Shop.tsx"
     },
     {
+      "id": "reward-obtain",
+      "aliases": ["reward-obtain", "rewardObtain", "reward", "congrats"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "RewardObtain",
+      "rootName": "RewardObtainPage",
+      "source": "apps/client/src/ui-uniflex/modules/reward/RewardObtain/RewardObtain.tsx"
+    },
+    {
       "id": "confirm-restored",
       "aliases": ["confirm-restored", "confirmRestored"],
       "canvas": { "width": 750, "height": 1624 },

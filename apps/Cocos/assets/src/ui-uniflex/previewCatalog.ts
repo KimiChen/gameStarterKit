@@ -54,6 +54,7 @@ import {
     RestoredPreviewHome,
     Settings,
     SettingsRestored,
+    RewardObtain,
     Shop,
     ShopGetItem,
     ShopGetItemRestored,
@@ -115,6 +116,8 @@ const PREVIEW_ALIASES: Record<string, string> = {
     allianceboard: "alliance-board",
     alliancetech: "alliance-tech",
     shopgetitem: "shop-getitem",
+    rewardobtain: "reward-obtain",
+    congrats: "reward-obtain",
     components: "component-gallery",
     "ui-components": "component-gallery",
     previewhomerestored: "preview-home-restored",
@@ -383,6 +386,14 @@ async function startPreviewScreen(
             await runtime.start(Shop, {
                 onBack: back,
                 onAction: (actionId) => console.info("[UniFlex Shop] action", actionId),
+            });
+            return;
+        case "reward-obtain":
+            await runtime.start(RewardObtain, {
+                onClose: () => {
+                    console.info("[UniFlex RewardObtain] close");
+                    back();
+                },
             });
             return;
         case "confirm-restored":
