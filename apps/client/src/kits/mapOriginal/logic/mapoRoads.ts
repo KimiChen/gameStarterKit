@@ -103,7 +103,7 @@ export function mapoRoadsInRect(rect: IMapoRoadRect, limit: number): MapoSpriteI
         const flip = view.getUint8(o + 5) !== 0;
         out.push({
             row: s, col: 0,
-            x: p.x, y: p.y - h / 2, w, h,
+            x: p.x, y: p.y, w, h, pivot: [0.5, 0.5],
             uv: flip ? [u0 + uw, v0, -uw, vh] : [u0, v0, uw, vh],
         });
     }

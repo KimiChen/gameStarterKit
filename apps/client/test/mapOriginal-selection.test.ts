@@ -82,3 +82,16 @@ test("mapOriginal 资源尺寸：保留 prefab 的两个轴缩放，不再只照
     assert.ok(Math.abs(desert.w - 50 * 32 / 150) < 1e-6);
     assert.ok(Math.abs(desert.h - 58 * 32 / 150) < 1e-6);
 });
+
+test("mapOriginal 精灵锚点：非中心 pivot 也按原位置展开、绕锚点旋转", () => {
+    // 左下角固定在 (10,20)，100×200 图片逆时针转 90° 后应位于其左上方。
+    // 这能抓住「记录了 pivot，渲染仍固定按底边/中心」或绕错旋转中心的回归。
+    const mesh = buildMapoSpriteMesh([{
+        row: 0, col: 0, x: 10, y: 20, w: 100, h: 200,
+        pivot: [0, 0], angleDeg: 90, uv: [0, 0, 1, 1],
+    }]);
+    assert.deepEqual(Array.from(mesh.positions),
+        [-190, 20, 0, -190, 120, 0, 10, 120, 0, 10, 20, 0]);
+    assert.deepEqual(mesh.minPos, [-190, 20, 0]);
+    assert.deepEqual(mesh.maxPos, [10, 120, 0]);
+});

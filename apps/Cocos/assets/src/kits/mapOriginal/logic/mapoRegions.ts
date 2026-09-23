@@ -18,7 +18,7 @@
  *
  * ⚠ 表**已按 s 升序落盘 = 画家序**，这里只做**区间二分 + 矩形裁剪**，
  * ⛔ 不要每帧对 2.8 万条排序或全表扫描。
- * ⚠ 件会**往上长**（锚在底边中点），所以二分的下界要往下多放一段（`S_MARGIN`），
+ * ⚠ 件带有 prefab 局部偏移，可能伸出锚点格，所以二分下界要多放一段（`S_MARGIN`），
  * ⛔ 只按可视矩形的 s 区间取会把「锚点在屏幕下方、身子探进来」的大山漏掉。
  */
 import {
@@ -91,7 +91,7 @@ function lowerBound(want: number): number {
 export interface IMapoRegionPlacement {
     readonly piece: IMapoRegionPiece;
     readonly cellLayout: IMapoRegionCell;
-    /** 底边中点的世界坐标。 */
+    /** prefab 中心锚点的世界坐标。 */
     readonly x: number;
     readonly y: number;
     readonly w: number;
@@ -132,13 +132,14 @@ export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoReg
         const [nw, nh] = layout.native;
         const w = mapoOriginalPxToWorld(nw * layout.scale[0]);
         const h = mapoOriginalPxToWorld(nh * layout.scale[1]);
-        // ★ 精灵**中心** = 锚点格位置 + prefab 的 pos（pivot 恒 [0.5, 0.5]）；
-        //   渲染按「底边中点」对齐 ⇒ 再往下挪 h/2。
+        // 精灵中心 = 锚点格位置 + prefab 的 pos（本套 pivot 恒 [0.5, 0.5]）。
         const x = anchor.x + mapoOriginalPxToWorld(layout.offset[0]);
-        const y = anchor.y + mapoOriginalPxToWorld(layout.offset[1]) - h / 2;
-        // ⚠ 件是「底边中点对齐」：横向以 x 为中心、纵向从 y 往上长 h
-        if (x + w / 2 < rect.left || x - w / 2 > rect.right) continue;
-        if (y > rect.top || y + h < rect.bottom) continue;
+        const y = anchor.y + mapoOriginalPxToWorld(layout.offset[1]);
+        const r = layout.angle * Math.PI / 180;
+        const cs = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r));
+        const halfW = (w * cs + h * sn) / 2, halfH = (w * sn + h * cs) / 2;
+        if (x + halfW < rect.left || x - halfW > rect.right) continue;
+        if (y - halfH > rect.top || y + halfH < rect.bottom) continue;
         out.push({ piece, cellLayout: layout, x, y, w, h, angleDeg: layout.angle });
     }
     return out;

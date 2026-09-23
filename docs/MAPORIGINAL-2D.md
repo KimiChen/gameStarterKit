@@ -236,13 +236,21 @@ BG(100) < TERRAIN_MASK(200) < TERRAIN(300) < ROAD(900) < RIVER(1600)
 主片的 `position` 是中心相对根的偏移；`size` 是显示矩形，**4 项不等于贴图像素**，
 `scale` 两轴也不恒为 1 或彼此相等。位置与尺寸必须一起保留，不能只提取贴图。
 
+`[实测]` 原版文本 prefab 的同一字段叫 `anchor`，本仓提取器将它命名为 `pivot`；
+`node2dVersion/width/height/mirror_x/mirror_y/anchor/skew/child_to_pivot` 的字段顺序
+可由包内 JSON prefab 对照二进制复核。`Food_05`、`Wood_01`、`choose_00` 的组根均为
+`width/height=200/200`、`anchor=[0.5,0.5]`、`child_to_pivot=true`；
+这些根尾字段不是图片纹理的尺寸/锚点，不能拿它们对图片再做统一底边补偿。
+
 例：`scene/resource/food-new/Food_05_group.prefab` 主片 `5.png` 的
 `size=[196,128]`、`scale=[1,1]`、`position≈[-8.054690,-3.634770]`；
 `scene/grid/choose_00_group.prefab` 的主片 `choose2` 为 `size=[240,112]`、
 `position=[0,0]`、`pivot=[0.5,0.5]`。选中面居格心，资源主片保留美术自身的微调。
 
 本 kit 的换算应为 `w/h = prefab.size × prefab.scale × (32/150)`，
-`中心 = 格心 + prefab.position × (32/150)`；传给底边对齐的 mesh 时仅再减 `h/2`。
+`锚点 = 格心 + prefab.position × (32/150)`；mesh 直接使用 prefab 锚点：
+局部矩形从 `(-pivot.x × w, -pivot.y × h)` 展开，再绕锚点旋转。
+资源、区域件、城、手摆细节和路片已统一这一接口，调用方不再先减 `h/2`。
 早先统一 `底边 y = 格心 y − 8`，使 5 级粮田中心变成原版像素 `+26.5`，
 比真实 `−3.634770` **高约 30.13 px**，看上去便像选中框整体偏下。
 修复已保留三套主片完整 transform；一格只取主片的既有简化仍在，不代表整组 prefab 已完整复刻。

@@ -212,21 +212,24 @@ export function mapoSelectionEdges(thickness: number, overhang = 0):
 /**
  * 把一批**带 UV 的矩形精灵**铺成一张 mesh（摆件层用）。
  *
- * ⚠ 精灵是**底边中点**对齐到 (x, y)：地物立在格上，往上长 —— ⛔ 不是几何中心对齐。
+ * (x, y) 是 prefab 锚点的世界坐标；顶点按 pivot 展开，再绕这个锚点旋转。
+ * 原版字段名为 anchor，资源元数据沿用 pivot 命名（MAPORIGINAL-2D §2.2）。
  * ⚠ 入参会被就地排序成**画家序**（屏幕越低越靠前）：摆件超出菱形、会互相叠压，
  *   顺着可视模板的遍历序画会前后颠倒。
  */
 export interface MapoSpriteInput {
     readonly row: number;
     readonly col: number;
-    /** 底边中点的世界坐标。 */
+    /** prefab 锚点的世界坐标 = 根位置 + 局部 position。 */
     readonly x: number;
     readonly y: number;
+    /** 归一化锚点；(0.5, 0.5) 为中心，(0, 0) 为左下角。 */
+    readonly pivot: readonly [number, number];
     readonly w: number;
     readonly h: number;
     readonly uv: readonly [number, number, number, number];
     /**
-     * 绕**精灵中心**的旋转（度，CCW 为正）。缺省 / 0 走原来的轴对齐快路径。
+     * 绕 prefab 锚点的旋转（度，CCW 为正）。缺省 / 0 走轴对齐快路径。
      * ⚠ 这是原版 prefab 里 sprite 的 `angle.z`（山族 13 形里只有 2 形非零，≤1.75°）。
      */
     readonly angleDeg?: number;
@@ -242,18 +245,17 @@ export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (let i = 0; i < n; i += 1) {
         const s = sprites[i];
-        const x0 = s.x - s.w / 2, x1 = s.x + s.w / 2, y0 = s.y, y1 = s.y + s.h;
+        const x0 = s.x - s.w * s.pivot[0], x1 = x0 + s.w;
+        const y0 = s.y - s.h * s.pivot[1], y1 = y0 + s.h;
         const [u0, v0, uw, vh] = s.uv;
         const deg = s.angleDeg ?? 0;
         if (deg === 0) {
             positions.set([x0, y1, 0, x1, y1, 0, x1, y0, 0, x0, y0, 0], i * 12);
         } else {
-            // ⚠ 绕**中心**转（原版 sprite 的 pivot 恒 [0.5, 0.5]），⛔ 不是绕底边中点
-            const cx = s.x, cy = s.y + s.h / 2;
             const r = (deg * Math.PI) / 180, cs = Math.cos(r), sn = Math.sin(r);
             const rot = (px: number, py: number): [number, number] => {
-                const dx = px - cx, dy = py - cy;
-                return [cx + dx * cs - dy * sn, cy + dx * sn + dy * cs];
+                const dx = px - s.x, dy = py - s.y;
+                return [s.x + dx * cs - dy * sn, s.y + dx * sn + dy * cs];
             };
             const [ax, ay] = rot(x0, y1), [bx, by] = rot(x1, y1);
             const [cx2, cy2] = rot(x1, y0), [dx2, dy2] = rot(x0, y0);
@@ -263,10 +265,14 @@ export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
         for (let v = 0; v < 16; v += 1) colors[i * 16 + v] = 1;   // ⚠ 贴图件取纯白，顶点色是相乘的
         const b = i * 4;
         indices16.set([b, b + 1, b + 2, b, b + 2, b + 3], i * 6);
-        if (x0 < minX) minX = x0;
-        if (x1 > maxX) maxX = x1;
-        if (y0 < minY) minY = y0;
-        if (y1 > maxY) maxY = y1;
+        // 包围盒必须包含旋转后的实际顶点，否则边缘件会被引擎提前裁掉。
+        for (let v = 0; v < 4; v += 1) {
+            const px = positions[i * 12 + v * 3], py = positions[i * 12 + v * 3 + 1];
+            if (px < minX) minX = px;
+            if (px > maxX) maxX = px;
+            if (py < minY) minY = py;
+            if (py > maxY) maxY = py;
+        }
     }
     if (n === 0) { minX = minY = maxX = maxY = 0; }
     return { positions, uvs, colors, indices16, quads: n,

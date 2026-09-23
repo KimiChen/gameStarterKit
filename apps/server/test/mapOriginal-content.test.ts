@@ -1043,7 +1043,7 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
         assert.deepEqual([...shared.pivot], c.pivot, `区域件格 ${c.variant}:${c.id} 的 pivot`);
         assert.ok(c.scale[0] > 0.1 && c.scale[0] < 8 && c.scale[1] > 0.1 && c.scale[1] < 8,
             `区域件格 ${c.variant}:${c.id} 的 scale ${c.scale} 不在 (0.1, 8.0) 内`);
-        // ⚠ 原版 sprite 的 pivot 恒中心；位置换算（中心 → 底边中点）就建在这条上
+        // 当前山体 sprite 的原版锚点均为中心；mesh 直接消费该字段。
         assert.deepEqual(c.pivot, [0.5, 0.5], `区域件格 ${c.variant}:${c.id} 的 pivot 不是中心`);
         assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
             `区域件格 ${c.variant}:${c.id} 缩略图没保住纵横比`);

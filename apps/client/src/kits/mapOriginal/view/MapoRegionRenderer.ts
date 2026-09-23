@@ -49,6 +49,7 @@ export class MapoRegionRenderer {
             // ⚠ row/col 只给画家序用；表已是画家序，这里给等距量即可（同序）
             row: p.piece.s, col: 0,
             x: p.x, y: p.y, w: p.w, h: p.h, angleDeg: p.angleDeg,
+            pivot: p.cellLayout.pivot,
             uv: mapoRegionUv(p.cellLayout, MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H),
         }));
         const geometry = buildMapoSpriteMesh(sprites);

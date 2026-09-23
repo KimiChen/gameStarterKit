@@ -57,8 +57,8 @@ test("mapOriginal 手摆件：组数/件数/长度任一对不上就拒收", () 
     assert.throws(() => mapoSetTops(KIND, makeTops(spec)), /手摆件 1 个/);
 });
 
-test("mapOriginal 手摆件：尺寸走 native × scale、位置 = 多边形原点 + pos − h/2", () => {
-    // ⚠ 尺寸 ⛔ 不能用图集里的缩略像素；位置里的 −h/2 是「中心 → 底边中点」的换算
+test("mapOriginal 手摆件：尺寸走 native × scale、锚点位置 = 多边形原点 + pos", () => {
+    // 尺寸不能用图集里的缩略像素；位置直接传 prefab 中心，不再转换成底边。
     const spec = emptySpec();
     const rest = ATLAS.sprites - 2;
     spec[0] = [[ATLAS.cells[0].id, 40, 90, 2, 3, 12, 0],
@@ -75,8 +75,9 @@ test("mapOriginal 手摆件：尺寸走 native × scale、位置 = 多边形原�
     assert.ok(Math.abs(out[0].w - w) < 1e-6, "宽 = native × scaleX");
     assert.ok(Math.abs(out[0].h - h) < 1e-6, "高 = native × scaleY");
     assert.ok(Math.abs(out[0].x - (1000 + mapoOriginalPxToWorld(40))) < 1e-6, "x = 原点 + pos.x");
-    assert.ok(Math.abs(out[0].y - (-2000 + mapoOriginalPxToWorld(90) - h / 2)) < 1e-6,
-        "y = 原点 + pos.y − h/2");
+    assert.ok(Math.abs(out[0].y - (-2000 + mapoOriginalPxToWorld(90))) < 1e-6,
+        "y = 原点 + pos.y");
+    assert.deepEqual(out[0].pivot, [0.5, 0.5]);
     assert.equal(out[0].angleDeg, 12);
     // 空组不出件
     assert.equal(mapoTopsFor(KIND, [{ ...poly, geo: 3 }], 99).length, 0);

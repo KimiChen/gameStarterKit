@@ -95,7 +95,7 @@ export function mapoTopUv(kind: string, cell: IMapoTopCell): readonly [number, n
 
 /**
  * 把一批多边形摆位展开成手摆件的 sprite。
- * ⚠ 件是「底边中点对齐」：prefab 的 pos 指的是**中心** ⇒ 这里要再往下 h/2（与山族件同式）。
+ * 图片中心 = 多边形原点 + prefab 局部 position；mesh 直接使用中心锚点。
  * @param limit 一屏最多展开多少件（一片水面能带 30 个件，⛔ 必须有上限）。
  */
 export function mapoTopsFor(kind: string, polys: readonly MapoPolygonInput[],
@@ -111,7 +111,7 @@ export function mapoTopsFor(kind: string, polys: readonly MapoPolygonInput[],
             out.push({
                 // ⚠ row/col 只给画家序用：底层表已是画家序，这里给同序的等距量即可
                 row: p.s, col: 0,
-                x: p.x + t.ox, y: p.y + t.oy - t.h / 2, w: t.w, h: t.h,
+                x: p.x + t.ox, y: p.y + t.oy, w: t.w, h: t.h, pivot: [0.5, 0.5],
                 uv: mapoTopUv(kind, t.cell), angleDeg: t.angleDeg,
             });
         }

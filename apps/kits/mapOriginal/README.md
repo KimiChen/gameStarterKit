@@ -319,13 +319,14 @@ S1 不用）。⚠ **`type_info` 的 id 比 `client_res` id 小 1**，+1 后 18 
 m2 只有 563 px，只用 native 的话 19 格的形会缩成 **1.88 格 —— 比 7 格的形还小**；
 补上 2.163 才是 4.06 格。三对共用贴图的形（m7/m6/m2）**全靠 transform 区分**，
 只抄像素会把 14 形压成 10 形。位置同理：精灵**中心** = 锚点格位置 + prefab 的 `pos`
-（pivot 恒 `[0.5, 0.5]`），渲染按底边中点对齐 ⇒ 再往下 `h/2`。
+（pivot 恒 `[0.5, 0.5]`），位置与 pivot 直接传给 mesh，由锚点展开顶点。
 `angle` 13 形里只有 2 形非零（−1.74° / −0.52°），绕精灵中心转。
 
 资源件同样保留 prefab 的 `size/scale/position/pivot/angle`（2026-09-23 选中错位修复，
 [MAPORIGINAL-2D §2.2](../../../docs/MAPORIGINAL-2D.md#22-资源件与选中框共用格心主图按-prefab-的中心锚点和偏移摆放)）。
 三套 135 个主片均为中心锚点，其中 4 项 `size` 不等于 `native`，所以资源件显示尺寸用
-`transform.size × transform.scale`；中心放在格心加 `transform.offset`，再减半高交给 mesh。
+`transform.size × transform.scale`；锚点放在格心加 `transform.offset`，mesh 按 `transform.pivot` 展开。
+资源、区域件、城、手摆细节与路片共用此接口，调用方不再转成图片底边坐标。
 旧版统一把图底放在格心下方 8 世界单位，导致 `(750,749)` 5 级粮田上浮约 30 个原版像素。
 选中框继续对准格心，不加补偿偏移；各资源等级与雪/沙变体使用各自的原版参数。
 

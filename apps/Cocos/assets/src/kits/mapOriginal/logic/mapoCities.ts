@@ -7,7 +7,7 @@
  *   （早先摆件层按「面积前 8 大 + 位置散列」挑城址件 —— 那是本仓自创的启发式，已删。）
  * ★ **15 个件覆盖全部 249 座**：件库只存 15 份、摆位存 249 条，⛔ 别把件展开 249 份。
  * ⚠ 件内次序按 **`low_z` 升序**（打包期已排好），⛔ 别在这里重排。
- * ⚠ 件是「**底边中点**对齐到格心」：prefab 的 pos 指的是件**中心** ⇒ 再往下 h/2（与山族件同式）。
+ * 图片中心 = 件根位置 + prefab 局部 position；mesh 直接使用中心锚点。
  * ⚠ 摆位的 row/col **打包期已套**过 `city_shape` 的 `even/odd_res_center` 美术偏移，
  *   ⛔ 这里别再套一次。
  */
@@ -137,7 +137,7 @@ export function mapoCitiesIn(minX: number, maxX: number, minY: number, maxY: num
             out.push({
                 // ⚠ row/col 只给画家序用：城已按 y 降序、件内已按 low_z 排好 ⇒ 给同序的量即可
                 row: out.length, col: 0,
-                x: q.x + t.ox, y: q.y + t.oy - t.h / 2, w: t.w, h: t.h,
+                x: q.x + t.ox, y: q.y + t.oy, w: t.w, h: t.h, pivot: [0.5, 0.5],
                 uv: t.flipX ? [uv[0] + uv[2], uv[1], -uv[2], uv[3]] : uv,
                 angleDeg: t.angleDeg,
             });

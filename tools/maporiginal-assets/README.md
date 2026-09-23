@@ -464,8 +464,8 @@ group 预制体。
 原版 2D 一格 300×150 px（`config_2d` 的 TILE_WIDTH/HEIGHT 是半值）⇒
 图集逐格记 `native`（贴图像素），显示尺寸还须消费 prefab：资源主片使用 `size × scale`，
 山体的 `size == native` 经提取期验证后用 `native × scale`，最后统一乘 `32/150`。
-资源三套 135 个主片均为中心 pivot，中心 = 格心 + `position × 32/150`；交给底边对齐的
-mesh 时再减 `h/2`。`pack_decor.py` 把这些参数写入 `transform`，schemaVersion=4，
+资源三套 135 个主片均为中心 pivot，锚点 = 格心 + `position × 32/150`；mesh 直接按
+pivot 展开和旋转顶点，调用方不再减 `h/2`。`pack_decor.py` 把这些参数写入 `transform`，schemaVersion=4，
 `land_variants.py` 校验根是单位变换，打包时再校验主片 pivot，避免遗漏父变换或锚点。
 详见 `docs/MAPORIGINAL-2D.md` §2.2；⛔ 不再使用统一的“图底对格心”偏移。
 

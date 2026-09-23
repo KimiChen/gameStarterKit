@@ -12,6 +12,7 @@ import {
     MAPO_ROAD_WORLD_HALF_H, MAPO_ROAD_WORLD_HALF_W,
     mapoHasRoads, mapoRoadCount, mapoRoadPos, mapoRoadsInRect, mapoSetRoads,
 } from "../src/kits/mapOriginal/logic/mapoRoads";
+import { buildMapoSpriteMesh } from "../src/kits/mapOriginal/logic/mapoMesh";
 
 function makeTable(rows: readonly { row: number; col: number; cell: number; flip: number }[]): Uint8Array {
     const recs = rows.map((r) => ({
@@ -96,7 +97,11 @@ test("mapOriginal 道路：长度对不上就拒收；画家序照表；矩形�
     assert.deepEqual(all.map((p) => p.row - MAPO_ROAD_S_BIAS), [200, 800, 1600], "画家序");
     const c = mapoRoadPos(400, 400);
     const tight = { left: c.x - 1, right: c.x + 1, bottom: c.y - 1, top: c.y + 1 };
-    assert.equal(mapoRoadsInRect(tight, 9).length, 1, "只该命中本格那片");
+    const inside = mapoRoadsInRect(tight, 9);
+    assert.equal(inside.length, 1, "只该命中本格那片");
+    const mesh = buildMapoSpriteMesh(inside);
+    assert.ok(Math.abs((mesh.positions[1] + mesh.positions[7]) / 2 - c.y) < 0.002,
+        "路片中心仍应落在道路网格中心，不能遗留半高偏移");
 });
 
 test("mapOriginal 道路：水平翻转用 **UV 宽取负**（⛔ 不翻顶点）", () => {

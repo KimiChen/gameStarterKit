@@ -39,7 +39,7 @@ export class MapoDecorRenderer {
             const place = mapoDecorAt(row, col, mapoValueAt(row, col), enabled);
             if (!place) continue;
             sprites.push({
-                row, col, x: place.x, y: place.y,
+                row, col, x: place.x, y: place.y, pivot: place.pivot,
                 w: place.w, h: place.h, angleDeg: place.angleDeg, uv: mapoDecorUv(place.cell),
             });
         }

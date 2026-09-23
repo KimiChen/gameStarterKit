@@ -45,14 +45,14 @@ test("mapOriginal 区域件：世界尺寸 = 原图像素 × prefab 的 scale（
 });
 
 test("mapOriginal 区域件：精灵中心 = 锚点格位置 + prefab 的 offset（pivot 恒中心）", () => {
-    // ⚠ 渲染按「底边中点」对齐，所以 y 要比中心低 h/2；漏了这一步件会整体上浮半个身位
+    // 位置直接是 prefab 锚点，调用方不再减半高。
     // ⚠ 坐标必须在**绿地**（N1 起雪带会换成雪山件格，offset 不同）：(838,1266) 实测是绿地。
     for (const cell of MAPO_REGION_CELLS) {
         mapoSetRegions(makeTable([{ row: 838, col: 1266, cell: cell.id }]));
         const [p] = mapoRegionsInRect(WHOLE, 8);
         const anchor = mapoRegionPos(838 + 1266, 838 - 1266);
         assert.equal(p.x, anchor.x + mapoOriginalPxToWorld(cell.offset[0]), `格 ${cell.id} x`);
-        assert.equal(p.y + p.h / 2, anchor.y + mapoOriginalPxToWorld(cell.offset[1]),
+        assert.equal(p.y, anchor.y + mapoOriginalPxToWorld(cell.offset[1]),
             `格 ${cell.id} 的精灵中心 y`);
     }
 });
@@ -70,14 +70,17 @@ test("mapOriginal 区域件：表已是画家序，摆出来的次序照抄（�
 
 test("mapOriginal 网格：angleDeg 绕**精灵中心**转，0 走轴对齐快路径", () => {
     const uv = [0, 0, 1, 1] as const;
-    const flat = buildMapoSpriteMesh([{ row: 0, col: 0, x: 0, y: 0, w: 100, h: 200, uv }]);
+    const sprite = { row: 0, col: 0, x: 0, y: 0, w: 100, h: 200, uv, pivot: [0.5, 0.5] as const };
+    const flat = buildMapoSpriteMesh([sprite]);
     // 无旋转：左上 / 右上 / 右下 / 左下
     assert.deepEqual(Array.from(flat.positions.slice(0, 12)),
-        [-50, 200, 0, 50, 200, 0, 50, 0, 0, -50, 0, 0]);
-    // 转 90°：绕中心 (0, 100)，左上角 (-50, 200) → (-100, 50)
-    const spun = buildMapoSpriteMesh([{ row: 0, col: 0, x: 0, y: 0, w: 100, h: 200, uv, angleDeg: 90 }]);
+        [-50, 100, 0, 50, 100, 0, 50, -100, 0, -50, -100, 0]);
+    // 转 90°：绕锚点 (0, 0)，左上角 (-50, 100) → (-100, -50)
+    const spun = buildMapoSpriteMesh([{ ...sprite, angleDeg: 90 }]);
     const p = Array.from(spun.positions.slice(0, 12)).map((n) => Math.round(n * 1e6) / 1e6);
-    assert.deepEqual(p, [-100, 50, 0, -100, 150, 0, 100, 150, 0, 100, 50, 0]);
+    assert.deepEqual(p, [-100, -50, 0, -100, 50, 0, 100, 50, 0, 100, -50, 0]);
+    assert.deepEqual(spun.minPos, [-100, -50, 0]);
+    assert.deepEqual(spun.maxPos, [100, 50, 0]);
     // ⚠ 旋转 ⛔ 不许改顶点数 / 索引，否则合批会错位
     assert.equal(spun.positions.length, flat.positions.length);
     assert.deepEqual(Array.from(spun.indices16), Array.from(flat.indices16));

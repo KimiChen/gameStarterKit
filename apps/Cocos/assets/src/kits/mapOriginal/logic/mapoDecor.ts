@@ -53,9 +53,10 @@ export interface IMapoDecorPlacement {
     readonly row: number;
     readonly col: number;
     readonly cell: IMapoDecorCell;
-    /** 应用 prefab 的中心偏移后，换成 mesh 要求的底边中点世界坐标。 */
+    /** 格心加 prefab 局部 position，直接作为图片锚点的世界坐标。 */
     readonly x: number;
     readonly y: number;
+    readonly pivot: readonly [number, number];
     readonly w: number;
     readonly h: number;
     readonly angleDeg: number;
@@ -86,11 +87,10 @@ export function mapoDecorAt(row: number, col: number, value: number,
     const cell = table.get(value) ?? BY_ID.get(value);
     if (!cell || cell.kind !== "res") return null;
     const { w, h } = mapoDecorSize(cell);
-    // 原版中心 = 格心 + prefab.position；底边 mesh 的 y 还须减去半高。
-    // 旧版统一 y = 格心 - 半格高/2，把 5 级粮田抬高了约 30 个原版像素。
+    // 与原版一致：格坐标只定位根，图片局部 position/pivot 由 prefab 决定。
     const x = pos.x + mapoOriginalPxToWorld(cell.transform.offset[0]);
-    const y = pos.y + mapoOriginalPxToWorld(cell.transform.offset[1]) - h / 2;
-    return { row, col, cell, x, y, w, h, angleDeg: cell.transform.angle };
+    const y = pos.y + mapoOriginalPxToWorld(cell.transform.offset[1]);
+    return { row, col, cell, x, y, w, h, pivot: cell.transform.pivot, angleDeg: cell.transform.angle };
 }
 
 /** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */

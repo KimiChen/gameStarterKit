@@ -12,8 +12,8 @@
  *   文件名/次序猜 —— 早先的 `wood/iron/stone/food` 次序假设被 land 表证伪（真值
  *   wood/stone/food/iron），旧映射把 12..41 的铁/石/粮轮转错位，N1 已随变体改正。
  * ★ `native` 是贴图像素；资源件显示尺寸 = `transform.size × transform.scale × (halfW / 150)`。
- *   `transform.offset` 是中心相对格心的原版像素偏移（+y 向上），pivot 经提取期验证恒为中心。
- *   传给底边对齐的 mesh 时再减 h/2，⛔ 不可把图底直接放到格心（MAPORIGINAL-2D §2.2）。
+ *   `transform.offset` 是锚点相对格心的原版像素偏移（+y 向上），当前主片 pivot 均为中心。
+ *   mesh 直接消费锚点位置和 pivot，⛔ 不可把图底放到格心或再减半高（MAPORIGINAL-2D §2.2）。
  * ⚠ 原版个别级的 prefab 缺/无可用 sprite，用同套同类最近一级顶上（`MAPO_DECOR_SUBSTITUTIONS`）。
  */
 
