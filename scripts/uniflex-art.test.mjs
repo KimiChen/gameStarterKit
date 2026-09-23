@@ -1,6 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
@@ -495,9 +494,8 @@ function layerPrefix(buffer) {
 }
 
 test("component document ids stay attached without rewriting pixels", () => {
-    const original = execFileSync("git", [
-        "show", "HEAD:apps/art/uniflex/components/BackpackItemCard/BackpackItemCard.psd",
-    ], { cwd: root });
+    const original = readFileSync(resolve(root,
+        "scripts/fixtures/uniflex-inline/BackpackItemCard.psd"));
     const stamped = stampComponentDocument(original, "BackpackItemCard");
     const bound = bindExternalLinks(stamped, [{
         documentId: componentDocumentId("ItemSlot"),

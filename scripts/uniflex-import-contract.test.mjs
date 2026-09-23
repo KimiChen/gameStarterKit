@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { resolveConverter } from "./uniflex-ui-cli.mjs";
-import { artComponentPsdPath, artPsdPath } from "./lib/uniflex-art.mjs";
+import { artPsdPath } from "./lib/uniflex-art.mjs";
 
 function findTextLayer(layer, namePrefix) {
     if (layer.text && String(layer.name || "").startsWith(namePrefix)) return layer;
@@ -529,10 +529,10 @@ test("import merges restored/ copies without wiping other restored files", async
     }
 });
 
-test("editing BackpackItemCard PSD overlays the shared restored copy and leaves originals", {
+test("editing an inline BackpackItemCard PSD overlays the shared restored copy and leaves originals", {
     skip: available ? false : "pinned web-ui-to-psd package is not installed",
 }, async () => {
-    const psdPath = artComponentPsdPath(root, "BackpackItemCard");
+    const psdPath = resolve(root, "scripts/fixtures/uniflex-inline/BackpackItemCard.psd");
     await access(psdPath);
     const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
     const { createCanvas } = converterRequire("@napi-rs/canvas");
@@ -645,10 +645,10 @@ test("editing Confirm PSD text rewrites ?? fallbacks and reports pure bindings",
     }
 });
 
-test("editing ActionButton PSD text skips pure prop bindings and reports them", {
+test("editing inline ActionButton PSD text skips pure prop bindings and reports them", {
     skip: available ? false : "pinned web-ui-to-psd package is not installed",
 }, async () => {
-    const psdPath = artComponentPsdPath(root, "ActionButton");
+    const psdPath = resolve(root, "scripts/fixtures/uniflex-inline/ActionButton.psd");
     await access(psdPath);
     const converterRequire = createRequire(resolve(root, "node_modules/web-ui-to-psd/package.json"));
     const { createCanvas } = converterRequire("@napi-rs/canvas");
