@@ -11,7 +11,7 @@ import {
 import { isForceLogoutReason } from './NativeLobbyRuntime'
 // 角色判定单独成模块（`lobbyRole.ts`）：它是「禁止静默降级单进程」的唯一判定点，必须有直接测试。
 import { lobbyRoleOf, schedulerOwner, workerRole } from './lobbyRole'
-// 玩家 Owner / 非玩家 Task 的跨进程转发统一装在这里，并直接验证完整监听进程链路。
+// 普通 Worker / 显式 taskGroupId Task Worker 的跨进程转发统一装在这里。
 import { installNativeLobbyProcessRouter } from './installNativeLobbyProcessRouter'
 import { routeOpsForceLogout } from '../runtime/lobby/NativeLobbyForceLogout'
 import { nativeLobbyProcessRoutes } from '../runtime/lobby/NativeLobbyProcessRoutes'

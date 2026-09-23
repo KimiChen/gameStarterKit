@@ -8,7 +8,7 @@
 - 线路配置只读取精确的 `<platform><version>` 目录，且 `platform.json5` 只做顶层浅覆盖；目录或文件缺失时使用项目基础配置，禁止自动创建线路目录或回退到其他线路。
 - 协议路由只以字符串标识（`ProtocolDef = { type, name, serviceType? }`）；`ProtocolConfig.protocols` 不含数字协议号、schema id 或内联 schema，⛔ 不要为了「兼容旧客户端」把它们加回来。
 - 多进程重复登录必须原子替换 Redis 在线归属后再踢旧连接；断线清理只能处理「被释放的连接仍是该 uid/sId 当前连接」的那一次（原生 Lobby 由 `LobbyAuthProvider.releaseOnline` 判定），避免旧连接异步 close 抹掉新会话。
-- 入口 Worker 首次解析的 `bindId` 必须随转发请求（字符串路由 + payload + 可信身份）透传给目标执行 Worker；目标进程只能复用该值，不得重新调用业务 Action 的 `getBindId`。
+- 入口 Worker 先解析 `taskGroupId` 与 `bindId`：前者为空或 `-1` 时留在普通 Worker，非负整数按 Task Worker 数取余；后者为空时回退有效 `uid`，只负责目标进程内串行。跨进程调用链必须透传并复用两项结果，不得在目标进程重算。
 - 玩家 Bean 的唯一写入 Owner 是 `uid` 对应的 Event Worker；客户端请求与后台 LocalAction 都必须回到该 Worker 串行执行。Task Worker 只能计算或发送玩家事件，不得直接提交玩家 Bean。
 - 客户端和内部业务 Action 都从进程内注册表执行；协议 Service 名不是远程路由依据，不要重新引入网关、服务发现或跨进程 Action 路由。
 - `/internal/action` 中会读写 Bean 的处理必须通过 `MessageHelper.syncDoFunc` 进入 `ServerTask`，不得在裸 HTTP 回调中执行协议逻辑。

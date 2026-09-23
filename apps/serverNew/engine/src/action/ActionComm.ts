@@ -2,6 +2,9 @@ import { ApiCall } from '../net/client/base/ApiCall'
 import { IActionLogic } from './IActionLogic'
 
 export class ActionComm implements IActionLogic {
+    async getTaskGroupId(call: ApiCall): Promise<number | undefined> {
+        return undefined
+    }
     async actionBefore(call: ApiCall<any, any, any>): Promise<void> {
         return
     }

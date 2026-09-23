@@ -27,8 +27,9 @@ export interface LobbyRouteIdentity {
     readonly sId: number
     /** 源 worker 首次解析出的内部 uid；目标 worker 不重新解析、也不做 Number(uid)。 */
     readonly internalUid: number
-    /** 源 worker 首次解析出的 bindId；目标 worker 复用而不重算。 */
-    readonly routedBindId?: number
+    /** 源 worker 首次解析出的两项调度值，目标 worker 复用而不重算。 */
+    readonly taskGroupId?: number
+    readonly bindId?: number
     readonly traceId: number
     readonly invokeLayer: number
 }
@@ -43,7 +44,8 @@ export type ProcessPipeRequest =
           readonly req: unknown
           readonly uid: number
           readonly sid: number
-          readonly bindId: number
+          readonly taskGroupId?: number
+          readonly bindId?: number
           readonly traceId: number
           readonly invokeLayer: number
           readonly backgroundTask?: BackgroundTaskDelivery
@@ -61,7 +63,8 @@ export type ProcessPipeRequest =
           readonly uid: string
           readonly internalUid: number
           readonly sid: number
-          readonly bindId: number
+          readonly taskGroupId?: number
+          readonly bindId?: number
           readonly traceId: number
           readonly invokeLayer: number
       }
@@ -119,7 +122,8 @@ export async function handleProcessPipeRequest(
                 kind: message.kind,
                 route: message.apiName,
                 uid: message.uid,
-                bindId: message.bindId,
+                taskGroupId: message.taskGroupId ?? null,
+                bindId: message.bindId ?? null,
                 pid: process.pid,
             })
             return executeLocalAction(message)
@@ -128,7 +132,8 @@ export async function handleProcessPipeRequest(
                 uid: message.uid,
                 sId: message.sid,
                 internalUid: message.internalUid,
-                routedBindId: message.bindId,
+                taskGroupId: message.taskGroupId,
+                bindId: message.bindId,
                 traceId: message.traceId,
                 invokeLayer: message.invokeLayer,
             }
@@ -140,7 +145,7 @@ export async function handleProcessPipeRequest(
                         // 可信外部身份必须随转发一起落到父调用上：嵌套对象调用据此继承，
                         // 目标 worker 不需要（也不允许）重新解析或从 payload 里猜。
                         externalUid: message.uid,
-                        routedBindId: message.bindId,
+                        routing: { taskGroupId: message.taskGroupId, bindId: message.bindId },
                         traceId: message.traceId,
                         invokeLayer: message.invokeLayer,
                     },
@@ -173,7 +178,7 @@ async function executeLocalAction(
         message.sid,
         new Call(message.apiName, (message.req ?? {}) as Record<string, unknown>, message.backgroundTask),
         {
-            routedBindId: message.bindId,
+            routing: { taskGroupId: message.taskGroupId, bindId: message.bindId },
             traceId: message.traceId,
             invokeLayer: message.invokeLayer,
             backgroundTask: message.backgroundTask,

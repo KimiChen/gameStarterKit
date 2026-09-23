@@ -1,0 +1,11 @@
+{
+  "id": "gameDemo",
+  "version": "1.0.0",
+  "domain": "gameDemo",
+  "module": "gameDemo",
+  "files": [
+    "apps/shared/schema/protocols/C2S/gameDemo.json",
+    "apps/serverNew/server/src/modules/gameDemo/GameDemoModule.ts",
+    "apps/serverNew/server/src/modules/gameDemo/action/ActionGameDemoPing.ts"
+  ]
+}

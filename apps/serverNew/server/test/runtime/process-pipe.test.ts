@@ -198,12 +198,63 @@ describe('native Lobby process pipe', () => {
                     req: {},
                     uid: INTERNAL_UID,
                     sid: SID,
+                    taskGroupId: undefined,
                     bindId: INTERNAL_UID,
                     traceId: TRACE_ID,
                     invokeLayer: 1,
                 },
             )
             assert.equal((forwarded[1] as ProcessPipeRequest).kind, 'routed-lobby-route')
+        } finally {
+            RouteAction.processRouter = savedRouter
+            RouteAction.callGroups.clear()
+        }
+    })
+
+    it('uses taskGroupId only for Task Worker selection and bindId only for target serialization', async () => {
+        const savedRouter = RouteAction.processRouter
+        const forwarded: Array<{ message: ProcessPipeRequest; targetWorkerId: number }> = []
+        let playerWorkerLookups = 0
+        const runtime = {
+            worker_id: 0,
+            setting: { worker_num: 2, task_worker_num: 2 },
+            requestMessage: async (message: ProcessPipeRequest, targetWorkerId: number) => {
+                forwarded.push({ message, targetWorkerId })
+                return { ok: true, res: { kind: 'lobby-route-outcome', data: { accepted: true } } }
+            },
+        }
+        installNativeLobbyProcessRouter(runtime as never, 5000, {
+            resolvePlayerWorker: async () => {
+                playerWorkerLookups++
+                return 1
+            },
+        })
+        try {
+            const result = await executeObjectAction(
+                'guild.taskProbe',
+                {},
+                {},
+                {
+                    async getTaskGroupId() {
+                        return 5
+                    },
+                    async getBindId() {
+                        return 77
+                    },
+                    async doAction() {
+                        throw new Error('Task Worker request must not execute on the source Worker')
+                    },
+                },
+                { uid: INTERNAL_UID, externalUid: EXTERNAL_UID, sId: SID },
+            )
+            assert.deepEqual(result, { ok: true, data: { accepted: true } })
+            assert.equal(playerWorkerLookups, 0)
+            assert.equal(forwarded.length, 1)
+            assert.equal(forwarded[0].targetWorkerId, 3, 'workerNum + 5 % taskWorkerNum')
+            assert.equal(forwarded[0].message.kind, 'routed-lobby-route')
+            if (forwarded[0].message.kind !== 'routed-lobby-route') throw new Error('unexpected pipe message')
+            assert.equal(forwarded[0].message.taskGroupId, 5)
+            assert.equal(forwarded[0].message.bindId, 77)
         } finally {
             RouteAction.processRouter = savedRouter
             RouteAction.callGroups.clear()
@@ -241,10 +292,10 @@ describe('native Lobby process pipe', () => {
 
         let getBindIdCalls = 0
         const observed: {
-            parentGroupName?: string
+            parentBindId?: number
             parentExternalUid?: string
-            nestedGroupName?: string
-            nestedRoutedBindId?: number
+            nestedBindId?: number
+            nestedTaskGroupId?: number
             nestedTraceId?: number
             nestedExternalUid?: string
         } = {}
@@ -255,12 +306,12 @@ describe('native Lobby process pipe', () => {
             assert.equal(context.uid, EXTERNAL_UID)
             assert.equal(context.sId, SID)
             const parentCall = ContextEngine.currentCtxEngine!.ctxLogic.call as unknown as {
-                groupName?: string
+                bindId?: number
                 externalUid?: string
             }
-            observed.parentGroupName = parentCall.groupName
+            observed.parentBindId = parentCall.bindId
             observed.parentExternalUid = parentCall.externalUid
-            assert.equal(RouteAction.callGroups.has(`bind:${BIND_ID}`), true)
+            assert.equal(RouteAction.callGroups.has(BIND_ID), true)
 
             const result = await executeObjectAction(
                 'user.inner',
@@ -273,14 +324,14 @@ describe('native Lobby process pipe', () => {
                     },
                     async doAction(req, res, call) {
                         order.push('inner')
-                        observed.nestedGroupName = call.groupName
-                        observed.nestedRoutedBindId = call.routedBindId
+                        observed.nestedBindId = call.bindId
+                        observed.nestedTaskGroupId = call.taskGroupId
                         observed.nestedTraceId = call.messageHead.traceId
                         observed.nestedExternalUid = call.externalUid
                         res.value = (req as { marker: string }).marker.length
                     },
                 },
-                // 故意不传 externalUid / routedBindId / traceId：必须从转发父调用继承。
+                // 故意不传 externalUid / routing / traceId：必须从转发父调用继承。
                 { uid: INTERNAL_UID, sId: SID },
             )
             assert.deepEqual(result, { ok: true, data: { value: 7 } })
@@ -299,9 +350,9 @@ describe('native Lobby process pipe', () => {
         assert.deepEqual(pipeResult.res, { kind: 'lobby-route-outcome', data: { value: 7 } })
 
         assert.equal(getBindIdCalls, 0, '目标 worker 不得用 getBindId 重算 bindId')
-        assert.equal(observed.parentGroupName, `bind:${BIND_ID}`)
-        assert.equal(observed.nestedGroupName, `bind:${BIND_ID}`)
-        assert.equal(observed.nestedRoutedBindId, BIND_ID)
+        assert.equal(observed.parentBindId, BIND_ID)
+        assert.equal(observed.nestedBindId, BIND_ID)
+        assert.equal(observed.nestedTaskGroupId, undefined)
         assert.equal(observed.nestedTraceId, TRACE_ID)
         assert.equal(observed.parentExternalUid, EXTERNAL_UID)
         assert.equal(observed.nestedExternalUid, EXTERNAL_UID)
@@ -313,7 +364,8 @@ describe('native Lobby process pipe', () => {
             uid: EXTERNAL_UID,
             sId: SID,
             internalUid: INTERNAL_UID,
-            routedBindId: BIND_ID,
+            taskGroupId: undefined,
+            bindId: BIND_ID,
             traceId: TRACE_ID,
             invokeLayer: 1,
         })
@@ -559,7 +611,7 @@ describe('native Lobby process pipe', () => {
         await assert.rejects(
             () =>
                 executeForwardedRoute(
-                    { uid: INTERNAL_UID, sId: SID, routedBindId: BIND_ID, traceId: TRACE_ID, invokeLayer: 0 },
+                    { uid: INTERNAL_UID, sId: SID, routing: { bindId: BIND_ID }, traceId: TRACE_ID, invokeLayer: 0 },
                     async () => {
                         throw businessError
                     },

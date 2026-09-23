@@ -35,12 +35,17 @@ export class ActionGuild extends ActionUser implements IActionLogic {
         this._user = user
     }
 
-    async getBindId(call: ApiCall): Promise<number | undefined> {
+    async getTaskGroupId(call: ApiCall): Promise<number | undefined> {
         if (!call.uId) {
             return undefined
         }
         const user = await UserBaseRef.load(call.uId)
-        return user?.guild
+        return user?.guild ? user.guild : undefined
+    }
+
+    async getBindId(call: ApiCall): Promise<number | undefined> {
+        // 复用入口先解析的公会 ID，避免两次读取时归属变化造成路由和串行组不一致。
+        return call.taskGroupId ?? (call.uId > 0 ? call.uId : undefined)
     }
 
     static GUILD_GIFT = 'guildGift'

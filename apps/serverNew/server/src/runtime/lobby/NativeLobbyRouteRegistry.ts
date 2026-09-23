@@ -197,7 +197,8 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
             attachNativeLobbyContext?: (connection: LobbyConnectionContext, services: NativeLobbyRouteServices) => void
             actionBefore?: (call: unknown) => Promise<void> | void
             doAction?: (request: unknown, response: unknown) => Promise<void> | void
-            getBindId?: (call: unknown) => Promise<number | undefined> | number | undefined
+            getTaskGroupId?: (call: unknown) => Promise<number | null | undefined> | number | null | undefined
+            getBindId?: (call: unknown) => Promise<number | null | undefined> | number | null | undefined
         }
         const actionServices = this.options?.actionServices
         if (actionServices && action.attachNativeLobbyContext) {
@@ -208,6 +209,7 @@ export class NativeLobbyRouteRegistry implements LobbyRouteRegistry {
             payload,
             {},
             {
+                getTaskGroupId: async (call) => action.getTaskGroupId?.call(action, call),
                 getBindId: async (call) => action.getBindId?.call(action, call),
                 actionBefore: action.actionBefore?.bind(action),
                 doAction: async (request, response) => {

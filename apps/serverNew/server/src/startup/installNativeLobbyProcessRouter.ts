@@ -1,11 +1,18 @@
-import { isLobbyRouteOutcome, RouteAction, type ApiCall, type ObjectActionCall } from '@arthropoda/game-engine'
+import {
+    isLobbyRouteOutcome,
+    RouteAction,
+    type ActionRouting,
+    type ApiCall,
+    type ObjectActionCall,
+} from '@arthropoda/game-engine'
 import type { ProcessPipeOutcome, ProcessPipeRequest } from './processPipe'
 import { resolvePlayerWorker } from './resolvePlayerWorker'
 import type { RuntimeServerLike } from './runtimeTypes'
 import { writeProcessRouteTrace } from './writeProcessRouteTrace'
 
 /**
- * 玩家 Action 落到 uid 的 Event Worker；非玩家资源 Action 继续按 bindId 落普通 Task Worker。
+ * taskGroupId 独立选择 Task Worker；未声明时玩家仍回 uid 的 Event Worker。
+ * bindId 只用于目标进程内的串行队列，不参与进程选择。
  *
  * 单独成模块是为了让这条链路**可被直接验证**：它的缺陷形态是「跨进程两侧各进一次幂等闸」，
  * 只在「监听进程 → 目标 worker」这条完整链路上才暴露——只测目标 worker 那一跳（
@@ -21,26 +28,37 @@ export function installNativeLobbyProcessRouter(
     } = {},
 ): void {
     const playerWorker = options.resolvePlayerWorker ?? resolvePlayerWorker
-    RouteAction.processRouter = async (call, bindId) => {
+    RouteAction.processRouter = async (call, routing) => {
+        const sourceWorkerId = runtime.worker_id
+        if (sourceWorkerId === null) throw new Error('action routing requires a worker process')
+        const { taskGroupId, bindId } = routing
+        // 匿名闭包没有可供目标进程重建的注册 handler。
+        if (call.getApiName() === 'default/Default') {
+            if (taskGroupId !== undefined) throw new Error('anonymous action cannot target a Task Worker')
+            return false
+        }
         let targetWorkerId: number
-        if (call.uId > 0 && bindId === call.uId) {
-            targetWorkerId = await playerWorker(runtime, call.uId, call.messageHead.serverId ?? 0)
-        } else {
+        if (taskGroupId !== undefined) {
             const taskWorkerNum = runtime.setting.task_worker_num
             if (taskWorkerNum === 0) {
-                throw new Error(`action ${call.getApiName()} 声明非玩家 bindId=${bindId}，但 taskWorkerNum=0`)
+                throw new Error(`action ${call.getApiName()} 声明 taskGroupId=${taskGroupId}，但 taskWorkerNum=0`)
             }
-            targetWorkerId = runtime.setting.worker_num + (bindId % taskWorkerNum)
+            targetWorkerId = runtime.setting.worker_num + (taskGroupId % taskWorkerNum)
+        } else if (call.uId > 0) {
+            targetWorkerId = await playerWorker(runtime, call.uId, call.messageHead.serverId ?? 0)
+        } else {
+            // 无玩家身份的命名 Action 默认在普通 Worker；后台 Task 发起时回到监听 Worker。
+            targetWorkerId = sourceWorkerId < runtime.setting.worker_num ? sourceWorkerId : 0
         }
-        if (runtime.worker_id === targetWorkerId) return false
-        const request = buildRoutedRequest(call, bindId)
-        if (!request) return false
+        if (sourceWorkerId === targetWorkerId) return false
+        const request = buildRoutedRequest(call, routing)
         writeProcessRouteTrace({
             event: 'route',
             kind: request.kind,
             route: call.getApiName(),
-            bindId,
-            sourceWorkerId: runtime.worker_id,
+            taskGroupId: taskGroupId ?? null,
+            bindId: bindId ?? null,
+            sourceWorkerId,
             targetWorkerId,
         })
         const outcome = (await runtime.requestMessage(request, targetWorkerId, pipeTimeoutMs)) as
@@ -53,13 +71,10 @@ export function installNativeLobbyProcessRouter(
 /**
  * 把一次已解析的调用编码成进程间请求。
  *
- * 只带字符串路由、业务 payload、可信身份与首次解析的 bindId；⛔ 不带客户端原始帧，也不在
- * 目标 worker 重算 bindId。RPC 请求配对由持有连接的一端完成，因此配对 id 不需要跨进程。
+ * 两项调度值都使用首次解析结果；RPC 配对留在持有连接的一端。
  */
-function buildRoutedRequest(call: ApiCall, bindId: number): ProcessPipeRequest | undefined {
+function buildRoutedRequest(call: ApiCall, routing: ActionRouting): ProcessPipeRequest {
     const sid = call.messageHead.serverId ?? 0
-    // 本地队列占位路由（`default/Default`）没有业务语义，就地执行即可。
-    if (call.getApiName() === 'default/Default') return undefined
     if (call.responseTransport !== 'object') {
         return {
             kind: 'routed-local-action',
@@ -67,7 +82,7 @@ function buildRoutedRequest(call: ApiCall, bindId: number): ProcessPipeRequest |
             req: call.req,
             uid: call.uId,
             sid,
-            bindId,
+            ...routing,
             traceId: call.messageHead.traceId,
             invokeLayer: call.messageHead.invokeLayer,
             ...(call.backgroundTask ? { backgroundTask: call.backgroundTask } : {}),
@@ -82,7 +97,7 @@ function buildRoutedRequest(call: ApiCall, bindId: number): ProcessPipeRequest |
         uid: externalUid,
         internalUid: call.uId,
         sid,
-        bindId,
+        ...routing,
         traceId: call.messageHead.traceId,
         invokeLayer: call.messageHead.invokeLayer,
     }

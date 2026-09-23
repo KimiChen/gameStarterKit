@@ -8,6 +8,7 @@ import { IActionLogic } from '../action/IActionLogic'
 import { LocalActionRegistry } from '../action/LocalActionRegistry'
 import { ApiProtocol } from '../protocol/ProtocolInterface'
 import { MsgType } from '../protocol/MsgType'
+import type { ActionRouting } from '../action/ActionRouting'
 
 export class Call<T extends {}> {
     constructor(
@@ -26,8 +27,8 @@ interface LocalCallOptions {
 }
 
 export interface LocalActionForwarding {
-    /** 源进程首次解析出的串行键；目标进程不得重新调用业务 getBindId。 */
-    routedBindId: number
+    /** 源进程首次解析出的调度信息；目标进程不得重算，包括空值。 */
+    routing: ActionRouting
     /** 复用源调用的链路信息，保证嵌套调用和死锁检测语义不变。 */
     traceId: number
     invokeLayer: number
@@ -84,7 +85,7 @@ export class MessageHelper {
         let value: Awaited<T>
         const handler = class implements IActionLogic {
             async getBindId(): Promise<number | undefined> {
-                return 0
+                return undefined
             }
             async actionBefore(): Promise<void> {
                 return
@@ -160,7 +161,11 @@ export class MessageHelper {
             },
             { handler: actionClass },
         )
-        actionCall.routedBindId = options.forwarded?.routedBindId
+        if (options.forwarded) {
+            actionCall.taskGroupId = options.forwarded.routing.taskGroupId
+            actionCall.bindId = options.forwarded.routing.bindId
+            actionCall.routingResolved = true
+        }
         actionCall.backgroundTask = options.forwarded?.backgroundTask ?? call.backgroundTask
 
         if (options.waitReturn) {

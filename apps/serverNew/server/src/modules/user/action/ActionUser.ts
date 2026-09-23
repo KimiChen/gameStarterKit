@@ -7,6 +7,10 @@ import { UserDayInit } from './UserDayInit'
  * 该类作为每日重置, action鉴权 的入口需要尽量被继承
  */
 export class ActionUser implements IActionLogic {
+    async getTaskGroupId(resCall: ApiCall): Promise<number | undefined> {
+        return undefined
+    }
+
     protected _user: any = undefined
 
     get user() {

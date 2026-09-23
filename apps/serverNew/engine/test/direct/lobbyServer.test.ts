@@ -107,6 +107,9 @@ async function waitFor(predicate: () => boolean, timeoutMs = 1000): Promise<void
 
 async function main() {
     const releases: string[] = []
+    let holdNext = false
+    let heldEntered: (() => void) | undefined
+    let releaseHeld: (() => void) | undefined
     const server = new LobbyServer({
         host,
         port: 0,
@@ -144,6 +147,13 @@ async function main() {
                 return type === 'user.getInfo'
             },
             async execute(_type, context) {
+                if (holdNext) {
+                    holdNext = false
+                    heldEntered?.()
+                    await new Promise<void>((resolve) => {
+                        releaseHeld = resolve
+                    })
+                }
                 return { uid: context.uid }
             },
             assertComplete() {},
@@ -152,29 +162,6 @@ async function main() {
     await server.start()
     const port = (server as unknown as { httpServer: { address(): AddressInfo } }).httpServer.address().port
     try {
-        let active = 0
-        let maxActive = 0
-        await Promise.all([
-            server.executeSerialized(
-                { uid: 'same-user', sId: 7, sessionEpoch: 'e', connectionId: 'a', ip: '' },
-                async () => {
-                    active += 1
-                    maxActive = Math.max(maxActive, active)
-                    await new Promise((resolve) => setTimeout(resolve, 5))
-                    active -= 1
-                },
-            ),
-            server.executeSerialized(
-                { uid: 'same-user', sId: 7, sessionEpoch: 'e', connectionId: 'b', ip: '' },
-                async () => {
-                    active += 1
-                    maxActive = Math.max(maxActive, active)
-                    active -= 1
-                },
-            ),
-        ])
-        assert.equal(maxActive, 1, 'same uid/sId must serialize across connections')
-
         const unauthorized = await open(port)
         unauthorized.send(JSON.stringify({ kind: 'rpc', rpc: { id: 'x', type: 'user.getInfo', payload: {} } }))
         assert.deepEqual(await message(unauthorized), {
@@ -212,6 +199,24 @@ async function main() {
         assert.deepEqual(await message(socket), {
             kind: 'reply',
             reply: { id: 'q1', ok: true, data: { uid: 'user-9007199254740993' } },
+        })
+
+        // 同一连接的接入队列只负责接纳：第一条业务尚未结束时，第二条应已进入 handler 并先回复。
+        holdNext = true
+        const entered = new Promise<void>((resolve) => {
+            heldEntered = resolve
+        })
+        socket.send(JSON.stringify({ kind: 'rpc', rpc: { id: 'slow', type: 'user.getInfo', payload: {} } }))
+        await entered
+        socket.send(JSON.stringify({ kind: 'rpc', rpc: { id: 'fast', type: 'user.getInfo', payload: {} } }))
+        assert.deepEqual(await message(socket), {
+            kind: 'reply',
+            reply: { id: 'fast', ok: true, data: { uid: 'user-9007199254740993' } },
+        })
+        releaseHeld?.()
+        assert.deepEqual(await message(socket), {
+            kind: 'reply',
+            reply: { id: 'slow', ok: true, data: { uid: 'user-9007199254740993' } },
         })
         socket.send(JSON.stringify({ kind: 'rpc', rpc: { id: 'q2', type: 'missing.route', payload: {} } }))
         assert.deepEqual(await message(socket), {

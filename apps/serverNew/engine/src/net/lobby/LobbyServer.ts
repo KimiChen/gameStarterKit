@@ -134,6 +134,8 @@ export interface LobbyServerOptions {
     readonly handlerTimeoutMs: number
     readonly rateLimitCapacity: number
     readonly rateLimitRefillPerSecond: number
+    /** 单连接尚未完成的业务数；超时但仍在执行的业务也占额度。 */
+    readonly maxPendingRequests?: number
     readonly auth: LobbyAuthProvider
     readonly wire: LobbyWireCodec
     readonly routes: LobbyRouteRegistry
@@ -159,6 +161,7 @@ class LobbyServerConnection {
     private readonly bucket: TokenBucket
     private chain: Promise<void> = Promise.resolve()
     private closeHandled = false
+    private pendingRequests = 0
 
     constructor(
         readonly id: string,
@@ -265,7 +268,10 @@ class LobbyServerConnection {
             this.sendReply(frame.rpc.id, activeError)
             return
         }
-        await this.executeRpc(context, frame.rpc)
+        // 接入队列只保护认证与请求接纳；业务互斥由目标进程的 bindId 队列负责。
+        void this.executeRpc(context, frame.rpc).catch(() => {
+            this.closeWithControl('INVALID_FRAME', '请求处理失败', 1011)
+        })
     }
 
     private async authenticate(frame: LobbyInboundAuth): Promise<void> {
@@ -320,13 +326,19 @@ class LobbyServerConnection {
             this.sendReply(rpc.id, { code: 'INVALID_PAYLOAD', msg: '请求参数无效' })
             return
         }
+        if (this.pendingRequests >= (this.server.options.maxPendingRequests ?? 100)) {
+            this.sendReply(rpc.id, { code: 'RATE_LIMITED', msg: '未完成请求过多' })
+            return
+        }
+        this.pendingRequests++
+        // 调用方超时不等于业务停止，必须等实际业务退出才释放额度。
+        const execution = Promise.resolve()
+            .then(() => this.server.options.routes.execute(rpc.type, context, payload))
+            .finally(() => {
+                this.pendingRequests--
+            })
         try {
-            const result = await withTimeout(
-                this.server.executeSerialized(context, () =>
-                    this.server.options.routes.execute(rpc.type, context, payload),
-                ),
-                this.server.options.handlerTimeoutMs,
-            )
+            const result = await withTimeout(execution, this.server.options.handlerTimeoutMs)
             const outcome = isLobbyRouteOutcome(result) ? result : lobbyRouteOutcome(result)
             const data = this.server.options.wire.validateResponse(rpc.type, outcome.data)
             this.send({
@@ -392,8 +404,6 @@ export class LobbyServer {
     private wsServer?: WebSocketServer
     private nextConnectionId = 1
     private readonly connections = new Map<string, LobbyServerConnection>()
-    /** 同一可信身份跨连接仍串行；业务 handler 可在其内部再按领域 bind key 细分。 */
-    private readonly identityChains = new Map<string, Promise<void>>()
 
     constructor(readonly options: LobbyServerOptions) {}
 
@@ -452,25 +462,6 @@ export class LobbyServer {
 
     removeConnection(connection: LobbyServerConnection): void {
         this.connections.delete(connection.id)
-    }
-
-    /**
-     * 认证上下文而非 payload 决定串行身份。前一个失败也会释放后续请求，避免一条异常把该用户永久卡住。
-     */
-    async executeSerialized<T>(context: LobbyConnectionContext, fn: () => Promise<T>): Promise<T> {
-        const key = `${context.sId}:${context.uid}`
-        const previous = this.identityChains.get(key) ?? Promise.resolve()
-        const run = previous.then(fn, fn)
-        const tail = run.then(
-            () => undefined,
-            () => undefined,
-        )
-        this.identityChains.set(key, tail)
-        try {
-            return await run
-        } finally {
-            if (this.identityChains.get(key) === tail) this.identityChains.delete(key)
-        }
     }
 
     private accept(socket: WebSocket, ip: string): void {

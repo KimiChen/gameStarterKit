@@ -24,14 +24,22 @@
 - `/gm/api` 的原生 Lobby 强制下线沿用内部数值 `role_id`：管理进程只把它投递到目标区服，监听 worker 用当前在线会话中的 `internalUid` 定位连接并复用 4903 `revoked` 语义。⛔ 不要新增持久化的 role_id → 外部 uid 反查表，离线用户必须诚实返回 `kicked: false`，也不得把外部 uid 视为数字。
 - Runtime bundle 固定由 `pnpm build:runtime` 生成；bundle 目录与 `build/Release/ts_swoole_runtime_state.node` 的相对位置不可拆开复制。
 - 外置 runtime ESM 必须使用带 `webpackIgnore` 的原生变量 `import()`；否则 NCC 会改写成 bundle 内 lazy context，生产包将无法加载独立的 runtime 文件。
-- 排查 `bindId` 路由时可临时设 `ALLOY_PROCESS_ROUTE_TRACE=1`；trace 只输出 API 名、bindId 和源/目标 worker，不得扩展为输出用户或请求业务数据。trace 打在 `requestMessage` **之前**，它证明的是「发起了转发」而不是「已经送达」——拿它当跨进程证据时必须同时有对端的行为观测（对端真的执行了、客户端真的收到了），否则「请求根本没送达」也是绿的。
-- 跨进程转发只传已解析对象：字符串路由、业务 payload、可信身份（字符串 uid、内部 uid、`sId`）、源 worker 首次解析的 `bindId` 与 traceId。禁止把客户端原始帧或数字协议号交给目标 worker 重放，目标 worker 也不得重算 `bindId`。
+- 排查 Action 路由时可临时设 `ALLOY_PROCESS_ROUTE_TRACE=1`；trace 只输出 API 名、`taskGroupId`、`bindId` 和源/目标 worker，不得扩展为输出用户或请求业务数据。trace 打在 `requestMessage` **之前**，跨进程证据仍需同时观察目标执行或客户端结果。
+- 跨进程转发只传已解析对象：字符串路由、业务 payload、可信身份（字符串 uid、内部 uid、`sId`）、源 Worker 首次解析的 `taskGroupId` / `bindId` 与 traceId。目标进程及其同步嵌套调用复用两项结果，不得重算。
 - 玩家写入 Owner 记录在 center Redis 的 `PlayerWorkerOwner`，值是 Event Worker 槽位，离线后仍保留。首次登记优先复用在线表或共享内存 `connection_owner(connectionId)`，否则按 uid 稳定分配；映射缺失或超出当前 Event Worker 池时原子重建。
-- `RouteAction.processRouter` 同时转发原生 Lobby 对象调用与玩家 LocalAction：`bindId === uid` 时回到玩家 Event Worker，非玩家资源才按 `bindId` 进入普通 Task Worker。Task Worker 不得直接写玩家 Bean，只能发送玩家 LocalAction/事件回 Owner；匿名 `default/Default` 才允许就地执行。
+- `RouteAction.processRouter` 同时转发原生 Lobby 对象调用与 LocalAction：`taskGroupId` 为空或 `-1` 时留在普通 Worker（带 uid 的调用回玩家 Owner），非负整数按 `workerNum + taskGroupId % taskWorkerNum` 进入 Task Worker。`bindId` 不参与进程选择，只控制目标进程内串行；空值默认使用 uid。
+
+## 多进程角色选择
+
+- `workerNum` 个 `WORKER`（Event Worker）占槽位 `[0, workerNum)`：玩家 Bean 唯一写入 Owner 属于此池，不等于「持有 WebSocket 连接的进程」。只有槽位 0 监听原生 Lobby 和内部 HTTP；其他进程的推送、同步与踢人回送槽位 0。
+- `taskWorkerNum` 个 `TASK_WORKER` 占槽位 `[workerNum, workerNum + taskWorkerNum)`：显式声明非负 `taskGroupId` 的 Action 按取余执行；有此池时首个 Task Worker 承担 Cron、延迟队列及 `scope: 'server'` 启动贡献，否则由槽位 0 承担。不要把 `ServerTask`（每次 Action 的执行/提交生命周期）误当成 Task Worker 进程。
+- `userTaskWorkerNum` 个 `USER_TASK_WORKER` 占后续槽位：目前只完成进程池配置、启动与角色登记，当前 `RouteAction.processRouter` **没有**向此池分发 Action；它不是玩家 Owner 池。新增用途必须先明确独立的路由与写入边界，不能仅增大这个数量来分担玩家 Action。
+- `MASTER` 没有业务槽位，只管理 worker、重拉和独立健康探针；不要在主控执行 Action 或发起目标 worker 请求。三种数量全为 0 才是 `SINGLE`；启用多进程必须有 Event Worker，不能单开 Task/User Task 池。
+- 新 Action 先判断**是否写玩家 Bean**：是则让 `taskGroupId` 为空，由玩家 Event Worker 执行，`bindId` 留空即可默认按 uid 串行；非玩家资源显式提供稳定 `taskGroupId` 进入 Task Worker，并按需要提供独立 `bindId`。Task Worker 不得直接提交玩家 Bean。
 - 客户端入口**只有**原生 Lobby；旧二进制网关（`ClientServer` + PB 编解码）已随 P6 删除。多进程下 `CP.service.clientPort` 仍被 alloy-core 绑定，因此该端口上的连接会被显式关闭（1008）而不是静默丢弃帧；⛔ 不要为「让端口安静」恢复旧的帧解析路径。
 - 原生 Lobby 的监听进程与转发 worker 必须共用同一份路由组装和进程级执行点；只有持有连接的一端能写 wire 消息，其余 worker 的推送与踢人必须转交监听进程，关闭时卸载进程级路由表。
 - worker 意外退出（崩溃 / OOM / SIGKILL）由 alloy-core 自动重拉：同一槽位重新 fork，`generation` +1，`restartCount` +1；重拉走的是**同一套** `onWorkerStart` → `initializeWorker`，所以调度器所有权（`taskWorkerNum > 0` 时归 `workerNum` 那个槽位）也会被重新获取。重启预算是 10s 窗口内最多 5 次，超出即判 crash loop 并**停掉整个 runtime**，因此排查时不要靠反复杀进程复现。崩溃的可观测出口只有主控的 `onWorkerError`：worker 自己的 `onWorkerExit` 只在优雅 drain 时才跑，硬杀根本轮不到它，而 alloy-core 内部的 `context.log` 不落服务进程 stdout —— ⛔ 删掉 `onWorkerError` 会让「崩了又被重拉」在日志里完全无声。
-- `QueuedLocalAction` 的立即与延迟调用都先按唯一 `taskId` 持久登记，再由调度 worker 认领；执行成功后 ACK，认领进程崩溃则租约到期后接管，确定失败只重试一次并进入失败清单。业务 Action 通过 `Ctx.backgroundTask` 读取同一个 `taskId`，跨进程 `bindId` 路由不得丢失它。
+- `QueuedLocalAction` 的立即与延迟调用都先按唯一 `taskId` 持久登记，再由调度 worker 认领；执行成功后 ACK，认领进程崩溃则租约到期后接管，确定失败只重试一次并进入失败清单。业务 Action 通过 `Ctx.backgroundTask` 读取同一个 `taskId`，跨进程调度不得丢失它。
 - 可靠任务崩溃接管的小验证运行 `pnpm verify:queued-action-recovery`：它在隔离 Redis DB 中让子进程认领任务后被 `SIGKILL`，再由新 owner 在租约到期后接管并完成，结束时清理一次性 key。
 - 关键状态与后续任务不能只依赖提交后回调：生产者应把稳定 `taskId` 随权威业务状态一起保存，重启时按该状态幂等补登记；业务副作用必须用 `taskId` 作为自身存储的幂等操作号。队列只能保证至少一次投递，不能替跨 Redis / MySQL 写入制造不存在的分布式原子性。
 
@@ -52,6 +60,8 @@
 ## 生成和 Bean
 
 - 原生 Lobby 的类型、路由、错误码和校验器从 `apps/shared` 真源编译到忽略的 `generated/lobby-contract/`；运行 `pnpm gen:lobby-contract` 刷新，`pnpm check:lobby-contract` 只读校验。禁止在新框架维护第二份业务协议或修改旧服务端来接入新通道。
+- `pnpm generate` 的 Lobby wire 阶段只编译已有的 `apps/shared/src/protocol/lobbyRpc`，不会把 `apps/shared/schema/protocols/C2S` 的新增域生成为 wire。验证可安装模块时必须先从 schema 在干净宿主独立生成 shared 域和路由登记，再编译契约、生成模块索引并实际启动；禁止把旧 `apps/server` 的 codegen 成功当作新宿主安装成功。
+- 可分发的原生 Lobby kit 用 `pnpm kit -- pack <source> --out-dir <artifact>`、`install <artifact>`、`check <id>`、`uninstall <id>`；它只拥有自己的 shared schema 与 `src/modules/<id>/`，不接管旧服务端、SQL、客户端或其他宿主文件。安装与卸载会经 `tools/lobby-protocol` 独立刷新 wire，再跑本项目 `pnpm generate`；锁文件记录归属与 sha256，源码漂移时拒绝卸载。需要真实入口闭环时在本地 Redis/MySQL 可达的开发机运行 `pnpm verify:kit-clean-host`，它在隔离宿主启动真实原生 Lobby，⛔ 不使用旧 `apps/server` 的 codegen。
 - 新增一个 lobbyRpc 域（`apps/shared` 的 `domains/<域>.ts`）会让旧 `apps/server` 的端点全集闸（`src/websocket/loader.ts`：shared 声明的每条路由都必须有 `src/websocket/<域>/<方法>.ts`）报「shared 已声明但无端点文件」并**拒绝启动**。那是**另一条通道**的工作项，不属于业务玩法开发：⛔ 不要为让它变绿在 `apps/server` 造 fail-closed 桩或伪造业务数据，也不要因此缩窄 wire 契约。业务开发的验收面只有本项目（`pnpm check`、`pnpm verify:module -- <module>`、`test/runtime/protocol/native-lobby-routes.test.ts`），不含 `apps/server` 的测试套件。
 - ⚠ **但「不动 `apps/server`」不等于「`apps/server` 下的路径一律不许改」**，两者别混：`apps/server/test/lobbyRpcVectors/<域>.ts` 是**codegen 契约要求的**（`tools/plugin-codegen/lib.ts` 的 `readVectorSidecars` 做双向对齐：每个 domain 必须有同名 sidecar，缺则 `codegen:plugins` 直接失败；域删了还要同批删 sidecar）。新增域必须同批提供最小合法 request/response 向量并重跑 `codegen:plugins`，其产物 `lobbyRpcVectors/index.generated.ts` 由生成器独占，⛔ 不手改。判据：`node --import tsx tools/plugin-codegen/cli.ts --check` 报 `generated plugin artifacts are fresh`。区分标准是**这条路径属于谁的所有权**：codegen/契约面（向量 sidecar、`tools/plugin-codegen/**`）必须跟着改；旧通道的**业务端点与测试套件**不碰。
 - `pnpm verify:module -- <module>` 的 `test:module` 一步要求 `test/modules/<module>/` 存在。`income` 这类只由运行时契约套件覆盖、没有模块测试目录的模块会报 `module has no tests`；它们的覆盖在 `test/runtime/protocol/native-lobby-routes.test.ts`，⛔ 不要为凑门禁建空测试目录。

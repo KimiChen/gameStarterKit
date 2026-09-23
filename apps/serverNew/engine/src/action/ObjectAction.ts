@@ -5,6 +5,7 @@ import { TraceIdGen } from '../net/client/codec/TraceIdGen'
 import type { ApiReturn } from '../protocol/ProtocolInterface'
 import { MsgType } from '../protocol/MsgType'
 import RouteAction from '../task/RouteAction'
+import type { ActionRouting } from './ActionRouting'
 
 /** 从持久化身份映射取得的内部角色 ID；不是 Number(外部 uid)。 */
 export interface ObjectActionIdentity {
@@ -15,11 +16,8 @@ export interface ObjectActionIdentity {
      * 跨进程转发时目标 worker 靠它解析内部身份；⛔ 业务代码不得用它做数值运算或当内部 ID 用。
      */
     readonly externalUid?: string
-    /**
-     * 跨进程转发时源 worker 首次解析出的 bindId。
-     * 目标 worker 必须原样复用，不得用 `getBindId` 重算（重算可能读到不同的业务状态）。
-     */
-    readonly routedBindId?: number
+    /** 已解析的两项调度信息；对象存在即表示已解析，包括两个 ID 都为空。 */
+    readonly routing?: ActionRouting
     /** 跨进程转发时复用源调用的 traceId / invokeLayer，保持全链路可追踪。 */
     readonly traceId?: number
     readonly invokeLayer?: number
@@ -27,7 +25,8 @@ export interface ObjectActionIdentity {
 
 /** server 已完成 shared 校验后，按字符串路由直接执行对象。 */
 export interface ObjectActionHandler<Req, Res> {
-    getBindId?(call: ObjectActionCall<Req, Res>): Promise<number | undefined>
+    getTaskGroupId?(call: ObjectActionCall<Req, Res>): number | null | undefined | Promise<number | null | undefined>
+    getBindId?(call: ObjectActionCall<Req, Res>): number | null | undefined | Promise<number | null | undefined>
     actionBefore?(call: ObjectActionCall<Req, Res>): Promise<void> | void
     doAction(req: Req, res: Res, call: ObjectActionCall<Req, Res>): Promise<void> | void
 }
@@ -92,15 +91,21 @@ export class ObjectActionCall<Req, Res> extends ApiCall<Req, Res> {
             req,
             res,
             handler: {
+                getTaskGroupId: async () => handler.getTaskGroupId?.(this),
                 getBindId: async () => handler.getBindId?.(this),
                 actionBefore: async () => { await handler.actionBefore?.(this) },
                 doAction: async (request, response) => { await handler.doAction(request, response, this) },
             },
         })
-        // 显式身份优先；否则继承转发请求的父调用，避免目标 worker 重新解析 bindId / 外部身份。
+        // 转发链上的嵌套对象调用继承首次解析结果，避免目标进程重算后再次路由。
         const forwardedParent = parent as ObjectActionCall<Req, Res> | undefined
         this.externalUid = identity.externalUid ?? forwardedParent?.externalUid
-        this.routedBindId = identity.routedBindId ?? forwardedParent?.routedBindId
+        const routing = identity.routing ?? (parent?.routingResolved ? parent : undefined)
+        if (routing) {
+            this.taskGroupId = routing.taskGroupId
+            this.bindId = routing.bindId
+            this.routingResolved = true
+        }
     }
 
     override getApiType(): string {
@@ -141,8 +146,8 @@ const FORWARDED_ROUTE = 'internal.forwardedRoute'
 /**
  * 目标 worker 执行跨进程转发过来的对象路由。
  *
- * 先建立父调用再执行 `run`，父调用因此占用 `bind:<routedBindId>` 分组；业务 ObjectActionCall
- * 继承同一个 bindId 与 traceId 后就地执行，既不会重算 bindId，也不会被判定成「跨进程绕回同分组」。
+ * 先建立父调用再执行 `run`，父调用占用 bindId 分组；直接业务 ObjectActionCall
+ * 继承 taskGroupId、bindId 与 traceId 后就地执行，不重算调度，也不会被误判为跨进程绕回。
  * 业务失败按原始错误抛出，避免在进程边界被压成数字错误码。
  */
 export async function executeForwardedRoute<T>(identity: ObjectActionIdentity, run: () => Promise<T>): Promise<T> {

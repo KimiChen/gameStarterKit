@@ -45,11 +45,11 @@ export abstract class ApiCall<
 
     public actionHandler?: IActionLogic
 
-    /** 绑定分组id */
-    public groupName?: string
-
-    /** 入口 Worker 首次解析后随 IPC 透传的 bindId；目标执行 Worker 不得重复计算。 */
-    public routedBindId?: int
+    /** 进程路由与进程内串行相互独立，入口解析后随 IPC 透传。 */
+    public taskGroupId?: number
+    public bindId?: number
+    /** 即使两个 ID 都为空，转发目标也不得重新解析。 */
+    public routingResolved = false
 
     /** 后台可靠任务身份；业务可用 taskId 做存储幂等，不得从 req 中猜。 */
     public backgroundTask?: BackgroundTaskDelivery

@@ -3,6 +3,7 @@ import { ServerTask } from './ServerTask'
 import { GameError } from '../error/GameError'
 import { ContextEngine } from '../context/ContextEngine'
 import { format } from 'util'
+import type { ActionRouting } from '../action/ActionRouting'
 
 export type error = GameError
 
@@ -55,7 +56,7 @@ export class CallGroup {
                 }
                 this.callQueue.splice(index, 1)
                 Log.net.error(
-                    `uid:${call.uId}, group:${call.groupName}, 排队${RouteAction.queueWaitSeconds}秒仍未轮到,放弃 api=${call.getApiName()}`,
+                    `uid:${call.uId}, bindId:${call.bindId}, 排队${RouteAction.queueWaitSeconds}秒仍未轮到,放弃 api=${call.getApiName()}`,
                 )
                 call.error(GameError.apiCallQueueTimeout.getItem()).then(
                     () => resolve(),
@@ -86,7 +87,7 @@ export class CallGroup {
 
 export default class RouteAction {
     /** 可选的跨进程路由器；返回 true 表示请求已在目标进程执行，本进程不再执行。 */
-    static processRouter?: (call: ApiCall, bindId: number) => Promise<boolean>
+    static processRouter?: (call: ApiCall, routing: ActionRouting) => Promise<boolean>
     /**
      * 排队等待上限（秒）：请求入队后超过这个时间还没轮到执行，就直接报错返回，
      * 避免它无限期挂在队列里。默认取 ApiCallWaitSeconds，部署环境可按需要调整。
@@ -94,10 +95,10 @@ export default class RouteAction {
     static queueWaitSeconds = ApiCallWaitSeconds
 
     /**
-     * 请求分组表：同分组的请求串行执行，key 见 resolveGroupName。
+     * 请求分组表：只按 bindId 串行，不使用 taskGroupId 作为队列键。
      * 表里存在某个 key 表示该分组的业务正在执行，后来的请求需要排队。
      */
-    static callGroups = new Map<string, CallGroup>()
+    static callGroups = new Map<number, CallGroup>()
 
     static async onApiCall(call: ApiCall): Promise<void> {
         //防止调用递归调用
@@ -116,25 +117,18 @@ export default class RouteAction {
             return
         }
 
-        const binding = await RouteAction.resolveBinding(call)
-        if (!call.groupName) {
-            call.groupName = binding.groupName
-        }
-        if (
-            binding.bindId !== undefined &&
-            RouteAction.processRouter &&
-            (await RouteAction.processRouter(call, binding.bindId))
-        ) {
+        const routing = await RouteAction.resolveRouting(call)
+        if (RouteAction.processRouter && (await RouteAction.processRouter(call, routing))) {
             return
         }
-        const groupName = call.groupName
-        if (!groupName) {
+        const bindId = call.bindId
+        if (bindId === undefined) {
             //没有分组，直接执行
             await RouteAction.doAction(call)
             return
         }
 
-        const running = RouteAction.callGroups.get(groupName)
+        const running = RouteAction.callGroups.get(bindId)
         if (running) {
             //已经有分组的请求在执行
             const sameTrace = running.callingTraceId !== 0 && running.callingTraceId === call.messageHead.traceId
@@ -172,8 +166,8 @@ export default class RouteAction {
         }
 
         const group = new CallGroup(call)
-        RouteAction.callGroups.set(groupName, group)
-        Log.net.debug(`uid:${call.uId}, group:${groupName}, 开始执行业务${call.getApiName()}`)
+        RouteAction.callGroups.set(bindId, group)
+        Log.net.debug(`uid:${call.uId}, bindId:${bindId}, 开始执行业务${call.getApiName()}`)
         try {
             await RouteAction.doAction(call)
             //执行完检查还有没有请求要跟在后面执行
@@ -181,7 +175,7 @@ export default class RouteAction {
             // eslint-disable-next-line no-constant-condition
             while ((item = group.next())) {
                 try {
-                    Log.net.debug(`uid:${item.call.uId}, group:${groupName}, 串行继续执行业务${item.call.getApiName()}`)
+                    Log.net.debug(`uid:${item.call.uId}, bindId:${bindId}, 串行继续执行业务${item.call.getApiName()}`)
                     await RouteAction.doAction(item.call)
                 } finally {
                     item.resolve()
@@ -189,39 +183,28 @@ export default class RouteAction {
             }
         } finally {
             //业务抛错也必须释放分组，否则该分组的后续请求会一直排在被占用的队列里
-            RouteAction.callGroups.delete(groupName)
+            RouteAction.callGroups.delete(bindId)
             RouteAction.abortQueue(group)
         }
     }
 
-    /**
-     * 计算串行分组键。
-     *
-     * 优先用 action 声明的 bindId —— 同 bindId 的请求串行执行，保证同一份业务数据
-     * （公会、房间、战斗）不会被两个请求并发修改。
-     * 没声明 bindId 时把 uid 提升为 bindId，保证任何带 uId 的请求都会回玩家 Owner 串行执行。
-     *
-     * 分组键只取 bindId，不带 apiType：带 apiType 会把同一份资源上的不同 api 拆进
-     * 不同分组，反而失去串行保护。不同资源 id 撞号只会多串行，不会漏串行。
-     *
-     * bindId <= 0 视为「未声明」：0 在现有实现里是「没有绑定业务资源」的哨兵
-     * （LocalAction 的匿名 handler、guild 模块都这么用）。若把 0 当成分组键，
-     * 所有框架内部调用（含 /internal/action 派发）会全部串行在同一个分组上。
-     */
-    private static async resolveBinding(call: ApiCall): Promise<{ groupName?: string; bindId?: number }> {
-        if (call.routedBindId !== undefined && call.routedBindId > 0) {
-            return { groupName: `bind:${call.routedBindId}`, bindId: call.routedBindId }
-        }
-        try {
-            const bindId = await call.actionHandler?.getBindId(call)
-            if (bindId !== undefined && bindId !== null && Number.isFinite(bindId) && bindId > 0) {
-                return { groupName: `bind:${bindId}`, bindId }
+    /** 先解析执行进程，再解析串行键；失败直接终止，不能换组后继续执行业务。 */
+    private static async resolveRouting(call: ApiCall): Promise<ActionRouting> {
+        if (!call.routingResolved) {
+            const taskGroupId = await call.actionHandler?.getTaskGroupId?.(call)
+            if (taskGroupId != null && taskGroupId !== -1 && (!Number.isSafeInteger(taskGroupId) || taskGroupId < 0)) {
+                throw new Error(`invalid taskGroupId for ${call.getApiName()}`)
             }
-        } catch (error) {
-            // bindId 解析失败不能阻断业务，退化为玩家 uid Owner
-            Log.error(`RouteAction#resolveGroupName getBindId failed api=${call.getApiName()} uId=${call.uId}`, error)
+            call.taskGroupId = taskGroupId == null || taskGroupId === -1 ? undefined : taskGroupId
+
+            const bindId = await call.actionHandler?.getBindId?.(call)
+            if (bindId != null && (!Number.isSafeInteger(bindId) || bindId < 0)) {
+                throw new Error(`invalid bindId for ${call.getApiName()}`)
+            }
+            call.bindId = bindId ?? (Number.isSafeInteger(call.uId) && call.uId > 0 ? call.uId : undefined)
+            call.routingResolved = true
         }
-        return call.uId ? { groupName: `bind:${call.uId}`, bindId: call.uId } : {}
+        return { taskGroupId: call.taskGroupId, bindId: call.bindId }
     }
 
     /**
@@ -250,7 +233,7 @@ export default class RouteAction {
                 clearTimeout(item.timer)
                 item.timer = undefined
             }
-            Log.net.error(`group:${item.call.groupName}, 分组异常退出, 放弃 api=${item.call.getApiName()}`)
+            Log.net.error(`bindId:${item.call.bindId}, 分组异常退出, 放弃 api=${item.call.getApiName()}`)
             item.call.error(GameError.apiCallQueueTimeout.getItem()).then(
                 () => item.resolve(),
                 () => item.resolve(),

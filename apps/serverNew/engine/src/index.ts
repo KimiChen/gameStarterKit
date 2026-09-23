@@ -166,6 +166,7 @@ export { ContextEngineExport as ContextEngine } from './context/ContextEngine'
 
 /** action生命周期相关, 请求的apiCall对象返回类型等  */
 export { IActionLogic } from './action/IActionLogic'
+export type { ActionRouting } from './action/ActionRouting'
 export {
     ObjectActionCall,
     executeObjectAction,

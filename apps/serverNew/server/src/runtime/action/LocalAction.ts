@@ -103,7 +103,7 @@ export class LocalAction {
     static asyncDoFunc(fn: () => void | Promise<void>) {
         const param = class tmp implements IActionLogic {
             async getBindId(call: ApiCall<any, any, any>): Promise<number | undefined> {
-                return 0
+                return undefined
             }
 
             async actionBefore(call: ApiCall<any, any, any>): Promise<void> {

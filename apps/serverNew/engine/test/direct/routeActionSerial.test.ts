@@ -30,7 +30,8 @@ interface CallOptions {
     traceId: number
     uId?: number
     /** 不传表示 action 没有实现 getBindId（actionHandler 为空） */
-    getBindId?: (call: any) => Promise<number | undefined>
+    getBindId?: (call: any) => Promise<number | null | undefined>
+    getTaskGroupId?: (call: any) => Promise<number | null | undefined>
     /** doAction 期间额外执行的逻辑，用来模拟嵌套调用 / 绕回调用 */
     body?: (call: any) => Promise<void>
 }
@@ -47,7 +48,7 @@ function makeCall(options: CallOptions) {
         error: async (errOrMsg: any) => {
             errors.push(errOrMsg)
         },
-        actionHandler: options.getBindId ? { getBindId: options.getBindId } : undefined,
+        actionHandler: { getBindId: options.getBindId, getTaskGroupId: options.getTaskGroupId },
     } as any
 }
 
@@ -89,6 +90,7 @@ async function runTest(name: string, test: () => Promise<void> | void) {
     const startedAt = Date.now()
     resetTrace()
     RouteAction.callGroups.clear()
+    RouteAction.processRouter = undefined
     RouteAction.queueWaitSeconds = 0.5
     stubDoAction()
     try {
@@ -98,6 +100,7 @@ async function runTest(name: string, test: () => Promise<void> | void) {
         throw error
     } finally {
         RouteAction.callGroups.clear()
+        RouteAction.processRouter = undefined
     }
     console.log(`PASS ${name} (${Date.now() - startedAt}ms)`)
 }
@@ -137,18 +140,22 @@ async function main() {
         assert.equal(RouteAction.callGroups.size, 0)
     })
 
-    await runTest('bindId 为 0 或未声明时退化为按 uid 分组', async () => {
+    await runTest('bindId 为 0 是有效组，空值或未声明才默认按 uid 分组', async () => {
         const zero = makeCall({ name: 'zero', traceId: 1, uId: 7, getBindId: async () => 0 })
         await RouteAction.onApiCall(zero)
-        assert.equal(zero.groupName, 'bind:7', 'bindId=0 时必须退化到玩家 uid Owner')
+        assert.equal(zero.bindId, 0)
 
         const unset = makeCall({ name: 'unset', traceId: 2, uId: 9, getBindId: async () => undefined })
         await RouteAction.onApiCall(unset)
-        assert.equal(unset.groupName, 'bind:9')
+        assert.equal(unset.bindId, 9)
+
+        const empty = makeCall({ name: 'null', traceId: 3, uId: 10, getBindId: async () => null })
+        await RouteAction.onApiCall(empty)
+        assert.equal(empty.bindId, 10)
 
         const noHandler = makeCall({ name: 'noHandler', traceId: 3, uId: 11 })
         await RouteAction.onApiCall(noHandler)
-        assert.equal(noHandler.groupName, 'bind:11')
+        assert.equal(noHandler.bindId, 11)
     })
 
     await runTest('既没有 bindId 也没有 uid 的请求不分组，直接执行', async () => {
@@ -156,7 +163,7 @@ async function main() {
 
         await RouteAction.onApiCall(call)
 
-        assert.equal(call.groupName, undefined)
+        assert.equal(call.bindId, undefined)
         assert.deepEqual(order, ['anon'])
         assert.equal(RouteAction.callGroups.size, 0)
     })
@@ -187,7 +194,7 @@ async function main() {
             await RouteAction.onApiCall(outer)
         })
 
-        assert.equal(nested.groupName, 'bind:42')
+        assert.equal(nested.bindId, 42)
         assert.equal(nested.errors.length, 0, '嵌套调用不应被判定为死锁')
         assert.deepEqual(order, ['outer', 'nested'])
     })
@@ -226,6 +233,132 @@ async function main() {
         await all
         assert.deepEqual(order, ['first'], '被超时放弃的请求不应执行')
         assert.equal(RouteAction.callGroups.size, 0)
+    })
+
+    await runTest('空 bindId 的同 uid 请求仍然串行', async () => {
+        await Promise.all(
+            ['a', 'b'].map((name, i) => RouteAction.onApiCall(makeCall({ name, traceId: i + 1, uId: 7 }))),
+        )
+        assert.equal(maxActive, 1)
+        assert.deepEqual(order, ['a', 'b'])
+    })
+
+    await runTest('taskGroupId 仅用于路由，转发发生在本地排队和业务之前', async () => {
+        const routed: unknown[] = []
+        RouteAction.processRouter = async (_call, routing) => {
+            routed.push(routing)
+            assert.equal(RouteAction.callGroups.size, 0)
+            assert.deepEqual(order, [])
+            return true
+        }
+        for (const taskGroupId of [undefined, null, -1, 0, 7]) {
+            await RouteAction.onApiCall(
+                makeCall({
+                    name: 'routed',
+                    traceId: 1,
+                    uId: 42,
+                    getTaskGroupId: async () => taskGroupId,
+                }),
+            )
+        }
+        assert.deepEqual(
+            routed,
+            [undefined, undefined, undefined, 0, 7].map((taskGroupId) => ({ taskGroupId, bindId: 42 })),
+        )
+        assert.deepEqual(order, [])
+    })
+
+    await runTest('相同 taskGroupId 不会串行不同 bindId；同进程相同 bindId 才串行', async () => {
+        await Promise.all(
+            [1, 2].map((bindId) =>
+                RouteAction.onApiCall(
+                    makeCall({
+                        name: String(bindId),
+                        traceId: bindId,
+                        uId: 7,
+                        getTaskGroupId: async () => 100,
+                        getBindId: async () => bindId,
+                    }),
+                ),
+            ),
+        )
+        assert.equal(maxActive, 2)
+        resetTrace()
+        await Promise.all(
+            [1, 2].map((taskGroupId) =>
+                RouteAction.onApiCall(
+                    makeCall({
+                        name: String(taskGroupId),
+                        traceId: taskGroupId,
+                        uId: 7,
+                        getTaskGroupId: async () => taskGroupId,
+                        getBindId: async () => 42,
+                    }),
+                ),
+            ),
+        )
+        assert.equal(maxActive, 1)
+    })
+
+    await runTest('解析失败和非法 ID 不得回退后执行业务', async () => {
+        for (const id of [NaN, Infinity, -2, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+            await assert.rejects(
+                RouteAction.onApiCall(
+                    makeCall({
+                        name: 'bad-task',
+                        traceId: 1,
+                        uId: 7,
+                        getTaskGroupId: async () => id,
+                    }),
+                ),
+                /invalid taskGroupId/,
+            )
+        }
+        await assert.rejects(
+            RouteAction.onApiCall(
+                makeCall({
+                    name: 'bad-bind',
+                    traceId: 1,
+                    uId: 7,
+                    getBindId: async () => NaN,
+                }),
+            ),
+            /invalid bindId/,
+        )
+        await assert.rejects(
+            RouteAction.onApiCall(
+                makeCall({
+                    name: 'broken',
+                    traceId: 1,
+                    uId: 7,
+                    getBindId: async () => {
+                        throw new Error('lookup failed')
+                    },
+                }),
+            ),
+            /lookup failed/,
+        )
+        assert.deepEqual(order, [])
+        assert.equal(RouteAction.callGroups.size, 0)
+    })
+
+    await runTest('已经转发的空调度值不得重新解析', async () => {
+        const call = makeCall({
+            name: 'forwarded',
+            traceId: 1,
+            uId: 0,
+            getTaskGroupId: async () => {
+                throw new Error('must not resolve taskGroupId')
+            },
+            getBindId: async () => {
+                throw new Error('must not resolve bindId')
+            },
+        })
+        call.routingResolved = true
+        await RouteAction.onApiCall(call)
+        assert.equal(call.bindId, undefined)
+        assert.equal(call.taskGroupId, undefined)
+        assert.deepEqual(order, ['forwarded'])
     })
 }
 
