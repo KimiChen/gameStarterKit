@@ -51,11 +51,14 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const pageSurfaceAlt = theme.preview.surfaceAlt;
     const pageText = theme.preview.text;
     const [checked, setChecked] = useState(true);
+    const [radio, setRadio] = useState('a');
     const [selectedTab, setSelectedTab] = useState('one');
     const [quantity, setQuantity] = useState(3);
     const [input, setInput] = useState('主题输入');
     const [navigation, setNavigation] = useState<MainNavSlot>('hero');
     const checkedLabel = checked ? '已勾选' : '未勾选';
+    const radioA = radio === 'a';
+    const radioB = radio === 'b';
     const font = fontRef('fonts/regular', 700);
     const gearIcon = imageRef('ui/settings/gear');
     const gemIcon = itemIcon('gem');
@@ -85,6 +88,8 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
         return { ...mailTab, selected: art.selected, unselected: art.unselected, color: theme.tab.color, activeColor: theme.tab.activeColor, badgeSource, noticeSource };
     }, [theme, showCharacterTab, showHeroListTab, showHeroDetailTab]);
     const toggleChecked = () => setChecked(!checked);
+    const pickRadioA = () => setRadio('a');
+    const pickRadioB = () => setRadio('b');
     const selectTab = (id: string) => setSelectedTab(id);
     const onQuantity = (value: number) => setQuantity(value);
     const onInput = (value: string) => setInput(value);
@@ -136,6 +141,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showBadge = part === 'cmp-badge';
     const showDot = part === 'cmp-dot';
     const showCheck = part === 'cmp-check';
+    const showRadio = part === 'cmp-radio';
     const showInput = part === 'cmp-input';
     const showProgress = part === 'cmp-progress';
     const showEmpty = part === 'cmp-empty';
@@ -190,6 +196,18 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
                 style={{ width: 210, height: 60, backgroundColor: pageSurfaceAlt, flexDirection: 'row', alignItems: 'center', padding: { left: 8 } }}>
                 <CheckBox theme={theme} checked={checked} size={44} hitSize={60} />
                 <text value={checkedLabel} style={{ width: 140, height: 60, font: font, fontSize: 24, color: pageText, horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+        </view>
+        <view visible={showRadio} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height, flexDirection: 'row', gap: 20 }}>
+            <view name="RadioA" accessibilityLabel="选项一" interaction="press" onClick={pickRadioA}
+                style={{ width: 210, height: 60, backgroundColor: pageSurfaceAlt, flexDirection: 'row', alignItems: 'center', padding: { left: 8 } }}>
+                <CheckBox theme={theme} checked={radioA} size={44} hitSize={60} />
+                <text value="选项一" style={{ width: 140, height: 60, font: font, fontSize: 24, color: pageText, horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view name="RadioB" accessibilityLabel="选项二" interaction="press" onClick={pickRadioB}
+                style={{ width: 210, height: 60, backgroundColor: pageSurfaceAlt, flexDirection: 'row', alignItems: 'center', padding: { left: 8 } }}>
+                <CheckBox theme={theme} checked={radioB} size={44} hitSize={60} />
+                <text value="选项二" style={{ width: 140, height: 60, font: font, fontSize: 24, color: pageText, horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
         </view>
         <view visible={showInput} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>

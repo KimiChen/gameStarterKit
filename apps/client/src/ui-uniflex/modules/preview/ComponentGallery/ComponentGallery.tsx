@@ -28,7 +28,7 @@ const PAGE_WIDTH = 750;
 const PAGE_HEIGHT = 1424;
 const HEADER_HEIGHT = 188;
 const SCROLL_HEIGHT = PAGE_HEIGHT - HEADER_HEIGHT;
-const CONTENT_HEIGHT = 2888;
+const CONTENT_HEIGHT = 4020;
 const SECTION_WIDTH = 710;
 const INNER_WIDTH = 674;
 const SECTION_GAP = 24;
@@ -59,6 +59,7 @@ export interface ComponentGalleryParams {
 export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zIndex: 'screen' }, (context) => {
     const [mode, setMode] = useState<ThemeName>('classic');
     const [checked, setChecked] = useState(true);
+    const [radio, setRadio] = useState('a');
     const [selectedTab, setSelectedTab] = useState('one');
     const [quantity, setQuantity] = useState(3);
     const [input, setInput] = useState('主题输入');
@@ -79,6 +80,8 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
     const classicChipText = classicSelected ? pageOnAccent : pageText;
     const midnightChipText = midnightSelected ? pageOnAccent : pageText;
     const checkedLabel = checked ? '已勾选' : '未勾选';
+    const radioA = radio === 'a';
+    const radioB = radio === 'b';
     const font = fontRef('fonts/regular', 700);
     const gearIcon = imageRef('ui/settings/gear');
     const gemIcon = itemIcon('gem');
@@ -111,6 +114,8 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
     const selectMidnight = () => setMode('midnight');
     const onPopupClose = () => console.info('[ComponentGallery] close');
     const toggleChecked = () => setChecked(!checked);
+    const pickRadioA = () => setRadio('a');
+    const pickRadioB = () => setRadio('b');
     const onBack = context.params.onBack;
     return (
         <view name="ComponentGallery" style={{
@@ -196,54 +201,12 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                             </view>
                         </view>
                     </view>
-                    <view name="FeedbackSection" style={{
+                    <view name="TabsSection" style={{
                         width: SECTION_WIDTH, backgroundColor: pageSurface,
                         padding: { left: 18, right: 18, top: 16, bottom: 20 },
                         flexDirection: 'column', gap: ITEM_GAP,
                     }}>
-                        <text value="02  反馈、输入与状态" style={{
-                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
-                            verticalAlign: 'center',
-                        }} />
-                        <view style={{ width: INNER_WIDTH, flexDirection: 'row', flexWrap: 'wrap', gap: ITEM_GAP, alignItems: 'center' }}>
-                            <view style={{ width: 34, height: 34 }}>
-                                <NotificationBadge theme={theme} mode="count" count={8} left={0} top={0} />
-                            </view>
-                            <view style={{ width: 24, height: 24 }}>
-                                <NotificationBadge theme={theme} mode="dot" visible left={0} top={0} />
-                            </view>
-                            <view name="ToggleCheckbox" accessibilityLabel="切换勾选" interaction="press"
-                                onClick={toggleChecked}
-                                style={{
-                                    width: 210, height: 60, backgroundColor: pageSurfaceAlt,
-                                    flexDirection: 'row', alignItems: 'center', padding: { left: 8 },
-                                }}>
-                                <CheckBox theme={theme} checked={checked} size={44} hitSize={60} />
-                                <text value={checkedLabel} style={{
-                                    width: 140, height: 60, font: font, fontSize: 24, color: pageText,
-                                    horizontalAlign: 'center', verticalAlign: 'center',
-                                }} />
-                            </view>
-                            <view style={{ width: 290, height: 56 }}>
-                                <InputText theme={theme} left={0} top={0} width={290} height={56}
-                                    value={input} placeholder="请输入" onInput={(value) => setInput(value)} />
-                            </view>
-                        </view>
-                        <view style={{ width: INNER_WIDTH, height: 34 }}>
-                            <ProgressBar theme={theme} left={0} top={0} width={INNER_WIDTH} height={34}
-                                value={72} max={100} label="72%" />
-                        </view>
-                        <view style={{ width: INNER_WIDTH, height: 160 }}>
-                            <EmptyState theme={theme} left={283} top={4} label="空状态"
-                                labelLeft={232} labelTop={124} labelWidth={210} />
-                        </view>
-                    </view>
-                    <view name="ItemsSection" style={{
-                        width: SECTION_WIDTH, backgroundColor: pageSurface,
-                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
-                        flexDirection: 'column', gap: ITEM_GAP,
-                    }}>
-                        <text value="03  页签、数量与道具" style={{
+                        <text value="02  页签" style={{
                             width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
                             verticalAlign: 'center',
                         }} />
@@ -252,10 +215,146 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                                 itemWidth={190} width={INNER_WIDTH} skin={tabSkin}
                                 onSelect={(id) => selectTab(id)} />
                         </view>
+                    </view>
+                    <view name="DotSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="03  红点" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view style={{ width: INNER_WIDTH, height: 48, flexDirection: 'row', alignItems: 'center', gap: ITEM_GAP }}>
+                            <view style={{ width: 34, height: 34 }}>
+                                <NotificationBadge theme={theme} mode="count" count={8} left={0} top={0} />
+                            </view>
+                            <view style={{ width: 24, height: 24 }}>
+                                <NotificationBadge theme={theme} mode="dot" visible left={0} top={0} />
+                            </view>
+                        </view>
+                    </view>
+                    <view name="InputSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="04  输入框" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view style={{ width: 290, height: 56 }}>
+                            <InputText theme={theme} left={0} top={0} width={290} height={56}
+                                value={input} placeholder="请输入" onInput={(value) => setInput(value)} />
+                        </view>
+                    </view>
+                    <view name="StatusSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="05  状态" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view style={{ width: INNER_WIDTH, height: 160 }}>
+                            <EmptyState theme={theme} left={283} top={4} label="空状态"
+                                labelLeft={232} labelTop={124} labelWidth={210} />
+                        </view>
+                    </view>
+                    <view name="ProgressSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="06  进度条" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view style={{ width: INNER_WIDTH, height: 34 }}>
+                            <ProgressBar theme={theme} left={0} top={0} width={INNER_WIDTH} height={34}
+                                value={72} max={100} label="72%" />
+                        </view>
+                    </view>
+                    <view name="CheckSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="07  复选框" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view name="ToggleCheckbox" accessibilityLabel="切换复选框" interaction="press"
+                            onClick={toggleChecked}
+                            style={{
+                                width: 210, height: 60, backgroundColor: pageSurfaceAlt,
+                                flexDirection: 'row', alignItems: 'center', padding: { left: 8 },
+                            }}>
+                            <CheckBox theme={theme} checked={checked} size={44} hitSize={60} />
+                            <text value={checkedLabel} style={{
+                                width: 140, height: 60, font: font, fontSize: 24, color: pageText,
+                                horizontalAlign: 'center', verticalAlign: 'center',
+                            }} />
+                        </view>
+                    </view>
+                    <view name="RadioSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="08  单选框" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view style={{ width: INNER_WIDTH, height: 60, flexDirection: 'row', gap: ITEM_GAP }}>
+                            <view name="RadioA" accessibilityLabel="选项一" interaction="press" onClick={pickRadioA}
+                                style={{
+                                    width: 210, height: 60, backgroundColor: pageSurfaceAlt,
+                                    flexDirection: 'row', alignItems: 'center', padding: { left: 8 },
+                                }}>
+                                <CheckBox theme={theme} checked={radioA} size={44} hitSize={60} />
+                                <text value="选项一" style={{
+                                    width: 140, height: 60, font: font, fontSize: 24, color: pageText,
+                                    horizontalAlign: 'center', verticalAlign: 'center',
+                                }} />
+                            </view>
+                            <view name="RadioB" accessibilityLabel="选项二" interaction="press" onClick={pickRadioB}
+                                style={{
+                                    width: 210, height: 60, backgroundColor: pageSurfaceAlt,
+                                    flexDirection: 'row', alignItems: 'center', padding: { left: 8 },
+                                }}>
+                                <CheckBox theme={theme} checked={radioB} size={44} hitSize={60} />
+                                <text value="选项二" style={{
+                                    width: 140, height: 60, font: font, fontSize: 24, color: pageText,
+                                    horizontalAlign: 'center', verticalAlign: 'center',
+                                }} />
+                            </view>
+                        </view>
+                    </view>
+                    <view name="QuantitySection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="09  数量" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
                         <view style={{ width: INNER_WIDTH, height: 85 }}>
                             <QuantityControl theme={theme} left={0} top={0} value={quantity} max={9}
                                 skin={QUANTITY_LAYOUT} onChange={(value) => setQuantity(value)} />
                         </view>
+                    </view>
+                    <view name="ItemsSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="10  道具" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
                         <view style={{ width: INNER_WIDTH, flexDirection: 'row', flexWrap: 'wrap', gap: ITEM_GAP, alignItems: 'center' }}>
                             <view style={{ width: 154, height: 159 }}>
                                 <ItemSlot theme={theme} left={0} top={0} itemId="cube" count="12" />
@@ -308,7 +407,7 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                         padding: { top: 16, bottom: 24 },
                         flexDirection: 'column', gap: CHROME_GAP, alignItems: 'center',
                     }}>
-                        <text value="04  页头、页尾与导航" style={{
+                        <text value="11  页头、页尾与导航" style={{
                             width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
                             verticalAlign: 'center',
                         }} />
@@ -338,7 +437,7 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                         padding: { top: 16, bottom: 24 },
                         flexDirection: 'column', gap: ITEM_GAP, alignItems: 'center',
                     }}>
-                        <text value="05  弹窗与关闭" style={{
+                        <text value="12  弹窗与关闭" style={{
                             width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
                             verticalAlign: 'center',
                         }} />
