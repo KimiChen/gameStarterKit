@@ -6,7 +6,35 @@
   "  ⛔ 任何 scene_3d/** 前缀都不许再进这张表 —— 那是 3D 沙盘的地形材质。",
   "  ⛔ fairy/atlas_3d/** 也不许：它是 3D **UI 皮肤**（const.lua:651-657 是与沙盘维度正交的另一套 tag），",
   "     两个沙盘 kit 都不该收。要地图 UI 就用 fairy/atlas/map_s1（2D UI）或 fairy/atlas_common/map_s1（共用）。",
-  "  机检在 apps/server/test/mapOriginal-content.test.ts（产物 info.json 的 source 前缀白名单）。"
+  "  机检在 apps/server/test/mapOriginal-content.test.ts（产物 info.json 的 source 前缀白名单）。",
+  {
+   "kind": "atlas",
+   "prefixes": [
+    "scene/effect/_output_atlas_se/atlas_tex/"
+   ],
+   "only": [
+    "se_resource_smoke",
+    "se_ashes_01"
+   ]
+  },
+  {
+   "kind": "atlas",
+   "prefixes": [
+    "scene/npc/_output_atlas_npc_shadow/atlas_tex/"
+   ],
+   "only": [
+    "shadow_atlas"
+   ]
+  },
+  {
+   "kind": "ui",
+   "prefixes": [
+    "fairy/atlas_common/"
+   ],
+   "only": [
+    "special_effects"
+   ]
+  }
  ],
  "mapId": "s1",
  "groups": [

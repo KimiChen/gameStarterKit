@@ -1,3 +1,6 @@
+import { MAPO_TOP_SCENES } from "../../../shared/kits/mapOriginal/content/top-scenes.data";
+import { mapoSceneAnimated, mapoSceneSprites } from "./mapoScene";
+import { mapoReadPrefabVisual, mapoPrefabUv, type MapoPrefabVisual } from "./mapoPrefab";
 /**
  * `_top_group` 的**手摆细节**：河流 / snow / desert 三族共用一套机制。纯逻辑，⛔ 不碰 cc。
  *
@@ -6,22 +9,16 @@
  *   ⇒ 件的 pos / scale / angle 全来自 prefab，⛔ 这里不撒、不随机、不按格算。
  * ⚠ 组内次序按 **`low_z` 升序**（打包期已排好）：原版靠它定同组内谁压谁，
  *   ⛔ 别在这里重排，也 ⛔ 别按子节点原序。
- * ⚠ 件的世界尺寸 = **原图像素 × prefab 的 scale**（与山族件 M0-B2 同式），
+ * ⚠ 件的世界尺寸 = **prefab.size × prefab.scale**（与山族件 M0-B2 同式），
  *   ⛔ 不是图集里的像素 —— 图集是按 0.4× 缩存的。
  */
-import { mapoOriginalPxToWorld } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import {
     MAPO_TOP_ATLASES, MAPO_TOP_RECORD_BYTES, type IMapoTopAtlas, type IMapoTopCell,
 } from "../../../shared/kits/mapOriginal/content/tops.data";
 import type { MapoPolygonInput, MapoSpriteInput } from "./mapoMesh";
 
-interface TopSprite {
+interface TopSprite extends MapoPrefabVisual {
     readonly cell: IMapoTopCell;
-    /** 件中心相对多边形原点的偏移（**已是世界单位**）。 */
-    readonly ox: number; readonly oy: number;
-    /** 件的世界尺寸。 */
-    readonly w: number; readonly h: number;
-    readonly angleDeg: number;
 }
 
 interface TopLib {
@@ -64,18 +61,8 @@ export function mapoSetTops(kind: string, buf: ArrayBuffer | Uint8Array): void {
         for (let k = 0; k < n; k += 1) {
             const cell = byId.get(v.getUint16(o));
             if (!cell) throw new Error(`mapOriginal ${kind} 手摆件引用了不存在的图集格`);
-            const x = v.getFloat32(o + 2), y = v.getFloat32(o + 6);
-            const sx = v.getFloat32(o + 10), sy = v.getFloat32(o + 14);
-            const angle = v.getFloat32(o + 18);
+            list.push({ cell, ...mapoReadPrefabVisual(v, o) });
             o += MAPO_TOP_RECORD_BYTES;
-            list.push({
-                cell,
-                ox: mapoOriginalPxToWorld(x), oy: mapoOriginalPxToWorld(y),
-                // ★ 尺寸走 native（原图像素）× prefab 的 scale，⛔ 不是图集里的缩略尺寸
-                w: mapoOriginalPxToWorld(cell.native[0] * Math.abs(sx)),
-                h: mapoOriginalPxToWorld(cell.native[1] * Math.abs(sy)),
-                angleDeg: angle,
-            });
         }
         groups.push(list);
     }
@@ -84,6 +71,13 @@ export function mapoSetTops(kind: string, buf: ArrayBuffer | Uint8Array): void {
 
 export function mapoHasTops(kind: string): boolean {
     return (LIBS.get(kind)?.groups.length ?? 0) > 0;
+}
+
+export function mapoTopsAnimated(kind: string, polys: readonly MapoPolygonInput[]): boolean {
+    return polys.some((p) => {
+        const scene = MAPO_TOP_SCENES[kind]?.[p.geo - 1];
+        return !!scene && mapoSceneAnimated(scene);
+    });
 }
 
 /** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */
@@ -95,15 +89,24 @@ export function mapoTopUv(kind: string, cell: IMapoTopCell): readonly [number, n
 
 /**
  * 把一批多边形摆位展开成手摆件的 sprite。
- * 图片中心 = 多边形原点 + prefab 局部 position；mesh 直接使用中心锚点。
+ * 图片锚点 = 多边形原点 + prefab 局部 position；mesh 使用 prefab 的真实 pivot。
  * @param limit 一屏最多展开多少件（一片水面能带 30 个件，⛔ 必须有上限）。
  */
 export function mapoTopsFor(kind: string, polys: readonly MapoPolygonInput[],
-                            limit: number): MapoSpriteInput[] {
+                            limit: number, seconds = 0): MapoSpriteInput[] {
     const lib = LIBS.get(kind);
     if (!lib || lib.groups.length === 0) return [];
     const out: MapoSpriteInput[] = [];
     for (const p of polys) {
+        const scene = MAPO_TOP_SCENES[kind]?.[p.geo - 1];
+        if (scene) {
+            const cells = lib.meta.cells.map((c) => ({ ...c, source: "" }));
+            const sprites = mapoSceneSprites(scene, cells, lib.meta.size, seconds,
+                { x: p.x, y: p.y, row: p.s, col: 0 });
+            if (out.length + sprites.length > limit) return out;
+            out.push(...sprites);
+            continue;
+        }
         const list = lib.groups[p.geo - 1];
         if (!list) continue;
         for (const t of list) {
@@ -111,8 +114,8 @@ export function mapoTopsFor(kind: string, polys: readonly MapoPolygonInput[],
             out.push({
                 // ⚠ row/col 只给画家序用：底层表已是画家序，这里给同序的等距量即可
                 row: p.s, col: 0,
-                x: p.x + t.ox, y: p.y + t.oy, w: t.w, h: t.h, pivot: [0.5, 0.5],
-                uv: mapoTopUv(kind, t.cell), angleDeg: t.angleDeg,
+                ...t.sprite, x: p.x + t.sprite.x, y: p.y + t.sprite.y,
+                uv: mapoPrefabUv(mapoTopUv(kind, t.cell), t.mirrorX, t.mirrorY),
             });
         }
     }

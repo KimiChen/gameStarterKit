@@ -4,7 +4,7 @@
  *    否则先 reject 再 release，晚到的成功回调会给一张已经 decRef 的资源再 addRef。
  *  ⚠ 路由关掉/切图时无论成功失败都要 release 整包。
  */
-import { BufferAsset, Texture2D, resources } from "cc";
+import { BufferAsset, EffectAsset, Texture2D, resources } from "cc";
 import {
     MAPO_DECOR_ATLAS_ASSET, MAPO_GROUND_BASE_ASSET, MAPO_MINIMAP_ASSET, MAPO_REGIONS_ASSET,
     MAPO_REGION_ATLAS_ASSET, MAPO_RIVERS_ASSET, MAPO_RIVER_FILL_ASSET, MAPO_RIVER_GEO_ASSET,
@@ -17,6 +17,11 @@ import { MAPO_BLOCK_KINDS } from "../logic/mapoBlocks";
 import { MAPO_TOP_KINDS } from "../logic/mapoTops";
 
 export interface MapoArtResources {
+    readonly spriteEffect: EffectAsset | null;
+    readonly riverEffect: EffectAsset | null;
+    readonly riverMask: Texture2D | null;
+    readonly riverNormal: Texture2D | null;
+    readonly gridLine: Texture2D | null;
     readonly plate4: Texture2D | null;
     readonly plate5: Texture2D | null;
     readonly minimap: Texture2D | null;
@@ -50,7 +55,7 @@ export interface MapoArtResources {
     readonly regions: BufferAsset | null;
     /** 河流水面的填充色图（6×2，三张原版 2×2 平色）。 */
     readonly riverFill: Texture2D | null;
-    /** 选中高亮（原版 choose2 罩格地块面，240×112）。⚠ 缺席只退回细线菱形，⛔ 不致命。 */
+    /** 普通点选 2080 的八片 UI 图集。 */
     readonly choose: Texture2D | null;
     /** 河流几何库 `river-geo.bin`。 */
     readonly riverGeo: BufferAsset | null;
@@ -81,6 +86,17 @@ function loadBuffer(path: string): Promise<BufferAsset | null> {
 }
 
 export async function loadMapoArt(): Promise<MapoArtResources> {
+    const loadEffect = (name: string): Promise<EffectAsset | null> => new Promise((resolve) => {
+        resources.load(`kits/mapOriginal/maps/s1/${name}`, EffectAsset, (error, asset) => {
+            if (error || !asset) { console.error(`mapOriginal 材质 ${name} 加载失败`, error); resolve(null); return; }
+            asset.addRef(); resolve(asset);
+        });
+    });
+    const [spriteEffect, riverEffect, riverMask, riverNormal, gridLine] = await Promise.all([
+        loadEffect("mapo-sprite"), loadEffect("mapo-river"),
+        loadTexture("kits/mapOriginal/maps/s1/river-mask"), loadTexture("kits/mapOriginal/maps/s1/river-normal"),
+        loadTexture("kits/mapOriginal/maps/s1/grid-line"),
+    ]);
     const [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill, groundBase, roadAtlas,
            terrain, regions, riverGeo, rivers, roads, cityAtlas, cities, choose] =
         await Promise.all([
@@ -116,7 +132,7 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
     const topBy = new Map(tops.map((t) => [t.kind, t]));
     let released = false;
     return {
-        plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
+        spriteEffect, riverEffect, riverMask, riverNormal, gridLine, plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
         riverFill, riverGeo, rivers, groundBase, roadAtlas, roads, cityAtlas, cities, choose,
         blockBase: (kind) => blockBy.get(kind)?.base ?? null,
         blockGeo: (kind) => blockBy.get(kind)?.geo ?? null,
@@ -128,6 +144,8 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             released = true;
             for (const a of [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill,
                              groundBase, roadAtlas, cityAtlas, choose]) a?.decRef();
+            spriteEffect?.decRef(); riverEffect?.decRef();
+            riverMask?.decRef(); riverNormal?.decRef(); gridLine?.decRef();
             terrain?.decRef();
             regions?.decRef();
             riverGeo?.decRef();

@@ -6,7 +6,9 @@
  * ⚠ 图集没加载出来就整层不建 —— ⛔ 不用纯色方块占位（那比没有还难看）。
  */
 import { Material, Node } from "cc";
-import { mapoDecorAt, mapoDecorUv } from "../logic/mapoDecor";
+import { mapoDecorAt } from "../logic/mapoDecor";
+import { mapoSceneAnimated, mapoSceneSprites } from "../logic/mapoScene";
+import { MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../shared/kits/mapOriginal/content/decor.data";
 import { buildMapoSpriteMesh, type MapoSpriteInput } from "../logic/mapoMesh";
 import { mapoDecorEnabledFor } from "../logic/mapoSettings";
 import { mapoValueAt } from "../logic/mapoTerrain";
@@ -21,6 +23,16 @@ export class MapoDecorRenderer {
     private batch: MapoBatch | null = null;
     private material: Material | null = null;
     private disposed = false;
+    private seconds = 0;
+    private animated = false;
+    private visible: { logic: MapOriginalWorldLogic; cells: readonly { row: number; col: number }[] } | null = null;
+
+    tick(dt: number): void {
+        this.seconds += dt;
+        if (dt > 0 && this.visible && this.animated) {
+            this.render(this.visible.logic, this.visible.cells);
+        }
+    }
 
     constructor(private readonly root: Node, private readonly art: MapoArtResources | null) {}
 
@@ -31,17 +43,18 @@ export class MapoDecorRenderer {
         const enabled = mapoDecorEnabledFor(logic.graphics.quality);
         if (!texture || !enabled) { this.clear(); return 0; }
         if (!this.material) {
-            this.material = createMapoMaterial(mapoUnlitTechnique(), true);
+            this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
         }
+        this.visible = { logic, cells };
+        this.animated = false;
         const sprites: MapoSpriteInput[] = [];
         for (const { row, col } of cells) {
             const place = mapoDecorAt(row, col, mapoValueAt(row, col), enabled);
             if (!place) continue;
-            sprites.push({
-                row, col, x: place.x, y: place.y, pivot: place.pivot,
-                w: place.w, h: place.h, angleDeg: place.angleDeg, uv: mapoDecorUv(place.cell),
-            });
+            this.animated = this.animated || mapoSceneAnimated(place.cell.scene);
+            sprites.push(...mapoSceneSprites(place.cell.scene, MAPO_DECOR_TEXTURES,
+                [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H], this.seconds, place));
         }
         if (sprites.length === 0) { this.clear(); return 0; }
         const geometry = buildMapoSpriteMesh(sprites);
@@ -54,12 +67,14 @@ export class MapoDecorRenderer {
     }
 
     clear(): void {
+        this.visible = null;
         destroyMapoBatch(this.batch);
         this.batch = null;
     }
 
     dispose(): void {
         this.disposed = true;
+        this.visible = null;
         destroyMapoBatch(this.batch);
         this.batch = null;
         this.material?.destroy();

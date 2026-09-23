@@ -23,7 +23,7 @@
  *   ⛔ 没法从地形值推出来。
  */
 import {
-    MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS,
+ MAPO_DECOR_CELLS,
     MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
     type IMapoDecorCell,
 } from "../../../shared/kits/mapOriginal/content/decor.data";
@@ -32,7 +32,7 @@ import {
     MAPO_BAND_DESERT, MAPO_BAND_SNOW,
 } from "../../../shared/kits/mapOriginal/content/bands.data";
 import {
-    mapoGrid2Pos, mapoOriginalPxToWorld,
+    mapoGrid2Pos,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import { mapoBandAt } from "./mapoBands";
 
@@ -53,13 +53,8 @@ export interface IMapoDecorPlacement {
     readonly row: number;
     readonly col: number;
     readonly cell: IMapoDecorCell;
-    /** 格心加 prefab 局部 position，直接作为图片锚点的世界坐标。 */
     readonly x: number;
     readonly y: number;
-    readonly pivot: readonly [number, number];
-    readonly w: number;
-    readonly h: number;
-    readonly angleDeg: number;
 }
 
 /**
@@ -86,26 +81,5 @@ export function mapoDecorAt(row: number, col: number, value: number,
         : band === MAPO_BAND_DESERT ? DESERT_BY_ID : BY_ID;
     const cell = table.get(value) ?? BY_ID.get(value);
     if (!cell || cell.kind !== "res") return null;
-    const { w, h } = mapoDecorSize(cell);
-    // 与原版一致：格坐标只定位根，图片局部 position/pivot 由 prefab 决定。
-    const x = pos.x + mapoOriginalPxToWorld(cell.transform.offset[0]);
-    const y = pos.y + mapoOriginalPxToWorld(cell.transform.offset[1]);
-    return { row, col, cell, x, y, w, h, pivot: cell.transform.pivot, angleDeg: cell.transform.angle };
-}
-
-/** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */
-export function mapoDecorUv(cell: IMapoDecorCell): readonly [number, number, number, number] {
-    const [x, y, w, h] = cell.art;
-    const [cx, cy] = cell.cell;
-    return [(cx + x) / MAPO_DECOR_ATLAS_W, (cy + y) / MAPO_DECOR_ATLAS_H,
-            w / MAPO_DECOR_ATLAS_W, h / MAPO_DECOR_ATLAS_H];
-}
-
-/**
- * 摆件显示尺寸 = prefab.size × prefab.scale × 原版像素换算。
- * size 不一定等于贴图 native，scale 也可能非等比；两轴必须分别保留（§2.2）。
- */
-export function mapoDecorSize(cell: Extract<IMapoDecorCell, { kind: "res" }>): { w: number; h: number } {
-    const { size, scale } = cell.transform;
-    return { w: mapoOriginalPxToWorld(size[0] * scale[0]), h: mapoOriginalPxToWorld(size[1] * scale[1]) };
+    return { row, col, cell, x: pos.x, y: pos.y };
 }

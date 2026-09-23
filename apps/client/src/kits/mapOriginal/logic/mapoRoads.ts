@@ -12,12 +12,14 @@
  *   ⛔ 别去翻顶点（那会连画家序一起翻）。
  * ⚠ 表**已按 s 升序落盘 = 画家序**，这里只做区间二分 + 矩形裁剪。
  */
-import { mapoOriginalPxToWorld } from "../../../shared/kits/mapOriginal/api/hexmap/index";
+import { mapoOriginalPxToWorld, mapoPos2GridRaw } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import {
     MAPO_ROAD_ATLAS_H, MAPO_ROAD_ATLAS_W, MAPO_ROAD_CELLS, MAPO_ROAD_D_BIAS,
     MAPO_ROAD_HALF_H, MAPO_ROAD_HALF_W, MAPO_ROAD_HEADER_BYTES, MAPO_ROAD_RECORD_BYTES,
     MAPO_ROAD_S_BIAS, type IMapoRoadCell,
 } from "../../../shared/kits/mapOriginal/content/roads.data";
+import { mapoBandAt } from "./mapoBands";
+import { MAPO_BAND_SNOW } from "../../../shared/kits/mapOriginal/content/bands.data";
 import type { MapoSpriteInput } from "./mapoMesh";
 
 /** 路格的世界半宽 / 半高。 */
@@ -87,11 +89,13 @@ export function mapoRoadsInRect(rect: IMapoRoadRect, limit: number): MapoSpriteI
         const o = MAPO_ROAD_HEADER_BYTES + i * MAPO_ROAD_RECORD_BYTES;
         const sRaw = view.getUint16(o);
         if (sRaw > sBottom) break;
-        const cell = CELL_BY_ID.get(view.getUint8(o + 4));
+        let cell = CELL_BY_ID.get(view.getUint8(o + 4));
         if (!cell) continue;
         const s = sRaw - MAPO_ROAD_S_BIAS, d = view.getUint16(o + 2) - MAPO_ROAD_D_BIAS;
         const row = (s + d) / 2, col = (s - d) / 2;
         const p = mapoRoadPos(row, col);
+        const grid = mapoPos2GridRaw(p.x, p.y);
+        if (mapoBandAt(grid.row, grid.col) === MAPO_BAND_SNOW) cell = CELL_BY_ID.get(cell.snowId)!;
         const w = mapoOriginalPxToWorld(cell.native[0]);
         const h = mapoOriginalPxToWorld(cell.native[1]);
         if (p.x + w / 2 < rect.left || p.x - w / 2 > rect.right) continue;

@@ -51,12 +51,7 @@
    "source": "scene/ground/river_longriver/png/26.png"
   }
  ],
- "tint": [
-  70,
-  120,
-  160
- ],
- "tintNote": "顶点色 = 本仓调色板 river 色相；亮度由 river-fill.png 的原版平色给。⛔ 原版的 river_color_mask.ktx 蒙版本仓不复刻。",
+ "material": "normal_river 的 2D 无结冰分支；静态分支使用原 prefab 填充色（无额外调色）",
  "alignCheck": {
   "res==47 格": 235292,
   "被覆盖": 235290,

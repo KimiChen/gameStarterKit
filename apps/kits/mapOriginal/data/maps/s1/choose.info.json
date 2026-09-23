@@ -1,0 +1,309 @@
+{
+  "clientResId": 2080,
+  "size": [
+    291.0,
+    148.0
+  ],
+  "atlasSize": [
+    512,
+    64
+  ],
+  "frameRate": 24,
+  "durationFrames": 30.0,
+  "pieces": [
+    {
+      "id": "n68_uwgu",
+      "xy": [
+        0.0,
+        55.0
+      ],
+      "flip": "",
+      "rect": [
+        2,
+        2,
+        117,
+        38
+      ],
+      "source": "fairy/ui/ui_common_effect/special_effects/image/yellow_a1.png"
+    },
+    {
+      "id": "n69_uwgu",
+      "xy": [
+        32.0,
+        17.0
+      ],
+      "flip": "",
+      "rect": [
+        121,
+        2,
+        141,
+        38
+      ],
+      "source": "fairy/ui/ui_common_effect/special_effects/image/yellow_a2.png"
+    },
+    {
+      "id": "n70_uwgu",
+      "xy": [
+        108.0,
+        0.0
+      ],
+      "flip": "",
+      "rect": [
+        264,
+        2,
+        75,
+        17
+      ],
+      "source": "fairy/ui/ui_common_effect/special_effects/image/yellow_a3.png"
+    },
+    {
+      "id": "n74_uwgu",
+      "xy": [
+        108.0,
+        131.0
+      ],
+      "flip": "vt",
+      "rect": [
+        264,
+        2,
+        75,
+        17
+      ],
+      "source": "fairy/ui/ui_common_effect/special_effects/image/yellow_a3.png"
+    },
+    {
+      "id": "n75_uwgu",
+      "xy": [
+        174.0,
+        55.0
+      ],
+      "flip": "hz",
+      "rect": [
+        2,
+        2,
+        117,
+        38
+      ],
+      "source": "fairy/ui/ui_common_effect/special_effects/image/yellow_a1.png"
+    },
+    {
+      "id": "n77_uwgu",
+      "xy": [
+        32.0,
+        93.0
+      ],
+      "flip": "vt",
+      "rect": [
+        121,
+        2,
+        141,
+        38
+      ],
+      "source": "fairy/ui/ui_common_effect/special_effects/image/yellow_a2.png"
+    },
+    {
+      "id": "n78_uwgu",
+      "xy": [
+        118.0,
+        17.0
+      ],
+      "flip": "hz",
+      "rect": [
+        121,
+        2,
+        141,
+        38
+      ],
+      "source": "fairy/ui/ui_common_effect/special_effects/image/yellow_a2.png"
+    },
+    {
+      "id": "n81_uwgu",
+      "xy": [
+        118.0,
+        93.0
+      ],
+      "flip": "both",
+      "rect": [
+        121,
+        2,
+        141,
+        38
+      ],
+      "source": "fairy/ui/ui_common_effect/special_effects/image/yellow_a2.png"
+    }
+  ],
+  "scaleTracks": [
+    {
+      "time": "0",
+      "type": "Scale",
+      "target": "n46_iznd",
+      "tween": "true",
+      "startValue": "1,1",
+      "endValue": "1.03,1.03",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Scale",
+      "target": "n46_iznd",
+      "tween": "true",
+      "startValue": "1.03,1.03",
+      "endValue": "1,1",
+      "duration": "15"
+    },
+    {
+      "time": "30",
+      "type": "Scale",
+      "target": "n46_iznd",
+      "tween": "true",
+      "startValue": "1,1"
+    }
+  ],
+  "colorTracks": [
+    {
+      "time": "0",
+      "type": "Color",
+      "target": "n68_uwgu",
+      "tween": "true",
+      "startValue": "#fffc96",
+      "endValue": "#fffcbd",
+      "duration": "15"
+    },
+    {
+      "time": "0",
+      "type": "Color",
+      "target": "n69_uwgu",
+      "tween": "true",
+      "startValue": "#fffc96",
+      "endValue": "#fffcbd",
+      "duration": "15"
+    },
+    {
+      "time": "0",
+      "type": "Color",
+      "target": "n70_uwgu",
+      "tween": "true",
+      "startValue": "#fffc96",
+      "endValue": "#fffcbd",
+      "duration": "15"
+    },
+    {
+      "time": "0",
+      "type": "Color",
+      "target": "n74_uwgu",
+      "tween": "true",
+      "startValue": "#fffc96",
+      "endValue": "#fffcbd",
+      "duration": "15"
+    },
+    {
+      "time": "0",
+      "type": "Color",
+      "target": "n75_uwgu",
+      "tween": "true",
+      "startValue": "#fffc96",
+      "endValue": "#fffcbd",
+      "duration": "15"
+    },
+    {
+      "time": "0",
+      "type": "Color",
+      "target": "n77_uwgu",
+      "tween": "true",
+      "startValue": "#fffc96",
+      "endValue": "#fffcbd",
+      "duration": "15"
+    },
+    {
+      "time": "0",
+      "type": "Color",
+      "target": "n78_uwgu",
+      "tween": "true",
+      "startValue": "#fffc96",
+      "endValue": "#fffcbd",
+      "duration": "15"
+    },
+    {
+      "time": "0",
+      "type": "Color",
+      "target": "n81_uwgu",
+      "tween": "true",
+      "startValue": "#fffc96",
+      "endValue": "#fffcbd",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Color",
+      "target": "n68_uwgu",
+      "tween": "true",
+      "startValue": "#fffcbd",
+      "endValue": "#fffc96",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Color",
+      "target": "n69_uwgu",
+      "tween": "true",
+      "startValue": "#fffcbd",
+      "endValue": "#fffc96",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Color",
+      "target": "n70_uwgu",
+      "tween": "true",
+      "startValue": "#fffcbd",
+      "endValue": "#fffc96",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Color",
+      "target": "n74_uwgu",
+      "tween": "true",
+      "startValue": "#fffcbd",
+      "endValue": "#fffc96",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Color",
+      "target": "n75_uwgu",
+      "tween": "true",
+      "startValue": "#fffcbd",
+      "endValue": "#fffc96",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Color",
+      "target": "n77_uwgu",
+      "tween": "true",
+      "startValue": "#fffcbd",
+      "endValue": "#fffc96",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Color",
+      "target": "n78_uwgu",
+      "tween": "true",
+      "startValue": "#fffcbd",
+      "endValue": "#fffc96",
+      "duration": "15"
+    },
+    {
+      "time": "15",
+      "type": "Color",
+      "target": "n81_uwgu",
+      "tween": "true",
+      "startValue": "#fffcbd",
+      "endValue": "#fffc96",
+      "duration": "15"
+    }
+  ],
+  "source": "fairy/ui/ui_common_effect/special_effects/view/special_effects_grid.xml"
+}

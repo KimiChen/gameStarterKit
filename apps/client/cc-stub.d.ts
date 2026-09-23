@@ -150,6 +150,10 @@ declare module "cc" {
         getFormatFeatures(format: Format): number;
     }
 
+    /** Creator 3.8.8 gfx/base/define.ts:1498，动态 mesh 自定义顶点属性。 */
+    class Attribute {
+        constructor(name?: string, format?: Format, isNormalized?: boolean, stream?: number, isInstanced?: boolean, location?: number);
+    }
     const CullMode: { NONE: number; FRONT: number; BACK: number };
   }
   export const utils: {

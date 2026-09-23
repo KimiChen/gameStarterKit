@@ -1,0 +1,49 @@
+// 原版 prefab 的乘色 / 加色独立于图集 RGBA。保留每片颜色，合批不合并材质参数。
+CCEffect %{
+  techniques:
+  - name: alpha-blend
+    passes:
+    - vert: mapo-sprite-vs:vert
+      frag: mapo-sprite-fs:frag
+      rasterizerState: { cullMode: none }
+      depthStencilState: { depthTest: false, depthWrite: false }
+      blendState:
+        targets:
+        - blend: true
+          blendSrc: src_alpha
+          blendDst: one_minus_src_alpha
+          blendSrcAlpha: one
+          blendDstAlpha: one_minus_src_alpha
+      properties:
+        mainTexture: { value: white }
+}%
+CCProgram mapo-sprite-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <builtin/uniforms/cc-local>
+  in vec3 a_position;
+  in vec2 a_texCoord;
+  in vec4 a_color;
+  in vec4 a_colorAdd;
+  out vec2 v_uv;
+  out vec4 v_color;
+  out vec4 v_add;
+  vec4 vert () {
+    v_uv = a_texCoord;
+    v_color = a_color;
+    v_add = a_colorAdd;
+    return cc_matProj * (cc_matView * cc_matWorld) * vec4(a_position, 1.0);
+  }
+}%
+CCProgram mapo-sprite-fs %{
+  precision highp float;
+  in vec2 v_uv;
+  in vec4 v_color;
+  in vec4 v_add;
+  uniform sampler2D mainTexture;
+  vec4 frag () {
+    vec4 texel = texture(mainTexture, v_uv);
+    return vec4(clamp(texel.rgb * v_color.rgb + (1.0 - texel.rgb * v_add.a) * v_add.rgb, 0.0, 1.0),
+                texel.a * v_color.a);
+  }
+}%

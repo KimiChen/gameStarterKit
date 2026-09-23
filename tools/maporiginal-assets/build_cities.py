@@ -36,6 +36,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import prefab_bin  # noqa: E402
+from prefab_visual import visual_fields, pack_visual
 from build_tops import normalize  # noqa: E402
 from ctable_cw import BaseCw, Ref  # noqa: E402
 from decode_ktx import _name_map, resolve_by_name  # noqa: E402
@@ -97,7 +98,7 @@ def parse_piece(logical: str) -> list:
         items.append({"tex": normalize(k["texture"]), "order": order, "lowZ": int(k["low_z"]),
                       "pos": [round(float(k["position"][0]), 4), round(float(k["position"][1]), 4)],
                       "scale": [round(sx, 6), round(sy, 6)],
-                      "angle": round(float(k["angle"][2]), 4)})
+                      "angle": round(float(k["angle"][2]), 4), **visual_fields(k)})
     items.sort(key=lambda x: (x["lowZ"], x["order"]))     # ⚠ low_z 升序定压盖
     return items
 
@@ -177,7 +178,7 @@ def main() -> int:
             if y + h + PAD > side:
                 ok = False
                 break
-            atlas.paste(im, (x, y), im)
+            atlas.paste(im, (x, y))
             cells.append({"id": len(cells), "rect": [x, y, w, h], "native": native, "source": tex})
             x += w + PAD
             row_h = max(row_h, h)
@@ -198,15 +199,14 @@ def main() -> int:
         parts.append(struct.pack(">H", len(p["items"])))
     for p in pieces:
         for it in p["items"]:
-            parts.append(struct.pack(">Hfffff", cell_of[it["tex"]], it["pos"][0], it["pos"][1],
-                                     it["scale"][0], it["scale"][1], it["angle"]))
+            parts.append(pack_visual(it, cell_of[it["tex"]]))
     for q in placed:
         parts.append(struct.pack(">HHH", q["piece"], q["row"], q["col"]))
     blob = b"".join(parts)
     open(os.path.join(d, "cities.bin"), "wb").write(blob)
 
     info = {
-        "schemaVersion": 1, "mapId": m,
+        "schemaVersion": 2, "mapId": m,
         "atlas": {"size": [side, side], "pad": PAD, "downscale": DOWNSCALE,
                   "fill": round(fill, 4), "cells": cells,
                   "sha256": hashlib.sha256(
@@ -214,9 +214,9 @@ def main() -> int:
         "pieces": [{"order": i, "resId": p["resId"], "name": p["name"], "source": p["source"],
                     "sprites": len(p["items"])} for i, p in enumerate(pieces)],
         "placements": len(placed), "anchorOffsets": offsets,
-        "recordBytes": {"sprite": 22, "placement": 6},
+        "recordBytes": {"sprite": 56, "placement": 6},
         "layout": "大端：u16 件数、u16 摆位数；件数×u16 每件精灵数；"
-                  "所有精灵按件序、件内按 low_z 升序 {u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle}；"
+                  "所有精灵按件序、件内按 low_z 升序 {u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle, 2f size, 2f pivot, 2f skew, 2B mirror, 4B color, 4B addColor}；"
                   "然后摆位 {u16 件号, u16 row, u16 col}",
         "sha256": hashlib.sha256(blob).hexdigest(),
         "note": "件由 base.cw 的 city[1].client_res_id → city_res.editor_brush_res_path 定；"
@@ -233,7 +233,7 @@ def main() -> int:
  * ★ **%d 个件覆盖全部 %d 座**（东/南/西/北 × 小城/都城 8 + 关卡 3 + 码头 3 + 洛阳专用 1），
  *   合计 %d 个 sprite。⇒ 落盘只存「件库 + 摆位」，⛔ 件不展开 %d 份。
  * ⚠ 件内次序按 **`low_z` 升序**（打包期已排好），⛔ 别按子节点原序。
- * ⚠ 件的世界尺寸 = **原图像素 × prefab 的 scale**，⛔ 不是图集像素（图集按 %s× 缩存）。
+ * ⚠ 件的世界尺寸 = **prefab.size × prefab.scale**，⛔ 不是图集像素（图集按 %s× 缩存）。
  * ⚠ 摆位的 row/col **已套** `city_shape` 的 `even/odd_res_center` 美术偏移
  *   （%d 座渡口非零，§11-1），⛔ 渲染侧别再套一次。
  */
@@ -242,7 +242,7 @@ export interface IMapoCityCell {
   readonly id: number;
   /** 图集像素矩形 [x, y, w, h]（**已缩**）。 */
   readonly rect: readonly [number, number, number, number];
-  /** 原图像素（**未缩**）。世界尺寸 = native × prefab 的 scale × (halfW / 150)。 */
+  /** 原图像素（**未缩**）。native 只记采样尺寸，显示使用 prefab.size × scale。 */
   readonly native: readonly [number, number];
 }
 

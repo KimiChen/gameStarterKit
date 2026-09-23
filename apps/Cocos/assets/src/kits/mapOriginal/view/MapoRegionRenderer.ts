@@ -1,3 +1,4 @@
+import { mapoPrefabSkew, mapoPrefabUv } from "../logic/mapoPrefab";
 /**
  * 区域件层渲染：山脉 / 林丛 / 散落，一件一个 sprite，合并成一张带贴图的 mesh。
  *
@@ -40,7 +41,7 @@ export class MapoRegionRenderer {
         const texture = this.art?.regionAtlas ?? null;
         if (!texture || !enabled) { this.clear(); return 0; }
         if (!this.material) {
-            this.material = createMapoMaterial(mapoUnlitTechnique(), true);
+            this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
         }
         const placed = mapoRegionsInRect(rect, MAPO_REGION_MAX_PIECES);
@@ -50,7 +51,11 @@ export class MapoRegionRenderer {
             row: p.piece.s, col: 0,
             x: p.x, y: p.y, w: p.w, h: p.h, angleDeg: p.angleDeg,
             pivot: p.cellLayout.pivot,
-            uv: mapoRegionUv(p.cellLayout, MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H),
+            skewBasis: mapoPrefabSkew(...p.cellLayout.skew, ...p.cellLayout.scale),
+            rgba: p.cellLayout.color.map((v) => v / 255) as [number, number, number, number],
+            addColor: p.cellLayout.add_color.map((v) => v / 255) as [number, number, number, number],
+            uv: mapoPrefabUv(mapoRegionUv(p.cellLayout, MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H),
+                p.cellLayout.mirror_x, p.cellLayout.mirror_y),
         }));
         const geometry = buildMapoSpriteMesh(sprites);
         if (!this.batch) {

@@ -42,7 +42,7 @@ export class MapoCityRenderer {
             return 0;
         }
         if (!this.material) {
-            this.material = createMapoMaterial(mapoUnlitTechnique(), true);
+            this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
         }
         const m = MAPO_CITY_MARGIN;

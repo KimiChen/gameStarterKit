@@ -6,7 +6,7 @@
  * ★ **15 个件覆盖全部 249 座**（东/南/西/北 × 小城/都城 8 + 关卡 3 + 码头 3 + 洛阳专用 1），
  *   合计 1642 个 sprite。⇒ 落盘只存「件库 + 摆位」，⛔ 件不展开 249 份。
  * ⚠ 件内次序按 **`low_z` 升序**（打包期已排好），⛔ 别按子节点原序。
- * ⚠ 件的世界尺寸 = **原图像素 × prefab 的 scale**，⛔ 不是图集像素（图集按 0.4× 缩存）。
+ * ⚠ 件的世界尺寸 = **prefab.size × prefab.scale**，⛔ 不是图集像素（图集按 0.4× 缩存）。
  * ⚠ 摆位的 row/col **已套** `city_shape` 的 `even/odd_res_center` 美术偏移
  *   （12 座渡口非零，§11-1），⛔ 渲染侧别再套一次。
  */
@@ -15,7 +15,7 @@ export interface IMapoCityCell {
   readonly id: number;
   /** 图集像素矩形 [x, y, w, h]（**已缩**）。 */
   readonly rect: readonly [number, number, number, number];
-  /** 原图像素（**未缩**）。世界尺寸 = native × prefab 的 scale × (halfW / 150)。 */
+  /** 原图像素（**未缩**）。native 只记采样尺寸，显示使用 prefab.size × scale。 */
   readonly native: readonly [number, number];
 }
 
@@ -28,7 +28,7 @@ export interface IMapoCityPiece {
 }
 
 /** 单条记录长度：件内精灵 u16 + 5 × f32；摆位 3 × u16。 */
-export const MAPO_CITY_SPRITE_BYTES = 22;
+export const MAPO_CITY_SPRITE_BYTES = 56;
 export const MAPO_CITY_PLACEMENT_BYTES = 6;
 export const MAPO_CITY_DOWNSCALE = 0.4;
 export const MAPO_CITY_ATLAS_SIZE: readonly [number, number] = [1024, 1024];

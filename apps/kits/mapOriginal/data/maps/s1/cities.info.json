@@ -1,5 +1,5 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "mapId": "s1",
  "atlas": {
   "size": [
@@ -2223,7 +2223,7 @@
     "source": "scene/build/main_city/wall/south/3.png"
    }
   ],
-  "sha256": "3027dc6712a63497fdf4956e997c58bbeecbc233b8c54fa9da6f5d50995166a5"
+  "sha256": "0b29b42f8489068dda23992fa320e4454a9a2ac618d7d66d1cee44a756853081"
  },
  "pieces": [
   {
@@ -2335,10 +2335,10 @@
  "placements": 249,
  "anchorOffsets": 12,
  "recordBytes": {
-  "sprite": 22,
+  "sprite": 56,
   "placement": 6
  },
- "layout": "大端：u16 件数、u16 摆位数；件数×u16 每件精灵数；所有精灵按件序、件内按 low_z 升序 {u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle}；然后摆位 {u16 件号, u16 row, u16 col}",
- "sha256": "0dd70f4dffabf086c80c436bd7e44922cbca21ffcd6d51fe10690663eb27540e",
+ "layout": "大端：u16 件数、u16 摆位数；件数×u16 每件精灵数；所有精灵按件序、件内按 low_z 升序 {u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle, 2f size, 2f pivot, 2f skew, 2B mirror, 4B color, 4B addColor}；然后摆位 {u16 件号, u16 row, u16 col}",
+ "sha256": "0ac7fd1c19d2ec86442903ebc1930bbae49f89608d34d4a39b7d95459609c689",
  "note": "件由 base.cw 的 city[1].client_res_id → city_res.editor_brush_res_path 定；row/col 已套 city_shape 的 even/odd_res_center 美术偏移（12 座渡口非零），⛔ 渲染侧别再套一次"
 }

@@ -1,21 +1,4493 @@
 {
- "schemaVersion": 4,
+ "schemaVersion": 5,
  "mapId": "s1",
- "cell": [
-  256,
-  192
- ],
- "gridCols": 16,
- "gridRows": 10,
  "size": [
   4096,
-  2048
+  4096
  ],
- "anchor": "prefab-pivot",
- "cityBase": 64,
- "indexing": "格 id = 原版 res 值（2..46）；城址件从 cityBase 起；变体格同 id 空间、按 variant 分表（N1）",
+ "cells": [
+  {
+   "id": 0,
+   "rect": [
+    2,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/002/250_idle3_002_0000.png"
+  },
+  {
+   "id": 1,
+   "rect": [
+    260,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/002/250_idle3_002_0001.png"
+  },
+  {
+   "id": 2,
+   "rect": [
+    518,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/002/250_idle3_002_0002.png"
+  },
+  {
+   "id": 3,
+   "rect": [
+    776,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/002/250_idle3_002_0003.png"
+  },
+  {
+   "id": 4,
+   "rect": [
+    1034,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/003/250_idle3_003_0000.png"
+  },
+  {
+   "id": 5,
+   "rect": [
+    1292,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/003/250_idle3_003_0001.png"
+  },
+  {
+   "id": 6,
+   "rect": [
+    1550,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/003/250_idle3_003_0002.png"
+  },
+  {
+   "id": 7,
+   "rect": [
+    1808,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/003/250_idle3_003_0003.png"
+  },
+  {
+   "id": 8,
+   "rect": [
+    2066,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/004/250_idle3_004_0000.png"
+  },
+  {
+   "id": 9,
+   "rect": [
+    2324,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/004/250_idle3_004_0001.png"
+  },
+  {
+   "id": 10,
+   "rect": [
+    2582,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/004/250_idle3_004_0002.png"
+  },
+  {
+   "id": 11,
+   "rect": [
+    2840,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle3/004/250_idle3_004_0003.png"
+  },
+  {
+   "id": 12,
+   "rect": [
+    3098,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle4/004/250_idle4_004_0000.png"
+  },
+  {
+   "id": 13,
+   "rect": [
+    3356,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle4/004/250_idle4_004_0001.png"
+  },
+  {
+   "id": 14,
+   "rect": [
+    3614,
+    2,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle4/004/250_idle4_004_0002.png"
+  },
+  {
+   "id": 15,
+   "rect": [
+    2,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle4/004/250_idle4_004_0003.png"
+  },
+  {
+   "id": 16,
+   "rect": [
+    260,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle4/004/250_idle4_004_0004.png"
+  },
+  {
+   "id": 17,
+   "rect": [
+    518,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle4/004/250_idle4_004_0005.png"
+  },
+  {
+   "id": 18,
+   "rect": [
+    776,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0010.png"
+  },
+  {
+   "id": 19,
+   "rect": [
+    1034,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0012.png"
+  },
+  {
+   "id": 20,
+   "rect": [
+    1292,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0014.png"
+  },
+  {
+   "id": 21,
+   "rect": [
+    1550,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0015.png"
+  },
+  {
+   "id": 22,
+   "rect": [
+    1808,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0016.png"
+  },
+  {
+   "id": 23,
+   "rect": [
+    2066,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0090.png"
+  },
+  {
+   "id": 24,
+   "rect": [
+    2324,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0092.png"
+  },
+  {
+   "id": 25,
+   "rect": [
+    2582,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0094.png"
+  },
+  {
+   "id": 26,
+   "rect": [
+    2840,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0096.png"
+  },
+  {
+   "id": 27,
+   "rect": [
+    3098,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/002/250_idle5_002_0112.png"
+  },
+  {
+   "id": 28,
+   "rect": [
+    3356,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0010.png"
+  },
+  {
+   "id": 29,
+   "rect": [
+    3614,
+    196,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0012.png"
+  },
+  {
+   "id": 30,
+   "rect": [
+    2,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0014.png"
+  },
+  {
+   "id": 31,
+   "rect": [
+    260,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0015.png"
+  },
+  {
+   "id": 32,
+   "rect": [
+    518,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0016.png"
+  },
+  {
+   "id": 33,
+   "rect": [
+    776,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0090.png"
+  },
+  {
+   "id": 34,
+   "rect": [
+    1034,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0092.png"
+  },
+  {
+   "id": 35,
+   "rect": [
+    1292,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0094.png"
+  },
+  {
+   "id": 36,
+   "rect": [
+    1550,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0096.png"
+  },
+  {
+   "id": 37,
+   "rect": [
+    1808,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/003/250_idle5_003_0112.png"
+  },
+  {
+   "id": 38,
+   "rect": [
+    2066,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0010.png"
+  },
+  {
+   "id": 39,
+   "rect": [
+    2324,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0012.png"
+  },
+  {
+   "id": 40,
+   "rect": [
+    2582,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0014.png"
+  },
+  {
+   "id": 41,
+   "rect": [
+    2840,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0015.png"
+  },
+  {
+   "id": 42,
+   "rect": [
+    3098,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0016.png"
+  },
+  {
+   "id": 43,
+   "rect": [
+    3356,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0090.png"
+  },
+  {
+   "id": 44,
+   "rect": [
+    3614,
+    390,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0092.png"
+  },
+  {
+   "id": 45,
+   "rect": [
+    2,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0094.png"
+  },
+  {
+   "id": 46,
+   "rect": [
+    260,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0096.png"
+  },
+  {
+   "id": 47,
+   "rect": [
+    518,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0097.png"
+  },
+  {
+   "id": 48,
+   "rect": [
+    776,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0098.png"
+  },
+  {
+   "id": 49,
+   "rect": [
+    1034,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0099.png"
+  },
+  {
+   "id": 50,
+   "rect": [
+    1292,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0100.png"
+  },
+  {
+   "id": 51,
+   "rect": [
+    1550,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0101.png"
+  },
+  {
+   "id": 52,
+   "rect": [
+    1808,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0102.png"
+  },
+  {
+   "id": 53,
+   "rect": [
+    2066,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0103.png"
+  },
+  {
+   "id": 54,
+   "rect": [
+    2324,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0104.png"
+  },
+  {
+   "id": 55,
+   "rect": [
+    2582,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0105.png"
+  },
+  {
+   "id": 56,
+   "rect": [
+    2840,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0106.png"
+  },
+  {
+   "id": 57,
+   "rect": [
+    3098,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0107.png"
+  },
+  {
+   "id": 58,
+   "rect": [
+    3356,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0108.png"
+  },
+  {
+   "id": 59,
+   "rect": [
+    3614,
+    584,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0109.png"
+  },
+  {
+   "id": 60,
+   "rect": [
+    2,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0110.png"
+  },
+  {
+   "id": 61,
+   "rect": [
+    260,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0111.png"
+  },
+  {
+   "id": 62,
+   "rect": [
+    518,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle5/004/250_idle5_004_0112.png"
+  },
+  {
+   "id": 63,
+   "rect": [
+    776,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0028.png"
+  },
+  {
+   "id": 64,
+   "rect": [
+    1034,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0029.png"
+  },
+  {
+   "id": 65,
+   "rect": [
+    1292,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0030.png"
+  },
+  {
+   "id": 66,
+   "rect": [
+    1550,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0032.png"
+  },
+  {
+   "id": 67,
+   "rect": [
+    1808,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0033.png"
+  },
+  {
+   "id": 68,
+   "rect": [
+    2066,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0034.png"
+  },
+  {
+   "id": 69,
+   "rect": [
+    2324,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0035.png"
+  },
+  {
+   "id": 70,
+   "rect": [
+    2582,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0036.png"
+  },
+  {
+   "id": 71,
+   "rect": [
+    2840,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0037.png"
+  },
+  {
+   "id": 72,
+   "rect": [
+    3098,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0039.png"
+  },
+  {
+   "id": 73,
+   "rect": [
+    3356,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0041.png"
+  },
+  {
+   "id": 74,
+   "rect": [
+    3614,
+    778,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0043.png"
+  },
+  {
+   "id": 75,
+   "rect": [
+    2,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/002/250_idle6_002_0045.png"
+  },
+  {
+   "id": 76,
+   "rect": [
+    260,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0028.png"
+  },
+  {
+   "id": 77,
+   "rect": [
+    518,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0029.png"
+  },
+  {
+   "id": 78,
+   "rect": [
+    776,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0030.png"
+  },
+  {
+   "id": 79,
+   "rect": [
+    1034,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0032.png"
+  },
+  {
+   "id": 80,
+   "rect": [
+    1292,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0033.png"
+  },
+  {
+   "id": 81,
+   "rect": [
+    1550,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0034.png"
+  },
+  {
+   "id": 82,
+   "rect": [
+    1808,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0035.png"
+  },
+  {
+   "id": 83,
+   "rect": [
+    2066,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0036.png"
+  },
+  {
+   "id": 84,
+   "rect": [
+    2324,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0037.png"
+  },
+  {
+   "id": 85,
+   "rect": [
+    2582,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0039.png"
+  },
+  {
+   "id": 86,
+   "rect": [
+    2840,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0041.png"
+  },
+  {
+   "id": 87,
+   "rect": [
+    3098,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0043.png"
+  },
+  {
+   "id": 88,
+   "rect": [
+    3356,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/003/250_idle6_003_0045.png"
+  },
+  {
+   "id": 89,
+   "rect": [
+    3614,
+    972,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0028.png"
+  },
+  {
+   "id": 90,
+   "rect": [
+    2,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0029.png"
+  },
+  {
+   "id": 91,
+   "rect": [
+    260,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0030.png"
+  },
+  {
+   "id": 92,
+   "rect": [
+    518,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0032.png"
+  },
+  {
+   "id": 93,
+   "rect": [
+    776,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0033.png"
+  },
+  {
+   "id": 94,
+   "rect": [
+    1034,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0034.png"
+  },
+  {
+   "id": 95,
+   "rect": [
+    1292,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0035.png"
+  },
+  {
+   "id": 96,
+   "rect": [
+    1550,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0036.png"
+  },
+  {
+   "id": 97,
+   "rect": [
+    1808,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0037.png"
+  },
+  {
+   "id": 98,
+   "rect": [
+    2066,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0039.png"
+  },
+  {
+   "id": 99,
+   "rect": [
+    2324,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0041.png"
+  },
+  {
+   "id": 100,
+   "rect": [
+    2582,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0043.png"
+  },
+  {
+   "id": 101,
+   "rect": [
+    2840,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/idle6/004/250_idle6_004_0045.png"
+  },
+  {
+   "id": 102,
+   "rect": [
+    3098,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0000.png"
+  },
+  {
+   "id": 103,
+   "rect": [
+    3356,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0001.png"
+  },
+  {
+   "id": 104,
+   "rect": [
+    3614,
+    1166,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0002.png"
+  },
+  {
+   "id": 105,
+   "rect": [
+    2,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0003.png"
+  },
+  {
+   "id": 106,
+   "rect": [
+    260,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0004.png"
+  },
+  {
+   "id": 107,
+   "rect": [
+    518,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0005.png"
+  },
+  {
+   "id": 108,
+   "rect": [
+    776,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0006.png"
+  },
+  {
+   "id": 109,
+   "rect": [
+    1034,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0007.png"
+  },
+  {
+   "id": 110,
+   "rect": [
+    1292,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0008.png"
+  },
+  {
+   "id": 111,
+   "rect": [
+    1550,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0009.png"
+  },
+  {
+   "id": 112,
+   "rect": [
+    1808,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0010.png"
+  },
+  {
+   "id": 113,
+   "rect": [
+    2066,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0011.png"
+  },
+  {
+   "id": 114,
+   "rect": [
+    2324,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0012.png"
+  },
+  {
+   "id": 115,
+   "rect": [
+    2582,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0013.png"
+  },
+  {
+   "id": 116,
+   "rect": [
+    2840,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0014.png"
+  },
+  {
+   "id": 117,
+   "rect": [
+    3098,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0015.png"
+  },
+  {
+   "id": 118,
+   "rect": [
+    3356,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/250/move/003/250_move_003_0016.png"
+  },
+  {
+   "id": 119,
+   "rect": [
+    3614,
+    1360,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/002/251_idle1_002_0022.png"
+  },
+  {
+   "id": 120,
+   "rect": [
+    2,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/002/251_idle1_002_0024.png"
+  },
+  {
+   "id": 121,
+   "rect": [
+    260,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/002/251_idle1_002_0026.png"
+  },
+  {
+   "id": 122,
+   "rect": [
+    518,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/002/251_idle1_002_0028.png"
+  },
+  {
+   "id": 123,
+   "rect": [
+    776,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/002/251_idle1_002_0030.png"
+  },
+  {
+   "id": 124,
+   "rect": [
+    1034,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/002/251_idle1_002_0032.png"
+  },
+  {
+   "id": 125,
+   "rect": [
+    1292,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/002/251_idle1_002_0033.png"
+  },
+  {
+   "id": 126,
+   "rect": [
+    1550,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0000.png"
+  },
+  {
+   "id": 127,
+   "rect": [
+    1808,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0001.png"
+  },
+  {
+   "id": 128,
+   "rect": [
+    2066,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0002.png"
+  },
+  {
+   "id": 129,
+   "rect": [
+    2324,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0003.png"
+  },
+  {
+   "id": 130,
+   "rect": [
+    2582,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0004.png"
+  },
+  {
+   "id": 131,
+   "rect": [
+    2840,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0005.png"
+  },
+  {
+   "id": 132,
+   "rect": [
+    3098,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0012.png"
+  },
+  {
+   "id": 133,
+   "rect": [
+    3356,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0014.png"
+  },
+  {
+   "id": 134,
+   "rect": [
+    3614,
+    1554,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0016.png"
+  },
+  {
+   "id": 135,
+   "rect": [
+    2,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0018.png"
+  },
+  {
+   "id": 136,
+   "rect": [
+    260,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0020.png"
+  },
+  {
+   "id": 137,
+   "rect": [
+    518,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0022.png"
+  },
+  {
+   "id": 138,
+   "rect": [
+    776,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0024.png"
+  },
+  {
+   "id": 139,
+   "rect": [
+    1034,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0026.png"
+  },
+  {
+   "id": 140,
+   "rect": [
+    1292,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0028.png"
+  },
+  {
+   "id": 141,
+   "rect": [
+    1550,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0030.png"
+  },
+  {
+   "id": 142,
+   "rect": [
+    1808,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0031.png"
+  },
+  {
+   "id": 143,
+   "rect": [
+    2066,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0032.png"
+  },
+  {
+   "id": 144,
+   "rect": [
+    2324,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0033.png"
+  },
+  {
+   "id": 145,
+   "rect": [
+    2582,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0034.png"
+  },
+  {
+   "id": 146,
+   "rect": [
+    2840,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0035.png"
+  },
+  {
+   "id": 147,
+   "rect": [
+    3098,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0036.png"
+  },
+  {
+   "id": 148,
+   "rect": [
+    3356,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0037.png"
+  },
+  {
+   "id": 149,
+   "rect": [
+    3614,
+    1748,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0038.png"
+  },
+  {
+   "id": 150,
+   "rect": [
+    2,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0039.png"
+  },
+  {
+   "id": 151,
+   "rect": [
+    260,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0040.png"
+  },
+  {
+   "id": 152,
+   "rect": [
+    518,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0041.png"
+  },
+  {
+   "id": 153,
+   "rect": [
+    776,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0042.png"
+  },
+  {
+   "id": 154,
+   "rect": [
+    1034,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0043.png"
+  },
+  {
+   "id": 155,
+   "rect": [
+    1292,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0044.png"
+  },
+  {
+   "id": 156,
+   "rect": [
+    1550,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0045.png"
+  },
+  {
+   "id": 157,
+   "rect": [
+    1808,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0046.png"
+  },
+  {
+   "id": 158,
+   "rect": [
+    2066,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0047.png"
+  },
+  {
+   "id": 159,
+   "rect": [
+    2324,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0048.png"
+  },
+  {
+   "id": 160,
+   "rect": [
+    2582,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/003/251_idle1_003_0049.png"
+  },
+  {
+   "id": 161,
+   "rect": [
+    2840,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/004/251_idle1_004_0022.png"
+  },
+  {
+   "id": 162,
+   "rect": [
+    3098,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/004/251_idle1_004_0024.png"
+  },
+  {
+   "id": 163,
+   "rect": [
+    3356,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/004/251_idle1_004_0026.png"
+  },
+  {
+   "id": 164,
+   "rect": [
+    3614,
+    1942,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/004/251_idle1_004_0028.png"
+  },
+  {
+   "id": 165,
+   "rect": [
+    2,
+    2136,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/004/251_idle1_004_0030.png"
+  },
+  {
+   "id": 166,
+   "rect": [
+    260,
+    2136,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/004/251_idle1_004_0032.png"
+  },
+  {
+   "id": 167,
+   "rect": [
+    518,
+    2136,
+    256,
+    192
+   ],
+   "native": [
+    400,
+    300
+   ],
+   "source": "scene/resource/food-new/png/251/idle1/004/251_idle1_004_0033.png"
+  },
+  {
+   "id": 168,
+   "rect": [
+    776,
+    2136,
+    256,
+    152
+   ],
+   "native": [
+    276,
+    164
+   ],
+   "source": "scene/resource_desert/wood-new/png/9.png"
+  },
+  {
+   "id": 169,
+   "rect": [
+    1034,
+    2136,
+    251,
+    150
+   ],
+   "native": [
+    251,
+    150
+   ],
+   "source": "scene/resource/wood-new/png/5.png"
+  },
+  {
+   "id": 170,
+   "rect": [
+    1287,
+    2136,
+    256,
+    149
+   ],
+   "native": [
+    271,
+    158
+   ],
+   "source": "scene/resource_desert/wood-new/png/8.png"
+  },
+  {
+   "id": 171,
+   "rect": [
+    1545,
+    2136,
+    256,
+    148
+   ],
+   "native": [
+    274,
+    158
+   ],
+   "source": "scene/resource/wood-new/png/8.png"
+  },
+  {
+   "id": 172,
+   "rect": [
+    1803,
+    2136,
+    256,
+    148
+   ],
+   "native": [
+    260,
+    150
+   ],
+   "source": "scene/resource_desert/wood-new/png/5.png"
+  },
+  {
+   "id": 173,
+   "rect": [
+    2061,
+    2136,
+    256,
+    148
+   ],
+   "native": [
+    258,
+    149
+   ],
+   "source": "scene/resource_snow/wood-new/png/s8.png"
+  },
+  {
+   "id": 174,
+   "rect": [
+    2319,
+    2136,
+    256,
+    148
+   ],
+   "native": [
+    268,
+    155
+   ],
+   "source": "scene/resource_snow/wood-new/png/s9.png"
+  },
+  {
+   "id": 175,
+   "rect": [
+    2577,
+    2136,
+    256,
+    147
+   ],
+   "native": [
+    282,
+    162
+   ],
+   "source": "scene/resource/wood-new/png/9.png"
+  },
+  {
+   "id": 176,
+   "rect": [
+    2835,
+    2136,
+    256,
+    141
+   ],
+   "native": [
+    285,
+    157
+   ],
+   "source": "scene/resource_desert/food-new/png/s8.png"
+  },
+  {
+   "id": 177,
+   "rect": [
+    3093,
+    2136,
+    256,
+    141
+   ],
+   "native": [
+    319,
+    176
+   ],
+   "source": "scene/resource_desert/wood-new/png/10b.png"
+  },
+  {
+   "id": 178,
+   "rect": [
+    3351,
+    2136,
+    256,
+    141
+   ],
+   "native": [
+    258,
+    142
+   ],
+   "source": "scene/resource_snow/wood-new/png/s5.png"
+  },
+  {
+   "id": 179,
+   "rect": [
+    3609,
+    2136,
+    251,
+    140
+   ],
+   "native": [
+    251,
+    140
+   ],
+   "source": "scene/resource/food-new/png/7.png"
+  },
+  {
+   "id": 180,
+   "rect": [
+    2,
+    2330,
+    251,
+    140
+   ],
+   "native": [
+    251,
+    140
+   ],
+   "source": "scene/resource_snow/food-new/png/s6.png"
+  },
+  {
+   "id": 181,
+   "rect": [
+    255,
+    2330,
+    251,
+    140
+   ],
+   "native": [
+    251,
+    140
+   ],
+   "source": "scene/resource_snow/food-new/png/s7.png"
+  },
+  {
+   "id": 182,
+   "rect": [
+    508,
+    2330,
+    217,
+    139
+   ],
+   "native": [
+    217,
+    139
+   ],
+   "source": "scene/resource_snow/stone-new/png/s4.png"
+  },
+  {
+   "id": 183,
+   "rect": [
+    727,
+    2330,
+    256,
+    138
+   ],
+   "native": [
+    258,
+    139
+   ],
+   "source": "scene/resource_desert/food-new/png/s7.png"
+  },
+  {
+   "id": 184,
+   "rect": [
+    985,
+    2330,
+    256,
+    138
+   ],
+   "native": [
+    299,
+    161
+   ],
+   "source": "scene/resource_snow/wood-new/png/s10.png"
+  },
+  {
+   "id": 185,
+   "rect": [
+    1243,
+    2330,
+    235,
+    137
+   ],
+   "native": [
+    235,
+    137
+   ],
+   "source": "scene/resource/wood-new/png/10.png"
+  },
+  {
+   "id": 186,
+   "rect": [
+    1480,
+    2330,
+    256,
+    136
+   ],
+   "native": [
+    264,
+    140
+   ],
+   "source": "scene/resource_snow/iron-new/png/s10.png"
+  },
+  {
+   "id": 187,
+   "rect": [
+    1738,
+    2330,
+    248,
+    136
+   ],
+   "native": [
+    248,
+    136
+   ],
+   "source": "scene/resource_snow/stone-new/png/s9.png"
+  },
+  {
+   "id": 188,
+   "rect": [
+    1988,
+    2330,
+    256,
+    135
+   ],
+   "native": [
+    277,
+    146
+   ],
+   "source": "scene/resource/food-new/png/8.png"
+  },
+  {
+   "id": 189,
+   "rect": [
+    2246,
+    2330,
+    256,
+    135
+   ],
+   "native": [
+    329,
+    174
+   ],
+   "source": "scene/resource/wood-new/png/10b.png"
+  },
+  {
+   "id": 190,
+   "rect": [
+    2504,
+    2330,
+    248,
+    135
+   ],
+   "native": [
+    248,
+    135
+   ],
+   "source": "scene/resource/stone-new/png/9.png"
+  },
+  {
+   "id": 191,
+   "rect": [
+    2754,
+    2330,
+    247,
+    135
+   ],
+   "native": [
+    247,
+    135
+   ],
+   "source": "scene/resource_desert/stone-new/png/9.png"
+  },
+  {
+   "id": 192,
+   "rect": [
+    3003,
+    2330,
+    256,
+    134
+   ],
+   "native": [
+    277,
+    145
+   ],
+   "source": "scene/resource_snow/food-new/png/s8.png"
+  },
+  {
+   "id": 193,
+   "rect": [
+    3261,
+    2330,
+    256,
+    134
+   ],
+   "native": [
+    263,
+    138
+   ],
+   "source": "scene/resource_snow/gold-new/png/3.png"
+  },
+  {
+   "id": 194,
+   "rect": [
+    3519,
+    2330,
+    256,
+    133
+   ],
+   "native": [
+    279,
+    145
+   ],
+   "source": "scene/resource_desert/iron-new/png/10.png"
+  },
+  {
+   "id": 195,
+   "rect": [
+    3777,
+    2330,
+    227,
+    133
+   ],
+   "native": [
+    227,
+    133
+   ],
+   "source": "scene/resource/wood-new/png/c.png"
+  },
+  {
+   "id": 196,
+   "rect": [
+    2,
+    2472,
+    256,
+    132
+   ],
+   "native": [
+    262,
+    135
+   ],
+   "source": "scene/resource/gold-new/png/3.png"
+  },
+  {
+   "id": 197,
+   "rect": [
+    260,
+    2472,
+    256,
+    132
+   ],
+   "native": [
+    279,
+    144
+   ],
+   "source": "scene/resource/iron-new/png/10.png"
+  },
+  {
+   "id": 198,
+   "rect": [
+    518,
+    2472,
+    256,
+    132
+   ],
+   "native": [
+    262,
+    135
+   ],
+   "source": "scene/resource_desert/gold-new/png/3.png"
+  },
+  {
+   "id": 199,
+   "rect": [
+    776,
+    2472,
+    250,
+    132
+   ],
+   "native": [
+    250,
+    132
+   ],
+   "source": "scene/resource/food-new/png/6.png"
+  },
+  {
+   "id": 200,
+   "rect": [
+    1028,
+    2472,
+    249,
+    132
+   ],
+   "native": [
+    249,
+    132
+   ],
+   "source": "scene/resource_desert/food-new/png/s6.png"
+  },
+  {
+   "id": 201,
+   "rect": [
+    1279,
+    2472,
+    256,
+    131
+   ],
+   "native": [
+    262,
+    134
+   ],
+   "source": "scene/resource/iron-new/png/8.png"
+  },
+  {
+   "id": 202,
+   "rect": [
+    1537,
+    2472,
+    234,
+    131
+   ],
+   "native": [
+    234,
+    131
+   ],
+   "source": "scene/resource_snow/iron-new/png/s7.png"
+  },
+  {
+   "id": 203,
+   "rect": [
+    1773,
+    2472,
+    201,
+    131
+   ],
+   "native": [
+    201,
+    131
+   ],
+   "source": "scene/resource_snow/food-new/png/s5.png"
+  },
+  {
+   "id": 204,
+   "rect": [
+    1976,
+    2472,
+    256,
+    130
+   ],
+   "native": [
+    275,
+    140
+   ],
+   "source": "scene/resource/wood-new/png/7.png"
+  },
+  {
+   "id": 205,
+   "rect": [
+    2234,
+    2472,
+    256,
+    130
+   ],
+   "native": [
+    276,
+    140
+   ],
+   "source": "scene/resource_snow/gold-new/png/4.png"
+  },
+  {
+   "id": 206,
+   "rect": [
+    2492,
+    2472,
+    244,
+    130
+   ],
+   "native": [
+    244,
+    130
+   ],
+   "source": "scene/resource/iron-new/png/9.png"
+  },
+  {
+   "id": 207,
+   "rect": [
+    2738,
+    2472,
+    242,
+    130
+   ],
+   "native": [
+    242,
+    130
+   ],
+   "source": "scene/resource_desert/iron-new/png/9.png"
+  },
+  {
+   "id": 208,
+   "rect": [
+    2982,
+    2472,
+    237,
+    130
+   ],
+   "native": [
+    237,
+    130
+   ],
+   "source": "scene/resource_snow/gold-new/png/2.png"
+  },
+  {
+   "id": 209,
+   "rect": [
+    3221,
+    2472,
+    228,
+    130
+   ],
+   "native": [
+    228,
+    130
+   ],
+   "source": "scene/resource_desert/food-new/png/s5.png"
+  },
+  {
+   "id": 210,
+   "rect": [
+    3451,
+    2472,
+    232,
+    129
+   ],
+   "native": [
+    232,
+    129
+   ],
+   "source": "scene/resource_desert/iron-new/png/7.png"
+  },
+  {
+   "id": 211,
+   "rect": [
+    3685,
+    2472,
+    229,
+    129
+   ],
+   "native": [
+    229,
+    129
+   ],
+   "source": "scene/resource/iron-new/png/7.png"
+  },
+  {
+   "id": 212,
+   "rect": [
+    2,
+    2606,
+    256,
+    128
+   ],
+   "native": [
+    278,
+    139
+   ],
+   "source": "scene/resource/gold-new/png/4.png"
+  },
+  {
+   "id": 213,
+   "rect": [
+    260,
+    2606,
+    256,
+    128
+   ],
+   "native": [
+    278,
+    139
+   ],
+   "source": "scene/resource_desert/gold-new/png/4.png"
+  },
+  {
+   "id": 214,
+   "rect": [
+    518,
+    2606,
+    256,
+    128
+   ],
+   "native": [
+    275,
+    138
+   ],
+   "source": "scene/resource_snow/stone-new/png/s10.png"
+  },
+  {
+   "id": 215,
+   "rect": [
+    776,
+    2606,
+    243,
+    128
+   ],
+   "native": [
+    243,
+    128
+   ],
+   "source": "scene/resource_snow/stone-new/png/s8.png"
+  },
+  {
+   "id": 216,
+   "rect": [
+    1021,
+    2606,
+    242,
+    128
+   ],
+   "native": [
+    242,
+    128
+   ],
+   "source": "scene/resource_desert/stone-new/png/8.png"
+  },
+  {
+   "id": 217,
+   "rect": [
+    1265,
+    2606,
+    196,
+    128
+   ],
+   "native": [
+    196,
+    128
+   ],
+   "source": "scene/resource/food-new/png/5.png"
+  },
+  {
+   "id": 218,
+   "rect": [
+    1463,
+    2606,
+    256,
+    127
+   ],
+   "native": [
+    312,
+    155
+   ],
+   "source": "scene/resource/food-new/png/10b.png"
+  },
+  {
+   "id": 219,
+   "rect": [
+    1721,
+    2606,
+    256,
+    127
+   ],
+   "native": [
+    312,
+    155
+   ],
+   "source": "scene/resource_desert/food-new/png/s10.png"
+  },
+  {
+   "id": 220,
+   "rect": [
+    1979,
+    2606,
+    256,
+    127
+   ],
+   "native": [
+    283,
+    140
+   ],
+   "source": "scene/resource_desert/stone-new/png/10.png"
+  },
+  {
+   "id": 221,
+   "rect": [
+    2237,
+    2606,
+    256,
+    127
+   ],
+   "native": [
+    312,
+    155
+   ],
+   "source": "scene/resource_snow/food-new/png/s10.png"
+  },
+  {
+   "id": 222,
+   "rect": [
+    2495,
+    2606,
+    256,
+    127
+   ],
+   "native": [
+    268,
+    133
+   ],
+   "source": "scene/resource_snow/iron-new/png/s8.png"
+  },
+  {
+   "id": 223,
+   "rect": [
+    2753,
+    2606,
+    252,
+    127
+   ],
+   "native": [
+    252,
+    127
+   ],
+   "source": "scene/resource/stone-new/png/8.png"
+  },
+  {
+   "id": 224,
+   "rect": [
+    3007,
+    2606,
+    256,
+    125
+   ],
+   "native": [
+    287,
+    140
+   ],
+   "source": "scene/resource/food-new/png/9.png"
+  },
+  {
+   "id": 225,
+   "rect": [
+    3265,
+    2606,
+    256,
+    125
+   ],
+   "native": [
+    286,
+    140
+   ],
+   "source": "scene/resource/stone-new/png/10.png"
+  },
+  {
+   "id": 226,
+   "rect": [
+    3523,
+    2606,
+    256,
+    125
+   ],
+   "native": [
+    286,
+    140
+   ],
+   "source": "scene/resource_desert/food-new/png/s9.png"
+  },
+  {
+   "id": 227,
+   "rect": [
+    3781,
+    2606,
+    256,
+    125
+   ],
+   "native": [
+    286,
+    140
+   ],
+   "source": "scene/resource_snow/food-new/png/s9.png"
+  },
+  {
+   "id": 228,
+   "rect": [
+    2,
+    2736,
+    241,
+    125
+   ],
+   "native": [
+    241,
+    125
+   ],
+   "source": "scene/resource_snow/iron-new/png/s9.png"
+  },
+  {
+   "id": 229,
+   "rect": [
+    245,
+    2736,
+    256,
+    124
+   ],
+   "native": [
+    276,
+    134
+   ],
+   "source": "scene/resource/gold-new/png/5.png"
+  },
+  {
+   "id": 230,
+   "rect": [
+    503,
+    2736,
+    256,
+    124
+   ],
+   "native": [
+    276,
+    134
+   ],
+   "source": "scene/resource_desert/gold-new/png/5.png"
+  },
+  {
+   "id": 231,
+   "rect": [
+    761,
+    2736,
+    256,
+    124
+   ],
+   "native": [
+    277,
+    134
+   ],
+   "source": "scene/resource_desert/iron-new/png/8.png"
+  },
+  {
+   "id": 232,
+   "rect": [
+    1019,
+    2736,
+    256,
+    124
+   ],
+   "native": [
+    276,
+    134
+   ],
+   "source": "scene/resource_snow/gold-new/png/5.png"
+  },
+  {
+   "id": 233,
+   "rect": [
+    1277,
+    2736,
+    256,
+    124
+   ],
+   "native": [
+    290,
+    141
+   ],
+   "source": "scene/resource_snow/wood-new/png/s7.png"
+  },
+  {
+   "id": 234,
+   "rect": [
+    1535,
+    2736,
+    221,
+    124
+   ],
+   "native": [
+    221,
+    124
+   ],
+   "source": "scene/resource_snow/wood-new/png/s3.png"
+  },
+  {
+   "id": 235,
+   "rect": [
+    1758,
+    2736,
+    227,
+    123
+   ],
+   "native": [
+    227,
+    123
+   ],
+   "source": "scene/resource_desert/wood-new/png/c.png"
+  },
+  {
+   "id": 236,
+   "rect": [
+    1987,
+    2736,
+    221,
+    123
+   ],
+   "native": [
+    221,
+    123
+   ],
+   "source": "scene/resource_desert/wood-new/png/10.png"
+  },
+  {
+   "id": 237,
+   "rect": [
+    2210,
+    2736,
+    240,
+    122
+   ],
+   "native": [
+    240,
+    122
+   ],
+   "source": "scene/resource_snow/wood-new/png/s4.png"
+  },
+  {
+   "id": 238,
+   "rect": [
+    2452,
+    2736,
+    256,
+    121
+   ],
+   "native": [
+    272,
+    129
+   ],
+   "source": "scene/resource_desert/wood-new/png/7.png"
+  },
+  {
+   "id": 239,
+   "rect": [
+    2710,
+    2736,
+    252,
+    121
+   ],
+   "native": [
+    252,
+    121
+   ],
+   "source": "scene/resource/stone-new/png/7.png"
+  },
+  {
+   "id": 240,
+   "rect": [
+    2964,
+    2736,
+    250,
+    121
+   ],
+   "native": [
+    250,
+    121
+   ],
+   "source": "scene/resource_desert/stone-new/png/7.png"
+  },
+  {
+   "id": 241,
+   "rect": [
+    3216,
+    2736,
+    248,
+    121
+   ],
+   "native": [
+    248,
+    121
+   ],
+   "source": "scene/resource_snow/stone-new/png/s7.png"
+  },
+  {
+   "id": 242,
+   "rect": [
+    3466,
+    2736,
+    229,
+    121
+   ],
+   "native": [
+    229,
+    121
+   ],
+   "source": "scene/resource/gold-new/png/2.png"
+  },
+  {
+   "id": 243,
+   "rect": [
+    3697,
+    2736,
+    229,
+    121
+   ],
+   "native": [
+    229,
+    121
+   ],
+   "source": "scene/resource_desert/gold-new/png/2.png"
+  },
+  {
+   "id": 244,
+   "rect": [
+    2,
+    2863,
+    235,
+    120
+   ],
+   "native": [
+    235,
+    120
+   ],
+   "source": "scene/resource_snow/stone-new/png/s5.png"
+  },
+  {
+   "id": 245,
+   "rect": [
+    239,
+    2863,
+    232,
+    120
+   ],
+   "native": [
+    232,
+    120
+   ],
+   "source": "scene/resource_desert/wood-new/png/b.png"
+  },
+  {
+   "id": 246,
+   "rect": [
+    473,
+    2863,
+    232,
+    119
+   ],
+   "native": [
+    232,
+    119
+   ],
+   "source": "scene/resource/wood-new/png/b.png"
+  },
+  {
+   "id": 247,
+   "rect": [
+    707,
+    2863,
+    230,
+    116
+   ],
+   "native": [
+    230,
+    116
+   ],
+   "source": "scene/resource_desert/stone-new/png/6.png"
+  },
+  {
+   "id": 248,
+   "rect": [
+    939,
+    2863,
+    241,
+    115
+   ],
+   "native": [
+    241,
+    115
+   ],
+   "source": "scene/resource/iron-new/png/6.png"
+  },
+  {
+   "id": 249,
+   "rect": [
+    1182,
+    2863,
+    241,
+    115
+   ],
+   "native": [
+    241,
+    115
+   ],
+   "source": "scene/resource_desert/iron-new/png/5.png"
+  },
+  {
+   "id": 250,
+   "rect": [
+    1425,
+    2863,
+    241,
+    115
+   ],
+   "native": [
+    241,
+    115
+   ],
+   "source": "scene/resource_desert/iron-new/png/6.png"
+  },
+  {
+   "id": 251,
+   "rect": [
+    1668,
+    2863,
+    239,
+    115
+   ],
+   "native": [
+    239,
+    115
+   ],
+   "source": "scene/resource_desert/food-new/png/s4.png"
+  },
+  {
+   "id": 252,
+   "rect": [
+    1909,
+    2863,
+    231,
+    114
+   ],
+   "native": [
+    231,
+    114
+   ],
+   "source": "scene/resource_snow/iron-new/png/s6.png"
+  },
+  {
+   "id": 253,
+   "rect": [
+    2142,
+    2863,
+    230,
+    114
+   ],
+   "native": [
+    230,
+    114
+   ],
+   "source": "scene/resource_snow/stone-new/png/s6.png"
+  },
+  {
+   "id": 254,
+   "rect": [
+    2374,
+    2863,
+    221,
+    114
+   ],
+   "native": [
+    221,
+    114
+   ],
+   "source": "scene/resource_snow/wood-new/png/s6.png"
+  },
+  {
+   "id": 255,
+   "rect": [
+    2597,
+    2863,
+    215,
+    112
+   ],
+   "native": [
+    215,
+    112
+   ],
+   "source": "scene/resource_desert/stone-new/png/4.png"
+  },
+  {
+   "id": 256,
+   "rect": [
+    2814,
+    2863,
+    208,
+    112
+   ],
+   "native": [
+    208,
+    112
+   ],
+   "source": "scene/resource_snow/gold-new/png/1.png"
+  },
+  {
+   "id": 257,
+   "rect": [
+    3024,
+    2863,
+    185,
+    112
+   ],
+   "native": [
+    185,
+    112
+   ],
+   "source": "scene/resource_desert/stone-new/png/a.png"
+  },
+  {
+   "id": 258,
+   "rect": [
+    3211,
+    2863,
+    175,
+    112
+   ],
+   "native": [
+    175,
+    112
+   ],
+   "source": "scene/resource/stone-new/png/a.png"
+  },
+  {
+   "id": 259,
+   "rect": [
+    3388,
+    2863,
+    239,
+    111
+   ],
+   "native": [
+    239,
+    111
+   ],
+   "source": "scene/resource/iron-new/png/5.png"
+  },
+  {
+   "id": 260,
+   "rect": [
+    3629,
+    2863,
+    217,
+    111
+   ],
+   "native": [
+    217,
+    111
+   ],
+   "source": "scene/resource_desert/iron-new/png/4.png"
+  },
+  {
+   "id": 261,
+   "rect": [
+    3848,
+    2863,
+    241,
+    110
+   ],
+   "native": [
+    241,
+    110
+   ],
+   "source": "scene/resource_snow/iron-new/png/s5.png"
+  },
+  {
+   "id": 262,
+   "rect": [
+    2,
+    2985,
+    200,
+    110
+   ],
+   "native": [
+    200,
+    110
+   ],
+   "source": "scene/resource/gold-new/png/1.png"
+  },
+  {
+   "id": 263,
+   "rect": [
+    204,
+    2985,
+    200,
+    110
+   ],
+   "native": [
+    200,
+    110
+   ],
+   "source": "scene/resource_desert/gold-new/png/1.png"
+  },
+  {
+   "id": 264,
+   "rect": [
+    406,
+    2985,
+    115,
+    110
+   ],
+   "native": [
+    115,
+    110
+   ],
+   "source": "scene/resource/wood-new/png/a.png"
+  },
+  {
+   "id": 265,
+   "rect": [
+    523,
+    2985,
+    242,
+    109
+   ],
+   "native": [
+    242,
+    109
+   ],
+   "source": "scene/resource_snow/wood-new/png/s2.png"
+  },
+  {
+   "id": 266,
+   "rect": [
+    767,
+    2985,
+    229,
+    109
+   ],
+   "native": [
+    229,
+    109
+   ],
+   "source": "scene/resource/stone-new/png/6.png"
+  },
+  {
+   "id": 267,
+   "rect": [
+    998,
+    2985,
+    113,
+    109
+   ],
+   "native": [
+    113,
+    109
+   ],
+   "source": "scene/resource_desert/wood-new/png/a.png"
+  },
+  {
+   "id": 268,
+   "rect": [
+    1113,
+    2985,
+    226,
+    108
+   ],
+   "native": [
+    226,
+    108
+   ],
+   "source": "scene/resource_desert/iron-new/png/3.png"
+  },
+  {
+   "id": 269,
+   "rect": [
+    1341,
+    2985,
+    229,
+    107
+   ],
+   "native": [
+    229,
+    107
+   ],
+   "source": "scene/resource/stone-new/png/5.png"
+  },
+  {
+   "id": 270,
+   "rect": [
+    1572,
+    2985,
+    194,
+    106
+   ],
+   "native": [
+    194,
+    106
+   ],
+   "source": "scene/resource_snow/stone-new/png/s3.png"
+  },
+  {
+   "id": 271,
+   "rect": [
+    1768,
+    2985,
+    232,
+    100
+   ],
+   "native": [
+    232,
+    100
+   ],
+   "source": "scene/resource_desert/iron-new/png/2.png"
+  },
+  {
+   "id": 272,
+   "rect": [
+    2002,
+    2985,
+    224,
+    100
+   ],
+   "native": [
+    224,
+    100
+   ],
+   "source": "scene/resource_desert/stone-new/png/2.png"
+  },
+  {
+   "id": 273,
+   "rect": [
+    2228,
+    2985,
+    220,
+    99
+   ],
+   "native": [
+    220,
+    99
+   ],
+   "source": "scene/resource_desert/stone-new/png/5.png"
+  },
+  {
+   "id": 274,
+   "rect": [
+    2450,
+    2985,
+    206,
+    98
+   ],
+   "native": [
+    206,
+    98
+   ],
+   "source": "scene/resource_snow/iron-new/png/s2.png"
+  },
+  {
+   "id": 275,
+   "rect": [
+    2658,
+    2985,
+    189,
+    98
+   ],
+   "native": [
+    189,
+    98
+   ],
+   "source": "scene/resource/iron-new/png/4.png"
+  },
+  {
+   "id": 276,
+   "rect": [
+    2849,
+    2985,
+    244,
+    97
+   ],
+   "native": [
+    244,
+    97
+   ],
+   "source": "scene/resource_desert/iron-new/png/a.png"
+  },
+  {
+   "id": 277,
+   "rect": [
+    3095,
+    2985,
+    245,
+    96
+   ],
+   "native": [
+    245,
+    96
+   ],
+   "source": "scene/resource_snow/iron-new/png/s4.png"
+  },
+  {
+   "id": 278,
+   "rect": [
+    3342,
+    2985,
+    224,
+    95
+   ],
+   "native": [
+    224,
+    95
+   ],
+   "source": "scene/resource/stone-new/png/2.png"
+  },
+  {
+   "id": 279,
+   "rect": [
+    3568,
+    2985,
+    200,
+    95
+   ],
+   "native": [
+    200,
+    95
+   ],
+   "source": "scene/resource_desert/stone-new/png/3.png"
+  },
+  {
+   "id": 280,
+   "rect": [
+    3770,
+    2985,
+    245,
+    92
+   ],
+   "native": [
+    245,
+    92
+   ],
+   "source": "scene/resource/iron-new/png/a.png"
+  },
+  {
+   "id": 281,
+   "rect": [
+    2,
+    3097,
+    159,
+    91
+   ],
+   "native": [
+    159,
+    91
+   ],
+   "source": "scene/resource_snow/iron-new/png/s3.png"
+  },
+  {
+   "id": 282,
+   "rect": [
+    163,
+    3097,
+    195,
+    89
+   ],
+   "native": [
+    195,
+    89
+   ],
+   "source": "scene/resource_desert/food-new/png/s3.png"
+  },
+  {
+   "id": 283,
+   "rect": [
+    360,
+    3097,
+    197,
+    88
+   ],
+   "native": [
+    197,
+    88
+   ],
+   "source": "scene/resource_snow/stone-new/png/s1.png"
+  },
+  {
+   "id": 284,
+   "rect": [
+    559,
+    3097,
+    184,
+    87
+   ],
+   "native": [
+    184,
+    87
+   ],
+   "source": "scene/resource/iron-new/png/3.png"
+  },
+  {
+   "id": 285,
+   "rect": [
+    745,
+    3097,
+    176,
+    87
+   ],
+   "native": [
+    176,
+    87
+   ],
+   "source": "scene/resource/stone-new/png/4.png"
+  },
+  {
+   "id": 286,
+   "rect": [
+    923,
+    3097,
+    230,
+    84
+   ],
+   "native": [
+    230,
+    84
+   ],
+   "source": "scene/resource/stone-new/png/3.png"
+  },
+  {
+   "id": 287,
+   "rect": [
+    1155,
+    3097,
+    179,
+    84
+   ],
+   "native": [
+    179,
+    84
+   ],
+   "source": "scene/resource/iron-new/png/2.png"
+  },
+  {
+   "id": 288,
+   "rect": [
+    1336,
+    3097,
+    178,
+    84
+   ],
+   "native": [
+    178,
+    84
+   ],
+   "source": "scene/resource_snow/stone-new/png/s2.png"
+  },
+  {
+   "id": 289,
+   "rect": [
+    1516,
+    3097,
+    122,
+    82
+   ],
+   "native": [
+    122,
+    82
+   ],
+   "source": "scene/resource_snow/food-new/png/s3.png"
+  },
+  {
+   "id": 290,
+   "rect": [
+    1640,
+    3097,
+    159,
+    81
+   ],
+   "native": [
+    159,
+    81
+   ],
+   "source": "scene/resource/food-new/png/10.png"
+  },
+  {
+   "id": 291,
+   "rect": [
+    1801,
+    3097,
+    154,
+    80
+   ],
+   "native": [
+    154,
+    80
+   ],
+   "source": "scene/resource_snow/iron-new/png/s1.png"
+  },
+  {
+   "id": 292,
+   "rect": [
+    1957,
+    3097,
+    122,
+    76
+   ],
+   "native": [
+    122,
+    76
+   ],
+   "source": "scene/resource/food-new/png/c.png"
+  },
+  {
+   "id": 293,
+   "rect": [
+    2081,
+    3097,
+    176,
+    75
+   ],
+   "native": [
+    176,
+    75
+   ],
+   "source": "scene/resource_snow/food-new/png/s4.png"
+  },
+  {
+   "id": 294,
+   "rect": [
+    2259,
+    3097,
+    126,
+    74
+   ],
+   "native": [
+    126,
+    74
+   ],
+   "source": "scene/resource_snow/wood-new/png/s1.png"
+  },
+  {
+   "id": 295,
+   "rect": [
+    2387,
+    3097,
+    149,
+    73
+   ],
+   "native": [
+    149,
+    73
+   ],
+   "source": "scene/resource_desert/food-new/png/a.png"
+  },
+  {
+   "id": 296,
+   "rect": [
+    2538,
+    3097,
+    50,
+    58
+   ],
+   "native": [
+    50,
+    58
+   ],
+   "source": "scene/resource/wood-new/png/3.png"
+  },
+  {
+   "id": 297,
+   "rect": [
+    2590,
+    3097,
+    26,
+    51
+   ],
+   "native": [
+    26,
+    51
+   ],
+   "source": "scene/resource/wood-new/png/1.png"
+  },
+  {
+   "id": 298,
+   "rect": [
+    2618,
+    3097,
+    49,
+    49
+   ],
+   "native": [
+    49,
+    49
+   ],
+   "source": "scene/resource_desert/wood-new/png/3.png"
+  },
+  {
+   "id": 299,
+   "rect": [
+    2669,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0000.png"
+  },
+  {
+   "id": 300,
+   "rect": [
+    2692,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0001.png"
+  },
+  {
+   "id": 301,
+   "rect": [
+    2715,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0002.png"
+  },
+  {
+   "id": 302,
+   "rect": [
+    2738,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0003.png"
+  },
+  {
+   "id": 303,
+   "rect": [
+    2761,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0004.png"
+  },
+  {
+   "id": 304,
+   "rect": [
+    2784,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0005.png"
+  },
+  {
+   "id": 305,
+   "rect": [
+    2807,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0006.png"
+  },
+  {
+   "id": 306,
+   "rect": [
+    2830,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0007.png"
+  },
+  {
+   "id": 307,
+   "rect": [
+    2853,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0008.png"
+  },
+  {
+   "id": 308,
+   "rect": [
+    2876,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0009.png"
+  },
+  {
+   "id": 309,
+   "rect": [
+    2899,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0010.png"
+  },
+  {
+   "id": 310,
+   "rect": [
+    2922,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0011.png"
+  },
+  {
+   "id": 311,
+   "rect": [
+    2945,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0012.png"
+  },
+  {
+   "id": 312,
+   "rect": [
+    2968,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0013.png"
+  },
+  {
+   "id": 313,
+   "rect": [
+    2991,
+    3097,
+    21,
+    44
+   ],
+   "native": [
+    21,
+    44
+   ],
+   "source": "scene/effect/png/resource_smoke_f_01/0014.png"
+  },
+  {
+   "id": 314,
+   "rect": [
+    3014,
+    3097,
+    44,
+    39
+   ],
+   "native": [
+    44,
+    39
+   ],
+   "source": "scene/effect/png/t2.png"
+  },
+  {
+   "id": 315,
+   "rect": [
+    3060,
+    3097,
+    53,
+    27
+   ],
+   "native": [
+    53,
+    27
+   ],
+   "source": "scene/npc/common/png/shadow/shadow5.png"
+  },
+  {
+   "id": 316,
+   "rect": [
+    3115,
+    3097,
+    53,
+    27
+   ],
+   "native": [
+    53,
+    27
+   ],
+   "source": "scene/resource/food-new/png/common/shadow5.png"
+  },
+  {
+   "id": 317,
+   "rect": [
+    3170,
+    3097,
+    19,
+    26
+   ],
+   "native": [
+    19,
+    26
+   ],
+   "source": "scene/resource_desert/wood-new/png/2.png"
+  },
+  {
+   "id": 318,
+   "rect": [
+    3191,
+    3097,
+    18,
+    25
+   ],
+   "native": [
+    18,
+    25
+   ],
+   "source": "scene/resource/wood-new/png/2.png"
+  },
+  {
+   "id": 319,
+   "rect": [
+    3211,
+    3097,
+    23,
+    24
+   ],
+   "native": [
+    23,
+    24
+   ],
+   "source": "scene/resource_desert/wood-new/png/1.png"
+  }
+ ],
  "variants": {
-  "来源": "base.cw land 表 client_res_id/snow_client_res_id/desert_client_res_id（⛔ autumn 不接，M0-B3）；类型/等级取套件 prefab 名（三套件互校，不一致即退出）",
   "resIds": {
    "2": {
     "base": 2011,
@@ -244,6137 +4716,7 @@
    }
   }
  },
- "substitutions": {
-  "base": [
-   "22(food用3级)",
-   "23(food用3级)",
-   "36(iron用4级)",
-   "39(iron用7级)",
-   "40(iron用7级)",
-   "41(iron用7级)"
-  ],
-  "snow": [
-   "22(food用3级)",
-   "23(food用3级)"
-  ],
-  "desert": []
- },
- "cells": [
-  {
-   "cell": [
-    0,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    103,
-    134,
-    50,
-    58
-   ],
-   "native": [
-    50,
-    58
-   ],
-   "id": 2,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 1,
-   "source": "scene/resource/wood-new/png/3.png",
-   "prefab": "scene/resource/wood-new/Wood_01_group.prefab",
-   "transform": {
-    "size": [
-     50.0,
-     58.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     2.7998,
-     -27.084
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    256,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    70,
-    82,
-    115,
-    110
-   ],
-   "native": [
-    115,
-    110
-   ],
-   "id": 3,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 2,
-   "source": "scene/resource/wood-new/png/a.png",
-   "prefab": "scene/resource/wood-new/Wood_02_group.prefab",
-   "transform": {
-    "size": [
-     115.0,
-     110.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.68457,
-     9.75391
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    512,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    12,
-    73,
-    232,
-    119
-   ],
-   "native": [
-    232,
-    119
-   ],
-   "id": 4,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 3,
-   "source": "scene/resource/wood-new/png/b.png",
-   "prefab": "scene/resource/wood-new/Wood_03_group.prefab",
-   "transform": {
-    "size": [
-     232.0,
-     119.0
-    ],
-    "scale": [
-     0.922414,
-     0.915966
-    ],
-    "offset": [
-     -7.29297,
-     3.62402
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    768,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    14,
-    59,
-    227,
-    133
-   ],
-   "native": [
-    227,
-    133
-   ],
-   "id": 5,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 4,
-   "source": "scene/resource/wood-new/png/c.png",
-   "prefab": "scene/resource/wood-new/Wood_04_group.prefab",
-   "transform": {
-    "size": [
-     227.0,
-     133.0
-    ],
-    "scale": [
-     1.02745,
-     1.05839
-    ],
-    "offset": [
-     3.63086,
-     8.05078
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1024,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    2,
-    42,
-    251,
-    150
-   ],
-   "native": [
-    251,
-    150
-   ],
-   "id": 6,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 5,
-   "source": "scene/resource/wood-new/png/5.png",
-   "prefab": "scene/resource/wood-new/Wood_05_group.prefab",
-   "transform": {
-    "size": [
-     251.0,
-     150.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.60742,
-     3.77734
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1280,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    10,
-    55,
-    235,
-    137
-   ],
-   "native": [
-    235,
-    137
-   ],
-   "id": 7,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 6,
-   "source": "scene/resource/wood-new/png/10.png",
-   "prefab": "scene/resource/wood-new/Wood_06_group.prefab",
-   "transform": {
-    "size": [
-     235.0,
-     137.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -2.0,
-     17.0
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    62,
-    256,
-    130
-   ],
-   "native": [
-    275,
-    140
-   ],
-   "id": 8,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 7,
-   "source": "scene/resource/wood-new/png/7.png",
-   "prefab": "scene/resource/wood-new/Wood_07_group.prefab",
-   "transform": {
-    "size": [
-     275.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -7.51563,
-     1.36719
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    44,
-    256,
-    148
-   ],
-   "native": [
-    274,
-    158
-   ],
-   "id": 9,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 8,
-   "source": "scene/resource/wood-new/png/8.png",
-   "prefab": "scene/resource/wood-new/Wood_08_group.prefab",
-   "transform": {
-    "size": [
-     274.0,
-     158.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -8.59766,
-     -1.87891
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    45,
-    256,
-    147
-   ],
-   "native": [
-    282,
-    162
-   ],
-   "id": 10,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 9,
-   "source": "scene/resource/wood-new/png/9.png",
-   "prefab": "scene/resource/wood-new/Wood_09_group.prefab",
-   "transform": {
-    "size": [
-     282.0,
-     162.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.1875,
-     0.285156
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    57,
-    256,
-    135
-   ],
-   "native": [
-    329,
-    174
-   ],
-   "id": 11,
-   "kind": "res",
-   "variant": "base",
-   "resType": "wood",
-   "level": 10,
-   "source": "scene/resource/wood-new/png/10b.png",
-   "prefab": "scene/resource/wood-new/Wood_10_group.prefab",
-   "transform": {
-    "size": [
-     329.0,
-     174.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.1875,
-     -2.41992
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    16,
-    97,
-    224,
-    95
-   ],
-   "native": [
-    224,
-    95
-   ],
-   "id": 12,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 1,
-   "source": "scene/resource/stone-new/png/2.png",
-   "prefab": "scene/resource/stone-new/Stone_01_group.prefab",
-   "transform": {
-    "size": [
-     224.0,
-     95.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -15.751,
-     -0.233398
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    108,
-    230,
-    84
-   ],
-   "native": [
-    230,
-    84
-   ],
-   "id": 13,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 2,
-   "source": "scene/resource/stone-new/png/3.png",
-   "prefab": "scene/resource/stone-new/Stone_02_group.prefab",
-   "transform": {
-    "size": [
-     230.0,
-     84.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     3.07422,
-     2.81934
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    40,
-    105,
-    176,
-    87
-   ],
-   "native": [
-    176,
-    87
-   ],
-   "id": 14,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 3,
-   "source": "scene/resource/stone-new/png/4.png",
-   "prefab": "scene/resource/stone-new/Stone_03_group.prefab",
-   "transform": {
-    "size": [
-     176.0,
-     87.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -18.294901,
-     8.9248
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    40,
-    80,
-    175,
-    112
-   ],
-   "native": [
-    175,
-    112
-   ],
-   "id": 15,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 4,
-   "source": "scene/resource/stone-new/png/a.png",
-   "prefab": "scene/resource/stone-new/Stone_04_group.prefab",
-   "transform": {
-    "size": [
-     175.0,
-     112.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -13.0469,
-     6.81738
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3584,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    85,
-    229,
-    107
-   ],
-   "native": [
-    229,
-    107
-   ],
-   "id": 16,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 5,
-   "source": "scene/resource/stone-new/png/5.png",
-   "prefab": "scene/resource/stone-new/Stone_05_group.prefab",
-   "transform": {
-    "size": [
-     229.0,
-     107.0
-    ],
-    "scale": [
-     0.9869,
-     1.00935
-    ],
-    "offset": [
-     -2.1084,
-     7.34961
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3840,
-    0,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    83,
-    229,
-    109
-   ],
-   "native": [
-    229,
-    109
-   ],
-   "id": 17,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 6,
-   "source": "scene/resource/stone-new/png/6.png",
-   "prefab": "scene/resource/stone-new/Stone_06_group.prefab",
-   "transform": {
-    "size": [
-     229.0,
-     109.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     0.530273,
-     6.38086
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    0,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    2,
-    71,
-    252,
-    121
-   ],
-   "native": [
-    252,
-    121
-   ],
-   "id": 18,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 7,
-   "source": "scene/resource/stone-new/png/7.png",
-   "prefab": "scene/resource/stone-new/Stone_07_group.prefab",
-   "transform": {
-    "size": [
-     252.0,
-     121.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     3.07422,
-     7.39844
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    256,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    2,
-    65,
-    252,
-    127
-   ],
-   "native": [
-    252,
-    127
-   ],
-   "id": 19,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 8,
-   "source": "scene/resource/stone-new/png/8.png",
-   "prefab": "scene/resource/stone-new/Stone_08_group.prefab",
-   "transform": {
-    "size": [
-     252.0,
-     127.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     2.56543,
-     -2.26855
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    512,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    4,
-    57,
-    248,
-    135
-   ],
-   "native": [
-    248,
-    135
-   ],
-   "id": 20,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 9,
-   "source": "scene/resource/stone-new/png/9.png",
-   "prefab": "scene/resource/stone-new/Stone_09_group.prefab",
-   "transform": {
-    "size": [
-     248.0,
-     135.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -2.01367,
-     3.83691
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    768,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    67,
-    256,
-    125
-   ],
-   "native": [
-    286,
-    140
-   ],
-   "id": 21,
-   "kind": "res",
-   "variant": "base",
-   "resType": "stone",
-   "level": 10,
-   "source": "scene/resource/stone-new/png/10.png",
-   "prefab": "scene/resource/stone-new/Stone_10_group.prefab",
-   "transform": {
-    "size": [
-     286.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.50488,
-     8.9248
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1024,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    67,
-    116,
-    122,
-    76
-   ],
-   "native": [
-    122,
-    76
-   ],
-   "id": 22,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 1,
-   "source": "scene/resource/food-new/png/c.png",
-   "prefab": "scene/resource/food-new/Food_03_group.prefab",
-   "transform": {
-    "size": [
-     122.0,
-     76.0
-    ],
-    "scale": [
-     1.17213,
-     1.21053
-    ],
-    "offset": [
-     30.058599,
-     13.457
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1280,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    67,
-    116,
-    122,
-    76
-   ],
-   "native": [
-    122,
-    76
-   ],
-   "id": 23,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 2,
-   "source": "scene/resource/food-new/png/c.png",
-   "prefab": "scene/resource/food-new/Food_03_group.prefab",
-   "transform": {
-    "size": [
-     122.0,
-     76.0
-    ],
-    "scale": [
-     1.17213,
-     1.21053
-    ],
-    "offset": [
-     30.058599,
-     13.457
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    67,
-    116,
-    122,
-    76
-   ],
-   "native": [
-    122,
-    76
-   ],
-   "id": 24,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 3,
-   "source": "scene/resource/food-new/png/c.png",
-   "prefab": "scene/resource/food-new/Food_03_group.prefab",
-   "transform": {
-    "size": [
-     122.0,
-     76.0
-    ],
-    "scale": [
-     1.17213,
-     1.21053
-    ],
-    "offset": [
-     30.058599,
-     13.457
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    48,
-    111,
-    159,
-    81
-   ],
-   "native": [
-    159,
-    81
-   ],
-   "id": 25,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 4,
-   "source": "scene/resource/food-new/png/10.png",
-   "prefab": "scene/resource/food-new/Food_04_group.prefab",
-   "transform": {
-    "size": [
-     159.0,
-     81.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     17.882799,
-     10.1445
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    30,
-    64,
-    196,
-    128
-   ],
-   "native": [
-    196,
-    128
-   ],
-   "id": 26,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 5,
-   "source": "scene/resource/food-new/png/5.png",
-   "prefab": "scene/resource/food-new/Food_05_group.prefab",
-   "transform": {
-    "size": [
-     196.0,
-     128.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -8.05469,
-     -3.63477
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    3,
-    60,
-    250,
-    132
-   ],
-   "native": [
-    250,
-    132
-   ],
-   "id": 27,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 6,
-   "source": "scene/resource/food-new/png/6.png",
-   "prefab": "scene/resource/food-new/Food_06_group.prefab",
-   "transform": {
-    "size": [
-     250.0,
-     132.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     5.41016,
-     -0.450195
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    2,
-    52,
-    251,
-    140
-   ],
-   "native": [
-    251,
-    140
-   ],
-   "id": 28,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 7,
-   "source": "scene/resource/food-new/png/7.png",
-   "prefab": "scene/resource/food-new/Food_07_group.prefab",
-   "transform": {
-    "size": [
-     251.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -0.899414,
-     0.451172
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    57,
-    256,
-    135
-   ],
-   "native": [
-    277,
-    146
-   ],
-   "id": 29,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 8,
-   "source": "scene/resource/food-new/png/8.png",
-   "prefab": "scene/resource/food-new/Food_08_group.prefab",
-   "transform": {
-    "size": [
-     277.0,
-     146.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.80078,
-     5.85938
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    67,
-    256,
-    125
-   ],
-   "native": [
-    287,
-    140
-   ],
-   "id": 30,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 9,
-   "source": "scene/resource/food-new/png/9.png",
-   "prefab": "scene/resource/food-new/Food_09_group.prefab",
-   "transform": {
-    "size": [
-     287.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -6.30762,
-     6.76074
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    65,
-    256,
-    127
-   ],
-   "native": [
-    312,
-    155
-   ],
-   "id": 31,
-   "kind": "res",
-   "variant": "base",
-   "resType": "food",
-   "level": 10,
-   "source": "scene/resource/food-new/png/10b.png",
-   "prefab": "scene/resource/food-new/Food_10_group.prefab",
-   "transform": {
-    "size": [
-     312.0,
-     155.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -8.11035,
-     -1.35156
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3584,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    38,
-    108,
-    179,
-    84
-   ],
-   "native": [
-    179,
-    84
-   ],
-   "id": 32,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 1,
-   "source": "scene/resource/iron-new/png/2.png",
-   "prefab": "scene/resource/iron-new/Iron_01_group.prefab",
-   "transform": {
-    "size": [
-     179.0,
-     84.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     21.0273,
-     -2.58008
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3840,
-    192,
-    256,
-    192
-   ],
-   "art": [
-    36,
-    105,
-    184,
-    87
-   ],
-   "native": [
-    184,
-    87
-   ],
-   "id": 33,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 2,
-   "source": "scene/resource/iron-new/png/3.png",
-   "prefab": "scene/resource/iron-new/Iron_02_group.prefab",
-   "transform": {
-    "size": [
-     184.0,
-     87.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     8.17969,
-     -7.83594
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    0,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    33,
-    94,
-    189,
-    98
-   ],
-   "native": [
-    189,
-    98
-   ],
-   "id": 34,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 3,
-   "source": "scene/resource/iron-new/png/4.png",
-   "prefab": "scene/resource/iron-new/Iron_03_group.prefab",
-   "transform": {
-    "size": [
-     189.0,
-     98.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     4.0918,
-     10.2676
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    256,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    5,
-    100,
-    245,
-    92
-   ],
-   "native": [
-    245,
-    92
-   ],
-   "id": 35,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 4,
-   "source": "scene/resource/iron-new/png/a.png",
-   "prefab": "scene/resource/iron-new/Iron_04_group.prefab",
-   "transform": {
-    "size": [
-     245.0,
-     92.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.54785,
-     -1.12695
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    512,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    5,
-    100,
-    245,
-    92
-   ],
-   "native": [
-    245,
-    92
-   ],
-   "id": 36,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 5,
-   "source": "scene/resource/iron-new/png/a.png",
-   "prefab": "scene/resource/iron-new/Iron_04_group.prefab",
-   "transform": {
-    "size": [
-     245.0,
-     92.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.54785,
-     -1.12695
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    768,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    7,
-    77,
-    241,
-    115
-   ],
-   "native": [
-    241,
-    115
-   ],
-   "id": 37,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 6,
-   "source": "scene/resource/iron-new/png/6.png",
-   "prefab": "scene/resource/iron-new/Iron_06_group.prefab",
-   "transform": {
-    "size": [
-     241.0,
-     115.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -2.33203,
-     0.339844
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1024,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    63,
-    229,
-    129
-   ],
-   "native": [
-    229,
-    129
-   ],
-   "id": 38,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 7,
-   "source": "scene/resource/iron-new/png/7.png",
-   "prefab": "scene/resource/iron-new/Iron_07_group.prefab",
-   "transform": {
-    "size": [
-     229.0,
-     129.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.08398,
-     4.42773
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1280,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    63,
-    229,
-    129
-   ],
-   "native": [
-    229,
-    129
-   ],
-   "id": 39,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 8,
-   "source": "scene/resource/iron-new/png/7.png",
-   "prefab": "scene/resource/iron-new/Iron_07_group.prefab",
-   "transform": {
-    "size": [
-     229.0,
-     129.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.08398,
-     4.42773
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    63,
-    229,
-    129
-   ],
-   "native": [
-    229,
-    129
-   ],
-   "id": 40,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 9,
-   "source": "scene/resource/iron-new/png/7.png",
-   "prefab": "scene/resource/iron-new/Iron_07_group.prefab",
-   "transform": {
-    "size": [
-     229.0,
-     129.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.08398,
-     4.42773
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    63,
-    229,
-    129
-   ],
-   "native": [
-    229,
-    129
-   ],
-   "id": 41,
-   "kind": "res",
-   "variant": "base",
-   "resType": "iron",
-   "level": 10,
-   "source": "scene/resource/iron-new/png/7.png",
-   "prefab": "scene/resource/iron-new/Iron_07_group.prefab",
-   "transform": {
-    "size": [
-     229.0,
-     129.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.08398,
-     4.42773
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    28,
-    82,
-    200,
-    110
-   ],
-   "native": [
-    200,
-    110
-   ],
-   "id": 42,
-   "kind": "res",
-   "variant": "base",
-   "resType": "gold",
-   "level": 1,
-   "source": "scene/resource/gold-new/png/1.png",
-   "prefab": "scene/resource/gold-new/Gold_01_group.prefab",
-   "transform": {
-    "size": [
-     200.0,
-     110.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     0.233398,
-     2.4873
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    71,
-    229,
-    121
-   ],
-   "native": [
-    229,
-    121
-   ],
-   "id": 43,
-   "kind": "res",
-   "variant": "base",
-   "resType": "gold",
-   "level": 2,
-   "source": "scene/resource/gold-new/png/2.png",
-   "prefab": "scene/resource/gold-new/Gold_02_group.prefab",
-   "transform": {
-    "size": [
-     229.0,
-     121.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -5.5127,
-     7.58496
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    60,
-    256,
-    132
-   ],
-   "native": [
-    262,
-    135
-   ],
-   "id": 44,
-   "kind": "res",
-   "variant": "base",
-   "resType": "gold",
-   "level": 3,
-   "source": "scene/resource/gold-new/png/3.png",
-   "prefab": "scene/resource/gold-new/Gold_03_group.prefab",
-   "transform": {
-    "size": [
-     262.0,
-     135.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     3.2207,
-     2.82129
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    64,
-    256,
-    128
-   ],
-   "native": [
-    278,
-    139
-   ],
-   "id": 45,
-   "kind": "res",
-   "variant": "base",
-   "resType": "gold",
-   "level": 4,
-   "source": "scene/resource/gold-new/png/4.png",
-   "prefab": "scene/resource/gold-new/Gold_04_group.prefab",
-   "transform": {
-    "size": [
-     278.0,
-     139.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.54297,
-     3.61523
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    68,
-    256,
-    124
-   ],
-   "native": [
-    276,
-    134
-   ],
-   "id": 46,
-   "kind": "res",
-   "variant": "base",
-   "resType": "gold",
-   "level": 5,
-   "source": "scene/resource/gold-new/png/5.png",
-   "prefab": "scene/resource/gold-new/Gold_05_group.prefab",
-   "transform": {
-    "size": [
-     276.0,
-     134.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     1.63281,
-     5.20313
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    32,
-    0,
-    192,
-    192
-   ],
-   "native": [
-    512,
-    512
-   ],
-   "id": 64,
-   "kind": "city",
-   "variant": "base",
-   "source": "scene/build_snow/main_city/28saiji_jianzhu/png/qianshao.png"
-  },
-  {
-   "cell": [
-    3584,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    32,
-    0,
-    192,
-    192
-   ],
-   "native": [
-    512,
-    512
-   ],
-   "id": 65,
-   "kind": "city",
-   "variant": "base",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_zuo.png"
-  },
-  {
-   "cell": [
-    3840,
-    384,
-    256,
-    192
-   ],
-   "art": [
-    32,
-    0,
-    192,
-    192
-   ],
-   "native": [
-    512,
-    512
-   ],
-   "id": 66,
-   "kind": "city",
-   "variant": "base",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_you.png"
-  },
-  {
-   "cell": [
-    0,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    32,
-    0,
-    192,
-    192
-   ],
-   "native": [
-    512,
-    512
-   ],
-   "id": 67,
-   "kind": "city",
-   "variant": "base",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_xia.png"
-  },
-  {
-   "cell": [
-    256,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    32,
-    0,
-    192,
-    192
-   ],
-   "native": [
-    512,
-    512
-   ],
-   "id": 68,
-   "kind": "city",
-   "variant": "base",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01_shang.png"
-  },
-  {
-   "cell": [
-    512,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    32,
-    0,
-    192,
-    192
-   ],
-   "native": [
-    512,
-    512
-   ],
-   "id": 69,
-   "kind": "city",
-   "variant": "base",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_d01.png"
-  },
-  {
-   "cell": [
-    768,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    32,
-    0,
-    192,
-    192
-   ],
-   "native": [
-    512,
-    512
-   ],
-   "id": 70,
-   "kind": "city",
-   "variant": "base",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_c02_x.png"
-  },
-  {
-   "cell": [
-    1024,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    32,
-    0,
-    192,
-    192
-   ],
-   "native": [
-    512,
-    512
-   ],
-   "id": 71,
-   "kind": "city",
-   "variant": "base",
-   "source": "scene/build_snow/main_city/26saiji_jianzhu/chengqiang/png/jiaolou_c02.png"
-  },
-  {
-   "cell": [
-    1280,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    65,
-    118,
-    126,
-    74
-   ],
-   "native": [
-    126,
-    74
-   ],
-   "id": 2,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 1,
-   "source": "scene/resource_snow/wood-new/png/s1.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_01_group.prefab",
-   "transform": {
-    "size": [
-     126.0,
-     74.0
-    ],
-    "scale": [
-     1.38489,
-     1.38489
-    ],
-    "offset": [
-     2.56348,
-     -0.324219
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    7,
-    83,
-    242,
-    109
-   ],
-   "native": [
-    242,
-    109
-   ],
-   "id": 3,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 2,
-   "source": "scene/resource_snow/wood-new/png/s2.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_02_group.prefab",
-   "transform": {
-    "size": [
-     242.0,
-     109.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -12.9297,
-     5.12207
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    17,
-    68,
-    221,
-    124
-   ],
-   "native": [
-    221,
-    124
-   ],
-   "id": 4,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 3,
-   "source": "scene/resource_snow/wood-new/png/s3.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_03_group.prefab",
-   "transform": {
-    "size": [
-     221.0,
-     124.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -7.86328,
-     -7.60059
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    8,
-    70,
-    240,
-    122
-   ],
-   "native": [
-    240,
-    122
-   ],
-   "id": 5,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 4,
-   "source": "scene/resource_snow/wood-new/png/s4.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_04_group.prefab",
-   "transform": {
-    "size": [
-     240.0,
-     122.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     4.15039,
-     -0.131836
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    51,
-    256,
-    141
-   ],
-   "native": [
-    258,
-    142
-   ],
-   "id": 6,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 5,
-   "source": "scene/resource_snow/wood-new/png/s5.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_05_group.prefab",
-   "transform": {
-    "size": [
-     258.0,
-     142.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.21484,
-     1.875
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    17,
-    78,
-    221,
-    114
-   ],
-   "native": [
-    221,
-    114
-   ],
-   "id": 7,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 6,
-   "source": "scene/resource_snow/wood-new/png/s6.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_06_group.prefab",
-   "transform": {
-    "size": [
-     221.0,
-     114.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.77734,
-     6.07227
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    68,
-    256,
-    124
-   ],
-   "native": [
-    290,
-    141
-   ],
-   "id": 8,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 7,
-   "source": "scene/resource_snow/wood-new/png/s7.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_07_group.prefab",
-   "transform": {
-    "size": [
-     290.0,
-     141.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -9.71094,
-     4.16406
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    44,
-    256,
-    148
-   ],
-   "native": [
-    258,
-    149
-   ],
-   "id": 9,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 8,
-   "source": "scene/resource_snow/wood-new/png/s8.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_08_group.prefab",
-   "transform": {
-    "size": [
-     258.0,
-     149.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -6.85156,
-     -2.15918
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    44,
-    256,
-    148
-   ],
-   "native": [
-    268,
-    155
-   ],
-   "id": 10,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 9,
-   "source": "scene/resource_snow/wood-new/png/s9.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_09_group.prefab",
-   "transform": {
-    "size": [
-     268.0,
-     155.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -10.3096,
-     4.75391
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3584,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    54,
-    256,
-    138
-   ],
-   "native": [
-    299,
-    161
-   ],
-   "id": 11,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "wood",
-   "level": 10,
-   "source": "scene/resource_snow/wood-new/png/s10.png",
-   "prefab": "scene/resource_snow/wood-new/Wood_10_group.prefab",
-   "transform": {
-    "size": [
-     299.0,
-     161.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -10.5547,
-     -1.44727
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3840,
-    576,
-    256,
-    192
-   ],
-   "art": [
-    29,
-    104,
-    197,
-    88
-   ],
-   "native": [
-    197,
-    88
-   ],
-   "id": 12,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 1,
-   "source": "scene/resource_snow/stone-new/png/s1.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_01_group.prefab",
-   "transform": {
-    "size": [
-     197.0,
-     88.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -11.0557,
-     4.92871
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    0,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    39,
-    108,
-    178,
-    84
-   ],
-   "native": [
-    178,
-    84
-   ],
-   "id": 13,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 2,
-   "source": "scene/resource_snow/stone-new/png/s2.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_02_group.prefab",
-   "transform": {
-    "size": [
-     178.0,
-     84.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     20.563499,
-     3.42578
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    256,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    31,
-    86,
-    194,
-    106
-   ],
-   "native": [
-    194,
-    106
-   ],
-   "id": 14,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 3,
-   "source": "scene/resource_snow/stone-new/png/s3.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_03_group.prefab",
-   "transform": {
-    "size": [
-     194.0,
-     106.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -10.5781,
-     -0.908203
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    512,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    19,
-    53,
-    217,
-    139
-   ],
-   "native": [
-    217,
-    139
-   ],
-   "id": 15,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 4,
-   "source": "scene/resource_snow/stone-new/png/s4.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_04_group.prefab",
-   "transform": {
-    "size": [
-     217.0,
-     139.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.99707,
-     -5.13965
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    768,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    10,
-    72,
-    235,
-    120
-   ],
-   "native": [
-    235,
-    120
-   ],
-   "id": 16,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 5,
-   "source": "scene/resource_snow/stone-new/png/s5.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_05_group.prefab",
-   "transform": {
-    "size": [
-     235.0,
-     120.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.02832,
-     10.6885
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1024,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    78,
-    230,
-    114
-   ],
-   "native": [
-    230,
-    114
-   ],
-   "id": 17,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 6,
-   "source": "scene/resource_snow/stone-new/png/s6.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_06_group.prefab",
-   "transform": {
-    "size": [
-     230.0,
-     114.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     0.504883,
-     6.91504
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1280,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    4,
-    71,
-    248,
-    121
-   ],
-   "native": [
-    248,
-    121
-   ],
-   "id": 18,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 7,
-   "source": "scene/resource_snow/stone-new/png/s7.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_07_group.prefab",
-   "transform": {
-    "size": [
-     248.0,
-     121.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     0.603516,
-     7.00586
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    6,
-    64,
-    243,
-    128
-   ],
-   "native": [
-    243,
-    128
-   ],
-   "id": 19,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 8,
-   "source": "scene/resource_snow/stone-new/png/s8.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_08_group.prefab",
-   "transform": {
-    "size": [
-     243.0,
-     128.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -0.242188,
-     -2.51367
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    4,
-    56,
-    248,
-    136
-   ],
-   "native": [
-    248,
-    136
-   ],
-   "id": 20,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 9,
-   "source": "scene/resource_snow/stone-new/png/s9.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_09_group.prefab",
-   "transform": {
-    "size": [
-     248.0,
-     136.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.16309,
-     5.15625
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    64,
-    256,
-    128
-   ],
-   "native": [
-    275,
-    138
-   ],
-   "id": 21,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "stone",
-   "level": 10,
-   "source": "scene/resource_snow/stone-new/png/s10.png",
-   "prefab": "scene/resource_snow/stone-new/Stone_10_group.prefab",
-   "transform": {
-    "size": [
-     275.0,
-     138.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     4.05176,
-     9.19043
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    67,
-    110,
-    122,
-    82
-   ],
-   "native": [
-    122,
-    82
-   ],
-   "id": 22,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 1,
-   "source": "scene/resource_snow/food-new/png/s3.png",
-   "prefab": "scene/resource_snow/food-new/Food_03_group.prefab",
-   "transform": {
-    "size": [
-     122.0,
-     82.0
-    ],
-    "scale": [
-     1.11784,
-     1.11784
-    ],
-    "offset": [
-     29.500999,
-     17.0313
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    67,
-    110,
-    122,
-    82
-   ],
-   "native": [
-    122,
-    82
-   ],
-   "id": 23,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 2,
-   "source": "scene/resource_snow/food-new/png/s3.png",
-   "prefab": "scene/resource_snow/food-new/Food_03_group.prefab",
-   "transform": {
-    "size": [
-     122.0,
-     82.0
-    ],
-    "scale": [
-     1.11784,
-     1.11784
-    ],
-    "offset": [
-     29.500999,
-     17.0313
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    67,
-    110,
-    122,
-    82
-   ],
-   "native": [
-    122,
-    82
-   ],
-   "id": 24,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 3,
-   "source": "scene/resource_snow/food-new/png/s3.png",
-   "prefab": "scene/resource_snow/food-new/Food_03_group.prefab",
-   "transform": {
-    "size": [
-     122.0,
-     82.0
-    ],
-    "scale": [
-     1.11784,
-     1.11784
-    ],
-    "offset": [
-     29.500999,
-     17.0313
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    40,
-    117,
-    176,
-    75
-   ],
-   "native": [
-    176,
-    75
-   ],
-   "id": 25,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 4,
-   "source": "scene/resource_snow/food-new/png/s4.png",
-   "prefab": "scene/resource_snow/food-new/Food_04_group.prefab",
-   "transform": {
-    "size": [
-     176.0,
-     75.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     10.2012,
-     6.31641
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    27,
-    61,
-    201,
-    131
-   ],
-   "native": [
-    201,
-    131
-   ],
-   "id": 26,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 5,
-   "source": "scene/resource_snow/food-new/png/s5.png",
-   "prefab": "scene/resource_snow/food-new/Food_05_group.prefab",
-   "transform": {
-    "size": [
-     201.0,
-     131.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -6.80859,
-     -4.23047
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3584,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    2,
-    52,
-    251,
-    140
-   ],
-   "native": [
-    251,
-    140
-   ],
-   "id": 27,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 6,
-   "source": "scene/resource_snow/food-new/png/s6.png",
-   "prefab": "scene/resource_snow/food-new/Food_06_group.prefab",
-   "transform": {
-    "size": [
-     251.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     4.63672,
-     3.78125
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3840,
-    768,
-    256,
-    192
-   ],
-   "art": [
-    2,
-    52,
-    251,
-    140
-   ],
-   "native": [
-    251,
-    140
-   ],
-   "id": 28,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 7,
-   "source": "scene/resource_snow/food-new/png/s7.png",
-   "prefab": "scene/resource_snow/food-new/Food_07_group.prefab",
-   "transform": {
-    "size": [
-     251.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -2.80273,
-     0.347656
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    0,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    58,
-    256,
-    134
-   ],
-   "native": [
-    277,
-    145
-   ],
-   "id": 29,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 8,
-   "source": "scene/resource_snow/food-new/png/s8.png",
-   "prefab": "scene/resource_snow/food-new/Food_08_group.prefab",
-   "transform": {
-    "size": [
-     277.0,
-     145.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.6582,
-     6.07031
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    256,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    67,
-    256,
-    125
-   ],
-   "native": [
-    286,
-    140
-   ],
-   "id": 30,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 9,
-   "source": "scene/resource_snow/food-new/png/s9.png",
-   "prefab": "scene/resource_snow/food-new/Food_09_group.prefab",
-   "transform": {
-    "size": [
-     286.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -6.23633,
-     7.21484
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    512,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    65,
-    256,
-    127
-   ],
-   "native": [
-    312,
-    155
-   ],
-   "id": 31,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "food",
-   "level": 10,
-   "source": "scene/resource_snow/food-new/png/s10.png",
-   "prefab": "scene/resource_snow/food-new/Food_10_group.prefab",
-   "transform": {
-    "size": [
-     312.0,
-     155.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -8.41992,
-     0.263672
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    768,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    51,
-    112,
-    154,
-    80
-   ],
-   "native": [
-    154,
-    80
-   ],
-   "id": 32,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 1,
-   "source": "scene/resource_snow/iron-new/png/s1.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_01_group.prefab",
-   "transform": {
-    "size": [
-     154.0,
-     80.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     36.6133,
-     -1.90625
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1024,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    25,
-    94,
-    206,
-    98
-   ],
-   "native": [
-    206,
-    98
-   ],
-   "id": 33,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 2,
-   "source": "scene/resource_snow/iron-new/png/s2.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_02_group.prefab",
-   "transform": {
-    "size": [
-     206.0,
-     98.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -0.78418,
-     -7.74121
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1280,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    48,
-    101,
-    159,
-    91
-   ],
-   "native": [
-    159,
-    91
-   ],
-   "id": 34,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 3,
-   "source": "scene/resource_snow/iron-new/png/s3.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_03_group.prefab",
-   "transform": {
-    "size": [
-     159.0,
-     91.0
-    ],
-    "scale": [
-     1.10703,
-     1.10703
-    ],
-    "offset": [
-     4.24512,
-     5.59961
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    5,
-    96,
-    245,
-    96
-   ],
-   "native": [
-    245,
-    96
-   ],
-   "id": 35,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 4,
-   "source": "scene/resource_snow/iron-new/png/s4.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_04_group.prefab",
-   "transform": {
-    "size": [
-     245.0,
-     96.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.30762,
-     -2.01855
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    7,
-    82,
-    241,
-    110
-   ],
-   "native": [
-    241,
-    110
-   ],
-   "id": 36,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 5,
-   "source": "scene/resource_snow/iron-new/png/s5.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_05_group.prefab",
-   "transform": {
-    "size": [
-     241.0,
-     110.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     3.33691,
-     -0.732422
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    12,
-    78,
-    231,
-    114
-   ],
-   "native": [
-    231,
-    114
-   ],
-   "id": 37,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 6,
-   "source": "scene/resource_snow/iron-new/png/s6.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_06_group.prefab",
-   "transform": {
-    "size": [
-     231.0,
-     114.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.0166,
-     1.7627
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    11,
-    61,
-    234,
-    131
-   ],
-   "native": [
-    234,
-    131
-   ],
-   "id": 38,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 7,
-   "source": "scene/resource_snow/iron-new/png/s7.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_07_group.prefab",
-   "transform": {
-    "size": [
-     234.0,
-     131.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.77441,
-     4.41699
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    65,
-    256,
-    127
-   ],
-   "native": [
-    268,
-    133
-   ],
-   "id": 39,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 8,
-   "source": "scene/resource_snow/iron-new/png/s8.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_08_group.prefab",
-   "transform": {
-    "size": [
-     268.0,
-     133.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     11.7051,
-     5.95703
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    7,
-    67,
-    241,
-    125
-   ],
-   "native": [
-    241,
-    125
-   ],
-   "id": 40,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 9,
-   "source": "scene/resource_snow/iron-new/png/s9.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_09_group.prefab",
-   "transform": {
-    "size": [
-     241.0,
-     125.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -4.24219,
-     10.0488
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    56,
-    256,
-    136
-   ],
-   "native": [
-    264,
-    140
-   ],
-   "id": 41,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "iron",
-   "level": 10,
-   "source": "scene/resource_snow/iron-new/png/s10.png",
-   "prefab": "scene/resource_snow/iron-new/Iron_10_group.prefab",
-   "transform": {
-    "size": [
-     264.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     1.6084,
-     3.94434
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    24,
-    80,
-    208,
-    112
-   ],
-   "native": [
-    208,
-    112
-   ],
-   "id": 42,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "gold",
-   "level": 1,
-   "source": "scene/resource_snow/gold-new/png/1.png",
-   "prefab": "scene/resource_snow/gold-new/Gold_01_group.prefab",
-   "transform": {
-    "size": [
-     208.0,
-     112.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     4.37109,
-     1.30859
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3584,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    9,
-    62,
-    237,
-    130
-   ],
-   "native": [
-    237,
-    130
-   ],
-   "id": 43,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "gold",
-   "level": 2,
-   "source": "scene/resource_snow/gold-new/png/2.png",
-   "prefab": "scene/resource_snow/gold-new/Gold_02_group.prefab",
-   "transform": {
-    "size": [
-     237.0,
-     130.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.39844,
-     2.17188
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3840,
-    960,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    58,
-    256,
-    134
-   ],
-   "native": [
-    263,
-    138
-   ],
-   "id": 44,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "gold",
-   "level": 3,
-   "source": "scene/resource_snow/gold-new/png/3.png",
-   "prefab": "scene/resource_snow/gold-new/Gold_03_group.prefab",
-   "transform": {
-    "size": [
-     263.0,
-     138.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     5.24316,
-     1.01465
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    0,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    62,
-    256,
-    130
-   ],
-   "native": [
-    276,
-    140
-   ],
-   "id": 45,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "gold",
-   "level": 4,
-   "source": "scene/resource_snow/gold-new/png/4.png",
-   "prefab": "scene/resource_snow/gold-new/Gold_04_group.prefab",
-   "transform": {
-    "size": [
-     276.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     0.316406,
-     3.11328
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    256,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    68,
-    256,
-    124
-   ],
-   "native": [
-    276,
-    134
-   ],
-   "id": 46,
-   "kind": "res",
-   "variant": "snow",
-   "resType": "gold",
-   "level": 5,
-   "source": "scene/resource_snow/gold-new/png/5.png",
-   "prefab": "scene/resource_snow/gold-new/Gold_05_group.prefab",
-   "transform": {
-    "size": [
-     276.0,
-     134.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     0.579102,
-     3.16504
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    512,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    103,
-    143,
-    49,
-    49
-   ],
-   "native": [
-    49,
-    49
-   ],
-   "id": 2,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 1,
-   "source": "scene/resource_desert/wood-new/png/3.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_01_group.prefab",
-   "transform": {
-    "size": [
-     50.0,
-     58.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     2.7998,
-     -27.084
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    768,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    71,
-    83,
-    113,
-    109
-   ],
-   "native": [
-    113,
-    109
-   ],
-   "id": 3,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 2,
-   "source": "scene/resource_desert/wood-new/png/a.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_02_group.prefab",
-   "transform": {
-    "size": [
-     113.0,
-     109.0
-    ],
-    "scale": [
-     1.0177,
-     1.00917
-    ],
-    "offset": [
-     -1.68457,
-     9.75391
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1024,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    12,
-    72,
-    232,
-    120
-   ],
-   "native": [
-    232,
-    120
-   ],
-   "id": 4,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 3,
-   "source": "scene/resource_desert/wood-new/png/b.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_03_group.prefab",
-   "transform": {
-    "size": [
-     232.0,
-     120.0
-    ],
-    "scale": [
-     0.922414,
-     0.915966
-    ],
-    "offset": [
-     -7.29297,
-     3.62402
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1280,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    14,
-    69,
-    227,
-    123
-   ],
-   "native": [
-    227,
-    123
-   ],
-   "id": 5,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 4,
-   "source": "scene/resource_desert/wood-new/png/c.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_04_group.prefab",
-   "transform": {
-    "size": [
-     227.0,
-     123.0
-    ],
-    "scale": [
-     1.02745,
-     1.05839
-    ],
-    "offset": [
-     -2.375,
-     2.04492
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    44,
-    256,
-    148
-   ],
-   "native": [
-    260,
-    150
-   ],
-   "id": 6,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 5,
-   "source": "scene/resource_desert/wood-new/png/5.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_05_group.prefab",
-   "transform": {
-    "size": [
-     260.0,
-     150.0
-    ],
-    "scale": [
-     0.965385,
-     1.0
-    ],
-    "offset": [
-     1.79785,
-     1.97559
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    17,
-    69,
-    221,
-    123
-   ],
-   "native": [
-    221,
-    123
-   ],
-   "id": 7,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 6,
-   "source": "scene/resource_desert/wood-new/png/10.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_06_group.prefab",
-   "transform": {
-    "size": [
-     221.0,
-     123.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -6.29102,
-     8.7207
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    71,
-    256,
-    121
-   ],
-   "native": [
-    272,
-    129
-   ],
-   "id": 8,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 7,
-   "source": "scene/resource_desert/wood-new/png/7.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_07_group.prefab",
-   "transform": {
-    "size": [
-     272.0,
-     129.0
-    ],
-    "scale": [
-     1.01103,
-     1.08527
-    ],
-    "offset": [
-     -13.5215,
-     13.9795
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    43,
-    256,
-    149
-   ],
-   "native": [
-    271,
-    158
-   ],
-   "id": 9,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 8,
-   "source": "scene/resource_desert/wood-new/png/8.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_08_group.prefab",
-   "transform": {
-    "size": [
-     274.0,
-     158.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -8.59766,
-     -1.87891
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    40,
-    256,
-    152
-   ],
-   "native": [
-    276,
-    164
-   ],
-   "id": 10,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 9,
-   "source": "scene/resource_desert/wood-new/png/9.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_09_group.prefab",
-   "transform": {
-    "size": [
-     282.0,
-     162.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -3.1875,
-     0.285156
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    51,
-    256,
-    141
-   ],
-   "native": [
-    319,
-    176
-   ],
-   "id": 11,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "wood",
-   "level": 10,
-   "source": "scene/resource_desert/wood-new/png/10b.png",
-   "prefab": "scene/resource_desert/wood-new/Wood_10_group.prefab",
-   "transform": {
-    "size": [
-     319.0,
-     176.0
-    ],
-    "scale": [
-     1.03135,
-     0.988636
-    ],
-    "offset": [
-     -17.601601,
-     6.58887
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    16,
-    92,
-    224,
-    100
-   ],
-   "native": [
-    224,
-    100
-   ],
-   "id": 12,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 1,
-   "source": "scene/resource_desert/stone-new/png/2.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_01_group.prefab",
-   "transform": {
-    "size": [
-     224.0,
-     100.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     1.66406,
-     4.45996
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    28,
-    97,
-    200,
-    95
-   ],
-   "native": [
-    200,
-    95
-   ],
-   "id": 13,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 2,
-   "source": "scene/resource_desert/stone-new/png/3.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_02_group.prefab",
-   "transform": {
-    "size": [
-     200.0,
-     95.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -8.00391,
-     2.04297
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3584,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    20,
-    80,
-    215,
-    112
-   ],
-   "native": [
-    215,
-    112
-   ],
-   "id": 14,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 3,
-   "source": "scene/resource_desert/stone-new/png/4.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_03_group.prefab",
-   "transform": {
-    "size": [
-     215.0,
-     112.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     4.88672,
-     0.431641
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3840,
-    1152,
-    256,
-    192
-   ],
-   "art": [
-    35,
-    80,
-    185,
-    112
-   ],
-   "native": [
-    185,
-    112
-   ],
-   "id": 15,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 4,
-   "source": "scene/resource_desert/stone-new/png/a.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_04_group.prefab",
-   "transform": {
-    "size": [
-     185.0,
-     112.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -23.311501,
-     2.04297
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    0,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    18,
-    93,
-    220,
-    99
-   ],
-   "native": [
-    220,
-    99
-   ],
-   "id": 16,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 5,
-   "source": "scene/resource_desert/stone-new/png/5.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_05_group.prefab",
-   "transform": {
-    "size": [
-     220.0,
-     99.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     1.66406,
-     11.7109
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    256,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    76,
-    230,
-    116
-   ],
-   "native": [
-    230,
-    116
-   ],
-   "id": 17,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 6,
-   "source": "scene/resource_desert/stone-new/png/6.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_06_group.prefab",
-   "transform": {
-    "size": [
-     230.0,
-     116.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     0.052734,
-     6.07129
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    512,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    3,
-    71,
-    250,
-    121
-   ],
-   "native": [
-    250,
-    121
-   ],
-   "id": 18,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 7,
-   "source": "scene/resource_desert/stone-new/png/7.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_07_group.prefab",
-   "transform": {
-    "size": [
-     250.0,
-     121.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     5.69238,
-     7.68262
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    768,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    7,
-    64,
-    242,
-    128
-   ],
-   "native": [
-    242,
-    128
-   ],
-   "id": 19,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 8,
-   "source": "scene/resource_desert/stone-new/png/8.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_08_group.prefab",
-   "transform": {
-    "size": [
-     242.0,
-     128.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     1.66406,
-     -2.79102
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1024,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    4,
-    57,
-    247,
-    135
-   ],
-   "native": [
-    247,
-    135
-   ],
-   "id": 20,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 9,
-   "source": "scene/resource_desert/stone-new/png/9.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_09_group.prefab",
-   "transform": {
-    "size": [
-     247.0,
-     135.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -5.58691,
-     9.29395
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1280,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    65,
-    256,
-    127
-   ],
-   "native": [
-    283,
-    140
-   ],
-   "id": 21,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "stone",
-   "level": 10,
-   "source": "scene/resource_desert/stone-new/png/10.png",
-   "prefab": "scene/resource_desert/stone-new/Stone_10_group.prefab",
-   "transform": {
-    "size": [
-     283.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -2.62988,
-     10.7725
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    53,
-    119,
-    149,
-    73
-   ],
-   "native": [
-    149,
-    73
-   ],
-   "id": 22,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 1,
-   "source": "scene/resource_desert/food-new/png/a.png",
-   "prefab": "scene/resource_desert/food-new/Food_01_group.prefab",
-   "transform": {
-    "size": [
-     149.0,
-     73.0
-    ],
-    "scale": [
-     0.525194,
-     0.525194
-    ],
-    "offset": [
-     -5.2002,
-     16.029301
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    53,
-    119,
-    149,
-    73
-   ],
-   "native": [
-    149,
-    73
-   ],
-   "id": 23,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 2,
-   "source": "scene/resource_desert/food-new/png/a.png",
-   "prefab": "scene/resource_desert/food-new/Food_02_group.prefab",
-   "transform": {
-    "size": [
-     149.0,
-     73.0
-    ],
-    "scale": [
-     1.34183,
-     1.18085
-    ],
-    "offset": [
-     -14.9844,
-     -0.358398
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    30,
-    103,
-    195,
-    89
-   ],
-   "native": [
-    195,
-    89
-   ],
-   "id": 24,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 3,
-   "source": "scene/resource_desert/food-new/png/s3.png",
-   "prefab": "scene/resource_desert/food-new/Food_03_group.prefab",
-   "transform": {
-    "size": [
-     195.0,
-     89.0
-    ],
-    "scale": [
-     1.11784,
-     1.11784
-    ],
-    "offset": [
-     5.3291,
-     9.26172
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    8,
-    77,
-    239,
-    115
-   ],
-   "native": [
-    239,
-    115
-   ],
-   "id": 25,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 4,
-   "source": "scene/resource_desert/food-new/png/s4.png",
-   "prefab": "scene/resource_desert/food-new/Food_04_group.prefab",
-   "transform": {
-    "size": [
-     239.0,
-     115.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     8.6875,
-     2.17188
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    14,
-    62,
-    228,
-    130
-   ],
-   "native": [
-    228,
-    130
-   ],
-   "id": 26,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 5,
-   "source": "scene/resource_desert/food-new/png/s5.png",
-   "prefab": "scene/resource_desert/food-new/Food_05_group.prefab",
-   "transform": {
-    "size": [
-     228.0,
-     130.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     2.64453,
-     0.445313
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    3,
-    60,
-    249,
-    132
-   ],
-   "native": [
-    249,
-    132
-   ],
-   "id": 27,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 6,
-   "source": "scene/resource_desert/food-new/png/s6.png",
-   "prefab": "scene/resource_desert/food-new/Food_06_group.prefab",
-   "transform": {
-    "size": [
-     249.0,
-     132.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     5.23438,
-     0.445313
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    54,
-    256,
-    138
-   ],
-   "native": [
-    258,
-    139
-   ],
-   "id": 28,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 7,
-   "source": "scene/resource_desert/food-new/png/s7.png",
-   "prefab": "scene/resource_desert/food-new/Food_07_group.prefab",
-   "transform": {
-    "size": [
-     258.0,
-     139.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     5.23438,
-     3.03516
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    51,
-    256,
-    141
-   ],
-   "native": [
-    285,
-    157
-   ],
-   "id": 29,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 8,
-   "source": "scene/resource_desert/food-new/png/s8.png",
-   "prefab": "scene/resource_desert/food-new/Food_08_group.prefab",
-   "transform": {
-    "size": [
-     277.0,
-     145.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.6582,
-     6.07031
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3584,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    67,
-    256,
-    125
-   ],
-   "native": [
-    286,
-    140
-   ],
-   "id": 30,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 9,
-   "source": "scene/resource_desert/food-new/png/s9.png",
-   "prefab": "scene/resource_desert/food-new/Food_09_group.prefab",
-   "transform": {
-    "size": [
-     286.0,
-     140.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -6.23633,
-     7.21484
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3840,
-    1344,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    65,
-    256,
-    127
-   ],
-   "native": [
-    312,
-    155
-   ],
-   "id": 31,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "food",
-   "level": 10,
-   "source": "scene/resource_desert/food-new/png/s10.png",
-   "prefab": "scene/resource_desert/food-new/Food_10_group.prefab",
-   "transform": {
-    "size": [
-     312.0,
-     155.0
-    ],
-    "scale": [
-     0.940468,
-     0.940468
-    ],
-    "offset": [
-     -8.41992,
-     -0.599609
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    0,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    12,
-    92,
-    232,
-    100
-   ],
-   "native": [
-    232,
-    100
-   ],
-   "id": 32,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 1,
-   "source": "scene/resource_desert/iron-new/png/2.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_01_group.prefab",
-   "transform": {
-    "size": [
-     232.0,
-     100.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -7.71484,
-     11.668
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    256,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    15,
-    84,
-    226,
-    108
-   ],
-   "native": [
-    226,
-    108
-   ],
-   "id": 33,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 2,
-   "source": "scene/resource_desert/iron-new/png/3.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_02_group.prefab",
-   "transform": {
-    "size": [
-     226.0,
-     108.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -10.3047,
-     0.445313
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    512,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    19,
-    81,
-    217,
-    111
-   ],
-   "native": [
-    217,
-    111
-   ],
-   "id": 34,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 3,
-   "source": "scene/resource_desert/iron-new/png/4.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_03_group.prefab",
-   "transform": {
-    "size": [
-     217.0,
-     111.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -5.98828,
-     4.76172
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    768,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    6,
-    95,
-    244,
-    97
-   ],
-   "native": [
-    244,
-    97
-   ],
-   "id": 35,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 4,
-   "source": "scene/resource_desert/iron-new/png/a.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_04_group.prefab",
-   "transform": {
-    "size": [
-     244.0,
-     97.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -9.44141,
-     -1.28125
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1024,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    7,
-    77,
-    241,
-    115
-   ],
-   "native": [
-    241,
-    115
-   ],
-   "id": 36,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 5,
-   "source": "scene/resource_desert/iron-new/png/5.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_05_group.prefab",
-   "transform": {
-    "size": [
-     241.0,
-     115.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     4.83594,
-     -1.9707
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1280,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    7,
-    77,
-    241,
-    115
-   ],
-   "native": [
-    241,
-    115
-   ],
-   "id": 37,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 6,
-   "source": "scene/resource_desert/iron-new/png/6.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_06_group.prefab",
-   "transform": {
-    "size": [
-     241.0,
-     115.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     2.43945,
-     -1.9707
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1536,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    12,
-    63,
-    232,
-    129
-   ],
-   "native": [
-    232,
-    129
-   ],
-   "id": 38,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 7,
-   "source": "scene/resource_desert/iron-new/png/7.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_07_group.prefab",
-   "transform": {
-    "size": [
-     232.0,
-     129.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -0.755859,
-     5.21875
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    1792,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    68,
-    256,
-    124
-   ],
-   "native": [
-    277,
-    134
-   ],
-   "id": 39,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 8,
-   "source": "scene/resource_desert/iron-new/png/8.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_08_group.prefab",
-   "transform": {
-    "size": [
-     277.0,
-     134.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     12.0254,
-     6.01758
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2048,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    7,
-    62,
-    242,
-    130
-   ],
-   "native": [
-    242,
-    130
-   ],
-   "id": 40,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 9,
-   "source": "scene/resource_desert/iron-new/png/9.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_09_group.prefab",
-   "transform": {
-    "size": [
-     242.0,
-     130.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -5.54883,
-     9.21289
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2304,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    59,
-    256,
-    133
-   ],
-   "native": [
-    279,
-    145
-   ],
-   "id": 41,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "iron",
-   "level": 10,
-   "source": "scene/resource_desert/iron-new/png/10.png",
-   "prefab": "scene/resource_desert/iron-new/Iron_10_group.prefab",
-   "transform": {
-    "size": [
-     279.0,
-     145.0
-    ],
-    "scale": [
-     1.0,
-     0.993103
-    ],
-    "offset": [
-     -5.25195,
-     2.67578
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2560,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    28,
-    82,
-    200,
-    110
-   ],
-   "native": [
-    200,
-    110
-   ],
-   "id": 42,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "gold",
-   "level": 1,
-   "source": "scene/resource_desert/gold-new/png/1.png",
-   "prefab": "scene/resource_desert/gold-new/Gold_01_group.prefab",
-   "transform": {
-    "size": [
-     200.0,
-     110.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     0.233398,
-     2.4873
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    2816,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    13,
-    71,
-    229,
-    121
-   ],
-   "native": [
-    229,
-    121
-   ],
-   "id": 43,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "gold",
-   "level": 2,
-   "source": "scene/resource_desert/gold-new/png/2.png",
-   "prefab": "scene/resource_desert/gold-new/Gold_02_group.prefab",
-   "transform": {
-    "size": [
-     229.0,
-     121.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -5.5127,
-     7.58496
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3072,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    60,
-    256,
-    132
-   ],
-   "native": [
-    262,
-    135
-   ],
-   "id": 44,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "gold",
-   "level": 3,
-   "source": "scene/resource_desert/gold-new/png/3.png",
-   "prefab": "scene/resource_desert/gold-new/Gold_03_group.prefab",
-   "transform": {
-    "size": [
-     262.0,
-     135.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     3.2207,
-     2.82129
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3328,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    64,
-    256,
-    128
-   ],
-   "native": [
-    278,
-    139
-   ],
-   "id": 45,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "gold",
-   "level": 4,
-   "source": "scene/resource_desert/gold-new/png/4.png",
-   "prefab": "scene/resource_desert/gold-new/Gold_04_group.prefab",
-   "transform": {
-    "size": [
-     278.0,
-     139.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     -1.54297,
-     3.61523
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  },
-  {
-   "cell": [
-    3584,
-    1536,
-    256,
-    192
-   ],
-   "art": [
-    0,
-    68,
-    256,
-    124
-   ],
-   "native": [
-    276,
-    134
-   ],
-   "id": 46,
-   "kind": "res",
-   "variant": "desert",
-   "resType": "gold",
-   "level": 5,
-   "source": "scene/resource_desert/gold-new/png/5.png",
-   "prefab": "scene/resource_desert/gold-new/Gold_05_group.prefab",
-   "transform": {
-    "size": [
-     276.0,
-     134.0
-    ],
-    "scale": [
-     1.0,
-     1.0
-    ],
-    "offset": [
-     1.63281,
-     5.20313
-    ],
-    "pivot": [
-     0.5,
-     0.5
-    ],
-    "angle": 0.0
-   }
-  }
- ]
+ "substitutions": [],
+ "prefabs": 135,
+ "nodes": 659
 }

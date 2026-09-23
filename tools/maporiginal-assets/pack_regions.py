@@ -8,9 +8,7 @@
   13 形只用到 m1..m10 十张图（三对共用），⛔ 别再按面积/绿度启发式挑件。
 
 ★ **默认用基础季**（`mountain_new/png/`，M0-B3）：秋季（`grass_fall_new`）只是同一批件的换季版。
-  ⚠ 顺带解决了一个坑：秋季 prefab 结构不同（根节点多 tag + 组件表），`prefab_bin.py` 会
-  **静默**解成 0 个子节点 ⇒ 取不到 transform。所以 B2 的 transform 只能走基础季，
-  施工单里「B3 依赖 B2」的次序实际是反的。
+  2026-09-24 已修复旧解析器的 tag/组件表错读，不能再以“解析为 0 子节点”判断素材缺失。
 
 ★ **季/地貌变体（N1）**：`land` 表的 `snow_client_res_id` 指向
   `scene/ground/mountain_snow/<同形>_group.prefab`（雪山1..14，逐形与本表**互校**，对不上即退出）；
@@ -53,6 +51,7 @@ sys.path.insert(0, HERE)
 import land_variants as LV  # noqa: E402
 import mountain_forms as MF  # noqa: E402
 import prefab_bin  # noqa: E402
+from prefab_visual import visual_fields
 from build_tops import normalize  # noqa: E402
 from decode_ktx import resolve_by_name  # noqa: E402
 
@@ -76,9 +75,7 @@ def read_transform(season_dir: str, form: str) -> dict:
     if len(kids) != 1 or kids[0].get("class") != "sprite_2d":
         raise SystemExit(
             "⛔ %s/%s 没解出「一个 node_2d 挂一个 sprite_2d」（解出 %s）。\n"
-            "   ⚠ 已知：**秋季**目录（grass_fall_new）的 prefab 结构不同（根节点多一段 tag "
-            "'default' + 组件表），`prefab_bin.py` 会静默解成 0 个子节点且仍报 _bytes_left=0；\n"
-            "   基础季（mountain_new/）的 13 个全部零残留可解 —— 取 transform 只走基础季。"
+
             % (season_dir, form, [k.get("class") for k in kids]))
     root_s, ch = d["scale"], kids[0]
     if abs(root_s[0] - 1.0) > 1e-6 or abs(root_s[1] - 1.0) > 1e-6:
@@ -92,7 +89,7 @@ def read_transform(season_dir: str, form: str) -> dict:
             "angle": round(float(ch["angle"][2]), 4),
             "pivot": [round(float(x), 4) for x in ch["pivot"]],
             "lowZ": int(ch["low_z"]),
-            "size": [int(ch["size"][0]), int(ch["size"][1])]}
+            **visual_fields(ch)}
 
 
 def load_sprites(*dirs: str) -> dict:
@@ -150,7 +147,7 @@ def main() -> int:
         im.thumbnail((CELL_W, CELL_H), Image.LANCZOS)
         gx, gy = (slot % GRID_COLS) * CELL_W, (slot // GRID_COLS) * CELL_H
         ox, oy = (CELL_W - im.width) // 2, (CELL_H - im.height)       # ⚠ 底对齐
-        atlas.paste(im, (gx + ox, gy + oy), im)
+        atlas.paste(im, (gx + ox, gy + oy))
         cells.append({"id": v, "kind": "mountain", "variant": variant, "shan": shan,
                       "form": form, "shape": shape,
                       "footprintCells": len(MF.footprint_cells(v, 0)),
@@ -158,7 +155,7 @@ def main() -> int:
                       "art": [ox, oy, im.width, im.height],
                       "native": native,
                       "scale": tr["scale"], "offset": tr["offset"], "angle": tr["angle"],
-                      "pivot": tr["pivot"], "lowZ": tr["lowZ"], "source": logical})
+                      "lowZ": tr["lowZ"], **{k: tr[k] for k in ("size", "pivot", "skew", "mirror_x", "mirror_y", "color", "add_color")}, "source": logical})
 
     for idx, v in enumerate(MF.VALUES):
         place(idx, v, read_transform(MF.PREFAB_DIR_BASE, MF.FORMS[v][1]), "base")
@@ -170,7 +167,7 @@ def main() -> int:
     atlas.save(os.path.join(d, "region-atlas.png"))
     info = {"schemaVersion": 3, "mapId": a.map, "cell": [CELL_W, CELL_H],
             "gridCols": GRID_COLS, "gridRows": GRID_ROWS, "size": [ATLAS_W, ATLAS_H],
-            "anchor": "bottom-center",
+            "anchor": "prefab-pivot",
             "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出；"
                         "变体格同 id 空间、按 variant 分表（N1）",
             "transform": "scale/offset/angle/pivot 逐形取自该套件 prefab 的 sprite_2d；"
@@ -235,6 +232,12 @@ export interface IMapoRegionCell {
     readonly angle: number;
     /** prefab 里 sprite 的轴心，恒 [0.5, 0.5]（中心）。 */
     readonly pivot: readonly [number, number];
+    readonly size: readonly [number, number];
+    readonly skew: readonly [number, number];
+    readonly mirror_x: boolean;
+    readonly mirror_y: boolean;
+    readonly color: readonly [number, number, number, number];
+    readonly add_color: readonly [number, number, number, number];
     /** prefab 里 sprite 的 `low_z`（同节点内的叠序）。 */
     readonly lowZ: number;
 }

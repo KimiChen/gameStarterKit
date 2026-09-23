@@ -25,6 +25,7 @@ export interface MapoBatch {
 function toCcGeometry(data: MapoGeometry) {
     return {
         positions: data.positions, uvs: data.uvs, colors: data.colors, indices16: data.indices16,
+        customAttributes: data.addColors ? [{ attr: new gfx.Attribute("a_colorAdd", gfx.Format.RGBA32F), values: data.addColors }] : undefined,
         minPos: new Vec3(data.minPos[0], data.minPos[1], data.minPos[2]),
         maxPos: new Vec3(data.maxPos[0], data.maxPos[1], data.maxPos[2]),
     };
@@ -37,10 +38,10 @@ export function mapoUnlitTechnique(): number {
     return index;
 }
 
-export function createMapoMaterial(technique: number, textured: boolean): Material {
+export function createMapoMaterial(technique: number, textured: boolean, spriteEffect?: EffectAsset | null): Material {
     const material = new Material();
     material.initialize({
-        effectName: "builtin-unlit", technique,
+        ...(spriteEffect ? { effectAsset: spriteEffect, technique: 0 } : { effectName: "builtin-unlit", technique }),
         defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: textured },
         states: { rasterizerState: { cullMode: gfx.CullMode.NONE } },
     });

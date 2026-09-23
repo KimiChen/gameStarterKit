@@ -46,17 +46,24 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `decode_ktx.py` / `decode_batch.py` | KTX(ETC2/ASTC/R8) → PNG；`--name` 走 name_map 按真名取 |
 | `slice_atlas.py` | `<TextureAtlas>` XML 切片（含 `r="y"` 旋转与 `oW/oH/oX/oY` 去裁边还原）→ `out/png/` + `out/sprites.jsonl` |
 | `build_terrain.py` | ★ 原版层 → `terrain.bytes`（**直接存原版 res 值**，`res==0` 用 `res_multi` 顶替）+ 3 类通行层 + 61 条调色板 |
-| `bake_content.py` | 远档底图 / 缩略图 / 近档地表图集（**按 8 个粗类 × 4 变体**建，⛔ 不按 61 个值建） |
-| `pack_decor.py` | ★ 摆件图集：**格 id = 原版 res 值**（2..46）+ 城址件从 64 起；**三套件**（基础/雪/沙，N1）全从 `land` 表读（套件列 → client_res → prefab 主片，⛔ 不按文件名猜）；缺级用同套同类最近一级顶上并存证 |
-| `land_variants.py` | ★ N1 的单一真源：`base.cw` 的 `land` 表四套件列 → client_res → prefab；大小写不敏感查 name_map（VFS 全小写）、主片 = 变体树内面积最大的有贴图 sprite（剔阴影/特效） |
+| `bake_content.py` | 由 terrain 烘远档 plate；逐格地表图集已经删除，近档由 build_ground.py 生成块底纹 |
+| `pack_decor.py` | land → client_res → 135 个完整 prefab；659 节点/320 纹理，递归引用、父子变换、时间线、帧动画；缺件报错，替代项为 0 |
+| `land_variants.py` | `base.cw.land` 四套资源列与 client_res 寻址；已删除最大主片选择器和邻级替换 |
 | `build_bands.py` | ★ cell 级地貌带（N1 选件判据）：`logic_background.bytes` → `bands.bytes`（原样留档）+ shared TS（varint-RLE 213 KB）；语义 = 原版 `check_ground_type`（2=雪 3=沙 其余回基础季）；交叉校验复用 `build_blocks.py` 的块→格映射（值2 ⊆ 雪块 / 值3 ⊆ 沙块，100%） |
 | `mountain_forms.py` | ★ 「山」族 14 形的**单一真源**：值 ↔ prefab ↔ 贴图 ↔ 足迹；足迹按 odd-row offset 生成并**逐锚点回代校验** |
 | `pack_regions.py` | ★ 山族件图集（13 形各一格 ×**基础季+雪山两套**（N1），格 id = 原版 res 值，682×409 大格）；贴图与 `scale`/`pos`/`angle`/`pivot` 全从**该套件** prefab 读出（雪山的 transform 与基础季不同，⛔ 不抄），⛔ 不按面积/绿度挑、⛔ 不裁 bbox；沙漠山 2D 与基础季同件（实测 13/13）⇒ ⛔ 无沙件格 |
 | `build_ground.py` | ★ 地表底：`ground_down/underground1.png` → `ground-base.png`（256² POT）+ 块/REPEAT 常量；校验 POT、满幅不透明、整周期 |
 | `ctable_cw.py` | ★ `base.cw`（66.8 MB ctable）**通用解码器**，格式逆自 `libnative-lib.so`（值解码 `0xb3fdb0` / 子项寻址 `0xb3f930` / 表布局 `0xb3fb50`）。`tables()` 读表目录（= 根的第 0 个子项，2,397 张）、`table(idx)` 解 `(array, hash)`、`rows(idx)` 按「含 `id` 键」向下展平多级分桶出行。⚠ **每行本身就是一个表对象**（长度天然可变）⇒ ⛔ 别再假设定长行；⚠ 根子项里也有**非表**的裸值对象，`table()` 对它们回 `None`（⛔ 别让它抛异常打断遍历）
-| `build_roads.py` | ★ 道路层：`road_info.lua` 的 42,018 格 → 路片图集（18 片，0.5× 缩存）+ 摆放表；绑定取自 `ctable_cw` 的 `client_res`（实测），**邻接度签名作交叉校验**、对不上直接退出 |
+| `build_roads.py` | 42,018 路片摆放 + 18 基础/18 雪地皮肤；运行时按路片中心的 logic_background 选皮 |
 | `recon_road.py` | ⏸ 道路层数据链勘察（**只勘察不出产物**）：坐标系由干净集 `road_info.lua` 直给（1125²、半宽 200/半高 100 = 4/3 逻辑格）、lua 与 bytes **42,018/42,018 逐条互证**（⚠ bytes 是 (col,row) 转置）、`type_info` 烘死片、id→精灵靠邻接度签名绑定 |
-| `build_tops.py` | ★ `_top_group` 手摆细节：三族 1,899 件 / 91 种贴图 → 每族一张图集（0.4× 缩存，`native` 记原版像素）+ 摆放库；贴图路径**归一化**（剥 atlas_mutil_assets 前缀与 @@材质名） |
+| `build_tops.py` | 三族 1,899 静态记录/92 纹理；完整视觉字段 60 B；含引用/动画的组另导出 top-scenes.data.ts |
+| `asset_source.py` | 只读原包寻址与切片查询，处理大小写 / @@ 别名 / hash fallback |
+| `prefab_scene.py` / `timeline_bin.py` / `scene_export.py` | 展开 prefab 引用与覆盖、时间线和事件子件；遇到未支持的视觉语义拒绝导出 |
+| `prefab_visual.py` | 城池/手摆静态精灵共用的 56 B 参数记录 |
+| `build_choose.py` | city_shape.GRID.click_res=2080；普通点选 8 片 UI XML、Scale/Color 轨道、24 fps 缺省值 |
+| `build_surface.py` / `shaders/` | 原格线、颜色蒙版、法线；移植 normal_river 无结冰分支与节点乘色/加色 |
+| `verify_fidelity.py` | 对照原包复核 381 个入口及引用、635 切片的全部 RGBA；只读校验，不重写产物 |
+| `test_prefab_bin.py` | 无原包也可运行的严格边界/中文节点/未知组件回归 |
 | `build_blocks.py` | ★ snow / desert 块层：`ground_{desert,snow}.bytes`（152² **行主序**）+ 路径表 51/52 条 → 几何库 + 摆放表 + 两张底纹；校 POT / 贴图归属 / 单位阵 transform |
 | `build_rivers.py` | ★ 河流几何层：`river.bytes`（504² 列主序 / 3×3 逻辑格 / 偏移 −6）+ `river_path.json` 102 条 → 几何库 `river-geo.bin` + 摆放表 `rivers.bin` + 填充色图 `river-fill.png`；带对位校验（覆盖 100.0% 的 `res==47`） |
 | `build_regions.py` | ★ 件摆放表 `regions.bin`：`res.bytes` 的 55,127 个锚点 + `mountain_patch` 的 3,942 条补件，按画家序落盘 |
@@ -265,54 +272,36 @@ python3 tools/maporiginal-assets/verify_root_res.py          # 全量
 序列化器的文本模式输出** ⇒ 字段顺序逐项照抄，⛔ 不用猜；二进制侧再用同尺寸对照组
 （`mountain2m_x_01` vs `_x_02`，502 B 对 502 B）差分定位变量字段。
 
+2026-09-24 A04 已纠正旧解析器的“跳到块尾即成功”：此前 1,872/1,872 的零残留统计
+包含 524 个内部重同步，**不能证明完整解析**。当前按声明长度逐层验证，任何未知组件或
+未消费字节都会报错，不能把解析失败判成“素材没进包”。
+
+```text
+字符串 = [u32 LE UTF-8 字节数][UTF-8]
+节点 = [str class][u32 blockSize][子节点特有 u8 继承深度，不计入 blockSize]
+       [逐层 u32 基类块长][u16 node3dVersion][str tag][i32 render_level]
+       [str name][u32 组件数][component…]
+       [3f position][3f angle][3f scale][4B color][4B add_color]
+       [i16 high_z][i16 low_z][5 × u8 继承/面向开关]
+       [u32 blendMode][i16 prefab_type][u32 prefab_id][str render_layer]
+       [u8 polygonOffset][u32 poly_block_size][u32 children_size][child…]
+node_2d 尾 = [u16 version][2f size][u8 mirror_x][u8 mirror_y][2f pivot][2f skew][u8 child_to_pivot]
+sprite 尾 = [graphic2dVersion/深度与alpha测试字段][str material][材质字段][str texture]
+frame_sprite 尾 = [u16 version][i32 start][f32 duration][i32 loops][u32 帧数][str texture × 帧数]
+组件 = [str class][u32 blockSize][u16 version][类型专属字段]
+comp_prefab 节点以引用/覆盖表 + 8 B 零尾收束，不按内联节点读取 transform。
 ```
-字符串 = [u32 LE 长度][ASCII]            ⚠ 空串就是长度 0，⛔ 无终止符
-节点   = [str class][u32 blockSize][类特有前缀][u32 node3dVersion=1][str tag][i16 render_level]
-         [str name][u32 components_size][component…]
-         [3f position][3f angle][3f scale][4B color][4B add_color]
-         [i16 high_z][i16 low_z][u8 faceToCamera][u8 ignoreParentFTC]
-         [u8 inheritColor][u8 inheritAlpha][u8 inheritBlend]
-         [u32 blendMode][i16 prefab_type][u32 prefab_id]
-         [str render_layer][u8 polygonOffset][u32 poly_block_size][u32 children_size][child…]
-         可绘制类再接：[u16][2f size][u16][2f pivot][15 B][str "material"][u32 4][u32 0][u16 0]
-                       polygon_2d 在此多一段几何：
-                         [u32 nv][2f × nv 顶点][u32 ni][u16 × ni 索引]
-                         [u32 n2][u16 × n2][u32 nuv][2f × nuv UV][u32 nc][u32 × nc 顶点色]
-                         [3 B][2f uvScale][12 B]
-                       [str 贴图路径]
-组件   = [str class][u32 blockSize][u16 version][…]   ★ 有块长 ⇒ 未知组件整块跳过
-```
 
-⚠ 四条坑（⛔ 别重蹈）：
-1. **字节紧凑、不按 4 对齐**：`render_level/high_z/low_z/prefab_type` 是 i16、五个继承开关是 u8
-   ⇒ f32 常落在非 4 倍偏移。按 4 对齐读会满屏 denormal。
-2. **`blockSize` 是重同步的命根**：下一个兄弟就从「块起点 + 块长」开始。局部解析失败时跳到边界
-   继续，整棵树不会被带歪。
-3. **文件末尾那 ~30 B 是根节点的尾巴、整个文件只有一份** —— 挂到每个可绘制节点上会吃掉
-   下一个兄弟的头（实测因此错位 26%）。
-4. **个别节点在 `children_size` 与首个子节点之间多 1~3 个字节** ⇒ 读子节点前要对齐探测，
-   否则 class 会读成 `"\x00polygon_2d…"`。
-
-**成果**（`scene/ground/**` 1,872 个 prefab 全量）：
-
-| 量 | 数 |
-|---|---:|
-| 解析成功 / 剩余字节 | **1872 / 1872，0 B** |
-| 节点 | 7,385（sprite_2d 4,807 / node_2d 2,038 / polygon_2d 447 / frame_sprite_2d 93） |
-| 内部重同步（未完全解出的子块） | 524（7.1%） |
-| 多边形 / 顶点 | 447 / 19,637 |
-| 引用到的不同贴图 | 415 张 |
-
-一块地表长这样（`10_1_top_group`）：6 个 sprite 各带位置 / 贴图 / 尺寸，
-配 `10_1_polygon_group` 的多边形底层（7 顶点 5 三角形 + `ground_down/underground3.png` 平铺）
-⇒ **逐块地表可以原样重建**。
+node3dVersion 是 **u16**，render_level 是 **i32**；旧文档写反会让有 tag 的节点整体错位。
+node_2d / sprite_2d / polygon_2d / frame_sprite_2d 的继承深度分别是 1 / 3 / 3 / 4，
+不再启发式搜索下一个字符串，也不进行 4 字节对齐。
+当前 S1 消费的 381 个不同入口及其引用展开后共有 4,504 节点，严格解析通过；
+这不代表整个原包所有未消费资源都已支持。
 
 ```bash
+python3 tools/maporiginal-assets/test_prefab_bin.py
 python3 tools/maporiginal-assets/prefab_bin.py scene/ground/desert/10_1_top_group.prefab.bin
-# ⚠ 已知缺陷：根节点带 tag + 组件表的 prefab（如 mountain_new/grass_fall_new/ 秋季那批）
-#   会被**静默**解成 0 个子节点、却仍报 _bytes_left=0 ⇒ 取 transform 前必须查 children 非空。
-#   基础季 mountain_new/ 的 13 个全部零残留可解。
-python3 tools/maporiginal-assets/prefab_bin.py --scan scene/ground/      # 批量 + 成功率
+python3 tools/maporiginal-assets/verify_fidelity.py --map s1 --report .cache/maporiginal-audit/fidelity-after.json
 ```
 
 ### 4.2·一·七 ★ 大小写：namehash 有的按原样算、有的按**全小写**算（2026-09-22）
@@ -423,7 +412,7 @@ group 预制体。
 
 原作近档 = 底图 + **逐格一个 `res_field` 单位**，由该格的 `res` 值唯一决定 ⇒
 `pack_decor.py` 把图集**按原版值建格**（格 id = 值），客户端零猜测。
-素材按 `land` 表三套件列读 prefab 主片：`scene/resource{,_snow,_desert}/<类>-new/`（45 格 × 3 套）
+素材按 `land` 表三套件列读完整 prefab：`scene/resource{,_snow,_desert}/<类>-new/`（45 格 × 3 套）
 + 城址 8 件（N1 起；早先按 `png/<等级>` 文件名取，⚠ 且 `wood/iron/stone/food` 次序假设是
 **轮转错位**的 —— land 表真值 `wood/stone/food/iron`，已改正）。
 
@@ -459,20 +448,22 @@ group 预制体。
 修正后切片从 3,510 涨到 **4,881 张**；`select.json` 的 atlas `only` 也补收了 `remain_tex`。
 ⛔ 别再改回 `find()`。
 
-### 4.7 件的尺寸与位置保留 prefab transform
+### 4.7 图片尺寸、锚点与层级变换
 
-原版 2D 一格 300×150 px（`config_2d` 的 TILE_WIDTH/HEIGHT 是半值）⇒
-图集逐格记 `native`（贴图像素），显示尺寸还须消费 prefab：资源主片使用 `size × scale`，
-山体的 `size == native` 经提取期验证后用 `native × scale`，最后统一乘 `32/150`。
-资源三套 135 个主片均为中心 pivot，锚点 = 格心 + `position × 32/150`；mesh 直接按
-pivot 展开和旋转顶点，调用方不再减 `h/2`。`pack_decor.py` 把这些参数写入 `transform`，schemaVersion=4，
-`land_variants.py` 校验根是单位变换，打包时再校验主片 pivot，避免遗漏父变换或锚点。
-详见 `docs/MAPORIGINAL-2D.md` §2.2；⛔ 不再使用统一的“图底对格心”偏移。
+图集 `native` 仅表示贴图像素；最终显示使用 prefab 的 `size/scale/position/pivot/angle/skew/mirror`，
+统一世界比例为 32/150。资源全层级展开，不能强制父节点是单位阵，也不能把整组压成最大一张图。
+静态城池/手摆参数记录是 56 B，top 另加 4 B 排序字段；资源 schemaVersion=5，使用完整节点图。
+颜色/透明度和 add_color 在材质处理；所有图集用无 mask 的 paste 保留 RGBA。
+
+原 native 的 skew 量化、mirror、frame sprite 周期、loopTimes 与普通点选 24 fps 缺省语义
+见 [MAPORIGINAL-2D §2.2](../../docs/MAPORIGINAL-2D.md#22-资源件与选中框共用格心图片按-prefab-锚点与层级变换定位)。
+保真复核覆盖 8 张图集、635 切片、19,164,211 像素（含 2,839,676 个半透明像素），RGBA 差异为 0。
 
 ### 4.8 ★ 本 kit 只收原版 **2D 沙盘**素材（2026-09-22 拍板）
 
 3D 沙盘（`asset/scene_3d/**`、`config_3d.lua`、`mapview/3d/**`）另开 kit `mapOriginal3d`。
-`select.json` 里 ⛔ 不许再出现这些前缀，机检在
+水面仅例外允许 `scene_3d/water/water_normal2.ktx` 与 `shaders/3d_water2.fs`：它们有原 2D river_grid 消费证据，
+经 build_surface.py 精确提取，不放开目录。`select.json` 里仍不允许 3D 前缀，机检在
 `apps/server/test/mapOriginal-content.test.ts`（两条：产物 `info.json` 的 `source` 白名单 + 选材表入口）。
 
 | 前缀 | 归属 | 判据 |
@@ -521,3 +512,26 @@ if all(32 <= c < 127 for c in b[i+4:i+4+ln]): ...  # 再按 .png/.ktx 结尾筛
 - 长字符串 L≥77 的残字：`terrain_attr.lua` 里仍有 `["CXTE[D_LANY"] = 17` 这类键，
   ⚠ 照抄数值表前**逐条目检**。
 - 1620² 的 pk 系赛季图（等 s1 这张跑顺）。
+
+## 六、2026-09-24 修复产物的重建与复核
+
+先保证 name_map 与 select.json 对应的 atlas 切片齐全。全部命令只读外部原包，产物写 out 与 kit。
+
+```bash
+python3 tools/maporiginal-assets/pack_decor.py --map s1
+python3 tools/maporiginal-assets/pack_regions.py --map s1
+python3 tools/maporiginal-assets/build_cities.py --map s1
+python3 tools/maporiginal-assets/build_tops.py --map s1
+python3 tools/maporiginal-assets/build_roads.py --map s1
+python3 tools/maporiginal-assets/build_rivers.py --map s1
+python3 tools/maporiginal-assets/build_choose.py --map s1
+python3 tools/maporiginal-assets/build_surface.py --map s1
+python3 tools/maporiginal-assets/install_to_kit.py --map s1
+npm run sync:shared
+python3 tools/maporiginal-assets/test_prefab_bin.py
+python3 tools/maporiginal-assets/verify_fidelity.py --map s1
+```
+
+导出需要本目录原有 Pillow/纹理解码依赖，保真检查另需 numpy。
+install_to_kit.py 同步 shared 数据、kit 资产和 Cocos 资产镜像；TS 镜像由 sync 脚本刷新。
+不手改生成物。A01–A12 的证据和边界见 [机制 §9.1](../../docs/MAPORIGINAL-2D.md#91-复刻简化审计-a01a12-的修复记录2026-09-24)。

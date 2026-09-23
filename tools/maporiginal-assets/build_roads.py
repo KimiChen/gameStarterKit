@@ -28,8 +28,8 @@
     （应 `upend/6-1`，推断取了 `6-2`）—— 已由本表改正。
 ★ 邻接度签名**保留为交叉校验**：每次构建都重算，与 base.cw 给出的类不符即退出。
 
-⚠ 三套皮肤 `road / road_ash / road_snow` 结构相同，S1 取 **`road`**
-  （`type_info` 第三列恒 1，疑似皮肤下标，⚠ 无直接证据）。
+★ 皮肤由 road_layer 的 check_ground_type 决定：雪地取同名 `_雪地` client_res。
+  S1 无 ash 状态源；type_info 第三列不是皮肤选择依据。
 """
 from __future__ import annotations
 
@@ -94,19 +94,21 @@ def main() -> int:
                 and src.startswith("scene/ground/road/")
                 and src.endswith("_complex_group.prefab") and "_complex_path" not in src):
             pieces[rid] = src[len("scene/ground/road/"):-len("_complex_group.prefab")]
-    bind = {}
+    import asset_source as source
+    import prefab_bin
+    from build_tops import normalize
+    by_name = {row.get("name"): row for row in rows.values()}
+    bind, snow_bind = {}, {}
     for tid in ids:
-        name = pieces.get(tid + TYPE_ID_TO_CLIENT_RES)
-        if not name:
-            raise SystemExit("⛔ client_res 里没有 id %d（type_info id %d +%d）"
-                             % (tid + TYPE_ID_TO_CLIENT_RES, tid, TYPE_ID_TO_CLIENT_RES))
-        blob = open(resolve_by_name("scene/ground/road/%s_complex_group.prefab.bin" % name),
-                    "rb").read()
-        tex = re.findall(rb"asset/scene/ground/road/[\x20-\x7e]+?\.png", blob)
-        cand = [t.decode()[len("asset/"):] for t in tex if b"/mask/" not in t]
-        if len(set(cand)) != 1:
-            raise SystemExit("⛔ %s 里不是恰好一张路片贴图：%s" % (name, cand))
-        bind[tid] = (cand[0], name)
+        for variant, row in (("base", rows[tid]), ("snow", by_name[rows[tid]["name"] + "_雪地"])):
+            src = row["src_name"]
+            prefab = prefab_bin.parse(source.resolve(src).read_bytes())
+            def textures(node):
+                if node.get("texture"): yield normalize(node["texture"])
+                for child in node.get("children", []): yield from textures(child)
+            cand = {tex for tex in textures(prefab) if "/mask/" not in tex}
+            if len(cand) != 1: raise ValueError((src, cand))
+            (bind if variant == "base" else snow_bind)[tid] = (cand.pop(), src, row["id"])
 
     # ── ② 交叉校验：路网邻接度必须与 base.cw 给出的类吻合 ────────
     cells_set = {(k >> 16, k & 0xFFFF) for k in tiles}
@@ -136,8 +138,9 @@ def main() -> int:
     atlas = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
     cells, x, y, row_h = [], PAD, PAD, 0
     cell_of = {}
-    for i in ids:
-        logical = bind[i][0]
+    for variant, i in [(variant, tid) for variant in ("base", "snow") for tid in ids]:
+        binding = bind if variant == "base" else snow_bind
+        logical = binding[i][0]
         p = os.path.join(OUT, sprites.get(logical, ""))
         if not sprites.get(logical) or not os.path.exists(p):
             raise SystemExit("⛔ 路片没落位：%s —— 先跑 slice_atlas.py %s" % (logical, ROAD_ATLAS_XML))
@@ -149,10 +152,10 @@ def main() -> int:
             x, y, row_h = PAD, y + row_h + PAD, 0
         if y + th + PAD > ATLAS_H:
             raise SystemExit("⛔ 路片图集装不下")
-        atlas.paste(im, (x, y), im)
-        cell_of[i] = len(cells)
-        cells.append({"id": len(cells), "typeId": i, "clientResId": i + TYPE_ID_TO_CLIENT_RES,
-                      "prefab": bind[i][1], "rect": [x, y, tw, th],
+        atlas.paste(im, (x, y))
+        if variant == "base": cell_of[i] = len(cells)
+        cells.append({"id": len(cells), "typeId": i, "clientResId": binding[i][2], "variant": variant,
+                      "snowId": ids.index(i) + len(ids), "prefab": binding[i][1], "rect": [x, y, tw, th],
                       "native": native, "cls": logical.split("/")[-2], "source": logical})
         x += tw + PAD
         row_h = max(row_h, th)
@@ -171,7 +174,7 @@ def main() -> int:
     open(os.path.join(d, "roads.bin"), "wb").write(blob)
 
     info = {
-        "schemaVersion": 1, "mapId": m, "skin": SKIN,
+        "schemaVersion": 2, "mapId": m, "skins": ["road", "road_snow"],
         "grid": {"side": side, "halfW": half_w, "halfH": half_h,
                  "tilesPerCell": round(half_w / 150, 6),
                  "key": "(row << 16) | col", "order": "lua tiles；bytes 侧是 (col, row) 转置"},
@@ -199,13 +202,14 @@ def main() -> int:
  *   = `grid_width×2 / grid_height×2`。
  * ★ 选片**在制图期就烘死了**（`tiles` 的值即 `type_info` 下标），运行时 ⛔ 不做邻接判断 ——
  *   与河同构。每片带一个**水平翻转**位。
- * ⚠ 图集格 → 精灵的绑定是 `[推断]`（邻接度结构签名 + 字母序，18 位逐位全等）：
- *   `client_res` 在未解的 `base.cw` 里。⛔ 别当干净集引用。
+ * ★ [实测] client_res → prefab → texture；[disasm] 地貌带选 `_雪地` 同名资源。
  * ⚠ 图集按 **%.2g×** 缩存，`native` 记原版像素（世界尺寸依据）。
  */
 
 export interface IMapoRoadCell {
     readonly id: number;
+    readonly snowId: number;
+    readonly clientResId: number;
     /** 图集像素矩形 [x, y, w, h]（**已缩**）。 */
     readonly rect: readonly [number, number, number, number];
     /** 原图像素（**未缩**，恒 400×200 = 一个路格）。 */
@@ -229,7 +233,7 @@ export const MAPO_ROAD_ATLAS_H = %d;
 export const MAPO_ROAD_CELLS: readonly IMapoRoadCell[] = %s;
 ''' % (m, side, half_w, half_h, DOWNSCALE, side, half_w, half_h, S_BIAS, D_BIAS,
        ATLAS_W, ATLAS_H,
-       json.dumps([{"id": c["id"], "rect": c["rect"], "native": c["native"], "cls": c["cls"]}
+       json.dumps([{"id": c["id"], "snowId": c["snowId"], "clientResId": c["clientResId"], "rect": c["rect"], "native": c["native"], "cls": c["cls"]}
                    for c in cells], ensure_ascii=False))
     open(os.path.join(d, "roads.data.ts"), "w", encoding="utf-8").write(ts)
 

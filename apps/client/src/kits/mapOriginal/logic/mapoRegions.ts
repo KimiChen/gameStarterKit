@@ -1,3 +1,4 @@
+import { mapoPrefabSkew } from "./mapoPrefab";
 /**
  * 多格地形的件层：原版「山」族 14 形（`山1..山14`）。纯逻辑，⛔ 不碰 cc。
  *
@@ -129,7 +130,7 @@ export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoReg
         // ★ 件多大 = **原图像素 × prefab 里的 scale**（⛔ 不按足迹拉伸，拉伸过一版是大绿斑）：
         //   m2 只有 563 px 却要盖满 19 格，靠的就是 `mountain19m_01` 的 scale 2.163；
         //   三对共用贴图的形全靠 transform 区分 ⇒ ⛔ 只用 native 会把 14 形压成 10 形。
-        const [nw, nh] = layout.native;
+        const [nw, nh] = layout.size;
         const w = mapoOriginalPxToWorld(nw * layout.scale[0]);
         const h = mapoOriginalPxToWorld(nh * layout.scale[1]);
         // 精灵中心 = 锚点格位置 + prefab 的 pos（本套 pivot 恒 [0.5, 0.5]）。
@@ -137,7 +138,9 @@ export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoReg
         const y = anchor.y + mapoOriginalPxToWorld(layout.offset[1]);
         const r = layout.angle * Math.PI / 180;
         const cs = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r));
-        const halfW = (w * cs + h * sn) / 2, halfH = (w * sn + h * cs) / 2;
+        const [ka, kb, kc, kd] = mapoPrefabSkew(...layout.skew, ...layout.scale);
+        const kw = Math.abs(w * ka) + Math.abs(h * kc), kh = Math.abs(w * kb) + Math.abs(h * kd);
+        const halfW = (kw * cs + kh * sn) / 2, halfH = (kw * sn + kh * cs) / 2;
         if (x + halfW < rect.left || x - halfW > rect.right) continue;
         if (y - halfH > rect.top || y + halfH < rect.bottom) continue;
         out.push({ piece, cellLayout: layout, x, y, w, h, angleDeg: layout.angle });

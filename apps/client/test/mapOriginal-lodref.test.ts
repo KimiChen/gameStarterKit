@@ -80,11 +80,9 @@ const MAPPING: readonly Mapping[] = [
     //   「远档出大区名」与原版同向；郡名档是 N2 明示的内容决策。
     { kit: "label", orig: "sandbox_area_name", cls: "other", kitCls: "static",
       basis: "大区名 ↔ sandbox_area_name（仅最远档出，同向）；郡名档是 N2 内容决策" },
-    // 线框网格：**未实现**。⚠ forest_grid（[0,0,1,1,1] 近档显示）是 2D 消费方所在文件的
-    //   名字（forest_grid_layer_view.lua），但它是「格子」类叠图，⛔ 仍不是线框网格的证据
-    //   （N4-B3）⇒ 本 kit 不做不矛盾。
-    { kit: "grid", orig: "forest_grid", cls: "near", kitCls: "absent",
-      basis: "forest_grid 是格子类叠图而非线框（N4-B3：线框网格无证据）⇒ 未实现不矛盾" },
+    // [disasm] GroundLayerView.line_layer 是 ground 的静态子层；与 forest_grid 无关。
+    { kit: "grid", orig: "ground", cls: "never", kitCls: "static",
+      basis: "ground_layer_view:_create_line_data → GROUND_GRID_LINE，MAP_ZORDER.FRAME=1400" },
     // 目标旗 ↔ grid_state（占领状态层）：AOI 驱动的归属态叠图，要服务端 ⇒ v1 明确不做；
     //   原版自己也是恒隐配置（两张表一致全 1）。
     { kit: "banner", orig: "grid_state", cls: "always", kitCls: "absent",

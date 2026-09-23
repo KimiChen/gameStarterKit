@@ -7,7 +7,7 @@
   是**若干个 `sprite_2d`**，各带独立 pos / scale / angle 与**互不相同的 `low_z`**。
   ⇒ 底是"面"、top 是"手摆的点缀"（岸石、草丛、雪堆、沙丘纹）。
 
-★ 规模（实测，三族全部零残留解析、无孙节点）：
+★ 规模（静态 sprite 记录；含引用/动画的组另导出完整节点图）：
     river  102 组 / 597 sprite    desert 51 组 / 481    snow 52 组 / 821   合计 **1,899**
 
 ⚠ **贴图路径要先归一化**：34 种写成
@@ -35,6 +35,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import prefab_bin  # noqa: E402
+from prefab_visual import visual_fields, pack_visual
 from decode_ktx import resolve_by_name  # noqa: E402
 
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
@@ -93,20 +94,27 @@ def main() -> int:
         sprites[r["logical"]] = r["out"]
 
     # ── 解析三族的 _top_group ───────────────────────────────────
+    import prefab_scene
+    from scene_export import textures, compile_node
+    dynamic = {}
     fam_groups: dict = {}
     used: dict = {}
     for kind, path_tpl in FAMILIES:
         paths = json.load(open(resolve_by_name(path_tpl % m), encoding="utf-8"))
         groups = []
-        for entry in paths:
+        dynamic[kind] = {}
+        for group_index, entry in enumerate(paths):
             stem = entry[0][: -len(".group")]
             d = prefab_bin.parse(open(resolve_by_name(stem + "_top_group.prefab.bin"), "rb").read())
             if d["_bytes_left"]:
                 raise SystemExit("⛔ %s 解析残留 %d B" % (stem, d["_bytes_left"]))
             items = []
+            if any(k.get("class") != "sprite_2d" or k.get("children") for k in d["children"]):
+                expanded = prefab_scene.load(stem + "_top_group.prefab")
+                dynamic[kind][group_index] = expanded
             for order, k in enumerate(d["children"]):
                 if k.get("class") != "sprite_2d":
-                    continue                      # ⚠ 河流里有 9 个 node_2d，⛔ 不是件
+                    continue                      # 引用/动画由完整节点图消费。
                 if k.get("children"):
                     raise SystemExit("⛔ %s 的 top 件有孙节点，摆放要重想" % stem)
                 tex = normalize(k["texture"])
@@ -119,7 +127,7 @@ def main() -> int:
                                       round(float(k["position"][1]), 4)],
                               "scale": [round(sx, 6), round(sy, 6)],
                               "angle": round(float(k["angle"][2]), 4),
-                              "size": [int(k["size"][0]), int(k["size"][1])]})
+                              **visual_fields(k)})
             # ⚠ low_z 升序（同值按子序）—— 原版靠它定同组内的压盖
             items.sort(key=lambda x: (x["lowZ"], x["order"]))
             groups.append(items)
@@ -132,7 +140,7 @@ def main() -> int:
     # ── 每族一张图集：按高度降序的架式装箱，图集取能装下的最小 POT ──
     atlas_info = {}
     for kind, groups in fam_groups.items():
-        fam_tex = sorted({it["tex"] for g in groups for it in g})
+        fam_tex = sorted({it["tex"] for g in groups for it in g} | {tex for root in dynamic[kind].values() for tex in textures(root)})
         imgs = []
         for tex in fam_tex:
             im = Image.open(sprite_png(tex, sprites)).convert("RGBA")
@@ -151,7 +159,7 @@ def main() -> int:
                 if y + h + PAD > side:
                     ok = False
                     break
-                atlas.paste(im, (x, y), im)
+                atlas.paste(im, (x, y))
                 cells.append({"id": len(cells), "rect": [x, y, w, h],
                               "native": native, "source": tex})
                 x += w + PAD
@@ -173,6 +181,13 @@ def main() -> int:
         used[kind] = cell_of
         print("  %-7s top 图集 %d 种 / %d²（填充 %.0f%%）" % (kind, len(cells), side, fill * 100))
 
+    from pathlib import Path
+    scenes = {kind: {index: compile_node(root, used[kind]) for index, root in entries.items()} for kind, entries in dynamic.items()}
+    Path(d, "top-scenes.data.ts").write_text('/** 生成物：带引用/动画的完整 top 节点图；静态组仍走紧凑二进制。 */\n'
+        + 'import type { IMapoPrefabNode } from "./prefabs.types";\n'
+        + 'export const MAPO_TOP_SCENES: Readonly<Record<string, Readonly<Record<number, IMapoPrefabNode>>>> = '
+        + json.dumps(scenes, ensure_ascii=False, separators=(',', ':')) + ';\n')
+
     # ── 每族一份摆放库 ──────────────────────────────────────────
     summary = {}
     for kind, groups in fam_groups.items():
@@ -182,21 +197,19 @@ def main() -> int:
         cell_of = used[kind]
         for g in groups:
             for it in g:
-                parts.append(struct.pack(">Hffffff", cell_of[it["tex"]],
-                                         it["pos"][0], it["pos"][1],
-                                         it["scale"][0], it["scale"][1], it["angle"],
-                                         float(it["lowZ"])))
+                parts.append(pack_visual(it, cell_of[it["tex"]]))
+                parts.append(struct.pack(">f", float(it["lowZ"])))
         blob = b"".join(parts)
         open(os.path.join(d, "%s-tops.bin" % kind), "wb").write(blob)
         summary[kind] = {"groups": len(groups), "sprites": sum(len(g) for g in groups),
                          "bytes": len(blob), "sha256": hashlib.sha256(blob).hexdigest()}
 
-    info = {"schemaVersion": 1, "mapId": m, "atlases": atlas_info, "recordBytes": 26,
+    info = {"schemaVersion": 2, "mapId": m, "atlases": atlas_info, "recordBytes": 60,
             "layout": "大端：u16 组数；组数×u16 每组件数；然后所有件按组序、组内按 low_z 升序："
-                      "{u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle, f32 lowZ}",
+                      "{u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle, 2f size, 2f pivot, 2f skew, 2B mirror, 4B color, 4B addColor, f32 lowZ}",
             "families": summary,
             "note": "贴图路径已归一化：剥掉 _output_atlas_scene/atlas_mutil_assets 前缀与 @@材质名后缀；"
-                    "图集按 %.2g× 缩存，native 记原版像素（世界尺寸的唯一依据）" % TOP_DOWNSCALE}
+                    "图集按 %.2g× 缩存，native 记原图像素，显示尺寸和锚点独立取 prefab 字段" % TOP_DOWNSCALE}
     json.dump(info, open(os.path.join(d, "top-atlas.info.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
 
@@ -207,7 +220,7 @@ def main() -> int:
  *   （MAPORIGINAL-2D §1.6）：底是「面」、top 是「手摆的点缀」（岸石 / 草丛 / 雪堆 / 沙丘纹）。
  * ★ **每族一张图集**：river %d 件 / desert %d 件 / snow %d 件，合计 **%d 件**。
  *   三族合并放不进 4096²（river 一族的贴图总面积就有 1,546 万 px²），而每族本来各有一个材质。
- * ⚠ 图集按 **%.2g×** 缩存，`native` 记**原版像素**（世界尺寸的唯一依据，与山族件同惯例）：
+ * ⚠ 图集按 **%.2g×** 缩存，`native` 记**原版像素**（贴图采样依据，与山族件同惯例）：
  *   本仓世界尺度 = 32/150 = 0.213 ⇒ 900 px 的件在 LOD0 只占 192 世界像素，
  *   存 %d px 仍有约 1.9× 过采样。⛔ 别按原生像素装，那要 59 MB 显存。
  * ⚠ 组内次序按 **`low_z` 升序**（同值按子序）—— 原版靠它定同组内谁压谁，⛔ 别按子节点原序。
@@ -217,7 +230,7 @@ export interface IMapoTopCell {
     readonly id: number;
     /** 图集像素矩形 [x, y, w, h]（**已缩**）。 */
     readonly rect: readonly [number, number, number, number];
-    /** 原图像素（**未缩**）。件的世界尺寸 = native × prefab 的 scale × (halfW / 150)。 */
+    /** 原图像素（**未缩**）。native 只记采样尺寸，显示使用 prefab.size × scale。 */
     readonly native: readonly [number, number];
 }
 
@@ -231,7 +244,7 @@ export interface IMapoTopAtlas {
 }
 
 /** 单件记录长度（u16 图集格 + 6 × f32）。 */
-export const MAPO_TOP_RECORD_BYTES = 26;
+export const MAPO_TOP_RECORD_BYTES = 60;
 export const MAPO_TOP_DOWNSCALE = %s;
 export const MAPO_TOP_ATLASES: readonly IMapoTopAtlas[] = %s;
 ''' % (m, summary["river"]["sprites"], summary["desert"]["sprites"], summary["snow"]["sprites"],

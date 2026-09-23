@@ -1,5 +1,5 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "mapId": "s1",
  "atlases": {
   "river": {
@@ -9,7 +9,7 @@
    ],
    "pad": 2,
    "downscale": 0.4,
-   "fill": 0.5897,
+   "fill": 0.5906,
    "cells": [
     {
      "id": 0,
@@ -1010,6 +1010,20 @@
      "rect": [
       1486,
       1361,
+      98,
+      37
+     ],
+     "native": [
+      245,
+      92
+     ],
+     "source": "scene/ground/river_longriver/png/c.png"
+    },
+    {
+     "id": 72,
+     "rect": [
+      1586,
+      1361,
       33,
       33
      ],
@@ -1020,9 +1034,9 @@
      "source": "scene/ground/river_longriver/png/27.png"
     },
     {
-     "id": 72,
+     "id": 73,
      "rect": [
-      1521,
+      1621,
       1361,
       134,
       23
@@ -1034,9 +1048,9 @@
      "source": "scene/ground/river_longriver/png/8.png"
     },
     {
-     "id": 73,
+     "id": 74,
      "rect": [
-      1657,
+      1757,
       1361,
       114,
       16
@@ -1048,9 +1062,9 @@
      "source": "scene/ground/river_yellowriver/png/12.png"
     },
     {
-     "id": 74,
+     "id": 75,
      "rect": [
-      1773,
+      1873,
       1361,
       100,
       16
@@ -1062,10 +1076,10 @@
      "source": "scene/ground/river_longriver/png/7.png"
     },
     {
-     "id": 75,
+     "id": 76,
      "rect": [
-      1875,
-      1361,
+      2,
+      1424,
       99,
       16
      ],
@@ -1076,9 +1090,9 @@
      "source": "scene/ground/river_longriver/png/9.png"
     },
     {
-     "id": 76,
+     "id": 77,
      "rect": [
-      2,
+      103,
       1424,
       83,
       16
@@ -1090,9 +1104,9 @@
      "source": "scene/ground/river_longriver/png/10.png"
     },
     {
-     "id": 77,
+     "id": 78,
      "rect": [
-      87,
+      188,
       1424,
       23,
       12
@@ -1104,7 +1118,7 @@
      "source": "scene/ground/river_longriver/png/29.png"
     }
    ],
-   "sha256": "a949ac2b02479d22464b82573e2e6b56caa48d743d52aa27d834bd63d5644cc1"
+   "sha256": "26b3457df382d660f689b013350503facf2bc0a76387174a36ec3865306b9757"
   },
   "desert": {
    "size": [
@@ -1186,7 +1200,7 @@
      "source": "scene/ground/desert/png/5.png"
     }
    ],
-   "sha256": "ba1951c1ac757cc40904a71f45f32be60713ce6d6dd6a3bc914db468a4f50754"
+   "sha256": "4e1c4bcdd8ce7ba4f046229bc4acd391ea4e3dfdcb51fd765010724d53652fa3"
   },
   "snow": {
    "size": [
@@ -1310,30 +1324,30 @@
      "source": "scene/ground/snow/png/1.png"
     }
    ],
-   "sha256": "8e743459d90104ae99f4e898ac8e64cfe3b5f8d877c23cfe70765c53c28198cb"
+   "sha256": "b03e8d43b4634b2df218bbd011cb9015e62a3d33ae4cceebf4868345c6c7815d"
   }
  },
- "recordBytes": 26,
- "layout": "大端：u16 组数；组数×u16 每组件数；然后所有件按组序、组内按 low_z 升序：{u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle, f32 lowZ}",
+ "recordBytes": 60,
+ "layout": "大端：u16 组数；组数×u16 每组件数；然后所有件按组序、组内按 low_z 升序：{u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle, 2f size, 2f pivot, 2f skew, 2B mirror, 4B color, 4B addColor, f32 lowZ}",
  "families": {
   "river": {
    "groups": 102,
    "sprites": 597,
-   "bytes": 15728,
-   "sha256": "c3d7fd9245995d870ae8cb45eb607b04d8bf8a700889b9a36f980b59360bd395"
+   "bytes": 36026,
+   "sha256": "d5f70d5111c00b4226a7cd74d30e105b78126c6a95df6fee44abc415977bb169"
   },
   "desert": {
    "groups": 51,
    "sprites": 481,
-   "bytes": 12610,
-   "sha256": "5dc6a778333b975a1df2738f3d5ffe5a985aa2e37a5eedf9607fd8e8323c69d6"
+   "bytes": 28964,
+   "sha256": "cba59e01a1a42204eab8aad530cbfb778fde17719bae3dd2c7fa8a10a8304788"
   },
   "snow": {
    "groups": 52,
    "sprites": 821,
-   "bytes": 21452,
-   "sha256": "386c9243b08046aaf934345ffbc097287b8d119b79902a44e079efd9a2790996"
+   "bytes": 49366,
+   "sha256": "3a0e83d6a164cba46c4076d04fe7a6fd36cac1a5ece1e5895bbece2615b9aa32"
   }
  },
- "note": "贴图路径已归一化：剥掉 _output_atlas_scene/atlas_mutil_assets 前缀与 @@材质名后缀；图集按 0.4× 缩存，native 记原版像素（世界尺寸的唯一依据）"
+ "note": "贴图路径已归一化：剥掉 _output_atlas_scene/atlas_mutil_assets 前缀与 @@材质名后缀；图集按 0.4× 缩存，native 记原图像素，显示尺寸和锚点独立取 prefab 字段"
 }

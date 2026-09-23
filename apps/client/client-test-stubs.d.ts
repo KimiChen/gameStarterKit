@@ -153,6 +153,9 @@ declare module "cc" {
         getFormatFeatures(format: Format): number;
     }
 
+    class Attribute {
+        constructor(name?: string, format?: Format, isNormalized?: boolean, stream?: number, isInstanced?: boolean, location?: number);
+    }
     const CullMode: { NONE: number; FRONT: number; BACK: number };
   }
   export const utils: {

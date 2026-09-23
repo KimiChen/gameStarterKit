@@ -25,6 +25,9 @@ OUT = os.path.join(HERE, CFG["outDir"])
 
 # out/pack/<id>/ 里的名字 -> 出品名。KIT_ONLY 的不进 Cocos 运行时镜像。
 FILES = {
+    "mapo-sprite.effect": "mapo-sprite.effect", "mapo-river.effect": "mapo-river.effect",
+    "river-mask.png": "river-mask.png", "river-normal.png": "river-normal.png", "grid-line.png": "grid-line.png",
+    "surface.info.json": "surface.info.json", "choose.info.json": "choose.info.json",
     "terrain.bytes": "terrain.bytes",              # ⚠ 进两份：权威 + 运行时（BufferAsset）
     "terrain.pass.bytes": "terrain.pass.bytes",
     "terrain.info.json": "terrain.info.json",
@@ -61,11 +64,11 @@ FILES = {
     # ★ 城址件：15 个原版件的图集 + 件库/摆位（§5）。⚠ 两件缺一则城址层整层不建。
     "city-atlas.png": "city-atlas.png", "cities.bin": "cities.bin",
     "cities.info.json": "cities.info.json",
-    # ★ 选中高亮：原版 choose2 罩格地块面（240×112，§「选中高亮」；`choose_00_group.prefab` 的主件）
+    # ★ 普通点选：city_shape.GRID.click_res=2080，FairyGUI XML 的八片图集
     "choose.png": "choose.png",
     "labels.json": "labels.json",
 }
-KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
+KIT_ONLY = {"surface.info.json", "choose.info.json","terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
             "rivers.info.json", "river-geo.index.json", "ground.info.json",
             "blocks.info.json", "bands.bytes", "bands.info.json", "top-atlas.info.json",
             "roads.info.json", "minimap.info.json", "cities.info.json"}
@@ -125,6 +128,9 @@ def meta_for(rel: str, name: str, data: bytes = b"") -> dict:
             "userData": {"type": "texture", "fixAlphaTransparencyArtifacts": False,
                          "hasAlpha": png_has_alpha(data), "redirect": "%s@%s" % (uuid, sid)},
         }
+    if name.endswith(".effect"):
+        return {"ver": "1.7.1", "importer": "effect", "imported": True, "uuid": uuid,
+                "files": [".json"], "subMetas": {}, "userData": {}}
     if name.endswith(".json"):
         return {"ver": "2.0.1", "importer": "json", "imported": True, "uuid": uuid,
                 "files": [".json"], "subMetas": {}, "userData": {}}
@@ -167,7 +173,7 @@ def main() -> int:
     bad = 0
     manifest = []
     for out_name, ship in FILES.items():
-        s = os.path.join(src, out_name)
+        s = os.path.join(HERE, "shaders", out_name) if out_name.endswith(".effect") else os.path.join(src, out_name)
         if not os.path.isfile(s):
             print("  ❌ 缺产物 %s" % s)
             bad += 1
@@ -209,6 +215,14 @@ def main() -> int:
         if os.path.isfile(mp) and not a.remint:
             continue
         open(mp, "w", encoding="utf-8").write(json.dumps(meta, ensure_ascii=False, indent=2) + "\n")
+
+    for name in ("decor.data.ts", "region.data.ts", "tops.data.ts", "cities.data.ts", "roads.data.ts", "river.data.ts", "choose.data.ts", "top-scenes.data.ts"):
+        data = open(os.path.join(src, name), "rb").read()
+        dest = os.path.join(REPO, "apps/shared/src/kits/mapOriginal/content", name)
+        if a.check:
+            if not os.path.isfile(dest) or open(dest, "rb").read() != data:
+                print("  ❌ 元数据不同: " + name); bad += 1
+        else: open(dest, "wb").write(data)
 
     if not a.check:
         node = coc

@@ -1,32 +1,15 @@
 #!/usr/bin/env python3
-"""ejoy2dx 二进制 prefab（`<资源路径>.prefab.bin`）解析器 → JSON。
+"""ejoy2dx 二进制 2D prefab → JSON（字段来自同序列化器 JSON 与原包对照）。
 
-    python3 prefab_bin.py scene/ground/desert/10_1_polygon_group.prefab.bin
-    python3 prefab_bin.py --scan scene/ground/          # 批量解并统计成功率
-
-★ 格式是怎么定下来的：包里有 155 个**文本（JSON）形态**的 prefab（`*_easset.prefab` 等），
-  它们是**同一个序列化器的文本模式输出** ⇒ 字段顺序逐项照抄即可，⛔ 不用猜。
-  二进制侧再用同尺寸对照组（`mountain2m_x_01` vs `_x_02`，502 B 对 502 B）差分定位变量字段。
-
-⚠ **字节紧凑、⛔ 不按 4 字节对齐**：`high_z/low_z/render_level` 是 i16、五个继承开关是 u8，
-  所以 f32 常常落在非 4 倍偏移上。按 4 对齐去读会满屏 denormal。
-⚠ 字符串 = u32 LE 长度 + ASCII（空串就是长度 0，⛔ 没有终止符）。
-
-节点通用块（已逐字节验证）：
-    [str class][类特有前缀][u32 node3dVersion][str tag][i16 render_level][str name]
-    [u32 components_size][component…]
-    [3f position][3f angle][3f scale][4B color][4B add_color]
-    [i16 high_z][i16 low_z][u8 faceToCamera][u8 ignoreParentFTC]
-    [u8 inheritColor][u8 inheritAlpha][u8 inheritBlend]
-    [u32 blendMode][i16 prefab_type][u32 prefab_id]
-    [str render_layer][u8 polygonOffset][u32 poly_block_size][u32 children_size][child…]
-⚠ 类特有前缀长度按类分：`node_2d` 8 B（两个 u32 尺寸）、可绘制类（`sprite_2d`/`polygon_2d`）17 B
-  （u32 + u8 + 3×u32）。⛔ 别写死成同一个数。
+u16 node3dVersion、i32 render_level；字段紧凑，不做字节对齐。
+子节点块长不包含 u8 继承深度标记。每层按声明长度校验，拒绝截断、
+不支持的节点与未消费数据，不能把强制跳到块尾当作完整解析。
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import struct
 import sys
@@ -44,11 +27,18 @@ class R:
     def __init__(self, b: bytes, o: int = 0):
         self.b, self.o = b, o
 
+    def need(self, n):
+        if n < 0 or self.o + n > len(self.b): raise ValueError("读取越界 @%#x +%d" % (self.o, n))
+
     def u8(self):
+        self.need(1)
         v = self.b[self.o]; self.o += 1; return v
 
     def i16(self):
         v = struct.unpack_from("<h", self.b, self.o)[0]; self.o += 2; return v
+
+    def i32(self):
+        v = struct.unpack_from("<i", self.b, self.o)[0]; self.o += 4; return v
 
     def u16(self):
         v = struct.unpack_from("<H", self.b, self.o)[0]; self.o += 2; return v
@@ -63,124 +53,91 @@ class R:
         v = struct.unpack_from("<%df" % n, self.b, self.o); self.o += 4 * n; return list(v)
 
     def rgba(self):
+        self.need(4)
         v = tuple(self.b[self.o:self.o + 4]); self.o += 4; return list(v)
 
     def s(self):
         n = self.u32()
         if n > len(self.b) - self.o:
             raise ValueError("字符串长度 %d 越界 @%#x" % (n, self.o - 4))
-        v = self.b[self.o:self.o + n].decode("utf-8", "replace"); self.o += n; return v
+        v = self.b[self.o:self.o + n].decode("utf-8"); self.o += n; return v
 
     def skip(self, n):
+        self.need(n)
         raw = self.b[self.o:self.o + n]; self.o += n; return raw.hex()
 
     def left(self):
         return len(self.b) - self.o
 
 
-def read_component(r: R) -> dict:
-    """组件 = `[str class][u32 blockSize][u16 version][…]`。
+def read_value(r: R):
+    kind = r.u8()
+    if kind == 0:
+        value = struct.unpack_from("<q", r.b, r.o)[0]; r.o += 8; return value
+    if kind == 1: return r.f32()
+    if kind == 2: return bool(r.u8())
+    if kind == 3: return r.s()
+    if kind == 6: return r.f(3)
+    raise ValueError("未知属性类型 %s @%#x" % (kind, r.o - 1))
 
-    ★ `blockSize` 是「本字段之后还有多少字节」⇒ **未知组件可以整块跳过**，
-      ⛔ 不必把每种组件都实现出来（`comp_timeline` / `comp_animator` 等一律跳）。
-    """
-    cls = r.s()
-    size = r.u32()
+
+def read_component(r: R) -> dict:
+    cls, size = r.s(), r.u32()
     end = r.o + size
+    if end > len(r.b): raise ValueError("组件块越界: " + cls)
     out = {"class": cls, "version": r.u16()}
-    if cls == "comp_tag_info":
+    if cls in ("comp_tag_info", "comp_prefab"):
+        if cls == "comp_prefab": out["path"] = r.s()
         out["tags"] = {}
         for _ in range(r.u32()):
-            out["tags"][r.s()] = read_component(r)          # tag_node_info
-    elif cls == "tag_node_info":
+            key = r.s()
+            out["tags"][key] = read_component(r)
+    elif cls in ("tag_node_info", "prefab_diff_info"):
         out["infos"] = {}
         for _ in range(r.u32()):
-            k = r.s()
-            r.u8()                                          # ⚠ 值类型标签（实测恒 0 = int64）
-            out["infos"][k] = struct.unpack_from("<q", r.b, r.o)[0]
-            r.o += 8
+            key = r.s()
+            out["infos"][key] = read_value(r)
+    elif cls == "comp_timeline":
+        resource_class = r.s()
+        resource_size = r.u32()
+        resource_end = r.o + resource_size
+        if resource_class != "timeline_res": raise ValueError(resource_class)
+        out["path"] = r.s()
+        if r.o != resource_end: raise ValueError("timeline_res 残留")
+        out["offsetTime"] = r.f32()
+        out["loopTimes"] = r.i32()
+        out["speed"] = r.f32()
     else:
-        out["_skipped"] = size
-    r.o = end                                               # ⚠ 一律按 blockSize 对齐，⛔ 不信任逐字段推进
+        raise ValueError("未支持的组件 " + cls)
+    if r.o != end: raise ValueError("组件 %s 残留 %d B" % (cls, end - r.o))
     return out
 
 
-def _plausible_head(b: bytes, o: int) -> bool:
-    """这个偏移能不能读出 [u32 version][str tag][i16 render_level][str name][u32 comps]。"""
-    try:
-        if struct.unpack_from("<I", b, o)[0] != 1:          # node3dVersion 实测恒 1
-            return False
-        o += 4
-        n = struct.unpack_from("<I", b, o)[0]
-        if n > 32 or o + 4 + n > len(b):
-            return False
-        tag = b[o + 4:o + 4 + n]
-        if any(c < 32 or c >= 127 for c in tag):
-            return False
-        o += 4 + n
-        lv = struct.unpack_from("<h", b, o)[0]
-        if not -16 <= lv <= 256:
-            return False
-        o += 2
-        n = struct.unpack_from("<I", b, o)[0]
-        if n > 96 or o + 4 + n > len(b):
-            return False
-        nm = b[o + 4:o + 4 + n]
-        if any(c < 32 or c >= 127 for c in nm):
-            return False
-        o += 4 + n
-        return struct.unpack_from("<I", b, o)[0] <= 16      # components_size
-    except struct.error:
-        return False
-
-
-def _align_to_class(r: R) -> None:
-    """把游标对到下一个「合法 class 字符串」的起点。
-
-    ⚠ 实测个别节点在 `children_size` 与首个子节点之间多 1~3 个字节（含义未定）。
-    ⛔ 别当成解析错误：不对齐的话读出来的 class 会是 `"\x00polygon_2d…"` 这种带前导空字节的串。
-    """
-    for d in range(0, 4):
-        o = r.o + d
-        try:
-            n = struct.unpack_from("<I", r.b, o)[0]
-        except struct.error:
-            return
-        if 1 <= n <= 32 and o + 4 + n <= len(r.b):
-            t = r.b[o + 4:o + 4 + n]
-            if all(48 <= c < 123 for c in t) and (b"_2d" in t or b"_3d" in t or t.endswith(b"sprite")):
-                r.o = o
-                return
-
-
-def read_node(r: R) -> dict:
-    """节点。
-
-    ★ **class 字符串之后的第一个 u32 就是块长**（本字段之后属于该节点的字节数）——
-      实测逐个吻合：下一个兄弟节点就从 `块起点 + 块长` 开始。
-      有了块长就能**出错重同步**：某个子树解析失败也不会带歪兄弟。
-    ⚠ 文件末尾那 ~30 B 是**根节点的尾巴、整个文件只有一份**，
-      ⛔ 别挂到每个可绘制节点上（那样会吃掉下一个兄弟的头，实测 26% 的节点因此错位）。
-    ⚠ class 与 `node3dVersion` 之间还有一段类特有前缀，长度按类不同
-      （`node_2d` 8 B、可绘制类 17 B，另有变体）⇒ ⛔ 别写死，用 `_plausible_head` 探。
-    """
+def read_node(r: R, child: bool = False) -> dict:
     cls = r.s()
     size = r.u32()
-    end = r.o + size
+    end = r.o + size + int(child)
+    if end > len(r.b): raise ValueError("节点块越界: " + cls)
     node = {"class": cls}
     try:
-        base = r.o
-        for skip in range(0, 33):
-            if _plausible_head(r.b, base + skip):
-                break
-        else:
-            raise ValueError("找不到 %r 的通用块入口 @%#x" % (cls, base))
-        node["_pre"] = r.skip(skip)
-        node["node3dVersion"] = r.u32()
+        depth = {"node_2d": 1, "sprite_2d": 3, "polygon_2d": 3, "frame_sprite_2d": 4}.get(cls)
+        if depth is None: raise ValueError("不支持的节点类型 " + cls)
+        if child and r.u8() != depth: raise ValueError("继承深度不符")
+        boundaries = []
+        for _ in range(depth):
+            length = r.u32()
+            boundaries.append(r.o + length)
+        base_end = boundaries[-1]
+        if not all(r.o <= bound <= end for bound in boundaries): raise ValueError("基类块越界")
+        node["node3dVersion"] = r.u16()
         node["tag"] = r.s()
-        node["render_level"] = r.i16()
+        node["render_level"] = r.i32()
         node["name"] = r.s()
         node["components"] = [read_component(r) for _ in range(r.u32())]
+        if any(c["class"] == "comp_prefab" for c in node["components"]):
+            node["reference_tail"] = r.skip(end - r.o)
+            if node["reference_tail"] != "00" * 8: raise ValueError("未知引用节点尾")
+            return node
         node["position"] = r.f(3)
         node["angle"] = r.f(3)
         node["scale"] = r.f(3)
@@ -199,18 +156,32 @@ def read_node(r: R) -> dict:
         node["render_layer"] = r.s()
         node["polygonOffset"] = bool(r.u8())
         node["poly_block_size"] = r.u32()
-        nkids = r.u32()
+        nkids = r.u32() if r.o < base_end else node["poly_block_size"]
         node["children"] = []
         for _ in range(nkids):
-            _align_to_class(r)                              # ⚠ 个别节点子项前多 1~3 个字节
-            node["children"].append(read_node(r))
-        if cls in DRAWABLE:
+            node["children"].append(read_node(r, child=True))
+        if r.o != base_end: raise ValueError("node3d 块边界不符 %s" % (base_end-r.o))
+        if cls in (*DRAWABLE, "frame_sprite_2d"):
             read_drawable_tail(r, node)
-    except Exception as e:                                  # noqa: BLE001
-        # ⚠ 不让局部失败污染整棵树：记下来，用块长跳到边界继续。
-        node["_error"] = str(e)[:120]
-    r.o = end                                               # ★ 按块长重同步
+        elif cls == "node_2d":
+            read_node2d_tail(r, node)
+        else:
+            raise ValueError("未实现节点类型 " + cls)
+        if r.o != end:
+            raise ValueError("节点 %s 残留 %d B" % (cls, end - r.o))
+    except Exception as e:
+        raise ValueError("%s/%s @%#x: %s" % (cls, node.get("name", "?"), r.o, e)) from e
     return node
+
+
+def read_node2d_tail(r: R, node: dict) -> None:
+    node["node2dVersion"] = r.u16()
+    node["size"] = r.f(2)
+    node["mirror_x"] = bool(r.u8())
+    node["mirror_y"] = bool(r.u8())
+    node["pivot"] = r.f(2)
+    node["skew"] = r.f(2)
+    node["child_to_pivot"] = bool(r.u8())
 
 
 def read_drawable_tail(r: R, node: dict) -> None:
@@ -226,11 +197,12 @@ def read_drawable_tail(r: R, node: dict) -> None:
         [str 贴图路径][u16][2f 贴图尺寸][u16][2f 贴图锚点][9 B]
     ⚠ UV 实测**全 0**，靠末尾的 uvScale(1,1) 按世界坐标平铺 —— ⛔ 别当成缺数据。
     """
-    r.u16()
-    node["size"] = r.f(2)
-    r.u16()
-    node["pivot"] = r.f(2)
-    r.skip(15)
+    read_node2d_tail(r, node)
+    node["graphic2dVersion"] = r.u16()
+    node["depthWrite"] = bool(r.u8())
+    node["depthTest"] = bool(r.u8())
+    node["alphaTest"] = bool(r.u8())
+    node["alphaRef"] = r.u8()
     mat = r.s()
     if mat != "material":
         raise ValueError("期望 material，得到 %r @%#x" % (mat, r.o))
@@ -247,17 +219,19 @@ def read_drawable_tail(r: R, node: dict) -> None:
         node["uv_scale"] = r.f(2)
         r.skip(12)
     node["texture"] = r.s()
+    if node["class"] == "frame_sprite_2d":
+        node["frameVersion"] = r.u16()
+        node["frameStart"] = r.i32()
+        node["frameDuration"] = r.f32()
+        node["frameLoops"] = r.i32()
+        node["frames"] = [r.s() for _ in range(r.u32())]
 
 
 def parse(blob: bytes) -> dict:
     r = R(blob)
     root = read_node(r)
-    # 根节点尾：[u16][2f 尺寸][u16][2f 锚点][余下]
-    if r.left() >= 20:
-        r.u16(); root["root_size"] = r.f(2)
-        r.u16(); root["root_pivot"] = r.f(2)
-        r.skip(r.left())
-    root["_bytes_left"] = r.left()
+    if r.left(): raise ValueError("prefab 尾部残留 %d B" % r.left())
+    root["_bytes_left"] = 0
     return root
 
 

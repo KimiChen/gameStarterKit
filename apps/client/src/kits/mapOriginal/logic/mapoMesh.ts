@@ -13,6 +13,7 @@ export interface MapoGeometry {
     readonly positions: Float32Array;
     readonly uvs: Float32Array;
     readonly colors: Float32Array;
+    readonly addColors?: Float32Array;
     readonly indices16: Uint16Array;
     readonly quads: number;
     readonly minPos: readonly [number, number, number];
@@ -176,40 +177,6 @@ export function mapoBorderStripPoly(row: number, col: number, resDir: number, ha
 }
 
 /**
- * 选中高亮的地块面在世界里的尺寸（**世界像素**）。
- *
- * ★ 原版 `choose_00_group.prefab` 的主件 `choose2`：240×112 px（= 0.80×0.75 格）、
- *   pivot 中心对格心 —— 与摆件同一条换算（原图像素 × 32/150），⛔ 不是图集格、不是贴图原尺寸。
- *   实物 = `scene/grid/png/choose2.png`（在 `scene/_output_atlas_scene/atlas_tex/grid-1.ktx`
- *   的 (1260,1526) 帧，`tools/maporiginal-assets/build_choose.py` 切出）。
- */
-export const MAPO_CHOOSE_WORLD: readonly [number, number] = Object.freeze([
-    240 * MAPO_TILE_HALF_W / 150, 112 * MAPO_TILE_HALF_W / 150,
-] as [number, number]);
-
-/**
- * 选中框的四条边（菱形轮廓）。返回**设计单位**下的条形描述，由 View 摆成四块旋转底板。
- *
- * ⚠ 菱形是 2:1，⛔ 不是正方形转 45° —— 边的倾角是 `atan2(TH, TW)` ≈ 26.565°，不是 45°。
- * 早先用四条轴对齐的长条围成**长方形**（菱形的包围盒），在菱形网格上看着格格不入。
- * `angle` 是 Cocos 的角度（度、逆时针）；条形左右对称，所以模 180° 等价。
- */
-export function mapoSelectionEdges(thickness: number, overhang = 0):
-    readonly { readonly x: number; readonly y: number; readonly length: number;
-               readonly thickness: number; readonly angle: number }[] {
-    const hw = MAPO_TILE_HALF_W, hh = MAPO_TILE_HALF_H;
-    const edge = Math.hypot(hw, hh);
-    const tilt = Math.atan2(hh, hw) * 180 / Math.PI;
-    // 四条边的中点与倾角：NE / SE / SW / NW
-    return [
-        { x: hw / 2, y: hh / 2, angle: -tilt, length: edge + overhang, thickness },
-        { x: hw / 2, y: -hh / 2, angle: tilt, length: edge + overhang, thickness },
-        { x: -hw / 2, y: -hh / 2, angle: -tilt, length: edge + overhang, thickness },
-        { x: -hw / 2, y: hh / 2, angle: tilt, length: edge + overhang, thickness },
-    ];
-}
-
-/**
  * 把一批**带 UV 的矩形精灵**铺成一张 mesh（摆件层用）。
  *
  * (x, y) 是 prefab 锚点的世界坐标；顶点按 pivot 展开，再绕这个锚点旋转。
@@ -233,6 +200,10 @@ export interface MapoSpriteInput {
      * ⚠ 这是原版 prefab 里 sprite 的 `angle.z`（山族 13 形里只有 2 形非零，≤1.75°）。
      */
     readonly angleDeg?: number;
+    /** 原版量化 skew，作用于已缩放的局部坐标。 */
+    readonly skewBasis?: readonly [number, number, number, number];
+    readonly rgba?: readonly [number, number, number, number];
+    readonly addColor?: readonly [number, number, number, number];
 }
 
 export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
@@ -241,6 +212,7 @@ export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
     const positions = new Float32Array(n * 12);
     const uvs = new Float32Array(n * 8);
     const colors = new Float32Array(n * 16);
+    const addColors = new Float32Array(n * 16);
     const indices16 = new Uint16Array(n * 6);
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (let i = 0; i < n; i += 1) {
@@ -249,20 +221,21 @@ export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
         const y0 = s.y - s.h * s.pivot[1], y1 = y0 + s.h;
         const [u0, v0, uw, vh] = s.uv;
         const deg = s.angleDeg ?? 0;
-        if (deg === 0) {
-            positions.set([x0, y1, 0, x1, y1, 0, x1, y0, 0, x0, y0, 0], i * 12);
-        } else {
-            const r = (deg * Math.PI) / 180, cs = Math.cos(r), sn = Math.sin(r);
-            const rot = (px: number, py: number): [number, number] => {
-                const dx = px - s.x, dy = py - s.y;
-                return [s.x + dx * cs - dy * sn, s.y + dx * sn + dy * cs];
-            };
-            const [ax, ay] = rot(x0, y1), [bx, by] = rot(x1, y1);
-            const [cx2, cy2] = rot(x1, y0), [dx2, dy2] = rot(x0, y0);
-            positions.set([ax, ay, 0, bx, by, 0, cx2, cy2, 0, dx2, dy2, 0], i * 12);
-        }
+        const r = deg * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);
+        const [ka, kb, kc, kd] = s.skewBasis ?? [1, 0, 0, 1];
+        const transform = (px: number, py: number): [number, number] => {
+            const dx = px - s.x, dy = py - s.y;
+            const kx = ka * dx + kc * dy, ky = kb * dx + kd * dy;
+            return [s.x + kx * cs - ky * sn, s.y + kx * sn + ky * cs];
+        };
+        const [ax, ay] = transform(x0, y1), [bx, by] = transform(x1, y1);
+        const [cx2, cy2] = transform(x1, y0), [dx2, dy2] = transform(x0, y0);
+        positions.set([ax, ay, 0, bx, by, 0, cx2, cy2, 0, dx2, dy2, 0], i * 12);
         uvs.set([u0, v0, u0 + uw, v0, u0 + uw, v0 + vh, u0, v0 + vh], i * 8);
-        for (let v = 0; v < 16; v += 1) colors[i * 16 + v] = 1;   // ⚠ 贴图件取纯白，顶点色是相乘的
+        for (let v = 0; v < 4; v += 1) {
+            colors.set(s.rgba ?? [1, 1, 1, 1], i * 16 + v * 4);
+            addColors.set(s.addColor ?? [0, 0, 0, 0], i * 16 + v * 4);
+        }
         const b = i * 4;
         indices16.set([b, b + 1, b + 2, b, b + 2, b + 3], i * 6);
         // 包围盒必须包含旋转后的实际顶点，否则边缘件会被引擎提前裁掉。
@@ -275,7 +248,7 @@ export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
         }
     }
     if (n === 0) { minX = minY = maxX = maxY = 0; }
-    return { positions, uvs, colors, indices16, quads: n,
+    return { positions, uvs, colors, addColors, indices16, quads: n,
              minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
 }
 

@@ -1,71 +1,49 @@
 #!/usr/bin/env python3
-"""选中高亮件：从 `scene/_output_atlas_scene/atlas_tex/grid-1.ktx` 裁出 choose2.png。
+"""普通点选：city_shape.GRID.click_res=2080，导出 UI XML 的八片布局与时间线。
 
-用法: /tmp/maporiginal-venv/bin/python build_choose.py
-
-溯源链（与原套件同一条）：`base.cw` client_res id 11009「行军选择_GRID_STATE_MY」
-→ `scene/grid/choose_00_group.prefab` → 子 sprite `choose2`（240×112、pivot 中心、
-绿 (49,255,39) + add_color）→ 贴图 `scene/grid/png/choose2.png`
-→ 实物在 `scene/_output_atlas_scene/atlas_tex/grid-1.ktx`（2044×1652）的
-atlas XML 帧 (1260,1526,240,112)。⚠ 无重采样、无缩放。
-产物：`out/pack/s1/choose.png` + `out/sources.jsonl` 追加一条溯源（emit_ledger §B 用）。
+11009/choose_00_group 是行军状态，不能用于普通点选。原资源只读；图集保留直通 RGBA。
 """
-from __future__ import annotations
-
-import hashlib
+import argparse
 import json
-import os
-
-from decode_ktx import decode, resolve_by_name
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
-OUT = os.path.join(HERE, CFG["outDir"])
-
-ATLAS = "asset/scene/_output_atlas_scene/atlas_tex/grid-1.ktx"
-# atlas XML（elp-unpacked …/16259_48ba0039b580cdea.xml）里 choose2.png 的帧：
-#   <sprite h="112" n="asset/scene/grid/png/choose2.png" w="240" x="1260" y="1526" />
-FRAME = (1260, 1526, 240, 112)
+import xml.etree.ElementTree as ET
+from PIL import Image
+import asset_source as source
+import land_variants as LV
 
 
-def main() -> int:
-    src = resolve_by_name(ATLAS)
-    blob = open(src, "rb").read()
-    img, fmt = decode(blob)
-    x, y, w, h = FRAME
-    tile = img.crop((x, y, x + w, y + h))
-    os.makedirs(os.path.join(OUT, "pack", "s1"), exist_ok=True)
-    dst = os.path.join(OUT, "pack", "s1", "choose.png")
-    tile.save(dst)
+def main():
+    ap = argparse.ArgumentParser(); ap.add_argument('--map', default='s1'); args = ap.parse_args()
+    row = LV.client_res_rows()[2080]
+    root_path = 'fairy/' + row['src_name_common'] + '.xml'
+    root = ET.fromstring(source.resolve(root_path).read_bytes())
+    child = root.find('displayList/component')
+    prefix = 'fairy/ui/ui_common_effect/'
+    panel = ET.fromstring(source.resolve(prefix + child.attrib['fileName']).read_bytes())
+    width, height = map(float, root.attrib['size'].split(','))
+    atlas = Image.new('RGBA', (512, 64)); x = 2; cells = {}; pieces = []
+    for image in panel.findall('displayList/image'):
+        at = image.attrib; path = prefix + at['fileName']
+        if path not in cells:
+            im = Image.open(source.sprite(path)).convert('RGBA')
+            if x + im.width + 2 > atlas.width or im.height + 4 > atlas.height: raise ValueError('selection atlas overflow')
+            atlas.paste(im, (x, 2)); cells[path] = {'rect': [x, 2, im.width, im.height], 'source': path}; x += im.width + 2
+        pieces.append({'id': at['id'], 'xy': list(map(float, at['xy'].split(','))),
+                       'flip': at.get('flip', ''), **cells[path]})
+    def tracks(xml):
+        return [dict(item.attrib) for item in xml.findall('transition/item') if item.attrib['type'] in ('Scale', 'Color')]
+    # 原包 UI XML importer 0x4d6508：缺省 frameRate=24；0x4d6a98：Quad.Out。
+    transition = root.find('transition')
+    frame_rate = int(transition.attrib.get('frameRate', 24))
+    duration = max(float(item.attrib['time']) + float(item.attrib.get('duration', 0))
+                   for item in transition.findall('item'))
+    data = {'clientResId': 2080, 'size': [width, height], 'atlasSize': list(atlas.size),
+            'frameRate': frame_rate, 'durationFrames': duration,
+            'pieces': pieces, 'scaleTracks': tracks(root), 'colorTracks': tracks(panel), 'source': root_path}
+    out = source.OUT / 'pack' / args.map; out.mkdir(parents=True, exist_ok=True)
+    atlas.save(out / 'choose.png')
+    (out / 'choose.info.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+    (out / 'choose.data.ts').write_text('/** 生成物：build_choose.py 从普通点选 UI XML 导出；不要手改。 */\n'
+        + 'export const MAPO_CHOOSE = ' + json.dumps(data, ensure_ascii=False) + ' as const;\n')
+    print('普通点选 2080：8 片 / 291×148；XML Scale + Color 时间线')
 
-    # 溯源（emit_ledger §B 的 sources.jsonl 追加一条；⛔ 不重复）
-    base = os.path.basename(src)              # 054_4de95185de972579.ktx
-    idx_str, namehash = base.split("_", 1)
-    entry = {
-        "logical": ATLAS[6:] + "#choose2",
-        "kind": "select",
-        "src_abs": src,
-        "sha256": hashlib.sha256(blob).hexdigest(),
-        "src_bytes": len(blob),
-        "src_format": fmt,
-        "size": [2044, 1652],
-        "container": os.path.basename(os.path.dirname(src)),
-        "idx": int(idx_str),
-        "namehash": os.path.splitext(namehash)[0],
-        "out": "png/choose2.png",
-        "convert": "KTX(%s) -> PNG RGBA，按 atlas XML 帧 (1260,1526,240,112) 裁切，⛔ 无重采样无缩放" % fmt,
-    }
-    sl = os.path.join(OUT, "sources.jsonl")
-    lines = []
-    if os.path.exists(sl):
-        lines = [x for x in open(sl, encoding="utf-8").read().splitlines()
-                 if x.strip() and json.loads(x)["logical"] != entry["logical"]]
-    lines.append(json.dumps(entry, ensure_ascii=False))
-    with open(sl, "w", encoding="utf-8") as fo:
-        fo.write("\n".join(lines) + "\n")
-    print("→ %s（%d B）+ sources.jsonl#%s" % (dst, os.path.getsize(dst), entry["logical"]))
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+if __name__ == '__main__': main()

@@ -14,12 +14,9 @@
      对应两个预制体：`_polygon_group`（水面多边形）与 `_top_group`（手摆细节，本批⛔ 不做）。
 
 ★ 多边形是**现成三角化**的：`polygon_2d` 带 `vertices` / `indices`，102 条零失败解析。
-⚠ `uvs` 全零 ⇒ 原版的 UV 是运行时按世界坐标算的（与 §1.4 地表底同一套）。
-  但三张填充图**都是 2×2 的单一平色**（river 78,88,94 / yellowriver 148,154,155 /
-  longriver 99,108,113）⇒ 水面就是**平色填充**，⛔ 本层不需要 REPEAT、不需要世界投影 UV。
-⚠ 原版三条水系的颜色差来自 `river_color_mask.ktx` 的材质蒙版（§4.1），本仓⛔ 不复刻蒙版：
-  改为「**原版相对明度 × 本仓调色板色相**」—— 贴图给相对明度、顶点色给色相，
-  两者都有出处，⛔ 不是拍脑袋调色。
+★ 高画质水面按原版 normal_river 的世界坐标 UV、全图颜色蒙版和法线采样，
+  材质移植见 build_surface.py / mapo-river.effect。原包在 can_change_3d 条件成立时启用。
+  不启用该效果时用原 prefab 的 2×2 填充色，不再额外乘本仓调色板。
 
 产物：
   river-geo.bin   几何库（102 条，局部坐标，原版 px）
@@ -52,8 +49,6 @@ RIVER_TILES = 3                  # 一个河格 = 3×3 逻辑格
 RIVER_ORIGIN = -6                # ★ 实测：logic row = 3·i + RIVER_ORIGIN
 S_BIAS, D_BIAS = 16, 1500        # s/d 可为负（margin 块），偏置成非负
 SYSTEMS = ["river", "river_yellowriver", "river_longriver"]
-# 本仓河流色相（= terrain 调色板的 river 色），⚠ 亮度由原版填充图给
-TINT = (70, 120, 160)
 
 
 def load_grid(logical: str, side: int) -> np.ndarray:
@@ -182,9 +177,8 @@ def main() -> int:
                      "nVerts×{f32 x, f32 y}（原版 px，局部坐标）, nIdx×u16",
         "verts": sum(len(g["verts"]) for g in geos),
         "tris": sum(len(g["indices"]) // 3 for g in geos),
-        "systems": fills, "tint": list(TINT),
-        "tintNote": "顶点色 = 本仓调色板 river 色相；亮度由 river-fill.png 的原版平色给。"
-                    "⛔ 原版的 river_color_mask.ktx 蒙版本仓不复刻。",
+        "systems": fills,
+        "material": "normal_river 的 2D 无结冰分支；静态分支使用原 prefab 填充色（无额外调色）",
         "alignCheck": {"res==47 格": int(is_river.sum()), "被覆盖": covered,
                        "覆盖率": round(rate, 6)},
         "topGroupSprites": {"合计": sum(tops), "每条 min/max": [min(tops), max(tops)]},
@@ -205,10 +199,7 @@ def main() -> int:
  *   单字节图，**选片在制图期就烘死在字节值里**，运行时 ⛔ 不做任何邻接判断。
  * ★ 一个「河格」= **3×3 逻辑格**；起点偏移 **−6**（logic row = 3·i − 6）是实测定死的：
  *   河格覆盖了 %d / %d 个 `res==47` 格（%.1f%%）。
- * ★ 水面是**平色多边形**：三张原版填充图都是 2×2 的单一平色，
- *   ⛔ 本层不需要 REPEAT、不需要世界投影 UV（地表底那层才需要，见 §1.4）。
- * ⚠ 原版三条水系的颜色差来自 `river_color_mask.ktx` 的材质蒙版，本仓 ⛔ 不复刻：
- *   改为「原版相对明度（`river-fill.png`）× 本仓色相（`MAPO_RIVER_TINT`）」。
+ * ★ 水面几何可用于原版静态填充与 normal_river；颜色蒙版/法线另由 build_surface.py 导出。
  */
 
 export interface IMapoRiverSystem {
@@ -233,13 +224,10 @@ export const MAPO_RIVER_HEADER_BYTES = 4;
 export const MAPO_RIVER_GEO_COUNT = %d;
 /** 三条水系；次序即 `river-fill.png` 里三个 2×2 色块的次序。 */
 export const MAPO_RIVER_SYSTEMS: readonly IMapoRiverSystem[] = %s;
-/** 本仓的河流色相（= terrain 调色板的 river 色）。⚠ 亮度由 `river-fill.png` 给。 */
-export const MAPO_RIVER_TINT: readonly [number, number, number] = %s;
 ''' % (m, covered, int(is_river.sum()), 100.0 * rate,
        RIVER_SIDE, RIVER_TILES, RIVER_ORIGIN, S_BIAS, D_BIAS, len(geos),
        json.dumps([{"system": f["system"], "name": f["name"], "rgb": f["rgb"]} for f in fills],
-                  ensure_ascii=False),
-       json.dumps(list(TINT)))
+                  ensure_ascii=False))
     open(os.path.join(d, "river.data.ts"), "w", encoding="utf-8").write(ts)
     print("  几何 %d 条 / %d 顶点 / %d 三角（%.0f KB）"
           % (len(geos), info["verts"], info["tris"], len(geo_blob) / 1024))
@@ -247,7 +235,7 @@ export const MAPO_RIVER_TINT: readonly [number, number, number] = %s;
                                   for f in fills))
     print("  摆放 %d 格（%.0f KB）  对位覆盖 %d/%d = %.4f"
           % (len(recs), len(blob) / 1024, covered, int(is_river.sum()), rate))
-    print("  _top_group 手摆件 %d 个（每条 %d..%d）—— ⚠ 本批不做"
+    print("  _top_group 手摆件 %d 个（每条 %d..%d）（另由 build_tops.py 导出）"
           % (sum(tops), min(tops), max(tops)))
     print("→ %s" % d)
     return 0

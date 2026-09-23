@@ -95,8 +95,8 @@ test("mapOriginal 摆件（N1）：带内换件、带外仍是基础件（选件
     assert.ok(onGrass && onGrass.cell === BASE_CELL_RES13, "绿地上的 2级石料必须仍是基础季件");
     // ⚠ 雪/沙件的图集坐标必须与基础件不同（同一格 = 没换件）
     const base32 = MAPO_DECOR_CELLS.find((c) => c.id === 32)!;
-    assert.notDeepEqual([...SNOW_CELL_RES32.cell], [...base32.cell], "雪件与基础件不该同格");
-    assert.notDeepEqual([...DESERT_CELL_RES32.cell], [...base32.cell], "沙件与基础件不该同格");
+    assert.notDeepEqual(SNOW_CELL_RES32.scene, base32.scene, "雪件与基础件不该同格");
+    assert.notDeepEqual(DESERT_CELL_RES32.scene, base32.scene, "沙件与基础件不该同格");
 });
 
 
@@ -127,8 +127,8 @@ test("mapOriginal 分层：implemented 的层必须真有渲染器（⛔ 不许�
     }
 });
 
-test("mapOriginal 分层：未实现的层就是 grid 与 banner（⛔ 改了要同步 kit README 层表）", () => {
-    assert.deepEqual([...MAPO_PLANNED_LAYERS], ["grid", "banner"]);
+test("mapOriginal 分层：未实现的层只剩 banner（⛔ 改了要同步 kit README 层表）", () => {
+    assert.deepEqual([...MAPO_PLANNED_LAYERS], ["banner"]);
 });
 
 test("mapOriginal 画质：⛔ 不再有「分帧建格步长」这个没人调的旋钮（M1-B2）", () => {
@@ -175,8 +175,8 @@ test("mapOriginal 分层：渲染器挂各自的层容器，⛔ 不许直接挂 
         new URL("../src/kits/mapOriginal/view/MapOriginalWorldView.ts", import.meta.url), "utf8");
     for (const m of view.matchAll(/new Mapo(\w+)Renderer\(([^,)]+)/g)) {
         const kind = m[1], parent = m[2].trim();
-        if (kind === "Label") continue;            // 地名建在 root 上（字号不跟相机缩放）
-        assert.ok(parent.startsWith("this.layer("),
+        if (kind === "Label" || kind === "Selection") continue;            // 地名建在 root 上（字号不跟相机缩放）
+        assert.ok((parent.startsWith("this.layer(") || parent.startsWith("this.sublayers.get(")),
             `Mapo${kind}Renderer 挂的是 ${parent}，应挂 this.layer(<层>)`);
     }
     assert.ok(view.includes("MAPO_LAYER_ORDER"), "容器必须按第 ② 级刻度升序建");

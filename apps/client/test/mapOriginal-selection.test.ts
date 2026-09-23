@@ -3,10 +3,20 @@ import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { MAPO_CHOOSE_ASSET } from "../src/kits/mapOriginal/logic/mapoFar";
-import { buildMapoSpriteMesh, MAPO_CHOOSE_WORLD } from "../src/kits/mapOriginal/logic/mapoMesh";
-import { mapoDecorAt, mapoDecorUv } from "../src/kits/mapOriginal/logic/mapoDecor";
+import { buildMapoSpriteMesh } from "../src/kits/mapOriginal/logic/mapoMesh";
+import { mapoDecorAt } from "../src/kits/mapOriginal/logic/mapoDecor";
 import { MapoCamera } from "../src/kits/mapOriginal/logic/mapoCamera";
 import { mapoGrid2Pos } from "../src/shared/kits/mapOriginal/api/hexmap/index";
+
+import { mapoSceneSprites } from "../src/kits/mapOriginal/logic/mapoScene";
+import { mapoSelectionSprites } from "../src/kits/mapOriginal/logic/mapoSelection";
+import { MAPO_CHOOSE } from "../src/shared/kits/mapOriginal/content/choose.data";
+import { MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../src/shared/kits/mapOriginal/content/decor.data";
+function pieces(row: number, col: number, value: number) {
+    const p = mapoDecorAt(row, col, value, true)!;
+    return mapoSceneSprites(p.cell.scene, MAPO_DECOR_TEXTURES,
+        [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H], 0, p);
+}
 
 /** 读 PNG 的 IHDR 尺寸（不改码、不解压）。 */
 function pngSize(path: string): [number, number] {
@@ -15,14 +25,21 @@ function pngSize(path: string): [number, number] {
     return [buf.readUInt32BE(16), buf.readUInt32BE(20)];
 }
 
-test("mapOriginal 选中地块面：尺寸 = 原图像素 × 32/150（与全 kit 同一道换算）", () => {
-    // ★ 原版 choose2 是 240×112 px、pivot 中心；漏掉 32/150 会把件放成 ~4.7 倍大
-    //   （交接坑清单第 9 条：UV/数量/次序的用例全都照过，只有尺寸会静默错）。
-    assert.ok(Math.abs(MAPO_CHOOSE_WORLD[0] - 240 * 32 / 150) < 1e-9);
-    assert.ok(Math.abs(MAPO_CHOOSE_WORLD[1] - 112 * 32 / 150) < 1e-9);
-    // ★ 尺寸纪律：原版就是「罩住整格的 0.8 倍」⇒ 必须落在 (0.7, 0.9) 格内，
-    //   出界多半是有人照抄了贴图原尺寸或又乘了一次 scale
-    assert.ok(MAPO_CHOOSE_WORLD[0] / 64 > 0.7 && MAPO_CHOOSE_WORLD[0] / 64 < 0.9);
+test("mapOriginal 普通点选：2080 的八片 UI 围绕格心，不混入行军选择", () => {
+    assert.equal(MAPO_CHOOSE.clientResId, 2080);
+    assert.deepEqual(MAPO_CHOOSE.size, [291, 148]);
+    const pieces = mapoSelectionSprites(0);
+    assert.equal(pieces.length, 8);
+    assert.ok(pieces[4].uv[2] < 0 && pieces[7].uv[2] < 0 && pieces[7].uv[3] < 0);
+    const mesh = buildMapoSpriteMesh(pieces);
+    assert.ok(Math.abs(mesh.minPos[0] + mesh.maxPos[0]) < 1e-5);
+    assert.ok(Math.abs(mesh.minPos[1] + mesh.maxPos[1]) < 1e-5);
+    assert.ok(Math.abs(mesh.maxPos[0] * 2 - 291 * 32 / 150) < 1e-5);
+    assert.equal(MAPO_CHOOSE.frameRate, 24, "原包 UI importer 缺省是 24 帧");
+    const peak = buildMapoSpriteMesh(mapoSelectionSprites(15 / 24));
+    assert.ok(Math.abs(peak.maxPos[0] / mesh.maxPos[0] - 1.03) < 1e-6);
+    assert.ok(Math.abs(peak.colors[2] - 189 / 255) < 1e-6);
+    assert.deepEqual(buildMapoSpriteMesh(mapoSelectionSprites(30 / 24)).positions, mesh.positions);
 });
 
 test("mapOriginal 选中地块面：原版件已入 kit 且两边镜像齐全", () => {
@@ -31,7 +48,7 @@ test("mapOriginal 选中地块面：原版件已入 kit 且两边镜像齐全", 
     const coc = fileURLToPath(new URL("../../Cocos/assets/resources/kits/mapOriginal/maps/s1/choose.png", import.meta.url));
     assert.ok(existsSync(kit), `缺 ${kit}（先跑 build_choose.py + install_to_kit.py）`);
     assert.ok(existsSync(coc), `缺 ${coc}（install_to_kit.py 的镜像没到）`);
-    assert.deepEqual([...pngSize(kit)], [240, 112], "choose.png 必须是原版 240×112 帧");
+    assert.deepEqual([...pngSize(kit)], [512, 64], "choose.png 必须包含普通点选的三种原始切片");
     assert.deepEqual(
         [...readFileSync(kit)], [...readFileSync(coc)], "kit 与 Cocos 镜像必须逐字节一致");
 });
@@ -44,9 +61,9 @@ test("mapOriginal 选中对齐：截图中的 (750,749) 5级粮田保留原版�
     assert.ok(place);
     const grid = mapoGrid2Pos(row, col);
     const px = 32 / 150;
-    assert.ok(Math.abs(place.w - 196 * px) < 1e-6);
-    assert.ok(Math.abs(place.h - 128 * px) < 1e-6);
-    const mesh = buildMapoSpriteMesh([{ ...place, uv: mapoDecorUv(place.cell) }]);
+    const sprite = pieces(row, col, 26).find((s) => s.w === 196 && s.h === 128)!;
+    assert.ok(sprite, "粮田主体必须存在于完整节点图中");
+    const mesh = buildMapoSpriteMesh([sprite]);
     const center = {
         x: (mesh.positions[0] + mesh.positions[6]) / 2,
         y: (mesh.positions[1] + mesh.positions[7]) / 2,
@@ -67,20 +84,15 @@ test("mapOriginal 选中对齐：截图中的 (750,749) 5级粮田保留原版�
     }
 });
 
-test("mapOriginal 资源尺寸：保留 prefab 的两个轴缩放，不再只照贴图像素", () => {
-    // Wood_03_group.prefab 的主片是 232×119，原版显示缩放并非等比。
-    const place = mapoDecorAt(750, 749, 4, true);
-    assert.ok(place);
-    assert.ok(Math.abs(place.w - 232 * 0.922414 * 32 / 150) < 1e-6);
-    assert.ok(Math.abs(place.h - 119 * 0.915966 * 32 / 150) < 1e-6);
-
-    // 沙地 Wood_01 主片贴图为 49×49，原版显示矩形却是 50×58。
-    const desert = mapoDecorAt(100, 749, 2, true);
-    assert.ok(desert);
-    assert.equal(desert.cell.variant, "desert");
-    assert.deepEqual([...desert.cell.native], [49, 49]);
-    assert.ok(Math.abs(desert.w - 50 * 32 / 150) < 1e-6);
-    assert.ok(Math.abs(desert.h - 58 * 32 / 150) < 1e-6);
+test("mapOriginal 资源尺寸与数量：保留完整树丛和不等于贴图的显示尺寸", () => {
+    assert.equal(pieces(750, 749, 2).length, 8, "Wood_01 必须保留 8 棵树");
+    const tree = pieces(750, 749, 4).find((s) => s.w === 232 && s.h === 119)!;
+    const mesh = buildMapoSpriteMesh([tree]);
+    assert.ok(Math.abs(mesh.maxPos[0] - mesh.minPos[0] - 232 * 0.922414 * 32 / 150) < 0.001);
+    const desert = pieces(100, 749, 2).find((s) => s.w === 50 && s.h === 58)!;
+    assert.ok(desert, "沙地树的显示矩形 50×58 不能替换为贴图 49×49");
+    const dm = buildMapoSpriteMesh([desert]);
+    assert.ok(Math.abs(dm.maxPos[1] - dm.minPos[1] - 58 * 32 / 150) < 0.001);
 });
 
 test("mapOriginal 精灵锚点：非中心 pivot 也按原位置展开、绕锚点旋转", () => {

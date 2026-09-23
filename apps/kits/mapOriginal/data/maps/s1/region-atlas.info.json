@@ -11,7 +11,7 @@
   2048,
   4096
  ],
- "anchor": "bottom-center",
+ "anchor": "prefab-pivot",
  "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出；变体格同 id 空间、按 variant 分表（N1）",
  "transform": "scale/offset/angle/pivot 逐形取自该套件 prefab 的 sprite_2d；offset 是精灵**中心**相对锚点格的偏移（原版 px），pivot 恒 [0.5, 0.5]",
  "variants": {
@@ -120,11 +120,33 @@
     7.8203
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    281.0,
+    148.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m7.png"
   },
   {
@@ -160,11 +182,33 @@
     5.2822
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    287.0,
+    148.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m6.png"
   },
   {
@@ -200,11 +244,33 @@
     5.2822
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    287.0,
+    148.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    6.688960075378418,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m6.png"
   },
   {
@@ -240,11 +306,33 @@
     5.9863
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    281.0,
+    148.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m7.png"
   },
   {
@@ -280,11 +368,33 @@
     45.6816
    ],
    "angle": -1.7436,
+   "lowZ": 1,
+   "size": [
+    422.0,
+    234.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    3.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m8.png"
   },
   {
@@ -320,11 +430,33 @@
     -60.9512
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    303.0,
+    238.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m3.png"
   },
   {
@@ -360,11 +492,33 @@
     -3.167
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    510.0,
+    178.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m9.png"
   },
   {
@@ -400,11 +554,33 @@
     48.2871
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    516.0,
+    292.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m10.png"
   },
   {
@@ -440,11 +616,33 @@
     10.8662
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    656.0,
+    342.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m1.png"
   },
   {
@@ -480,11 +678,33 @@
     -3.2344
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    657.0,
+    350.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m4.png"
   },
   {
@@ -520,11 +740,33 @@
     8.2734
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    697.0,
+    345.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m5.png"
   },
   {
@@ -560,11 +802,33 @@
     22.9844
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    563.0,
+    283.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m2.png"
   },
   {
@@ -600,11 +864,33 @@
     15.9102
    ],
    "angle": -0.5181,
+   "lowZ": 1,
+   "size": [
+    563.0,
+    283.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.5771480202674866
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_new/png/m2.png"
   },
   {
@@ -640,11 +926,33 @@
     -16.1963
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    265.0,
+    155.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/9.png"
   },
   {
@@ -680,11 +988,33 @@
     -16.1963
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    265.0,
+    155.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/9.png"
   },
   {
@@ -720,11 +1050,33 @@
     -16.1963
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    265.0,
+    155.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/9.png"
   },
   {
@@ -760,11 +1112,33 @@
     -16.1963
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    265.0,
+    155.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/9.png"
   },
   {
@@ -800,11 +1174,33 @@
     20.8184
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    423.0,
+    230.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/8.png"
   },
   {
@@ -840,11 +1236,33 @@
     -51.9434
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    307.0,
+    257.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/7.png"
   },
   {
@@ -880,11 +1298,33 @@
     -41.0293
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    520.0,
+    199.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/6.png"
   },
   {
@@ -920,11 +1360,33 @@
     28.9414
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    593.0,
+    298.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/5.png"
   },
   {
@@ -960,11 +1422,33 @@
     -8.2041
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    893.0,
+    423.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/2.png"
   },
   {
@@ -1000,11 +1484,33 @@
     -1.667
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    769.0,
+    375.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/3.png"
   },
   {
@@ -1040,11 +1546,33 @@
     -9.6885
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    733.0,
+    427.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/4.png"
   },
   {
@@ -1080,11 +1608,33 @@
     18.5
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    626.0,
+    328.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/1.png"
   },
   {
@@ -1120,11 +1670,33 @@
     18.5
    ],
    "angle": 0.0,
+   "lowZ": 1,
+   "size": [
+    626.0,
+    328.0
+   ],
    "pivot": [
     0.5,
     0.5
    ],
-   "lowZ": 1,
+   "skew": [
+    0.0,
+    0.0
+   ],
+   "mirror_x": false,
+   "mirror_y": false,
+   "color": [
+    255,
+    255,
+    255,
+    255
+   ],
+   "add_color": [
+    0,
+    0,
+    0,
+    0
+   ],
    "source": "scene/ground/mountain_snow/png/1.png"
   }
  ]

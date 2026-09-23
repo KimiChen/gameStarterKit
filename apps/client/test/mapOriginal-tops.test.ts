@@ -25,7 +25,11 @@ function makeTops(spec: readonly (readonly (readonly [number, number, number, nu
             v.setUint16(o, cell);
             v.setFloat32(o + 2, x); v.setFloat32(o + 6, y);
             v.setFloat32(o + 10, sx); v.setFloat32(o + 14, sy);
-            v.setFloat32(o + 18, ang); v.setFloat32(o + 22, lowZ);
+            v.setFloat32(o + 18, ang);
+            v.setFloat32(o + 22, 123); v.setFloat32(o + 26, 89);
+            v.setFloat32(o + 30, 0.5); v.setFloat32(o + 34, 0.5);
+            for (let i = 48; i < 52; i++) v.setUint8(o + i, 255);
+            v.setFloat32(o + 56, lowZ);
             o += MAPO_TOP_RECORD_BYTES;
         }
     }
@@ -57,7 +61,7 @@ test("mapOriginal 手摆件：组数/件数/长度任一对不上就拒收", () 
     assert.throws(() => mapoSetTops(KIND, makeTops(spec)), /手摆件 1 个/);
 });
 
-test("mapOriginal 手摆件：尺寸走 native × scale、锚点位置 = 多边形原点 + pos", () => {
+test("mapOriginal 手摆件：尺寸走 prefab.size × scale、锚点位置 = 多边形原点 + pos", () => {
     // 尺寸不能用图集里的缩略像素；位置直接传 prefab 中心，不再转换成底边。
     const spec = emptySpec();
     const rest = ATLAS.sprites - 2;
@@ -70,10 +74,9 @@ test("mapOriginal 手摆件：尺寸走 native × scale、锚点位置 = 多边�
                    indices: new Uint16Array(), uv: [0, 0], rgba: [1, 1, 1, 1] } as MapoPolygonInput;
     const out = mapoTopsFor(KIND, [poly], 99);
     assert.equal(out.length, 2, "第 1 组两件");
-    const c0 = ATLAS.cells[0];
-    const w = mapoOriginalPxToWorld(c0.native[0] * 2), h = mapoOriginalPxToWorld(c0.native[1] * 3);
-    assert.ok(Math.abs(out[0].w - w) < 1e-6, "宽 = native × scaleX");
-    assert.ok(Math.abs(out[0].h - h) < 1e-6, "高 = native × scaleY");
+    const w = mapoOriginalPxToWorld(123 * 2), h = mapoOriginalPxToWorld(89 * 3);
+    assert.ok(Math.abs(out[0].w - w) < 1e-6, "宽 = size × scaleX");
+    assert.ok(Math.abs(out[0].h - h) < 1e-6, "高 = size × scaleY");
     assert.ok(Math.abs(out[0].x - (1000 + mapoOriginalPxToWorld(40))) < 1e-6, "x = 原点 + pos.x");
     assert.ok(Math.abs(out[0].y - (-2000 + mapoOriginalPxToWorld(90))) < 1e-6,
         "y = 原点 + pos.y");

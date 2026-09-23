@@ -1,0 +1,37 @@
+[
+  {
+    "source": "ground_down/grid_line.ktx",
+    "output": "grid-line.png",
+    "size": [
+      8,
+      8
+    ],
+    "format": "ETC2 RGBA",
+    "sourceSha256": "f092405b45938e4cc2aed18918d3d8442171733bc069375d65004bc1679002db"
+  },
+  {
+    "source": "map/s1/cn/river_color_mask.ktx",
+    "output": "river-mask.png",
+    "size": [
+      2048,
+      2048
+    ],
+    "format": "ETC2 RGBA",
+    "sourceSha256": "e741db4c3673d0e1b9903d27a037372babf51292f533f5bac5c19690df5dfcca"
+  },
+  {
+    "source": "scene_3d/water/water_normal2.ktx",
+    "output": "river-normal.png",
+    "size": [
+      256,
+      256
+    ],
+    "format": "ETC2 RGBA",
+    "sourceSha256": "5c0447c0c55d56282b8e7f712fb48db4d62337c3347f6dcf868c4831f790a3c1"
+  },
+  {
+    "source": "shaders/3d_water2.fs",
+    "sourceSha256": "cad161c6a043a13d2cab8a66e9d258bc6d42a23fc97b2f143135c5cc9d4762cb",
+    "port": "mapo-river.effect: 无结冰状态的 2D normal_river 分支；Flow/Foam 采样未被原 FS 使用"
+  }
+]

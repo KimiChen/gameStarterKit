@@ -44,12 +44,8 @@ export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
     // ★ 地表底：**一块 10×10 格 + 一张底纹整数次 GL_REPEAT**（原版做法，MAPORIGINAL-2D §1.4）。
     //   ⛔ 早先是「8 粗类 × 4 变体的逐格菱形贴片」——那是本仓自创的，M2-B1 已换掉。
     { id: "terrain", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 100 },
-    // ⚠ 网格线：**尚未实现**（M1-B1 止血）。此前写着 implemented: true 而渲染器里一行都没有，
-    //   违反本文件抬头立的规矩，还会向状态行与真机重放证据谎报。
-    //   ⚠ 另：原版 2D 的逐格三层是 res / terrain / grid_state（MAPORIGINAL-2D §2），
-    //   `grid_state` 是 AOI 驱动的**归属态叠图**，⛔ 不是线框网格；
-    //   「原版有没有线框网格层」目前**无证据** ⇒ 要做之前先补证据，⛔ 别照 sgzzmap 抄了当原版。
-    { id: "grid", hideAtLod: 1, showFromLod: 0, streamed: true, implemented: false, zorder: 950 },
+    // [disasm] GroundLayerView.line_layer / MAP_ZORDER.FRAME；使用原版 GROUND_GRID_LINE。
+    { id: "grid", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 1400 },
     // ★ snow / desert 的 block 级地貌带：**叠**在地表底之上（§1.3，⛔ 不是替换）。
     //   与 terrain 同档：它就是地表的一部分。
     { id: "blocks", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 110 },
@@ -90,7 +86,7 @@ export const MAPO_LAYER_RENDERER: Readonly<Record<MapoLayerId, string | null>> =
     terrain: "renderer",
     blocks: "blockRenderers",
     road: "roadRenderer",
-    grid: null,
+    grid: "gridRenderer",
     river: "riverRenderer",
     plate: "farRenderer",
     region: "regionRenderer",

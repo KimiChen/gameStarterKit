@@ -18,9 +18,8 @@ import {
     MAPO_VALUE_KINDS, MAPO_VALUE_MAX, MAPO_VALUE_PALETTE,
 } from "@game/shared/kits/mapOriginal/content/display.data";
 import {
-    MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_CELL_H,
-    MAPO_DECOR_CELL_W, MAPO_DECOR_CITY_BASE, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
-    type IMapoDecorTransform,
+    MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_TEXTURES,
+    MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS, type IMapoDecorCell,
 } from "@game/shared/kits/mapOriginal/content/decor.data";
 import {
     MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_CELL_H,
@@ -36,7 +35,7 @@ import {
 import {
     MAPO_RIVER_D_BIAS, MAPO_RIVER_GEO_COUNT, MAPO_RIVER_HEADER_BYTES, MAPO_RIVER_ORIGIN,
     MAPO_RIVER_RECORD_BYTES, MAPO_RIVER_SIDE, MAPO_RIVER_S_BIAS, MAPO_RIVER_SYSTEMS,
-    MAPO_RIVER_TILES, MAPO_RIVER_TINT,
+    MAPO_RIVER_TILES,
 } from "@game/shared/kits/mapOriginal/content/river.data";
 import {
     MAPO_GROUND_BLOCK_TILES, MAPO_GROUND_GRID_SIDE, MAPO_GROUND_ORIGIN,
@@ -158,74 +157,27 @@ test("mapOriginal 内容：shared 值调色板 = terrain.info.json 的调色板"
     for (const t of types) assert.ok(MAPO_RES_TYPE_CN[t], `资源类型 ${t} 缺中文名`);
 });
 
-test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，一一对应）", () => {
-    const meta = JSON.parse(kit("decor-atlas.info.json").toString("utf8")) as {
-        cell: [number, number]; gridCols: number; size: [number, number];
-        schemaVersion: number; anchor: string; cityBase: number;
-        substitutions: Record<string, (number | string)[]>;
-        variants: { resIds: Record<string, { base: number; snow: number; desert: number }> };
-        cells: { id: number; kind: string; variant: string; cell: [number, number, number, number];
-                 art: [number, number, number, number]; native: [number, number];
-                 resType?: string; level?: number; source: string;
-                 prefab?: string; transform?: IMapoDecorTransform }[];
-    };
-    assert.deepEqual(meta.cell, [MAPO_DECOR_CELL_W, MAPO_DECOR_CELL_H]);
+test("mapOriginal 内容：完整 prefab 覆盖 135 套，纹理索引和图集元数据一致", () => {
+    const meta = JSON.parse(kit("decor-atlas.info.json").toString("utf8"));
+    assert.equal(meta.schemaVersion, 5);
+    assert.equal(meta.prefabs, 135);
+    assert.equal(meta.nodes, 659);
+    assert.deepEqual(meta.substitutions, [], "资源解析失败不得换成相邻等级");
     assert.deepEqual(meta.size, [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H]);
-    assert.equal(meta.cityBase, MAPO_DECOR_CITY_BASE);
-    assert.equal(meta.schemaVersion, 4);
-    assert.equal(meta.anchor, "prefab-pivot");
-    // ★ N1：图集是三套件一张（143 格 = 基础 53 + 雪 45 + 沙 45），shared 按 variant 分三表
-    assert.equal(meta.cells.length,
-        MAPO_DECOR_CELLS.length + MAPO_DECOR_SNOW_CELLS.length + MAPO_DECOR_DESERT_CELLS.length);
-    const sharedAll = [...MAPO_DECOR_CELLS, ...MAPO_DECOR_SNOW_CELLS, ...MAPO_DECOR_DESERT_CELLS];
-    const keyOf = (v: string, id: number) => `${v}:${id}`;
-    const byKey = new Map(sharedAll.map((c) => [keyOf(c.variant, c.id), c]));
-    const slots = new Set<string>();
-    for (const c of meta.cells) {
-        const shared = byKey.get(keyOf(c.variant ?? "base", c.id));
-        assert.ok(shared, `摆件格 ${c.variant}:${c.id} 必须进 shared`);
-        assert.deepEqual([...shared.cell], c.cell, `摆件格 ${c.variant}:${c.id} 画布`);
-        assert.deepEqual([...shared.art], c.art, `摆件格 ${c.variant}:${c.id} 图内矩形`);
-        // native 管贴图采样；世界尺寸和相对格心的位置由资源件 transform 决定。
-        assert.deepEqual([...shared.native], c.native, `摆件格 ${c.variant}:${c.id} 原图像素`);
-        if (shared.kind === "res") {
-            assert.ok(c.transform, `资源格 ${c.variant}:${c.id} 缺 prefab transform`);
-            assert.deepEqual(shared.transform, c.transform, `资源格 ${c.variant}:${c.id} transform 未进入 shared`);
-            assert.deepEqual([...c.transform.pivot], [0.5, 0.5], "当前主片必须是中心锚点");
-            assert.ok([...c.transform.size, ...c.transform.scale].every((n) => Number.isFinite(n) && n > 0));
-            assert.ok([...c.transform.offset, c.transform.angle].every(Number.isFinite));
+    assert.deepEqual(meta.cells, MAPO_DECOR_TEXTURES);
+    for (const c of MAPO_DECOR_TEXTURES) {
+        const [x, y, w, h] = c.rect;
+        assert.ok(x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= MAPO_DECOR_ATLAS_W && y + h <= MAPO_DECOR_ATLAS_H);
+    }
+    const check = (n: IMapoDecorCell["scene"]): number => {
+        for (const id of [n.texture, ...(n.frames ?? []), ...(n.tracks ?? []).filter((t) => t.type === 5).flatMap((t) => t.keys.map((k) => k.value as number))]) {
+            assert.ok(id === -1 || MAPO_DECOR_TEXTURES[id], `节点 ${n.name} 的纹理 ${id} 丢失`);
         }
-        assert.ok(c.native[0] > 0 && c.native[1] > 0, `摆件格 ${c.variant}:${c.id} 原图像素非法`);
-        // 纵横比必须与图集里的一致（缩略图保比例），⛔ 漂了就是件被压扁/拉长
-        assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
-            `摆件格 ${c.variant}:${c.id} 缩略图没保住纵横比`);
-        // ⚠ 存证不许写本机绝对路径（会随机器漂、且泄漏路径）
-        assert.ok(!c.source.startsWith("/"), `摆件格 ${c.variant}:${c.id} 的 source 必须是仓外相对路径`);
-        const [ax, ay, aw, ah] = c.art;
-        assert.ok(ax >= 0 && ay >= 0 && ax + aw <= MAPO_DECOR_CELL_W && ay + ah <= MAPO_DECOR_CELL_H,
-            `摆件格 ${c.variant}:${c.id} 图内矩形越界`);
-        // ★ UV 不越界：格必须整张落在图集内（N1 图集已加宽到 4096×2048）
-        const [cx, cy, cw, ch] = c.cell;
-        assert.ok(cx >= 0 && cy >= 0 && cx + cw <= MAPO_DECOR_ATLAS_W && cy + ch <= MAPO_DECOR_ATLAS_H,
-            `摆件格 ${c.variant}:${c.id} 越出图集`);
-        // ⚠ 图集槽位不许撞车（两格同位 = 有一件盖住了另一件）
-        const slot = `${cx},${cy}`;
-        assert.ok(!slots.has(slot), `摆件格 ${c.variant}:${c.id} 的槽位 ${slot} 撞车`);
-        slots.add(slot);
-    }
-    // ★ 这条才是「按原游戏参数摆放」的机检：**每个资源/金矿值都得有自己的一张图**，
-    //   ⛔ 少一个就会在近档出现「这一格什么都没有」的空地，而原版那里是有 res_field 的。
-    const byId = new Map(MAPO_DECOR_CELLS.map((c) => [c.id, c]));
-    for (const e of info.palette) {
-        if (e.kind !== "resource" && e.kind !== "gold") continue;
-        assert.ok(byId.has(e.id), `原版值 ${e.id}（${e.cn}）缺摆件图`);
-    }
-    // ⚠ 城址件与资源件必须**分段不重叠**：城不在 res 值空间里
-    for (const c of MAPO_DECOR_CELLS) {
-        assert.equal(c.kind === "city", c.id >= MAPO_DECOR_CITY_BASE, `格 ${c.id} 分段`);
-        if (c.kind !== "city") assert.ok(MAPO_VALUE_BY_ID.has(c.id), `格 ${c.id} 不是原版值`);
-    }
-    assert.ok(MAPO_DECOR_CELLS.some((c) => c.id >= MAPO_DECOR_CITY_BASE), "至少要有一件城址图");
+        return 1 + n.children.reduce((count, c) => count + check(c), 0);
+    };
+    const all = [...MAPO_DECOR_CELLS, ...MAPO_DECOR_SNOW_CELLS, ...MAPO_DECOR_DESERT_CELLS];
+    assert.equal(all.reduce((count, c) => count + check(c.scene), 0), 659);
+    for (const c of all) assert.ok(c.prefab.toLowerCase().includes(`_${String(c.level).padStart(2, "0")}_group`));
 });
 
 test("mapOriginal 内容（N1）：摆件三套件与 land 表一致（值 → {base, snow, desert}）", () => {
@@ -237,7 +189,7 @@ test("mapOriginal 内容（N1）：摆件三套件与 land 表一致（值 → {
         cells: { id: number; kind: string; variant: string; source: string;
                  resType?: string; level?: number }[];
     };
-    const tables: Record<string, readonly { id: number; resType?: string; level?: number }[]> = {
+    const tables: Record<string, readonly IMapoDecorCell[]> = {
         base: MAPO_DECOR_CELLS, snow: MAPO_DECOR_SNOW_CELLS, desert: MAPO_DECOR_DESERT_CELLS,
     };
     // 三套件齐全：45 个资源值（2..46）在每套表里都恰有一格
@@ -245,14 +197,11 @@ test("mapOriginal 内容（N1）：摆件三套件与 land 表一致（值 → {
         base: "scene/resource/", snow: "scene/resource_snow/", desert: "scene/resource_desert/",
     };
     for (const [variant, table] of Object.entries(tables)) {
-        const ids = table.filter((c) => c.id < MAPO_DECOR_CITY_BASE)
-            .map((c) => c.id).sort((x, y) => x - y);
+        const ids = table.map((c) => c.id).sort((x, y) => x - y);
         assert.deepEqual(ids, Array.from({ length: 45 }, (_x, i) => i + 2),
             `${variant} 表的值域必须精确是 2..46`);
-        for (const c of meta.cells.filter((x) => x.variant === variant && x.kind === "res")) {
-            // ★ 贴图必须长在**本套**树里（⛔ 雪件图落在基础季树 = 换件是假的）
-            assert.ok(c.source.startsWith(prefixOf[variant]),
-                `${variant} 格 ${c.id} 的 source ${c.source} 不在 ${prefixOf[variant]} 下`);
+        for (const c of table) {
+            assert.ok(c.prefab.startsWith(prefixOf[variant]), `${variant} 的 prefab 路径错误`);
         }
     }
     // land 表互证：45 个值的雪/沙套件 id 都必须与基础季**不同**（本 kit 消费的值全在
@@ -563,14 +512,14 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
     //   网格 1125²、一个路格半宽 200 / 半高 100 = **4/3 个逻辑格**。
     //   ★ 独立佐证：18 张路片**每张都正好 400×200 px** = grid_width×2 / grid_height×2。
     const meta = JSON.parse(kit("roads.info.json").toString("utf8")) as {
-        skin: string;
+        skins: string[];
         grid: { side: number; halfW: number; halfH: number; tilesPerCell: number; key: string };
         sBias: number; dBias: number; recordBytes: number; headerBytes: number;
         placements: number; placementSha256: string; typeCount: number; resIds: number[];
         atlas: { size: [number, number]; downscale: number; sha256: string;
                  cells: { id: number; typeId: number; clientResId: number; prefab: string;
                           rect: [number, number, number, number];
-                          native: [number, number]; cls: string; source: string }[] };
+                          native: [number, number]; cls: string; source: string; variant: string }[] };
         binding: { degrees: number[]; typeIdToClientResId: number; tier: string };
     };
     assert.equal(meta.grid.side, MAPO_ROAD_SIDE);
@@ -584,8 +533,8 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
     assert.equal(1500 * 150 / MAPO_ROAD_HALF_W, MAPO_ROAD_SIDE, "网格边长与半宽不自洽");
     assert.ok(Math.abs(meta.grid.tilesPerCell - MAPO_ROAD_HALF_W / 150) < 1e-6);
     // ★ 每张路片都正好一个路格见方 —— 这是半值约定的独立佐证
-    assert.equal(meta.atlas.cells.length, 18);
-    assert.equal(MAPO_ROAD_CELLS.length, 18);
+    assert.equal(meta.atlas.cells.length, 36);
+    assert.equal(MAPO_ROAD_CELLS.length, 36);
     for (const c of meta.atlas.cells) {
         assert.deepEqual(c.native, [MAPO_ROAD_HALF_W * 2, MAPO_ROAD_HALF_H * 2],
             `路片 ${c.id}（${c.cls}）不是一个路格见方`);
@@ -597,7 +546,7 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
         assert.equal(c.rect[2], Math.round(c.native[0] * meta.atlas.downscale));
         const [x, y, w, h] = c.rect;
         assert.ok(x >= 0 && y >= 0 && x + w <= MAPO_ROAD_ATLAS_W && y + h <= MAPO_ROAD_ATLAS_H);
-        assert.ok(c.source.startsWith(`scene/ground/${meta.skin}/`), `路片 ${c.id} 的 source`);
+        assert.ok(c.source.startsWith(`scene/ground/${c.variant === "snow" ? "road_snow" : "road"}/`), `路片 ${c.id} 的 source`);
     }
     assert.deepEqual([MAPO_ROAD_ATLAS_W, MAPO_ROAD_ATLAS_H], meta.atlas.size);
     assert.equal(sha256(kit("road-atlas.png")), meta.atlas.sha256);
@@ -614,10 +563,10 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
     //   ⚠ 早先写成「要 +1」是因为当时用启发式扫表、整体错位了一格（已由真解码器纠正）。
     assert.equal(meta.binding.typeIdToClientResId, 0);
     for (const c of meta.atlas.cells) {
-        assert.equal(c.clientResId, c.typeId, `路片 ${c.id} 的 id 换算`);
+        assert.equal(c.clientResId, c.variant === "snow" ? 26001 + c.typeId - 1170 : c.typeId, `路片 ${c.id} 的 id 换算`);
         // ★ prefab 名与精灵目录必须同类（下划线去掉后即目录名）
         const dir = c.source.split("/").slice(-2)[0];
-        assert.equal(c.prefab.replace(/_/g, "").replace(/\d+$/, ""), dir.replace(/\d+$/, ""),
+        assert.equal(c.prefab.split("/").pop()!.replace("_complex_group.prefab", "").replace(/_/g, "").replace(/\d+$/, ""), dir.replace(/\d+$/, ""),
             `路片 ${c.id}：prefab ${c.prefab} 与精灵目录 ${dir} 不同类`);
     }
 
@@ -901,7 +850,7 @@ test("mapOriginal 内容：河流几何库 river-geo.bin 自洽（102 条 / 三�
         sBias: number; dBias: number;
         grid: { side: number; tilesPerCell: number; origin: number };
         systems: { system: number; name: string; rgb: [number, number, number] }[];
-        tint: [number, number, number];
+
         alignCheck: Record<string, number>;
     };
     const raw = kit("river-geo.bin");
@@ -933,7 +882,7 @@ test("mapOriginal 内容：河流几何库 river-geo.bin 自洽（102 条 / 三�
     assert.equal(tris, meta.tris);
     // ★ 三条水系的条数 = 原版 river_path.json 的分法（51 / 26 / 25）
     assert.deepEqual([...bySystem.entries()].sort((a, b) => a[0] - b[0]), [[0, 51], [1, 26], [2, 25]]);
-    assert.deepEqual([...MAPO_RIVER_TINT], meta.tint);
+    assert.ok(!("tint" in meta), "不得额外乘本仓调色板");
     assert.equal(MAPO_RIVER_SYSTEMS.length, meta.systems.length);
     for (const s of meta.systems) {
         const shared = MAPO_RIVER_SYSTEMS[s.system];
@@ -1023,7 +972,7 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
     };
     assert.deepEqual(meta.cell, [MAPO_REGION_CELL_W, MAPO_REGION_CELL_H]);
     assert.deepEqual(meta.size, [MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H]);
-    assert.equal(meta.anchor, "bottom-center");
+    assert.equal(meta.anchor, "prefab-pivot", "位置语义来自 prefab，不再统一图片底边定位");
     // ★ N1：一张图集装两套（基础 13 + 雪 13 = 26 格，2048×4096）
     assert.equal(meta.cells.length, MAPO_REGION_CELLS.length + MAPO_REGION_SNOW_CELLS.length);
     const byKey = new Map([...MAPO_REGION_CELLS, ...MAPO_REGION_SNOW_CELLS]
@@ -1170,8 +1119,10 @@ const MAPO_2D_SOURCE_PREFIXES = [
 ];
 /** ⛔ 出现即红。⚠ 前缀要**带斜杠**，否则 `scene/` 会把 `scene_3d/` 也放过去。 */
 const MAPO_BANNED_SOURCE_PREFIXES = ["scene_3d/", "fairy/ui_3d/", "fairy/atlas_3d/", "ui_3d/"];
+// 原 2D river_grid 明确引用这两个共享资产（MAPORIGINAL-2D §4.1）；只放行精确路径。
+const MAPO_2D_WATER_SHARED = new Set(["scene_3d/water/water_normal2.ktx", "shaders/3d_water2.fs"]);
 
-test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2D 侧**（⛔ 无 scene_3d）", () => {
+test("mapOriginal 内容：所有素材有 2D 消费证据，水面共享资产仅限精确路径", () => {
     // ⚠ ⛔ 不用 readdirSync 全枚举：那会把「这几个必须被校」的显式契约换成
     //   「目录里有什么校什么」，产物被删/改名后同样静默退出。
     const files = ["decor-atlas.info.json", "region-atlas.info.json"];
@@ -1208,6 +1159,10 @@ test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2
     }
     // ★ 非「格」形态的产物也要校 source：地表底一张、河流三条水系各一张
     const extra: [string, string][] = [
+        ...(JSON.parse(kit("surface.info.json").toString("utf8")) as { source: string }[])
+            .map((x): [string, string] => ["surface.info.json", x.source]),
+        ...(JSON.parse(kit("choose.info.json").toString("utf8")) as { pieces: { source: string }[] }).pieces
+            .map((x): [string, string] => ["choose.info.json", x.source]),
         ["ground.info.json", (JSON.parse(kit("ground.info.json").toString("utf8")) as
             { texture: { source: string } }).texture.source],
         ...(JSON.parse(kit("rivers.info.json").toString("utf8")) as
@@ -1225,6 +1180,7 @@ test("mapOriginal 内容：★ 所有产物的素材来源都必须是**原版 2
                 [`top-atlas.info.json/${k}#${c.id}`, c.source])),
     ];
     for (const [where, src] of extra) {
+        if (where === "surface.info.json" && MAPO_2D_WATER_SHARED.has(src)) { checked += 1; continue; }
         for (const bad of MAPO_BANNED_SOURCE_PREFIXES) {
             assert.ok(!src.includes(bad), `${where} 的素材来自 3D 侧：${src}`);
         }

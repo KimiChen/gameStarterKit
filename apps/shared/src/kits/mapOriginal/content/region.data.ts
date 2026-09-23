@@ -47,6 +47,12 @@ export interface IMapoRegionCell {
     readonly angle: number;
     /** prefab 里 sprite 的轴心，恒 [0.5, 0.5]（中心）。 */
     readonly pivot: readonly [number, number];
+    readonly size: readonly [number, number];
+    readonly skew: readonly [number, number];
+    readonly mirror_x: boolean;
+    readonly mirror_y: boolean;
+    readonly color: readonly [number, number, number, number];
+    readonly add_color: readonly [number, number, number, number];
     /** prefab 里 sprite 的 `low_z`（同节点内的叠序）。 */
     readonly lowZ: number;
 }
@@ -90,11 +96,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       7.8203
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      281.0,
+      148.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 49,
@@ -129,11 +157,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       5.2822
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      287.0,
+      148.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 50,
@@ -168,11 +218,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       5.2822
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      287.0,
+      148.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      6.688960075378418,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 51,
@@ -207,11 +279,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       5.9863
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      281.0,
+      148.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 52,
@@ -246,11 +340,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       45.6816
     ],
     "angle": -1.7436,
+    "lowZ": 1,
+    "size": [
+      422.0,
+      234.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      3.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 53,
@@ -285,11 +401,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       -60.9512
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      303.0,
+      238.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 54,
@@ -324,11 +462,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       -3.167
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      510.0,
+      178.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 55,
@@ -363,11 +523,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       48.2871
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      516.0,
+      292.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 57,
@@ -402,11 +584,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       10.8662
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      656.0,
+      342.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 58,
@@ -441,11 +645,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       -3.2344
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      657.0,
+      350.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 59,
@@ -480,11 +706,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       8.2734
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      697.0,
+      345.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 60,
@@ -519,11 +767,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       22.9844
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      563.0,
+      283.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 61,
@@ -558,11 +828,33 @@ export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = [
       15.9102
     ],
     "angle": -0.5181,
+    "lowZ": 1,
+    "size": [
+      563.0,
+      283.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.5771480202674866
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   }
 ];
 /** 雪山 13 形（id = 原版 res 值；N1）。 */
@@ -600,11 +892,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -16.1963
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      265.0,
+      155.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 49,
@@ -639,11 +953,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -16.1963
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      265.0,
+      155.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 50,
@@ -678,11 +1014,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -16.1963
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      265.0,
+      155.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 51,
@@ -717,11 +1075,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -16.1963
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      265.0,
+      155.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 52,
@@ -756,11 +1136,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       20.8184
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      423.0,
+      230.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 53,
@@ -795,11 +1197,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -51.9434
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      307.0,
+      257.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 54,
@@ -834,11 +1258,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -41.0293
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      520.0,
+      199.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 55,
@@ -873,11 +1319,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       28.9414
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      593.0,
+      298.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 57,
@@ -912,11 +1380,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -8.2041
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      893.0,
+      423.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 58,
@@ -951,11 +1441,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -1.667
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      769.0,
+      375.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 59,
@@ -990,11 +1502,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       -9.6885
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      733.0,
+      427.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 60,
@@ -1029,11 +1563,33 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       18.5
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      626.0,
+      328.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   },
   {
     "id": 61,
@@ -1068,10 +1624,32 @@ export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = [
       18.5
     ],
     "angle": 0.0,
+    "lowZ": 1,
+    "size": [
+      626.0,
+      328.0
+    ],
     "pivot": [
       0.5,
       0.5
     ],
-    "lowZ": 1
+    "skew": [
+      0.0,
+      0.0
+    ],
+    "mirror_x": false,
+    "mirror_y": false,
+    "color": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "add_color": [
+      0,
+      0,
+      0,
+      0
+    ]
   }
 ];

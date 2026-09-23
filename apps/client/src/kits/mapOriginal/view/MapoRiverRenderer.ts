@@ -6,9 +6,9 @@
  *   `RIVER(1600)` 在 `TERRAIN(300)` 之上、`RES(3400)` 之下（MAPORIGINAL-2D §2）。
  * ⚠ 三件（几何库 / 摆放表 / 填充图）缺一则整层不建 —— ⛔ 不用纯色多边形占位。
  */
-import { Material, Node } from "cc";
+import { Material, Node, Vec4 } from "cc";
 import {
-    MAPO_RIVER_SYSTEMS, MAPO_RIVER_TINT,
+    MAPO_RIVER_SYSTEMS,
 } from "../../../shared/kits/mapOriginal/content/river.data";
 import { buildMapoPolygonMesh, type MapoPolygonInput } from "../logic/mapoMesh";
 import { mapoHasRivers, mapoRiversInRect, type IMapoWorldRectLike } from "../logic/mapoRivers";
@@ -31,29 +31,39 @@ function uvOfSystem(system: number): readonly [number, number] {
     return [(system * 2 + 1) / (n * 2), 0.5];
 }
 
-const TINT_RGBA: readonly [number, number, number, number] = [
-    MAPO_RIVER_TINT[0] / 255, MAPO_RIVER_TINT[1] / 255, MAPO_RIVER_TINT[2] / 255, 1,
-];
-
 export class MapoRiverRenderer {
     private batch: MapoBatch | null = null;
     private material: Material | null = null;
     private disposed = false;
+    private seconds = 0;
+    private cameraX = 0;
+    private cameraY = 0;
+    private flow: boolean | null = null;
+    tick(dt: number, x: number, y: number): void {
+        this.seconds += dt; this.cameraX = x * 150 / 32; this.cameraY = y * 150 / 32;
+        if (this.flow && this.material) this.material.setProperty("clockCamera", new Vec4(this.seconds, this.cameraX, this.cameraY, 0));
+    }
 
     constructor(private readonly root: Node, private readonly art: MapoArtResources | null) {}
 
     /**
      * @returns 本帧裁剪出来的片（⚠ 同一批要喂给 `MapoTopRenderer`，⛔ 别让它再裁一遍）。
      */
-    render(rect: IMapoWorldRectLike, enabled: boolean): MapoPolygonInput[] {
+    render(rect: IMapoWorldRectLike, enabled: boolean, waterFlow = true): MapoPolygonInput[] {
         if (this.disposed) return [];
-        const texture = this.art?.riverFill ?? null;
+        const flow = waterFlow && !!this.art?.riverEffect && !!this.art.riverMask && !!this.art.riverNormal;
+        if (this.flow !== flow) { this.clear(); this.material?.destroy(); this.material = null; this.flow = flow; }
+        const texture = flow ? this.art!.riverMask : this.art?.riverFill ?? null;
         if (!texture || !enabled || !mapoHasRivers()) { this.clear(); return []; }
         if (!this.material) {
-            this.material = createMapoMaterial(mapoUnlitTechnique(), true);
+            this.material = createMapoMaterial(mapoUnlitTechnique(), true, flow ? this.art!.riverEffect : undefined);
             this.material.setProperty("mainTexture", texture);
+            if (flow) {
+                this.material.setProperty("normalTexture", this.art!.riverNormal);
+                this.material.setProperty("clockCamera", new Vec4(this.seconds, this.cameraX, this.cameraY, 0));
+            }
         }
-        const polys = mapoRiversInRect(rect, MAPO_RIVER_MAX_PIECES, uvOfSystem, TINT_RGBA);
+        const polys = mapoRiversInRect(rect, MAPO_RIVER_MAX_PIECES, uvOfSystem, [1, 1, 1, 1]);
         if (polys.length === 0) { this.clear(); return []; }
         const geometry = buildMapoPolygonMesh(polys);
         if (!this.batch) {

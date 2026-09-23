@@ -1,3 +1,4 @@
+import { mapoReadPrefabVisual, mapoPrefabUv, type MapoPrefabVisual } from "./mapoPrefab";
 /**
  * 城址件层：把**原版的城**（城墙 + 民居 + 街巷 + 林木）立在真坐标上。纯逻辑，⛔ 不碰 cc。
  *
@@ -7,7 +8,7 @@
  *   （早先摆件层按「面积前 8 大 + 位置散列」挑城址件 —— 那是本仓自创的启发式，已删。）
  * ★ **15 个件覆盖全部 249 座**：件库只存 15 份、摆位存 249 条，⛔ 别把件展开 249 份。
  * ⚠ 件内次序按 **`low_z` 升序**（打包期已排好），⛔ 别在这里重排。
- * 图片中心 = 件根位置 + prefab 局部 position；mesh 直接使用中心锚点。
+ * 图片锚点 = 件根位置 + prefab 局部 position；mesh 使用 prefab 的真实 pivot。
  * ⚠ 摆位的 row/col **打包期已套**过 `city_shape` 的 `even/odd_res_center` 美术偏移，
  *   ⛔ 这里别再套一次。
  */
@@ -16,18 +17,12 @@ import {
     MAPO_CITY_PLACEMENT_BYTES, MAPO_CITY_SPRITE_BYTES, type IMapoCityCell,
 } from "../../../shared/kits/mapOriginal/content/cities.data";
 import {
-    mapoGrid2Pos, mapoOriginalPxToWorld,
+    mapoGrid2Pos,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import type { MapoSpriteInput } from "./mapoMesh";
 
-interface CitySprite {
+interface CitySprite extends MapoPrefabVisual {
     readonly cell: IMapoCityCell;
-    /** 相对件锚点的世界偏移。 */
-    readonly ox: number; readonly oy: number;
-    readonly w: number; readonly h: number;
-    readonly angleDeg: number;
-    /** 水平翻转（prefab 的 scale.x < 0）。 */
-    readonly flipX: boolean;
 }
 
 export interface IMapoCityPlacement {
@@ -74,18 +69,8 @@ export function mapoSetCities(buf: ArrayBuffer | Uint8Array): void {
         for (let k = 0; k < n; k += 1) {
             const cell = byId.get(v.getUint16(o));
             if (!cell) throw new Error("mapOriginal 城址件引用了不存在的图集格");
-            const x = v.getFloat32(o + 2), y = v.getFloat32(o + 6);
-            const sx = v.getFloat32(o + 10), sy = v.getFloat32(o + 14);
-            const angle = v.getFloat32(o + 18);
+            list.push({ cell, ...mapoReadPrefabVisual(v, o) });
             o += MAPO_CITY_SPRITE_BYTES;
-            list.push({
-                cell,
-                ox: mapoOriginalPxToWorld(x), oy: mapoOriginalPxToWorld(y),
-                // ★ 尺寸走 native（原图像素）× prefab 的 scale，⛔ 不是图集里的缩略尺寸
-                w: mapoOriginalPxToWorld(cell.native[0] * Math.abs(sx)),
-                h: mapoOriginalPxToWorld(cell.native[1] * Math.abs(sy)),
-                angleDeg: angle, flipX: sx < 0,
-            });
         }
         pieces.push(list);
     }
@@ -133,13 +118,11 @@ export function mapoCitiesIn(minX: number, maxX: number, minY: number, maxY: num
     for (const q of hit) {
         for (const t of PIECES[q.piece]) {
             if (out.length >= limit) return out;
-            const uv = mapoCityUv(t.cell);
             out.push({
                 // ⚠ row/col 只给画家序用：城已按 y 降序、件内已按 low_z 排好 ⇒ 给同序的量即可
                 row: out.length, col: 0,
-                x: q.x + t.ox, y: q.y + t.oy, w: t.w, h: t.h, pivot: [0.5, 0.5],
-                uv: t.flipX ? [uv[0] + uv[2], uv[1], -uv[2], uv[3]] : uv,
-                angleDeg: t.angleDeg,
+                ...t.sprite, x: q.x + t.sprite.x, y: q.y + t.sprite.y,
+                uv: mapoPrefabUv(mapoCityUv(t.cell), t.mirrorX, t.mirrorY),
             });
         }
     }

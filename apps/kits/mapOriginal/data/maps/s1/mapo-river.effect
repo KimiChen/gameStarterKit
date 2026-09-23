@@ -1,0 +1,57 @@
+// 原 normal_river 的 2D 无结冰分支，见 surface.info.json 的源校验值和 MAPORIGINAL-2D §4.1。
+CCEffect %{
+  techniques:
+  - passes:
+    - vert: mapo-river-vs:vert
+      frag: mapo-river-fs:frag
+      rasterizerState: { cullMode: none }
+      depthStencilState: { depthTest: false, depthWrite: false }
+      properties:
+        mainTexture: { value: white }
+        normalTexture: { value: normal }
+        clockCamera: { value: [0, 0, 0, 0] }
+}%
+CCProgram mapo-river-vs %{
+  precision highp float;
+  #include <builtin/uniforms/cc-global>
+  #include <builtin/uniforms/cc-local>
+  in vec3 a_position;
+  out vec2 v_position;
+  vec4 vert () {
+    // 世界像素还原原版像素；局部 batch 以地图原点为原点。
+    v_position = a_position.xy * (150.0 / 32.0);
+    return cc_matProj * (cc_matView * cc_matWorld) * vec4(a_position, 1.0);
+  }
+}%
+CCProgram mapo-river-fs %{
+  precision highp float;
+  in vec2 v_position;
+  uniform sampler2D mainTexture;
+  uniform sampler2D normalTexture;
+  uniform RiverParams { vec4 clockCamera; };
+  vec3 waveNormal(vec2 uv, vec2 velocity, vec2 repeatRate, vec2 offset, float height) {
+    vec2 slope = texture(normalTexture, (uv - clockCamera.x * velocity) * repeatRate + offset).xy * 2.0 - 1.0;
+    return vec3(slope.x, (sqrt(max(0.0, 1.0 - dot(slope, slope))) + 1.0) * height, slope.y);
+  }
+  vec4 frag () {
+    // 原 FS 保留 3.14 的转角常量，避免改变蒙版取样坐标。
+    vec2 mapUv = vec2((v_position.x + 225000.0) / 450000.0, 1.0 + v_position.y / 225000.0);
+    float angle = 45.0 / 180.0 * 3.14;
+    float cs = cos(angle), sn = sin(angle);
+    vec2 delta = mapUv - 0.5;
+    mapUv = 0.5 + vec2(delta.x * cs - delta.y * sn, delta.x * sn + delta.y * cs) * sqrt(2.0);
+    vec3 base = texture(mainTexture, mapUv).rgb;
+    // set_uv_in_world + set_uv_scale(0.5)：原纹理尺寸归一化与 uv_ratio=128 抵消。
+    vec2 uv = v_position * 0.5;
+    float repeatRate = 4.7 * 0.001;
+    vec3 a = waveNormal(uv, vec2(14.0, 0.0), vec2(repeatRate * 0.8, repeatRate), vec2(0.5, 0.0), 0.75);
+    vec3 b = waveNormal(uv, vec2(0.0, 4.2), vec2(repeatRate * 1.3), vec2(0.0), 1.5);
+    vec3 c = waveNormal(uv, vec2(0.0, -2.8), vec2(repeatRate * 1.8), vec2(0.0, 0.5), 1.5);
+    vec3 n = normalize(vec3(-a.x - b.x - c.x, a.y + b.y, -a.z - b.z - c.z));
+    float ambient = clamp(dot(n, normalize(vec3(0.0, 0.7, -2.0))), 0.0, 1.0);
+    vec3 camera = vec3(clockCamera.y - 100.0, 0.0, clockCamera.z - 1200.0);
+    vec3 eye = normalize(camera + vec3(200.0, 2300.0, 200.0) - vec3(v_position.x, 0.0, v_position.y));
+    float specular = pow(clamp(dot(n, normalize(normalize(vec3(2.0, 14.5, 9.0)) + eye)), 0.0, 1.0), 800.0);
+    return vec4(base * (1.0 + ambient) + vec3(0.16, 0.16, 0.14) * specular * 1.5, 1.0);
+  }
+}%

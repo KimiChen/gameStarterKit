@@ -222,38 +222,40 @@ BG(100) < TERRAIN_MASK(200) < TERRAIN(300) < ROAD(900) < RIVER(1600)
 
 ---
 
-### 2.2 资源件与选中框共用格心，主图按 prefab 的中心锚点和偏移摆放
+### 2.2 资源件与选中框共用格心，图片按 prefab 锚点与层级变换定位
 
-`[干净集]` `scene/mapview/2d/map/grid_state_2d_view.lua:12–24` 的
-`create_state_res` 先按资源 id 创建节点，再用 `coord_util.grid2pos(row,col)` 设置位置；
-同文件 `:80–90` 的格闪烁提示也走相同换算。
-`[disasm]` `scene/unit/unit_res_field.lua` 源行 11–25 的初始化调用 `unit_set_grid`；
-`scene/unit/base_unit.lua` 源行 563–572 中该方法依次调用 `grid2pos`、`unit_set_pos`。
-因此资源单位与格状态节点的根使用同一套格坐标，sprite 内部的局部变换仍由 prefab 保留。
+`[disasm]` `scene/unit/unit_res_field.lua` 初始化调用 `unit_set_grid`，
+`scene/unit/base_unit.lua` 的该方法调用 `grid2pos`、`unit_set_pos`。
+资源单位根落在逻辑格心，图片按自身 `size/position/scale/angle/anchor/skew/mirror` 绘制，
+不统一对齐图片底边。`[实测]` 文本序列化字段 `anchor` 在本仓数据中命名为 `pivot`。
 
-★ `[实测]` 2026-09-23 逐个解析当前三套资源主片（基础 / 雪 / 沙，共 135 项）：
-根节点 position/angle 均为 0、scale 均为 1；主片 pivot **135/135 为 `[0.5,0.5]`**。
-主片的 `position` 是中心相对根的偏移；`size` 是显示矩形，**4 项不等于贴图像素**，
-`scale` 两轴也不恒为 1 或彼此相等。位置与尺寸必须一起保留，不能只提取贴图。
+普通点选的证据链须与行军状态分开：`[disasm]` `scene_mgr.sc_select_grid` →
+`base_effect_mgr.show_select_grid` → shape 选择资源；`[实测]` `base.cw.city_shape` 的
+`GRID.click_res=2080`，`client_res[2080].src_name_common` 指向
+`fairy/ui/ui_common_effect/special_effects/view/special_effects_grid.xml`。
+该 XML 根尺寸 291×148、中心 anchor，子面板有 8 张 `yellow_a1/a2/a3` 拼片，
+Scale 在 30 帧内 1→1.03→1，Color 在 `#fffc96` 与 `#fffcbd` 间变化。
+`[实测]（原包 native）` XML importer `0x4d6508` 的缺省帧率为 **24**（`0x4d6da4/0x4d6e1c` 除以该值），
+`0x4d6a98` 缺省缓动为 **Quad.Out**，所以完整周期为 **1.25 秒**。
+`11009/choose_00_group` 是“行军选择_GRID_STATE_MY”，不是普通点选。
+`[干净集]` `grid_state_2d_view.lua` 按格创建状态件的代码，只能证明格状态层的定位，不能代替普通点选调用链。
 
-`[实测]` 原版文本 prefab 的同一字段叫 `anchor`，本仓提取器将它命名为 `pivot`；
-`node2dVersion/width/height/mirror_x/mirror_y/anchor/skew/child_to_pivot` 的字段顺序
-可由包内 JSON prefab 对照二进制复核。`Food_05`、`Wood_01`、`choose_00` 的组根均为
-`width/height=200/200`、`anchor=[0.5,0.5]`、`child_to_pivot=true`；
-这些根尾字段不是图片纹理的尺寸/锚点，不能拿它们对图片再做统一底边补偿。
+`[实测]` `Food_05_group.prefab` 的粮田主体 `5.png`：size=196×128、scale=1、
+position≈(-8.054690,-3.634770)、pivot=(0.5,0.5)。先前统一
+`底边 y = 格心 y − 8`，使中心变成原版像素 +26.5，比真实位置高约 **30.13 px**，
+看起来便像选中框偏下。选框应继续居格心，不能给它反向补偿。
 
-例：`scene/resource/food-new/Food_05_group.prefab` 主片 `5.png` 的
-`size=[196,128]`、`scale=[1,1]`、`position≈[-8.054690,-3.634770]`；
-`scene/grid/choose_00_group.prefab` 的主片 `choose2` 为 `size=[240,112]`、
-`position=[0,0]`、`pivot=[0.5,0.5]`。选中面居格心，资源主片保留美术自身的微调。
+2026-09-24 复核纠正了前次“135 个根都是单位阵、只取主片”的统计口径：此前混入了
+解析失败和 8 项邻级替代。现在 135 个真实资源入口完整展开为 **659 个节点、320 种纹理**，
+父子矩阵逐层相乘，阴影、引用与时间线一并保留；Wood_01 的 8 棵树全部绘制。
+图片局部矩形从 `(-pivot.x×width,-pivot.y×height)` 展开，再依次应用 skew、scale、angle、position
+与父矩阵，最后乘世界比例 `32/150`。`mirror` 只翻转自身显示矩形中的图片，不移动偏心锚点。
 
-本 kit 的换算应为 `w/h = prefab.size × prefab.scale × (32/150)`，
-`锚点 = 格心 + prefab.position × (32/150)`；mesh 直接使用 prefab 锚点：
-局部矩形从 `(-pivot.x × w, -pivot.y × h)` 展开，再绕锚点旋转。
-资源、区域件、城、手摆细节和路片已统一这一接口，调用方不再先减 `h/2`。
-早先统一 `底边 y = 格心 y − 8`，使 5 级粮田中心变成原版像素 `+26.5`，
-比真实 `−3.634770` **高约 30.13 px**，看上去便像选中框整体偏下。
-修复已保留三套主片完整 transform；一格只取主片的既有简化仍在，不代表整组 prefab 已完整复刻。
+`[实测]（原包 native）` skew 不是 tan 剪切：`0xb08c8c/0xb2bc8c` 将角度按 FCVTAS 量化到 4096 档，
+使用 `0x117ddf4` 的 1024 精度 cos 表，矩阵为 `[cos(y),sin(y),-sin(x),cos(x)]`，再乘 SRT。
+`0x67f910` 的 mirror 围绕矩形边界翻转；`0x67fd04` 的 frame sprite 按
+`floor(t×帧数/duration)+start` 选帧；`0xafcc94` 对 `loopTimes<1` 持续循环。
+这些是本包 native 实测，不能只凭通用引擎同名属性猜公式。
 
 ---
 
@@ -387,6 +389,20 @@ id 48..61 的 `name` 逐条就是 **`山1`..`山14`**，且 id 47 名「河」�
 
 ★ `[disasm]` 三条水系的颜色差来自**一张 2048² 全图蒙版**（`river_color_mask.ktx`，实测 2048×2048 ETC2A8）：
 作为 `normal_river` 材质的额外 `set_param` 纹理采样，⛔ 不是换贴图。
+
+2026-09-24 材质补核：`[disasm]` `2d/background/river_grid.lua` 的创建路径受
+`dimension_mgr.can_change_3d` 等条件控制，进入后使用 `terrain_attr.shader_props.river_2d`。
+`[实测]` `base.cw.SHADER[4]` 将 `normal_river` 绑定到 `color_pst.vs` / `3d_water2.fs`；
+后者虽然带 3d 文件名，确实有上述 2D 消费现场。原 FS 在无结冰分支采样全图颜色蒙版和
+`scene_3d/water/water_normal2.ktx`，叠加三层运动法线、环境光和高光。
+Flow_Speed_Noise / Foam 虽在 Lua 绑定，但这个 FS 没有使用它们的采样。
+`[实测]（原包 native）` 世界 UV 的 `set_uv_scale(0.5)` 在 `0x69681c/0x845254` 经纹理尺寸归一化，
+与 shader `uv_ratio=128` 抵消，进入法线平铺的坐标是原版位置×0.5。
+
+本 kit 已移植此无结冰分支，保留原蒙版、法线与 shader 参数；原始 2×2 填充图仅用于
+关闭水流的分支，删除本仓额外色相。标准及以上画质开启、流畅关闭，是宿主的画质映射，
+**不声称等同原版设备条件**。结冰、洪水和动态灰烬状态仍不在本次静态 S1 范围。
+素材白名单仅为这两个已证实的共享文件增加精确路径例外，不放开整个 `scene_3d/`。
 
 ### 4.2 道
 
@@ -675,12 +691,46 @@ LOD 门控**，档界只服务 3D/无极缩放路径。所以对 2D：**没有�
 | 季/地貌变体件 | `land` 表四套件列（基础/雪/沙/秋），`check_ground_type` 按 **cell 级** `logic_background` 选件（§3.2） | ✅ **已对齐**（N1，2026-09-23）：`mapoBandAt` 同一条数据链；摆件三套件 + 雪山件进图集 | ~~所有格一律基础件~~ 已修。⚠ `autumn_*` 不接（M0-B3 拍板）；沙漠山 2D 与基础季同件（实测 13/13）⇒ 无沙件山 |
 | 河流 | 独立几何层，河格 = 3×3 逻辑格，102 条手工形状、制图期烘死 | ✅ **已建**（M3-B2）：102 条原版多边形 + 31,140 片，对位覆盖 100% 的 `res==47` | ~~整层缺失~~ 已补，含 `_top_group` 597 件 |
 | 道路 | 选片**制图期烘死**（`type_info` 下标 + 水平翻转），三套皮肤 | ✅ **已建**（M3-B1）：路格 1125²、半宽 200/半高 100 = 4/3 逻辑格，42,018 片 | ~~整层缺失~~ 已补。~~id→精灵绑定是 `[推断]`~~ ✅ 已由 `base.cw.client_res` 升为 `[实测]`（§4.2） |
-| 建筑城营 | **AOI 驱动的 unit**，两级配置表选件 | 城址件按「面积前 8 大」**启发式**挑 | 机制不同（AOI 需服务端）。~~**选件**卡在 base.cw~~ ✅ **已建**（2026-09-23）：`city[1].client_res_id` → `city_res.editor_brush_res_path` → prefab，**15 个件覆盖 249 座**，1,642 sprite 已入 `cities.bin`；城名/类型/等级/形状入 `MAPO_CITY_SITES`。✅ **已过真机**（同日 N0）：洛阳 218 sprite 在屏，层序 / 第 4 道门 / 尺寸四项肉眼全过。⚠ 早先判 `.group` 是 3D 件是**错的**：路径在 `scene/`（2D 树）下，与 `_top_group` 完全同构。⛔ 余下未做的是 AOI 驱动的**动态** unit（军队/营） |
+| 建筑城营 | **AOI 驱动的 unit**，两级配置表选件 | 按两级原表选择 15 个城址 prefab | 机制不同（AOI 需服务端）。~~**选件**卡在 base.cw~~ ✅ **已建**（2026-09-23）：`city[1].client_res_id` → `city_res.editor_brush_res_path` → prefab，**15 个件覆盖 249 座**，1,642 sprite 已入 `cities.bin`；城名/类型/等级/形状入 `MAPO_CITY_SITES`。✅ **已过真机**（同日 N0）：洛阳 218 sprite 在屏，层序 / 第 4 道门 / 尺寸四项肉眼全过。⚠ 早先判 `.group` 是 3D 件是**错的**：路径在 `scene/`（2D 树）下，与 `_top_group` 完全同构。⛔ 余下未做的是 AOI 驱动的**动态** unit（军队/营） |
 | 归属状态 | `grid_state` 层，两个 z 档（2000 / 3800） | 无 | 需服务端 |
-| 格线 | **地表视图内嵌的贴图格线子系统**（2026-09-23 N4-B3 查明 `[disasm]`+`[实测]`）：`2d/background/ground_layer_view` 的 `line_layer` @ `MAP_ZORDER.FRAME`(1400)，`GROUND_GRID_LINE` 线股贴图（8×8、1px 淡黄 α≈24%）按 26.57°（=atan(0.5)，菱形格边）铺线段、`obj2d.static_nodes` 合批、随块刷新、远档隐 | ⛔ 未实现（原版依据已有，另开批次） | 缺。⚠ 原版**没有独立线框网格层**（grid 名层全是格子类叠图，`forest_grid`=特殊城建筑件且 S1 为空）；⛔ 别照 sgzzmap 的线框抄 |
+| 格线 | **地表视图内嵌的贴图格线子系统**（2026-09-23 N4-B3 查明 `[disasm]`+`[实测]`）：`2d/background/ground_layer_view` 的 `line_layer` @ `MAP_ZORDER.FRAME`(1400)，`GROUND_GRID_LINE` 线股贴图（8×8、1px 淡黄 α≈24%）按 26.57°（=atan(0.5)，菱形格边）铺线段、`obj2d.static_nodes` 合批、随块刷新、远档隐 | ✅ 已实现（2026-09-24 A12）：原始 8² 线股贴图、FRAME=1400、L0–L1 合批显示 | ⚠ 原版**没有独立线框网格层**（grid 名层全是格子类叠图，`forest_grid`=特殊城建筑件且 S1 为空）；⛔ 别照 sgzzmap 的线框抄 |
 | 分层深度 | render_layer + `MAP_ZORDER`（留缝） + 层内画家序**三级** | ✅ **已补第 ② 级**（2026-09-23）：`MAPO_LAYERS` 每层带 `zorder`（照抄 MAP_ZORDER、留缝），**每层一个容器节点**按它升序建 | ~~缺第 ② 级刻度~~ 已补。⚠ 补之前实测有真缺陷：次序取决于「谁先 render」，地表底挂在路/河/山之后把它们全盖住。⚠ 补之后又一条真机缺陷（N0 抓到）：容器节点没继承 layer（Cocos `addChild` 不传播）⇒ 全部 mesh 层被 UI 相机裁掉黑屏，已修 |
 | 看全局 | 2D 到顶仅硬夹；**3D** 拉到头才换视图（小地图面板，预制静态底图） | 同相机 6 档 LOD + 自烘远档底图 | 自创（见 §10） |
 | 资源寻址 | 逻辑名 → id → 路径**三段表**，十列源路径换皮 | 格 id 焊进图集坐标 | 架构差异，非缺陷 |
+
+### 9.1 复刻简化审计 A01–A12 的修复记录（2026-09-24）
+
+审计基线 `7b5c16af`；范围为 S1 已有静态地图表现，原包和 sourceVersion 全程只读。
+
+| 项 | 原问题 | 修复与判据 |
+|---|---|---|
+| A01 | 129 个城池/手摆精灵固定中心 pivot | 导出真实 pivot；snow/18_1 的 (0.020633,-0.623905) 进入实际顶点，保留越界 pivot |
+| A02 | 342 个 mirror、397 个 skew 被丢弃 | 保留字段；镜像翻 UV，skew 使用原 native 量化矩阵，覆盖山体 |
+| A03 | 7 张图集再次乘 alpha | 直通 RGBA 重打包；连新选框共 8 张图集、635 切片、19,164,211 像素与源重采样逐像素一致（含 2,839,676 个半透明像素） |
+| A04 | 解析错误吞掉后用邻级替代 | 严格节点/组件块边界；支持引用/时间线/帧精灵；381 个入口及其引用展开通过，替代项为 0 |
+| A05 | 每格只留最大主图，阴影/多片/动画丢失 | 135 个完整资源 prefab、659 节点；含引用的河岸组也使用完整节点图；父子矩阵、排序、轨道和事件均保留 |
+| A06 | 11 个静态节点拿 PNG 尺寸替代显示尺寸 | 城池/手摆/山体统一消费 prefab.size；静态记录 56 B，top 另加 4 B 排序记录 |
+| A07 | 793 个非白 color、21 个 add_color 丢失 | 逐片 RGBA 与 add_color 进入顶点属性、原公式乘色/加色材质；图集本身不烘入节点颜色 |
+| A08 | 先到雪地再到沙地时叠压倒置 | 固定 desert-base → desert-top → snow-base → snow-top 容器，重建 batch 不改变父层顺序 |
+| A09 | 6,012 片雪地路仍用基础皮肤 | 18 基础 + 18 雪地切片；路片中心映射 logic_background 后选择同名雪地 client_res |
+| A10 | 普通点选用了行军图 + 白矩形 + 自编动画 | 2080 的 8 片 XML 布局、镜像、Scale/Color 时间线；原包缺省 24 fps、Quad.Out |
+| A11 | 河流平色加本仓 tint | 原全图颜色蒙版 + normal_river 无结冰分支；条件与边界见 §4.1 |
+| A12 | 地表贴图格线缺失 | GROUND_GRID_LINE 原图、26.57° 格边、8 px 显示矩形、FRAME=1400；不再写“无依据” |
+
+验证入口：`tools/maporiginal-assets/test_prefab_bin.py`（无原包的边界回归）、
+`verify_fidelity.py`（本地原包/图集保真校验）、`mapOriginal-prefab.test.ts`（独立 native 数值、
+真实导出 pivot、父子矩阵/镜像/颜色、动画循环、全图雪路统计）、其余 mapOriginal 回归及 Creator 预览。
+验收：93 项 mapOriginal 回归、3 项 Python 边界回归、`npm run typecheck` 和 `npm run verify:all` 通过。
+Creator 常规 15 步通过，console=[]；追加实际输入覆盖 `(750,749)` 放大点选及
+雪地→雪沙交界→草地→返回交界，四个子层的顺序和可见性稳定。通过公开 `Mesh.readAttribute`
+采样，资源 UV 和选框顶点色随时间变化，现场材质分别为 mapo-sprite / mapo-river。
+本地证据：`.cache/maporiginal-audit/{fidelity-after.json,focused-final.log,verify-all.log}` 和
+`.cache/creator-preview/maporiginal-fidelity-final/{report.json,extended-qa.json,selection-750-749-zoom.png}`。
+最终元数据注释校正后重跑了上述 93 项回归、客户端严格/legacy 类型检查、镜像与逐像素复核。
+
+保留的既定边界：6 档 LOD、图集缩采样、mesh 合批、远档自烘、各层可见预算是宿主实现；
+AOI 军队/营地/领地旗标尚未实现。雪沙底纹精确 UV 原式与河格 ninegrid2pos 的像素级差异仍须
+独立补核，既有格级覆盖率不作为像素级一致的证明。本表不把这些事项写成已修复。
 
 ---
 
@@ -697,7 +747,7 @@ LOD 门控**，档界只服务 3D/无极缩放路径。所以对 2D：**没有�
 | `plate-lod4/5` 由 terrain 自烘 | **必要补充** | 原版远档是手绘、我们没有画师 |
 | ~~缩略图贴原版鸟瞰插画~~ | ✅ **已换**（2026-09-23） | 它是 3D 透视渲染，与正交等距无可靠对齐（实测相似变换 IoU 0.62、河网 NCC 0.30）。⚠ 而缩略图在本 kit 里是**可点击导航**的（`mapoMinimapCell` → `centerOn`）⇒ 图与点选换算必须同源。现在由地形按 `mapoWorldToMinimap` 的同一套投影烘 |
 | ~~画质档 → 分帧建格步长~~ | ✅ **已删**（M1-B2） | `mapoCreateStepFor` / `createStep` 无任何消费方；近档一屏本来只有几十格，⛔ 不需要分帧建格 |
-| ~~`grid` 层 `implemented: true` 但无渲染器~~ | ✅ **已止血**（M1-B1） | 改 `implemented: false`，并加了**通用**守门用例（层 → 渲染器字段的对照表 + 扫视图），新增层自动受管 |
+| ~~`grid` 层 `implemented: true` 但无渲染器~~ | ✅ **已止血**（M1-B1） | 先改 `implemented: false`；2026-09-24 A12 已补真实贴图格线并启用。保留**通用**守门用例（层 → 渲染器字段的对照表 + 扫视图），新增层自动受管 |
 
 ---
 

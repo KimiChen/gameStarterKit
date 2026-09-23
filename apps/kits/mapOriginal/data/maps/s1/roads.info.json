@@ -1,7 +1,10 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "mapId": "s1",
- "skin": "road",
+ "skins": [
+  "road",
+  "road_snow"
+ ],
  "grid": {
   "side": 1125,
   "halfW": 200,
@@ -48,7 +51,9 @@
     "id": 0,
     "typeId": 1170,
     "clientResId": 1170,
-    "prefab": "down_end_1",
+    "variant": "base",
+    "snowId": 18,
+    "prefab": "scene/ground/road/down_end_1_complex_group.prefab",
     "rect": [
      2,
      2,
@@ -66,7 +71,9 @@
     "id": 1,
     "typeId": 1171,
     "clientResId": 1171,
-    "prefab": "down_end_2",
+    "variant": "base",
+    "snowId": 19,
+    "prefab": "scene/ground/road/down_end_2_complex_group.prefab",
     "rect": [
      204,
      2,
@@ -84,7 +91,9 @@
     "id": 2,
     "typeId": 1172,
     "clientResId": 1172,
-    "prefab": "down_tcross_1",
+    "variant": "base",
+    "snowId": 20,
+    "prefab": "scene/ground/road/down_tcross_1_complex_group.prefab",
     "rect": [
      406,
      2,
@@ -102,7 +111,9 @@
     "id": 3,
     "typeId": 1173,
     "clientResId": 1173,
-    "prefab": "down_vertical_turn_1",
+    "variant": "base",
+    "snowId": 21,
+    "prefab": "scene/ground/road/down_vertical_turn_1_complex_group.prefab",
     "rect": [
      608,
      2,
@@ -120,7 +131,9 @@
     "id": 4,
     "typeId": 1174,
     "clientResId": 1174,
-    "prefab": "down_vertical_turn_2",
+    "variant": "base",
+    "snowId": 22,
+    "prefab": "scene/ground/road/down_vertical_turn_2_complex_group.prefab",
     "rect": [
      810,
      2,
@@ -138,7 +151,9 @@
     "id": 5,
     "typeId": 1175,
     "clientResId": 1175,
-    "prefab": "horizonal_turn_1",
+    "variant": "base",
+    "snowId": 23,
+    "prefab": "scene/ground/road/horizonal_turn_1_complex_group.prefab",
     "rect": [
      2,
      104,
@@ -156,7 +171,9 @@
     "id": 6,
     "typeId": 1176,
     "clientResId": 1176,
-    "prefab": "horizonal_turn_2",
+    "variant": "base",
+    "snowId": 24,
+    "prefab": "scene/ground/road/horizonal_turn_2_complex_group.prefab",
     "rect": [
      204,
      104,
@@ -174,7 +191,9 @@
     "id": 7,
     "typeId": 1177,
     "clientResId": 1177,
-    "prefab": "horizonal_turn_3",
+    "variant": "base",
+    "snowId": 25,
+    "prefab": "scene/ground/road/horizonal_turn_3_complex_group.prefab",
     "rect": [
      406,
      104,
@@ -192,7 +211,9 @@
     "id": 8,
     "typeId": 1178,
     "clientResId": 1178,
-    "prefab": "horizonal_turn_4",
+    "variant": "base",
+    "snowId": 26,
+    "prefab": "scene/ground/road/horizonal_turn_4_complex_group.prefab",
     "rect": [
      608,
      104,
@@ -210,7 +231,9 @@
     "id": 9,
     "typeId": 1179,
     "clientResId": 1179,
-    "prefab": "line_1",
+    "variant": "base",
+    "snowId": 27,
+    "prefab": "scene/ground/road/line_1_complex_group.prefab",
     "rect": [
      810,
      104,
@@ -228,7 +251,9 @@
     "id": 10,
     "typeId": 1180,
     "clientResId": 1180,
-    "prefab": "line_2",
+    "variant": "base",
+    "snowId": 28,
+    "prefab": "scene/ground/road/line_2_complex_group.prefab",
     "rect": [
      2,
      206,
@@ -246,7 +271,9 @@
     "id": 11,
     "typeId": 1181,
     "clientResId": 1181,
-    "prefab": "line_3",
+    "variant": "base",
+    "snowId": 29,
+    "prefab": "scene/ground/road/line_3_complex_group.prefab",
     "rect": [
      204,
      206,
@@ -264,7 +291,9 @@
     "id": 12,
     "typeId": 1182,
     "clientResId": 1182,
-    "prefab": "line_4",
+    "variant": "base",
+    "snowId": 30,
+    "prefab": "scene/ground/road/line_4_complex_group.prefab",
     "rect": [
      406,
      206,
@@ -282,7 +311,9 @@
     "id": 13,
     "typeId": 1183,
     "clientResId": 1183,
-    "prefab": "up_end_1",
+    "variant": "base",
+    "snowId": 31,
+    "prefab": "scene/ground/road/up_end_1_complex_group.prefab",
     "rect": [
      608,
      206,
@@ -300,7 +331,9 @@
     "id": 14,
     "typeId": 1184,
     "clientResId": 1184,
-    "prefab": "up_tcross_1",
+    "variant": "base",
+    "snowId": 32,
+    "prefab": "scene/ground/road/up_tcross_1_complex_group.prefab",
     "rect": [
      810,
      206,
@@ -318,7 +351,9 @@
     "id": 15,
     "typeId": 1185,
     "clientResId": 1185,
-    "prefab": "up_vertical_turn_1",
+    "variant": "base",
+    "snowId": 33,
+    "prefab": "scene/ground/road/up_vertical_turn_1_complex_group.prefab",
     "rect": [
      2,
      308,
@@ -336,7 +371,9 @@
     "id": 16,
     "typeId": 1186,
     "clientResId": 1186,
-    "prefab": "up_vertical_turn_2",
+    "variant": "base",
+    "snowId": 34,
+    "prefab": "scene/ground/road/up_vertical_turn_2_complex_group.prefab",
     "rect": [
      204,
      308,
@@ -354,7 +391,9 @@
     "id": 17,
     "typeId": 1187,
     "clientResId": 1187,
-    "prefab": "xcross_1",
+    "variant": "base",
+    "snowId": 35,
+    "prefab": "scene/ground/road/xcross_1_complex_group.prefab",
     "rect": [
      406,
      308,
@@ -367,9 +406,369 @@
     ],
     "cls": "xcross",
     "source": "scene/ground/road/xcross/5-1.png"
+   },
+   {
+    "id": 18,
+    "typeId": 1170,
+    "clientResId": 26001,
+    "variant": "snow",
+    "snowId": 18,
+    "prefab": "scene/ground/road_snow/down_end_1_complex_group.prefab",
+    "rect": [
+     608,
+     308,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downend",
+    "source": "scene/ground/road_snow/downend/7-1.png"
+   },
+   {
+    "id": 19,
+    "typeId": 1171,
+    "clientResId": 26002,
+    "variant": "snow",
+    "snowId": 19,
+    "prefab": "scene/ground/road_snow/down_end_2_complex_group.prefab",
+    "rect": [
+     810,
+     308,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downend",
+    "source": "scene/ground/road_snow/downend/7-2.png"
+   },
+   {
+    "id": 20,
+    "typeId": 1172,
+    "clientResId": 26003,
+    "variant": "snow",
+    "snowId": 20,
+    "prefab": "scene/ground/road_snow/down_tcross_1_complex_group.prefab",
+    "rect": [
+     2,
+     410,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downtcross",
+    "source": "scene/ground/road_snow/downtcross/9-1.png"
+   },
+   {
+    "id": 21,
+    "typeId": 1173,
+    "clientResId": 26004,
+    "variant": "snow",
+    "snowId": 21,
+    "prefab": "scene/ground/road_snow/down_vertical_turn_1_complex_group.prefab",
+    "rect": [
+     204,
+     410,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downverticalturn",
+    "source": "scene/ground/road_snow/downverticalturn/4-1.png"
+   },
+   {
+    "id": 22,
+    "typeId": 1174,
+    "clientResId": 26005,
+    "variant": "snow",
+    "snowId": 22,
+    "prefab": "scene/ground/road_snow/down_vertical_turn_2_complex_group.prefab",
+    "rect": [
+     406,
+     410,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "downverticalturn",
+    "source": "scene/ground/road_snow/downverticalturn/4-2.png"
+   },
+   {
+    "id": 23,
+    "typeId": 1175,
+    "clientResId": 26006,
+    "variant": "snow",
+    "snowId": 23,
+    "prefab": "scene/ground/road_snow/horizonal_turn_1_complex_group.prefab",
+    "rect": [
+     608,
+     410,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "horizonalturn",
+    "source": "scene/ground/road_snow/horizonalturn/2-1.png"
+   },
+   {
+    "id": 24,
+    "typeId": 1176,
+    "clientResId": 26007,
+    "variant": "snow",
+    "snowId": 24,
+    "prefab": "scene/ground/road_snow/horizonal_turn_2_complex_group.prefab",
+    "rect": [
+     810,
+     410,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "horizonalturn",
+    "source": "scene/ground/road_snow/horizonalturn/2-2.png"
+   },
+   {
+    "id": 25,
+    "typeId": 1177,
+    "clientResId": 26008,
+    "variant": "snow",
+    "snowId": 25,
+    "prefab": "scene/ground/road_snow/horizonal_turn_3_complex_group.prefab",
+    "rect": [
+     2,
+     512,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "horizonalturn",
+    "source": "scene/ground/road_snow/horizonalturn/2-3.png"
+   },
+   {
+    "id": 26,
+    "typeId": 1178,
+    "clientResId": 26009,
+    "variant": "snow",
+    "snowId": 26,
+    "prefab": "scene/ground/road_snow/horizonal_turn_4_complex_group.prefab",
+    "rect": [
+     204,
+     512,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "horizonalturn",
+    "source": "scene/ground/road_snow/horizonalturn/2-4.png"
+   },
+   {
+    "id": 27,
+    "typeId": 1179,
+    "clientResId": 26010,
+    "variant": "snow",
+    "snowId": 27,
+    "prefab": "scene/ground/road_snow/line_1_complex_group.prefab",
+    "rect": [
+     406,
+     512,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "line",
+    "source": "scene/ground/road_snow/line/1-1.png"
+   },
+   {
+    "id": 28,
+    "typeId": 1180,
+    "clientResId": 26011,
+    "variant": "snow",
+    "snowId": 28,
+    "prefab": "scene/ground/road_snow/line_2_complex_group.prefab",
+    "rect": [
+     608,
+     512,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "line",
+    "source": "scene/ground/road_snow/line/1-2.png"
+   },
+   {
+    "id": 29,
+    "typeId": 1181,
+    "clientResId": 26012,
+    "variant": "snow",
+    "snowId": 29,
+    "prefab": "scene/ground/road_snow/line_3_complex_group.prefab",
+    "rect": [
+     810,
+     512,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "line",
+    "source": "scene/ground/road_snow/line/1-3.png"
+   },
+   {
+    "id": 30,
+    "typeId": 1182,
+    "clientResId": 26013,
+    "variant": "snow",
+    "snowId": 30,
+    "prefab": "scene/ground/road_snow/line_4_complex_group.prefab",
+    "rect": [
+     2,
+     614,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "line",
+    "source": "scene/ground/road_snow/line/1-4.png"
+   },
+   {
+    "id": 31,
+    "typeId": 1183,
+    "clientResId": 26014,
+    "variant": "snow",
+    "snowId": 31,
+    "prefab": "scene/ground/road_snow/up_end_1_complex_group.prefab",
+    "rect": [
+     204,
+     614,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "upend",
+    "source": "scene/ground/road_snow/upend/6-1.png"
+   },
+   {
+    "id": 32,
+    "typeId": 1184,
+    "clientResId": 26015,
+    "variant": "snow",
+    "snowId": 32,
+    "prefab": "scene/ground/road_snow/up_tcross_1_complex_group.prefab",
+    "rect": [
+     406,
+     614,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "uptcross",
+    "source": "scene/ground/road_snow/uptcross/8-1.png"
+   },
+   {
+    "id": 33,
+    "typeId": 1185,
+    "clientResId": 26016,
+    "variant": "snow",
+    "snowId": 33,
+    "prefab": "scene/ground/road_snow/up_vertical_turn_1_complex_group.prefab",
+    "rect": [
+     608,
+     614,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "upverticalturn",
+    "source": "scene/ground/road_snow/upverticalturn/3-1.png"
+   },
+   {
+    "id": 34,
+    "typeId": 1186,
+    "clientResId": 26017,
+    "variant": "snow",
+    "snowId": 34,
+    "prefab": "scene/ground/road_snow/up_vertical_turn_2_complex_group.prefab",
+    "rect": [
+     810,
+     614,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "upverticalturn",
+    "source": "scene/ground/road_snow/upverticalturn/3-2.png"
+   },
+   {
+    "id": 35,
+    "typeId": 1187,
+    "clientResId": 26018,
+    "variant": "snow",
+    "snowId": 35,
+    "prefab": "scene/ground/road_snow/xcross_1_complex_group.prefab",
+    "rect": [
+     2,
+     716,
+     200,
+     100
+    ],
+    "native": [
+     400,
+     200
+    ],
+    "cls": "xcross",
+    "source": "scene/ground/road_snow/xcross/5-1.png"
    }
   ],
-  "sha256": "77dadb509cb0cf0dea64457d855798a2dfcdd780bac81a42100af2ee759a9a4f"
+  "sha256": "5700f116964a61738143775c262d8de03a2510abc559c7364f13237f91f553fd"
  },
  "binding": {
   "method": "base.cw 的 client_res 表（id → prefab → 贴图）；邻接度结构签名作交叉校验",
