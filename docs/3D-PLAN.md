@@ -272,11 +272,13 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
-- [x] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
+- [x] SC2-B1 [x] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-23 SC2-B2 完成：`logic/scene3d/cameraRig.ts` 抽取指针表、pan / pinch / 滚轮因子缩放、惯性衰减、视口边界钳制与 `version` / `touched`，消费方注入投影和手感参数；双指中点与单指起终点按投影差换算，支持非线性屏幕投影，SLG 的仿射 `panOffset` 保留原运算顺序。新增 `follow(target)` 实时目标引用：立即定位、有效 step 跟随、边界钳制、无缩放 / touched 副作用，进入跟随清旧指针和惯性，手动输入 / locate / cancel 可退出。`MapCamera` 改为组合适配，公开读写字段、方法、2D 投影与状态化 LOD 不变；既有 `slg-input` / `slg-map` / `slg-map-lod` 测试原文未改。新增 15 项回归，42 项定向测试通过；对抽取前实现做 35 组场景、70035 次状态 / 62958 次调用返回与异常比对，全部精确一致。移除 zoomBy 新缩放偏移的变异打红 5 项（含 pinch 锚点漂移）；把非线性平移差值退回裸位移投影的变异打红 1 项，恢复后全绿。独立最终 `typecheck`（两套客户端探针）与 1119 项 `test:client` 通过，`verify:all` 全过（Node 26.5.0；客户端 1119 / UniFlex 契约 77 / 服务端 1382，加其余门禁合计 2794 项）。镜像同步，Creator 3.8.8 已导入生成脚本 meta；重新导入后预览 source map 与两份最终源码逐字一致。机制细化回写 3d.md §4；本批不新增 cc API，SC2 尚未退出，阶段 WebGL1 证据仍在退出时验收，下一批 SC2-B3。
 
 - 2026-09-23 SC2-B1 完成：`shared/logic/lodBands.ts` 提供 `lodForValue` / `lodForValueStable`，阈值为有限正数的严格升序表，支持任意档数、空表单档、边界相等及一次跨多档；滞回比例范围 `[0,1)`，无环境依赖、兼容 ES2017。SLG 两个函数改为薄包装，阈值 / 8% 滞回 / 签名 / 错误信息不变，`worldmap` API 仍为 v1。新增 7 项通用回归，35 项定向测试通过，`slg-map-lod.test.ts` 原文未改；对 `sc1-exit` 实现与 shared / 客户端镜像做 180666 次返回值及异常比对，全同。分别移除升细 `(1+r)` / 降粗 `(1-r)` 的变异使 4 / 3 项测试转红，均命中阈值抖动回归，恢复后全绿。两级镜像已同步，Creator 3.8.8 实际导入与编译完成、生成新脚本 `.meta`；独立 `typecheck` / 1104 项 `test:client` 及本批 `verify:all` 全过，提交前同步远端预览优化后再次全量复验通过（Node 26.5.0；客户端 1104 / UniFlex 契约 77 / 服务端 1382 项，合计 2779 项）。本批为纯数学抽取，SC2 尚未退出，阶段 WebGL1 证据仍在退出时验收；下一批 SC2-B2。
 
