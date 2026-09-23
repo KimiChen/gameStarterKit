@@ -69,7 +69,29 @@
  export class DOMHostDriver {
      constructor(container, assets, width, height, anchorsChanged = () => { }, scrollChanged = undefined) {
          this.container = container;
-@@ -210,6 +217,7 @@
+@@ -71,6 +78,21 @@
+             const id = this.window.requestAnimationFrame(callback);
+             return () => this.window.cancelAnimationFrame(id);
+         });
++        // CSS transforms can change without a window resize (catalog -> fullscreen).
++        // Observe only ancestors, never the canvas descendants written by this driver.
++        if (this.window.MutationObserver) {
++            let density = this.rasterScale();
++            this.displayObserver = new this.window.MutationObserver(() => {
++                const next = this.rasterScale();
++                if (next === density || this.disposed)
++                    return;
++                density = next;
++                this.onResize();
++            });
++            for (let node = container; node; node = node.parentElement || node.getRootNode().host) {
++                this.displayObserver.observe(node, { attributes: true, attributeFilter: ['style', 'class'] });
++            }
++        }
+         this.interactionStyle = container.ownerDocument.createElement('style');
+         this.interactionStyle.textContent =
+             '[data-uniflex-interaction="press"]{appearance:none;font:inherit;color:inherit}';
+@@ -210,6 +232,7 @@
                      this.pressedButton = undefined;
                  }
                  handle.pressed = pressed;
@@ -77,7 +99,7 @@
                  (_c = (_b = handle.props).onPressChange) === null || _c === void 0 ? void 0 : _c.call(_b, pressed);
              };
              const down = (event) => {
-@@ -259,7 +267,9 @@
+@@ -259,7 +282,9 @@
                  const rect = element.getBoundingClientRect();
                  const min = Number((_a = handle.props.min) !== null && _a !== void 0 ? _a : 0);
                  const max = Number((_b = handle.props.max) !== null && _b !== void 0 ? _b : 100);
@@ -88,7 +110,7 @@
                  return normalizeRangeValue(min + ratio * (max - min), min, max, Number((_c = handle.props.step) !== null && _c !== void 0 ? _c : 1));
              };
              const down = (event) => {
-@@ -335,7 +345,8 @@
+@@ -335,7 +360,8 @@
                  const anchor = (_a = this.floatingAnchorRecord(record)) === null || _a === void 0 ? void 0 : _a.handle.element;
                  const panel = (_b = this.floatingPanel(record)) === null || _b === void 0 ? void 0 : _b.handle.element;
                  const target = event.target;
@@ -98,7 +120,18 @@
                      this.consumeClick = true;
                      this.window.clearTimeout(this.consumeClickReset);
                      this.consumeClickReset = 0;
-@@ -575,12 +586,18 @@
+@@ -349,6 +375,10 @@
+             handle.disposers.push(() => this.container.ownerDocument.removeEventListener('pointerdown', outside, true));
+         }
+         return handle;
++    }
++    rasterScale() {
++        return (this.container.getBoundingClientRect().width / this.width || 1) *
++            (this.window.devicePixelRatio || 1);
+     }
+     imageCanvas() {
+         const canvas = this.container.ownerDocument.createElement('canvas');
+@@ -575,12 +605,18 @@
          const effect = h.entrance;
          const translateX = Number((_a = h.props.translateX) !== null && _a !== void 0 ? _a : 0);
          const translateY = Number((_b = h.props.translateY) !== null && _b !== void 0 ? _b : 0);
@@ -121,7 +154,15 @@
          h.element.style.opacity = String(Number((_g = h.props.opacity) !== null && _g !== void 0 ? _g : 1) * ((_h = effect === null || effect === void 0 ? void 0 : effect.opacity) !== null && _h !== void 0 ? _h : 1));
      }
      flushLayout() {
-@@ -734,7 +751,21 @@
+@@ -696,6 +732,7 @@
+         (_a = this.cancelSurfaceTransition) === null || _a === void 0 ? void 0 : _a.call(this);
+         this.presentation.dispose();
+         this.disposed = true;
++        this.displayObserver?.disconnect();
+         this.window.cancelAnimationFrame(this.frame);
+         this.window.cancelAnimationFrame(this.animation);
+         this.window.clearTimeout(this.clickReset);
+@@ -734,7 +771,21 @@
          if (!active.handle.pressed)
              return;
          active.handle.pressed = false;
@@ -143,6 +184,65 @@
      }
      property(record, property, value) {
          var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+@@ -920,7 +971,9 @@
+         s.top = `${p.verticalAlign === 'center' ? (f.height - text.height) / 2 : p.verticalAlign === 'bottom' ? f.height - text.height : 0}px`;
+         s.webkitTextStroke = `${Number((_g = p.outlineWidth) !== null && _g !== void 0 ? _g : 0) * 2}px ${String((_h = p.outlineColor) !== null && _h !== void 0 ? _h : '#000000')}`;
+         h.element.style.overflow = 'hidden';
++        const rasterScale = Math.max(1, this.rasterScale());
+         const key = JSON.stringify([
++            rasterScale,
+             p.value,
+             font.entry.id,
+             fontWeight,
+@@ -940,11 +993,14 @@
+             return;
+         h.textKey = key;
+         const canvas = h.textCanvas;
+-        canvas.width = Math.max(0, p.cacheMode === 'char' ? Math.ceil(f.width) : Math.floor(f.width));
+-        canvas.height = Math.max(0, p.cacheMode === 'char' ? Math.ceil(f.height) : Math.floor(f.height));
+-        canvas.style.width = p.cacheMode === 'char' ? `${canvas.width}px` : '100%';
+-        canvas.style.height = p.cacheMode === 'char' ? `${canvas.height}px` : '100%';
++        const logicalWidth = Math.max(0, p.cacheMode === 'char' ? Math.ceil(f.width) : Math.floor(f.width));
++        const logicalHeight = Math.max(0, p.cacheMode === 'char' ? Math.ceil(f.height) : Math.floor(f.height));
++        canvas.width = Math.ceil(logicalWidth * rasterScale);
++        canvas.height = Math.ceil(logicalHeight * rasterScale);
++        canvas.style.width = p.cacheMode === 'char' ? `${logicalWidth}px` : '100%';
++        canvas.style.height = p.cacheMode === 'char' ? `${logicalHeight}px` : '100%';
+         const context = canvas.getContext('2d');
++        context.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
+         const outline = Number((_j = p.outlineWidth) !== null && _j !== void 0 ? _j : 0);
+         let size = text.fontSize, spacing = text.lineHeight;
+         if (p.overflow === 'shrink') {
+@@ -979,6 +1035,7 @@
+             for (let line = 0; line < text.lines.length; line++) {
+                 const glyphs = [...text.lines[line]].map((char) => {
+                     const glyphKey = JSON.stringify([
++                        rasterScale,
+                         font.entry.id,
+                         fontWeight,
+                         size,
+@@ -992,9 +1049,10 @@
+                         const width = Number(context.measureText(char).width.toFixed(2)) + outline * 2, height = 1.26 * size + outline * 2;
+                         const textureWidth = Math.floor(width + 2), textureHeight = Math.floor(height + 2);
+                         const surface = this.container.ownerDocument.createElement('canvas');
+-                        surface.width = Math.ceil(width + 2);
+-                        surface.height = Math.ceil(height + 2);
++                        surface.width = Math.ceil((width + 2) * rasterScale);
++                        surface.height = Math.ceil((height + 2) * rasterScale);
+                         const ctx = surface.getContext('2d');
++                        ctx.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
+                         ctx.font = context.font;
+                         ctx.textAlign = 'center';
+                         ctx.textBaseline = 'alphabetic';
+@@ -1030,7 +1088,7 @@
+                     line * spacing -
+                     0.13 * size;
+                 for (const glyph of glyphs) {
+-                    context.drawImage(glyph.canvas, 1, 1, glyph.width, glyph.height, left, top, glyph.width, glyph.height);
++                    context.drawImage(glyph.canvas, rasterScale, rasterScale, glyph.width * rasterScale, glyph.height * rasterScale, left, top, glyph.width, glyph.height);
+                     left += glyph.width;
+                 }
+             }
 --- a/core/chunk-YDFCQFP2.js
 +++ b/core/chunk-YDFCQFP2.js
 @@ -1440,8 +1440,9 @@
@@ -157,3 +257,19 @@
      slots,
      previousSlots: new Array(definition.plan.slotCount),
      recordsByPlanId: /* @__PURE__ */ new Map(),
+--- a/web/dom-host.d.ts
++++ b/web/dom-host.d.ts
+@@ -80,11 +80,13 @@
+     private readonly onClickCapture;
+     private readonly window;
+     private readonly interactionStyle;
++    private readonly displayObserver?;
+     private readonly presentation;
+     private floatingSequence;
+     constructor(container: HTMLElement, assets: ResourceResolver<WebAsset>, width: number, height: number, anchorsChanged?: () => void, scrollChanged?: ((scroll: HostScrollSnapshot) => void) | undefined);
+     private readonly onResize;
+     create(kind: HostKind, planId: number, behavior?: HostBehavior): DOMHandle;
++    private rasterScale;
+     private imageCanvas;
+     inspect(): import("../core/provider.js").InspectedNode[];
+     paintSnapshot(context: CanvasRenderingContext2D): void;

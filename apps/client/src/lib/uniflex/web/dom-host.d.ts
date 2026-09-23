@@ -80,11 +80,13 @@ export declare class DOMHostDriver implements HostDriver<DOMHandle> {
     private readonly onClickCapture;
     private readonly window;
     private readonly interactionStyle;
+    private readonly displayObserver?;
     private readonly presentation;
     private floatingSequence;
     constructor(container: HTMLElement, assets: ResourceResolver<WebAsset>, width: number, height: number, anchorsChanged?: () => void, scrollChanged?: ((scroll: HostScrollSnapshot) => void) | undefined);
     private readonly onResize;
     create(kind: HostKind, planId: number, behavior?: HostBehavior): DOMHandle;
+    private rasterScale;
     private imageCanvas;
     inspect(): import("../core/provider.js").InspectedNode[];
     paintSnapshot(context: CanvasRenderingContext2D): void;

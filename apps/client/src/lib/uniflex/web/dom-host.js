@@ -78,6 +78,21 @@ export class DOMHostDriver {
             const id = this.window.requestAnimationFrame(callback);
             return () => this.window.cancelAnimationFrame(id);
         });
+        // CSS transforms can change without a window resize (catalog -> fullscreen).
+        // Observe only ancestors, never the canvas descendants written by this driver.
+        if (this.window.MutationObserver) {
+            let density = this.rasterScale();
+            this.displayObserver = new this.window.MutationObserver(() => {
+                const next = this.rasterScale();
+                if (next === density || this.disposed)
+                    return;
+                density = next;
+                this.onResize();
+            });
+            for (let node = container; node; node = node.parentElement || node.getRootNode().host) {
+                this.displayObserver.observe(node, { attributes: true, attributeFilter: ['style', 'class'] });
+            }
+        }
         this.interactionStyle = container.ownerDocument.createElement('style');
         this.interactionStyle.textContent =
             '[data-uniflex-interaction="press"]{appearance:none;font:inherit;color:inherit}';
@@ -360,6 +375,10 @@ export class DOMHostDriver {
             handle.disposers.push(() => this.container.ownerDocument.removeEventListener('pointerdown', outside, true));
         }
         return handle;
+    }
+    rasterScale() {
+        return (this.container.getBoundingClientRect().width / this.width || 1) *
+            (this.window.devicePixelRatio || 1);
     }
     imageCanvas() {
         const canvas = this.container.ownerDocument.createElement('canvas');
@@ -713,6 +732,7 @@ export class DOMHostDriver {
         (_a = this.cancelSurfaceTransition) === null || _a === void 0 ? void 0 : _a.call(this);
         this.presentation.dispose();
         this.disposed = true;
+        this.displayObserver?.disconnect();
         this.window.cancelAnimationFrame(this.frame);
         this.window.cancelAnimationFrame(this.animation);
         this.window.clearTimeout(this.clickReset);
@@ -951,7 +971,9 @@ export class DOMHostDriver {
         s.top = `${p.verticalAlign === 'center' ? (f.height - text.height) / 2 : p.verticalAlign === 'bottom' ? f.height - text.height : 0}px`;
         s.webkitTextStroke = `${Number((_g = p.outlineWidth) !== null && _g !== void 0 ? _g : 0) * 2}px ${String((_h = p.outlineColor) !== null && _h !== void 0 ? _h : '#000000')}`;
         h.element.style.overflow = 'hidden';
+        const rasterScale = Math.max(1, this.rasterScale());
         const key = JSON.stringify([
+            rasterScale,
             p.value,
             font.entry.id,
             fontWeight,
@@ -971,11 +993,14 @@ export class DOMHostDriver {
             return;
         h.textKey = key;
         const canvas = h.textCanvas;
-        canvas.width = Math.max(0, p.cacheMode === 'char' ? Math.ceil(f.width) : Math.floor(f.width));
-        canvas.height = Math.max(0, p.cacheMode === 'char' ? Math.ceil(f.height) : Math.floor(f.height));
-        canvas.style.width = p.cacheMode === 'char' ? `${canvas.width}px` : '100%';
-        canvas.style.height = p.cacheMode === 'char' ? `${canvas.height}px` : '100%';
+        const logicalWidth = Math.max(0, p.cacheMode === 'char' ? Math.ceil(f.width) : Math.floor(f.width));
+        const logicalHeight = Math.max(0, p.cacheMode === 'char' ? Math.ceil(f.height) : Math.floor(f.height));
+        canvas.width = Math.ceil(logicalWidth * rasterScale);
+        canvas.height = Math.ceil(logicalHeight * rasterScale);
+        canvas.style.width = p.cacheMode === 'char' ? `${logicalWidth}px` : '100%';
+        canvas.style.height = p.cacheMode === 'char' ? `${logicalHeight}px` : '100%';
         const context = canvas.getContext('2d');
+        context.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
         const outline = Number((_j = p.outlineWidth) !== null && _j !== void 0 ? _j : 0);
         let size = text.fontSize, spacing = text.lineHeight;
         if (p.overflow === 'shrink') {
@@ -1010,6 +1035,7 @@ export class DOMHostDriver {
             for (let line = 0; line < text.lines.length; line++) {
                 const glyphs = [...text.lines[line]].map((char) => {
                     const glyphKey = JSON.stringify([
+                        rasterScale,
                         font.entry.id,
                         fontWeight,
                         size,
@@ -1023,9 +1049,10 @@ export class DOMHostDriver {
                         const width = Number(context.measureText(char).width.toFixed(2)) + outline * 2, height = 1.26 * size + outline * 2;
                         const textureWidth = Math.floor(width + 2), textureHeight = Math.floor(height + 2);
                         const surface = this.container.ownerDocument.createElement('canvas');
-                        surface.width = Math.ceil(width + 2);
-                        surface.height = Math.ceil(height + 2);
+                        surface.width = Math.ceil((width + 2) * rasterScale);
+                        surface.height = Math.ceil((height + 2) * rasterScale);
                         const ctx = surface.getContext('2d');
+                        ctx.setTransform(rasterScale, 0, 0, rasterScale, 0, 0);
                         ctx.font = context.font;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'alphabetic';
@@ -1061,7 +1088,7 @@ export class DOMHostDriver {
                     line * spacing -
                     0.13 * size;
                 for (const glyph of glyphs) {
-                    context.drawImage(glyph.canvas, 1, 1, glyph.width, glyph.height, left, top, glyph.width, glyph.height);
+                    context.drawImage(glyph.canvas, rasterScale, rasterScale, glyph.width * rasterScale, glyph.height * rasterScale, left, top, glyph.width, glyph.height);
                     left += glyph.width;
                 }
             }

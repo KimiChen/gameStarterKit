@@ -9,6 +9,74 @@ import { defineCompiledComponent, mountComponent } from "../apps/client/src/lib/
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
+test("Web text canvases and cached glyphs follow display density without changing logical size", (t) => {
+    class ElementStub extends EventTarget {
+        style = {};
+        dataset = {};
+        children = [];
+        context = {
+            draws: [], transforms: [],
+            setTransform(...args) { this.transforms.push(args); },
+            measureText: () => ({ width: 12 }),
+            fillRect() {}, fillText() {}, strokeText() {},
+            drawImage(...args) { this.draws.push(args); },
+        };
+        append(child) { this.children.push(child); }
+        remove() {}
+        setAttribute() {}
+        getRootNode() { return {}; }
+        getContext() { return this.context; }
+    }
+    const observers = [];
+    const window = Object.assign(new EventTarget(), {
+        performance, clearTimeout, setTimeout, devicePixelRatio: 2,
+        requestAnimationFrame: () => 1, cancelAnimationFrame() {},
+        MutationObserver: class {
+            disconnected = false;
+            constructor(callback) { this.callback = callback; observers.push(this); }
+            observe() {}
+            disconnect() { this.disconnected = true; }
+        },
+    });
+    let displayedWidth = 320;
+    const document = { defaultView: window, createElement: () => new ElementStub(),
+        addEventListener() {}, removeEventListener() {} };
+    const container = Object.assign(new ElementStub(), { ownerDocument: document,
+        getBoundingClientRect: () => ({ width: displayedWidth }) });
+    const font = { entry: { id: "test-font", weight: 400, metrics: { unitsPerEm: 1000,
+        ascender: 800, descender: -200, lineGap: 0, advances: { A: 600, "?": 500 } } },
+        native: { family: "test-font" } };
+    const driver = new DOMHostDriver(container, { font: () => font }, 320, 352);
+    t.after(() => driver.destroy());
+    const handle = driver.create("text", 1);
+    Object.assign(handle.flex.frame, { width: 100, height: 30 });
+    Object.assign(handle.props, { value: "AA", fontSize: 20 });
+    // Repaint the same text when an ancestor's CSS transform changes.
+    driver.root = {};
+    driver.write = () => driver.writeText(handle);
+    driver.writeText(handle);
+    assert.equal(handle.textCanvas.width, 200);
+    assert.equal(handle.textCanvas.height, 60);
+    assert.deepEqual(handle.textCanvas.context.transforms.at(-1), [2, 0, 0, 2, 0, 0]);
+    handle.props.cacheMode = "char";
+    driver.writeText(handle);
+    assert.equal(handle.textCanvas.style.width, "100px");
+    const firstGlyph = handle.textCanvas.context.draws.at(-1)[0];
+    displayedWidth = 480;
+    observers[0].callback();
+    assert.equal(handle.textCanvas.width, 300);
+    assert.equal(handle.textCanvas.height, 90);
+    assert.equal(handle.textCanvas.style.width, "100px");
+    const enlargedGlyph = handle.textCanvas.context.draws.at(-1)[0];
+    assert.notEqual(firstGlyph, enlargedGlyph);
+    assert.ok(enlargedGlyph.width > firstGlyph.width);
+    displayedWidth = 160;
+    observers[0].callback();
+    assert.equal(handle.textCanvas.width, 100);
+    driver.destroy();
+    assert.equal(observers[0].disconnected, true);
+});
+
 test("a component's For scope stays local when mounted and reused inside another For", () => {
     const childPlan = { version: 5, name: "Stars", slotCount: 1,
         root: { kind: "view", planId: 0, children: [{ kind: "view", planId: 1,
