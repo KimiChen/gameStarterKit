@@ -123,11 +123,12 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         const frameXml = readFileSync(join(out, "assets/UniFlex_Common/PopupFrame.xml"), "utf8");
         const names = ir.packages[0].components.map((item) => item.name).sort();
         assert.deepEqual(names, [
-            "ActionButton", "CancelButton", "CloseButton", "ConfirmButton", "PopupFrame",
+            "ActionButton", "PopupFrame",
         ]);
         assert.match(promptXml, /name="ConfirmButton"/);
         assert.match(promptXml, /name="CancelButton"/);
         assert.match(promptXml, /name="CloseButton"/);
+        assert.match(promptXml, /<image[^>]*xy="653,642" size="50,50"[^>]*fileName="images\/close.png"/);
         assert.match(promptXml, /name="Prompt\/Message"/);
         assert.doesNotMatch(promptXml, /<graph/);
         assert.doesNotMatch(promptXml, /ui\/button\/confirm/);
@@ -138,9 +139,15 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
         assert.match(actionXml, /font="UniFlex"/);
         assert.match(actionXml, /strokeSize="4"/);
         assert.doesNotMatch(actionXml, /ActionButton\/IconRow/);
-        const cancelXml = readFileSync(join(out, "assets/UniFlex_Common/CancelButton.xml"), "utf8");
-        assert.match(cancelXml, /title="取消"/);
-        assert.match(cancelXml, /propertyId="3"/);
+        // Legacy snapshot wrappers become groups; each ActionButton keeps its own injected skin/title.
+        const common = ir.packages[0];
+        assert.equal((promptXml.match(/fileName="ActionButton.xml"/g) ?? []).length, 2);
+        for (const [label, resourceId] of [["确定", "ui/button/confirm"], ["取消", "ui/button/cancel"]]) {
+            const skin = common.images.find((item) => item.resourceId === resourceId);
+            assert.ok(skin, `${resourceId} was not exported`);
+            assert.ok(promptXml.includes(`<Button title="${label}" icon="ui://${common.id}${skin.id}"/>`));
+        }
+        assert.match(promptXml, /propertyId="3"/);
         assert.match(frameXml, /fileName="images\/prompt.png"/);
         const previewHtml = readFileSync(join(out, "preview/index.html"), "utf8");
         assert.match(previewHtml, /id="ui"/);
@@ -169,9 +176,6 @@ test("Prompt fixture compiles a candidate FairyGUI project without touching art/
 
         for (const file of [
             "assets/UniFlex_Common/ActionButton.xml",
-            "assets/UniFlex_Common/ConfirmButton.xml",
-            "assets/UniFlex_Common/CancelButton.xml",
-            "assets/UniFlex_Common/CloseButton.xml",
             "assets/UniFlex_Common/PopupFrame.xml",
             "assets/UniFlex_Prompt/Prompt.xml",
         ]) {
@@ -644,7 +648,7 @@ test("nested shared cards do not remap parent list instance text", async () => {
     }
 });
 
-test("hidden empty buttons do not become the shared CloseButton template", async () => {
+test("hidden empty buttons do not become the shared ActionButton template and legacy close icons stay inlined", async () => {
     const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-hidden-btn-"));
     try {
         const catalog = await loadScreenCatalog(root);
@@ -689,14 +693,14 @@ test("hidden empty buttons do not become the shared CloseButton template", async
             ],
             out, root, catalog, images,
         });
-        const closeXml = readFileSync(join(out, "assets/UniFlex_Common/CloseButton.xml"), "utf8");
         const actionXml = readFileSync(join(out, "assets/UniFlex_Common/ActionButton.xml"), "utf8");
         const pageXml = readFileSync(join(out, "assets/UniFlex_HeroStarUpgrade/HeroStarUpgrade.xml"), "utf8");
-        assert.match(closeXml, /size="72,72"/);
-        assert.match(closeXml, /name="icon"/);
+        assert.match(actionXml, /name="icon"/);
         assert.match(actionXml, /size="255,102"/);
         assert.match(actionXml, /text="升星"/);
-        assert.match(pageXml, /fileName="CloseButton.xml"/);
+        assert.match(pageXml, /name="CloseButton" xy="642,383" size="72,72"/);
+        assert.match(pageXml, /<image[^>]*xy="653,394" size="50,50"[^>]*fileName="images\/close.png"/);
+        assert.doesNotMatch(pageXml, /fileName="CloseButton.xml"/);
         assert.match(pageXml, /fileName="ActionButton.xml"/);
         assert.match(pageXml, /title="升星"/);
     } finally {
@@ -704,7 +708,7 @@ test("hidden empty buttons do not become the shared CloseButton template", async
     }
 });
 
-test("ConfirmButton instances override nested ActionButton title", async () => {
+test("legacy ConfirmButton groups preserve ActionButton instance titles without changing the shared template", async () => {
     const out = mkdtempSync(join(tmpdir(), "uniflex-fgui-confirm-title-"));
     try {
         const catalog = await loadScreenCatalog(root);
@@ -738,10 +742,15 @@ test("ConfirmButton instances override nested ActionButton title", async () => {
             out, root, catalog, images,
         });
         const createXml = readFileSync(join(out, "assets/UniFlex_AllianceCreate/AllianceCreate.xml"), "utf8");
-        assert.match(createXml, /fileName="ConfirmButton.xml"/);
-        assert.match(createXml, /target="ActionButton" propertyId="0" value="创建"/);
+        assert.match(createXml, /fileName="ActionButton.xml"/);
+        assert.doesNotMatch(createXml, /fileName="ConfirmButton.xml"/);
+        assert.match(createXml, /<Button title="创建"/);
         const promptXml = readFileSync(join(out, "assets/UniFlex_Prompt/Prompt.xml"), "utf8");
-        assert.doesNotMatch(promptXml, /value="创建"/);
+        assert.match(promptXml, /<Button title="确定"/);
+        assert.doesNotMatch(promptXml, /title="创建"/);
+        const actionXml = readFileSync(join(out, "assets/UniFlex_Common/ActionButton.xml"), "utf8");
+        assert.match(actionXml, /text="确定"/);
+        assert.doesNotMatch(actionXml, /创建/);
     } finally {
         rmSync(out, { recursive: true, force: true });
     }

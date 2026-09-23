@@ -645,7 +645,7 @@ test("editing Confirm PSD text rewrites ?? fallbacks and reports pure bindings",
     }
 });
 
-test("editing inline ActionButton PSD text skips pure prop bindings and reports them", {
+test("editing inline ActionButton PSD text skips bound labels and reports them", {
     skip: available ? false : "pinned web-ui-to-psd package is not installed",
 }, async () => {
     const psdPath = resolve(root, "scripts/fixtures/uniflex-inline/ActionButton.psd");
@@ -674,14 +674,16 @@ test("editing inline ActionButton PSD text skips pure prop bindings and reports 
         ], { cwd: root, env });
         const restored = await readFile(
             join(packageDir, "restored/components/button/ActionButton.tsx"), "utf8");
-        assert.match(restored, /name="ActionButton\/Label" visible=\{!hasIcon\} value=\{p\.label\}/);
+        assert.match(restored, /const label = p\.label \?\? '';/);
+        assert.match(restored, /name="ActionButton\/Label" visible=\{showLabel\} value=\{label\}/);
         assert.ok(!restored.includes("定确"),
-            "value={p.label} has no ?? fallback and must stay untouched");
+            "value={label} is a binding and must stay untouched, including its prop-derived initializer");
         const report = await readFile(join(packageDir, "IMPORT.md"), "utf8");
         assert.match(report, /bound: .*ActionButton\/Label\.value/);
         const original = await readFile(
             resolve(root, "apps/client/src/ui-uniflex/components/button/ActionButton.tsx"), "utf8");
-        assert.match(original, /name="ActionButton\/Label" visible=\{!hasIcon\} value=\{p\.label\}/);
+        assert.match(original, /const label = p\.label \?\? '';/);
+        assert.match(original, /name="ActionButton\/Label" visible=\{showLabel\} value=\{label\}/);
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }
