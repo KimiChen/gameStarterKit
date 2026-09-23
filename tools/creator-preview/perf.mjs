@@ -10,7 +10,7 @@ import { STAGE3D_PREVIEW_DEVICE, STAGE3D_VIEWPORT } from "./probe-stage3d.mjs";
 import { aggregateStage3dSampling, createStage3dSamplingSource, STAGE3D_SAMPLER_KEY, stopStage3dSamplingSource } from "./stage3d-sampling.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const FRAME_PROBE = "__stage3dPerfFrameProbe";
+export const FRAME_PROBE = "__stage3dPerfFrameProbe";
 const POPULATION = Object.freeze({ low: 0, medium: 300, high: 500 });
 
 export function parseStage3dPerfArgs(argv) {
@@ -145,7 +145,7 @@ function percentile(values, fraction) {
   return [...values].sort((a, b) => a - b)[Math.ceil(values.length * fraction) - 1];
 }
 
-async function newPerfTab(options) {
+export async function newPerfTab(options) {
   if (!options.newWindow) return acquireTab({ ...options, reuse: false });
   const browser = await (await fetch(`${options.devtools}/json/version`)).json();
   const control = await CdpClient.connect(browser.webSocketDebuggerUrl);
@@ -169,12 +169,12 @@ async function waitScene(client, accept, timeoutMs = 45_000) {
   throw new Error(`Stage3dDevScene population timeout: ${JSON.stringify(state?.population)}`);
 }
 
-async function capture(client, options, extra = true) {
+export async function capture(client, options, extra = true) {
   const raw = await client.evaluate(createStage3dSamplingSource(options, extra ? FRAME_PROBE : null));
   return validWindow(raw);
 }
 
-async function captureAfter(client, action, options) {
+export async function captureAfter(client, action, options) {
   const pending = client.evaluate(createStage3dSamplingSource(options, FRAME_PROBE));
   try {
     const deadline = Date.now() + 5_000;

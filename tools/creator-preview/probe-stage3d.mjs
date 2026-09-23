@@ -83,7 +83,7 @@ export async function prepareStage3dViewport(client, reuse = false) {
  * renderGraph can already be cleared between frames; never dereference its old scene IDs.
  * Only ordinary stage color queues qualify; shadow/reflection queues cannot prove visibility.
  */
-function readScheduledStageQueues(culling, camera) {
+export function readScheduledStageQueues(culling, camera) {
   if (!camera) return [];
   if (!culling?.renderQueueQueryIndex || typeof culling.renderQueueIndex?.entries !== "function"
     || !Number.isInteger(culling.kFilterMask) || !Number.isInteger(culling.kDrawMask) || !Number.isInteger(culling.numRenderQueues)) {

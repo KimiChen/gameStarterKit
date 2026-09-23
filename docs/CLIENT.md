@@ -232,6 +232,26 @@ capacity 同时约束逻辑实体数和每个池跨 LOD 的 active + inactive �
 实例只借用源 mesh，材质按源身份与 instancing 能力共享一份池内副本；实时蒙皮在本适配器始终禁用 instancing。
 Cocos 适配器先停用、摘除和销毁节点，再于 AFTER_DRAW 回收渲染缓存、材质与 AssetLease，不由调用方裸 decRef。
 
+SC4-B1 的 `createCocosSkinnedUnits(catalog, lease.root, { quality, signal, allowRealtime?, clips? })`
+以同一 `EntityPool` 为底，增加整个单位池的 `quality.maxUnits` 上限；预制须有一个 `SkeletalAnimation`，
+所有 `SkinnedMeshRenderer` 指向该动画根。`spawn(poolId, clipName, configure?, mode?)` 返回相同生命周期句柄，
+另有只读 `clip / mode`；默认 baked，`play(entity, clipName, mode?)` 可在排队期间更新请求，
+或在活动节点上切 clip / 模式。动画及材质由此接口管理，调用方只改变换和挂点内容。
+`socket(entity, jointPath)` 只接受活动实体，返回引擎真实 socket；切 clip / 实时模式保持同一挂点，
+despawn 或 LOD 更换预制后须重新取得，调用方在 despawn 前摘除自己挂载的内容。
+
+实际 mesh、源材质、关节纹理对象、实例属性格式 / 顺序 / stride 一起决定共享材质组；跨图集切 clip
+立即重分组，各 pass 使用独立父材质。可选 `registerJointTextureLayouts` 须在第一次实例化 / 烘焙前调用，
+以真实 skeleton / clip hash 声明兼容图集；相同声明复用，冲突拒绝。宽度按 12 对齐以同时满足浮点与 RGBA8 行采样，
+内容须由作者保证能放入图集。布局不能替代运行时实际纹理分组，也不能迁移已烘焙的纹理句柄。
+额外 `clips` 为已加载的兼容 clip，模板通过统一 retainer 持有到节点退休后。素材与源材质均不被改写。
+
+实时蒙皮须 `allowRealtime:true` 并显式选择 `mode:"realtime"`；同池实时单位另受
+`maxUnitsWithoutInstancing` 上限约束，换模型前先安装关闭 instancing 的副本。首次进入实时的每个 clip
+重建一次求值状态，后续切换复用；不因缺少浮点纹理直接放弃可用的 RGBA8 预烘焙。
+`setLod / setQuality / evict / close` 沿用实体池语义；若新能力完全没有关节纹理，调用方先显式转换或移除 baked 单位。
+本批没有自动能力退化政策，完整 low / 公告板及真机缓存门仍在 SC4-B3。
+
 玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
 `RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。组合点采用生成式
 catalog：每个玩法一个 `gameplay/modes/<id>/index.ts` 模块（导出

@@ -1,0 +1,778 @@
+{
+  "schemaVersion": 1,
+  "batch": "SC4-B1",
+  "date": "2026-09-24",
+  "status": "passed",
+  "scope": "Formal SkinnedUnits on EntityPool: baked GPU skinning, actual joint-texture/layout groups, clip regrouping, explicit non-instanced realtime and stable sockets.",
+  "baseline": {
+    "commit": "7786292f3e10f025cfb360b29a5861532bb551b8",
+    "tag": "sc3-exit",
+    "isolatedWorktree": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion",
+    "branch": "codex/sc4-b1"
+  },
+  "synchronizedBase": {
+    "commit": "3084fa003a17af4999ecc380f08e5be8950cb657",
+    "note": "Required pull --rebase incorporated the independent mapOriginal commit. Both cc stubs and creator-preview README merged cleanly. The five captured client modules remain byte-identical; full verification was repeated on the combined tree."
+  },
+  "implementation": [
+    "Global maxUnits and separate maxUnitsWithoutInstancing realtime admission; inherits EntityPool LOD, per-frame activation, cancellation, retries and delayed release.",
+    "Groups include source mesh/material identity, actual jointTexture object, slot, full attribute names/formats/normalization/locations and stride; private parent Materials isolate every pass.",
+    "Optional joint layouts register before baking. Equal declarations reuse chunks; overlapping XOR claims and invalid row widths fail; a partially failed registration cannot be retried silently.",
+    "Clip changes update animation and regroup the same node in the same call. Real-time mode installs safe non-instanced materials before replacing models, then creates each clip evaluator once.",
+    "Extra clips use the common AssetRetainer boundary. Socket identity survives clip/mode switches; onEnable reentrant close is handled. Node, material and render-cache release follows AFTER_DRAW."
+  ],
+  "method": {
+    "engine": "Cocos Creator 3.8.8",
+    "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+    "viewportCss": [
+      375,
+      812
+    ],
+    "backingPixels": [
+      750,
+      1624
+    ],
+    "dpr": 2,
+    "clock": "performance.now at Director.EVENT_AFTER_DRAW",
+    "activationIntervals": 120,
+    "warmupIntervals": 60,
+    "steadyIntervals": 240,
+    "recycleCyclesPerContext": 20,
+    "population": "100 two-bone greyboxes; 99 share one actual atlas with two different clips, one uses a second atlas.",
+    "frameAudit": "All 1266 raw frame records independently checked for monotonic sequence, measured atMs delta and nearest-rank p50/p95; summaries match.",
+    "webgl1": "Created owned page refuses WebGL2 before startup and asserts the actual WebGL1 device.",
+    "rgba8": "WebGL1 plus explicit preboot float-texture-extension masking; actual sampled texture format RGBA8 (35), versus RGBA32F (44).",
+    "visualReview": "All six final baked/realtime screenshots inspected. All 100 greyboxes are in view; distinct sway/bow poses are visible without torn or exploded skin. Socket/matrix progression uses consecutive runtime snapshots."
+  },
+  "runs": [
+    {
+      "label": "webgl2",
+      "summary": {
+        "path": "docs/perf/stage3d/2026-09-24-sc4-b1-webgl2.json",
+        "sha256": "89769b45d6c7d76834454c3069aec760777f5bcd641c1677658e9f94bcd53750"
+      },
+      "raw": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-webgl2/report.json",
+        "sha256": "031bdeaaef2c71f885f3aa908ebaf9f0e578243c04860961cdfcb9ef5cd938de"
+      },
+      "rawFrameRecords": {
+        "activation": 121,
+        "steady": 301
+      },
+      "population": {
+        "admitted": 100,
+        "active": 100,
+        "pending": 0,
+        "hidden": 0,
+        "failed": 0
+      },
+      "quality": {
+        "details": true,
+        "shadows": "off",
+        "maxEffects": 48,
+        "maxUnits": 100,
+        "maxUnitsWithoutInstancing": 50,
+        "textureStepDown": 0,
+        "minTextureSize": 256,
+        "tier": "high",
+        "detectedTier": "high",
+        "overridden": true,
+        "instancing": true,
+        "jointTexture": "float",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "astc",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl2",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": true,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": true
+          }
+        }
+      },
+      "jointTextureFormats": [
+        44
+      ],
+      "functionalPhases": [
+        {
+          "name": "initial",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "advanced",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "sameAtlas",
+          "textureCount": 1,
+          "realtime": 0,
+          "drawCalls": 4,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "alternateClip",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "realtime",
+          "textureCount": 1,
+          "realtime": 1,
+          "drawCalls": 5,
+          "instances": 99,
+          "triangles": 9794
+        },
+        {
+          "name": "realtimeAdvanced",
+          "textureCount": 1,
+          "realtime": 1,
+          "drawCalls": 5,
+          "instances": 99,
+          "triangles": 9794
+        },
+        {
+          "name": "restored",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        }
+      ],
+      "steadyFrameIntervalMs": {
+        "count": 240,
+        "p50Ms": 18.599999997764826,
+        "p95Ms": 34.099999997764826,
+        "maxMs": 35.100000001490116,
+        "meanMs": 23.73583333332402
+      },
+      "activationMaxIntervalMs": 44.30000000074506,
+      "memory": {
+        "cycles": 20,
+        "closedSceneNodes": 10,
+        "closedGfx": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42500,
+          "textureBytes": 8409220
+        },
+        "allCyclesMatchBaseline": true
+      },
+      "consoleEntries": 0,
+      "unexpectedErrors": 0,
+      "expectedBootDiagnostics": 0,
+      "screenshots": [
+        {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-webgl2/baked.png",
+          "sha256": "b203c406d9a6135444a142f19f7ea508cfde318400e13d5a74a588a03692c868",
+          "reviewed": true
+        },
+        {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-webgl2/realtime.png",
+          "sha256": "ddd318ca76d0c68ab73cae1519aa447ec71d09eef022d9045dae67d556d1a36d",
+          "reviewed": true
+        }
+      ]
+    },
+    {
+      "label": "webgl1",
+      "summary": {
+        "path": "docs/perf/stage3d/2026-09-24-sc4-b1-webgl1.json",
+        "sha256": "2dedf5021316368de87e9d9bd13b7ea4d84dcb09e38495d949760516b62ef1f7"
+      },
+      "raw": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-webgl1/report.json",
+        "sha256": "0465e1c64b58126249808142a07ec2c30a67200e64bca9df7cfb2996b7aa3182"
+      },
+      "rawFrameRecords": {
+        "activation": 121,
+        "steady": 301
+      },
+      "population": {
+        "admitted": 100,
+        "active": 100,
+        "pending": 0,
+        "hidden": 0,
+        "failed": 0
+      },
+      "quality": {
+        "details": true,
+        "shadows": "off",
+        "maxEffects": 48,
+        "maxUnits": 100,
+        "maxUnitsWithoutInstancing": 50,
+        "textureStepDown": 0,
+        "minTextureSize": 256,
+        "tier": "high",
+        "detectedTier": "low",
+        "overridden": true,
+        "instancing": true,
+        "jointTexture": "float",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "astc",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl1",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": true,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": true
+          }
+        }
+      },
+      "jointTextureFormats": [
+        44
+      ],
+      "functionalPhases": [
+        {
+          "name": "initial",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "advanced",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "sameAtlas",
+          "textureCount": 1,
+          "realtime": 0,
+          "drawCalls": 4,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "alternateClip",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "realtime",
+          "textureCount": 1,
+          "realtime": 1,
+          "drawCalls": 5,
+          "instances": 99,
+          "triangles": 9794
+        },
+        {
+          "name": "realtimeAdvanced",
+          "textureCount": 1,
+          "realtime": 1,
+          "drawCalls": 5,
+          "instances": 99,
+          "triangles": 9794
+        },
+        {
+          "name": "restored",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        }
+      ],
+      "steadyFrameIntervalMs": {
+        "count": 240,
+        "p50Ms": 16.699999999254942,
+        "p95Ms": 17.600000001490116,
+        "maxMs": 33.69999999925494,
+        "meanMs": 16.87583333334575
+      },
+      "activationMaxIntervalMs": 42.600000001490116,
+      "memory": {
+        "cycles": 20,
+        "closedSceneNodes": 10,
+        "closedGfx": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42500,
+          "textureBytes": 8409220
+        },
+        "allCyclesMatchBaseline": true
+      },
+      "consoleEntries": 0,
+      "unexpectedErrors": 0,
+      "expectedBootDiagnostics": 0,
+      "screenshots": [
+        {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-webgl1/baked.png",
+          "sha256": "7ebe1428bc8a64cb16475ece1c5a0b08c9947ee5fdd2f2b2bc7bd5c8c0f23d78",
+          "reviewed": true
+        },
+        {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-webgl1/realtime.png",
+          "sha256": "9ce71652414342a4e11818f69a6e517d32236d3fb821594fafc9bf6cf75b1ffc",
+          "reviewed": true
+        }
+      ]
+    },
+    {
+      "label": "rgba8",
+      "summary": {
+        "path": "docs/perf/stage3d/2026-09-24-sc4-b1-rgba8.json",
+        "sha256": "c8a9f12e0dd00b0a3f776b01094cc025fb245b8717b2d913292152c237ce2b07"
+      },
+      "raw": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-rgba8/report.json",
+        "sha256": "32bf10b129cb43f4ac5dbd8f9485bec8218991d8b53b90c6a93c777ad71d2bb7"
+      },
+      "rawFrameRecords": {
+        "activation": 121,
+        "steady": 301
+      },
+      "population": {
+        "admitted": 100,
+        "active": 100,
+        "pending": 0,
+        "hidden": 0,
+        "failed": 0
+      },
+      "quality": {
+        "details": true,
+        "shadows": "off",
+        "maxEffects": 48,
+        "maxUnits": 100,
+        "maxUnitsWithoutInstancing": 50,
+        "textureStepDown": 0,
+        "minTextureSize": 256,
+        "tier": "high",
+        "detectedTier": "low",
+        "overridden": true,
+        "instancing": true,
+        "jointTexture": "rgba8",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "astc",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl1",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": false,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": true
+          }
+        }
+      },
+      "jointTextureFormats": [
+        35
+      ],
+      "functionalPhases": [
+        {
+          "name": "initial",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "advanced",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "sameAtlas",
+          "textureCount": 1,
+          "realtime": 0,
+          "drawCalls": 4,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "alternateClip",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        },
+        {
+          "name": "realtime",
+          "textureCount": 1,
+          "realtime": 1,
+          "drawCalls": 5,
+          "instances": 99,
+          "triangles": 9794
+        },
+        {
+          "name": "realtimeAdvanced",
+          "textureCount": 1,
+          "realtime": 1,
+          "drawCalls": 5,
+          "instances": 99,
+          "triangles": 9794
+        },
+        {
+          "name": "restored",
+          "textureCount": 2,
+          "realtime": 0,
+          "drawCalls": 5,
+          "instances": 100,
+          "triangles": 9794
+        }
+      ],
+      "steadyFrameIntervalMs": {
+        "count": 240,
+        "p50Ms": 16.699999999254942,
+        "p95Ms": 17.800000000745058,
+        "maxMs": 37.19999999925494,
+        "meanMs": 17.08291666666046
+      },
+      "activationMaxIntervalMs": 43.599999997764826,
+      "memory": {
+        "cycles": 20,
+        "closedSceneNodes": 10,
+        "closedGfx": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42500,
+          "textureBytes": 8409220
+        },
+        "allCyclesMatchBaseline": true
+      },
+      "consoleEntries": 0,
+      "unexpectedErrors": 0,
+      "expectedBootDiagnostics": 0,
+      "screenshots": [
+        {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-rgba8/baked.png",
+          "sha256": "8085bdceb23f485edddfc3584d123d47e50cc5d11e4b2a025b962887c993c308",
+          "reviewed": true
+        },
+        {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-rgba8/realtime.png",
+          "sha256": "62a464d27929f4ed681e4a9a0b8d8e798fc77531e15a79ccc68bb27b29290077",
+          "reviewed": true
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "node": "v26.5.0",
+    "verifyAll": {
+      "command": "npm run verify:all",
+      "exitCode": 0,
+      "totals": {
+        "tests": 3003,
+        "pass": 3003,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/verify-all-after-pull.log",
+        "sha256": "0db44f267dc211e2ce61d81244f486f509b8885aa9cdb9e11e1fc319d7c2a22a"
+      },
+      "includes": [
+        "shared/server typecheck",
+        "strict client typecheck",
+        "legacy Creator-compatible typecheck",
+        "sync/asset/protected-path verification",
+        "core/UniFlex/server suites"
+      ]
+    },
+    "isolatedBeforeSync": {
+      "command": "npm run verify:all",
+      "exitCode": 0,
+      "totals": {
+        "tests": 2993,
+        "pass": 2993,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/verify-all.log",
+        "sha256": "b478a76d6e6994c3340958df2cfdbae60c2fc570366acd7f9c46f0f2f7348fa5"
+      }
+    },
+    "targeted": {
+      "totals": {
+        "tests": 45,
+        "pass": 45,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/targeted-final.log",
+        "sha256": "35ee0868d17ee01b1abbd804bd6b01fb02bef8310cde86bc7b2c1e16a273534d"
+      }
+    },
+    "newTests": {
+      "client": 15,
+      "previewTool": 3
+    },
+    "postCaptureToolEdit": "Only artifact output naming changed after capture: UTC run date, observed WebGL label, and parent-directory creation. Capture, assertions and client runtime stayed unchanged; final verify:all server tests import the updated module.",
+    "engineDeclarations": {
+      "result": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/real-engine-types.json",
+        "sha256": "1cdab255b95370788f7e38771330500a52a7fb10c711960aaf840286632f7899"
+      },
+      "log": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/engine-types.log",
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "diagnostics": 0,
+      "engineDts": {
+        "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/bin/.declarations/cc.d.ts",
+        "sha256": "88fa33fe074ccd5471fb1bea6779a37d025dbf9570a195fc0d9f684a3608dcc9"
+      }
+    },
+    "mutations": [
+      {
+        "name": "omit-joint-texture",
+        "exitCode": 1,
+        "detected": true,
+        "log": {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/mutations-final/omit-joint-texture/test.log",
+          "sha256": "a95c182b3b7c40d693e92de2fa62a3d8066aaf820dd0c4e90cbaa0534ac8910f"
+        },
+        "firstFailingTest": "CocosSkinnedUnits: same actual texture shares materials, another atlas splits, play regroups the same node (10.312709ms)",
+        "note": "Later setup failures can follow the intentionally failed test; acceptance uses the first targeted assertion."
+      },
+      {
+        "name": "realtime-instancing",
+        "exitCode": 1,
+        "detected": true,
+        "log": {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/mutations-final/realtime-instancing/test.log",
+          "sha256": "e0f5fd86916565fb8c434553b06d1fad65153a2b455ba3b807721a9834782012"
+        },
+        "firstFailingTest": "CocosSkinnedUnits: realtime receives safe material before model replacement; each evaluator recreated once; socket survives (2.333875ms)",
+        "note": "Later setup failures can follow the intentionally failed test; acceptance uses the first targeted assertion."
+      },
+      {
+        "name": "omit-instance-layout",
+        "exitCode": 1,
+        "detected": true,
+        "log": {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/mutations-final/omit-instance-layout/test.log",
+          "sha256": "901141945203873610a29c2c15a3a3b0385857ee3ac48a263a075ddd522702e8"
+        },
+        "firstFailingTest": "CocosSkinnedUnits: same stride but different instance attributes, mesh or source material never share a group (3.34275ms)",
+        "note": "Later setup failures can follow the intentionally failed test; acceptance uses the first targeted assertion."
+      }
+    ],
+    "interruptedVerifyAll": {
+      "log": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/verify-all-inventory-index-failed.log",
+        "sha256": "c748ab730e1204b8a9a312e63db774c6efc28f9d191c51788eea97eea0790a59"
+      },
+      "reason": "AGENTS phase index updated before CLAUDE mirror; inventory guard failed. Updated the matching CLAUDE entries and reran verify:all."
+    }
+  },
+  "sourceAudit": {
+    "report": {
+      "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/source-audit.json",
+      "sha256": "7ae60fa7e16efd5ff98e2beb5c68bd02d0084332869d2b0ad859a4d206047dc2"
+    },
+    "modulesVerified": 15,
+    "contexts": 3,
+    "modulesPerContext": 5,
+    "method": "Read each actual SystemJS export and prototype method, match function bodies to its fetched JS module, then compare source-map embedded TypeScript to current source and generated Cocos mirror; all code/map hashes retained locally.",
+    "sourcesAndMirrors": [
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data/detail-layers.json",
+        "sha256": "e86681c9161d1c8963031dd9580639a7913ca0c0842b496508d55f81838ac3b0"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data/pool.json",
+        "sha256": "80fe9762f2c34b6218cc115c9e28ef1a19ea9f1061ff53ea2547574c51a6dd79"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/SkinnedUnits.ts",
+        "sha256": "6004992cffcd573d93a09d77b85c4147aab5f12b34e921cc5df96972f7ed5a90"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/SkinnedUnits.ts.meta",
+        "sha256": "082b6170c5e40148f3bf4dc228372f5338c6e94ade7274b54a4a3752384e5f9f"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/SkinnedUnitsFixture.ts",
+        "sha256": "c1ad056119a66c982c71d1e81fd7e8bb9c429bcf7f0def67ac176d47fd4a3e5f"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/SkinnedUnitsFixture.ts.meta",
+        "sha256": "9bb131ca3172c29893d7ab88e797837dc9a07433bcf4e286a2f4844791474c48"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/Stage3dDevScene.ts",
+        "sha256": "131398e8b247de8f33bcb0385f7bd3dd85d144fa4d98932d68005f1157afdb45"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/cocosSkinnedUnits.ts",
+        "sha256": "d91836060afd4c5409a562954ad5afcb5871875175bfe9753b869e38d8cdde0b"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/cocosSkinnedUnits.ts.meta",
+        "sha256": "438242d8b7f2c36c92a859d8659f2467bc72c1eb47ee8db081545fc0b8b03dbc"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/jointTextureLayouts.ts",
+        "sha256": "ed37425fc080f9f341740bf8c962b33c748523b7ddb9f198204b7a6bcdac89d6"
+      },
+      {
+        "path": "apps/Cocos/assets/src/view/scene3d/jointTextureLayouts.ts.meta",
+        "sha256": "c3758e6c8bf9e90561112ca5bf070a25f6651e90f2d05d5193cea1405cf8d450"
+      },
+      {
+        "path": "apps/client/cc-stub.d.ts",
+        "sha256": "d8aa8d3f8ceaab87d4f5cea7c944214bb8b0cd51ddf344dd2347717a052f1d34"
+      },
+      {
+        "path": "apps/client/client-test-stubs.d.ts",
+        "sha256": "2759faadf1b4d2d4bac8aece6685b3e90dd077c58b79f7bf84a68ea447e87028"
+      },
+      {
+        "path": "apps/client/src/view/scene3d/SkinnedUnits.ts",
+        "sha256": "6004992cffcd573d93a09d77b85c4147aab5f12b34e921cc5df96972f7ed5a90"
+      },
+      {
+        "path": "apps/client/src/view/scene3d/SkinnedUnitsFixture.ts",
+        "sha256": "c1ad056119a66c982c71d1e81fd7e8bb9c429bcf7f0def67ac176d47fd4a3e5f"
+      },
+      {
+        "path": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+        "sha256": "131398e8b247de8f33bcb0385f7bd3dd85d144fa4d98932d68005f1157afdb45"
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosSkinnedUnits.ts",
+        "sha256": "d91836060afd4c5409a562954ad5afcb5871875175bfe9753b869e38d8cdde0b"
+      },
+      {
+        "path": "apps/client/src/view/scene3d/jointTextureLayouts.ts",
+        "sha256": "ed37425fc080f9f341740bf8c962b33c748523b7ddb9f198204b7a6bcdac89d6"
+      },
+      {
+        "path": "apps/client/test/cocosSkinnedUnits.test.ts",
+        "sha256": "7d26ece835ebe783a0fd98623242eab29a9caa110fc03ecd635fb6f97fe2b41b"
+      },
+      {
+        "path": "apps/client/test/skinnedUnits.test.ts",
+        "sha256": "47f03b4330d8eeb086321d410287dd73ba4e35e6424d172283cdf351cc02482d"
+      },
+      {
+        "path": "apps/server/test/skinned-preview.test.ts",
+        "sha256": "baee06d25aaa9aa20876def48e9e681d649f1757b5da62e770b64aaee874677d"
+      },
+      {
+        "path": "tools/creator-preview/README.md",
+        "sha256": "5b340c8b31ccbefc91caed2f5c3904ef755cc75b9dfc48b07f64651a7ef22dc8"
+      },
+      {
+        "path": "tools/creator-preview/perf.mjs",
+        "sha256": "3652d7859eb08db2b98269b709ddf2143f5d8150e4af1877df12c8476df32097"
+      },
+      {
+        "path": "tools/creator-preview/probe-stage3d.mjs",
+        "sha256": "6e2a60430f2c1426defa63a207dd5f8a9020c122c1f7d8c77b49b740ae264843"
+      },
+      {
+        "path": "tools/creator-preview/run.mjs",
+        "sha256": "9524c36f41bac002876c648cff9a0547de2e65e6ba7802d0ae58cf4125ea8d1c"
+      },
+      {
+        "path": "tools/creator-preview/skinned-perf.mjs",
+        "sha256": "3e58d310a55750cc619e971f05f584b95ffb4799c24ba5df4623785cb391a30a"
+      }
+    ]
+  },
+  "earlierAttempts": [
+    {
+      "report": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/rgba8/report.json",
+        "sha256": "b91e284c0834103d558feb3576c78de72792905221a6c6c058b1a8ebb7fd248c"
+      },
+      "ok": true,
+      "error": null,
+      "note": "Earlier candidate/failed attempt retained; final runs above are authoritative for this source revision."
+    },
+    {
+      "report": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/webgl1/report.json",
+        "sha256": "a1ee49277e790394aeb15b3b123265430db420279428fd9a9ef3de9e8dd9f660"
+      },
+      "ok": true,
+      "error": null,
+      "note": "Earlier candidate/failed attempt retained; final runs above are authoritative for this source revision."
+    },
+    {
+      "report": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/webgl2-attempt1/report.json",
+        "sha256": "4c72eb0a71aed4d326a2bf21f17aa9658bc96613a0f04de51260c3c55870822f"
+      },
+      "ok": false,
+      "error": "Select WebpageFullScreen / Rotate off in the native Creator preview menu",
+      "note": "Earlier candidate/failed attempt retained; final runs above are authoritative for this source revision."
+    },
+    {
+      "report": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/webgl2-attempt2/report.json",
+        "sha256": "bb8beefc7ea444f10bf34d3d9129f55e190d0a920bbbd593b7f8165ebee296f5"
+      },
+      "ok": false,
+      "error": "Unit missing from actual stage color draw queues",
+      "note": "Earlier candidate/failed attempt retained; final runs above are authoritative for this source revision."
+    },
+    {
+      "report": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/webgl2-attempt3/report.json",
+        "sha256": "e7271b70cbaefe270e899b15b6508f20c79389b56eb9d9232116cd420e93cb51"
+      },
+      "ok": true,
+      "error": null,
+      "note": "Earlier candidate/failed attempt retained; final runs above are authoritative for this source revision."
+    }
+  ],
+  "limitations": [
+    "WebGL2 steady p95 is 34.1 ms in the accepted final window; no 60 fps claim or SC4 stage exit. Earlier/faster candidate windows are retained and not substituted.",
+    "Desktop Apple M4 with high developer override and shadows off; two-bone greyboxes do not establish complex-rig, phone, low-tier or production capacity.",
+    "RGBA8 is an explicit capability fault injection, not a physical device or WeChat cache test.",
+    "SC4-B2 Vfx, SC4-B3 low/billboard and real WeChat cache acceptance, and SC4-B4 phase review remain pending. SC0 frozen budgets were not raised.",
+    "Raw reports, screenshots, logs and source maps remain in ignored local .cache paths; committed summaries pin their hashes."
+  ]
+}

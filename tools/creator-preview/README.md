@@ -267,3 +267,23 @@ buffer / texture 字节数回到该基线。数字摘要写入 `docs/perf/stage3
 
 完整剧本保留原 SC0 的人工复核 pending（exit 2 表示已执行检查通过但仍需按阶段审阅）；
 SC1-B4 摘要须同时引用两上下文的原报告、截图与逐项接受理由，不能把历史 SC0、B9 或 SC4 的范围混为本批交付。
+
+## SC4-B1 正式蒙皮单位池
+
+沿用上述预览前置，新增 `--skinned` 在独立开发场景使用正式 `SkinnedUnits`：
+
+```bash
+node tools/creator-preview/run.mjs stage3d --perf --skinned --expect-webgl 2 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --skinned --expect-webgl 1 --force-webgl1 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --skinned --expect-webgl 1 --force-webgl1 --rgba8 --new-window
+```
+
+此 B1 固定夹具要求 high 开发覆写，100 个两骨 biped 同时播放主图集两个 clip 和第二图集一个 clip。
+探针核对实际关节纹理 / mesh / Pass、相机裁剪后的提交队列、上传实例数及纹理格式；切换跨图集后重新分组，
+同一节点 / socket 保持身份，baked 帧与实时关节矩阵 / socket 变换持续推进。保留首载 120 帧和
+60 帧预热 + 240 帧稳态的原始毫秒间隔；20 次开关交替在 baked 与实时状态关闭，节点与 GFX 回预热基线。
+`baked.png` / `realtime.png` 须人工复核。失败报告与控制台原样保留；失败清理停止本次夹具。
+
+`--rgba8` 只在自有新页面启动前注入浮点能力缺失，复用 SC0 的精确扩展掩码并核对真实 RGBA8 选择，
+明确区别于自然低端硬件或微信。WebGL1 冷启动仅接受原有精确、时间有界的 WebGL2 初始化失败诊断。
+这些桌面证据不替代 SC4-B2 的 50 特效或 SC4-B3 的 low / 真机与缓存验收，也不提高 SC0 冻结容量。

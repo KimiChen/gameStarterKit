@@ -17,6 +17,18 @@
         "medium": 300,
         "high": 500
       }
+    },
+    {
+      "id": "bipeds",
+      "prefab": {
+        "bundle": "resources",
+        "path": "stage3d/greybox-biped/greybox-biped"
+      },
+      "capacity": {
+        "low": 50,
+        "medium": 100,
+        "high": 100
+      }
     }
   ]
 }

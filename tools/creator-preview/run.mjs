@@ -1236,6 +1236,14 @@ async function scenarioMmoHold(runner) {
 
 async function main() {
   if (process.argv[2] === "stage3d") {
+    if (process.argv.includes("--skinned")) {
+      const { runSkinnedPerf, parseSkinnedPerfArgs } = await import("./skinned-perf.mjs");
+      const options = parseSkinnedPerfArgs(process.argv.slice(3));
+      if (options.help) { console.log("stage3d --perf --skinned: --expect-webgl 1|2 [--force-webgl1] [--rgba8] [--preview URL] [--new-window] [--out DIR]"); return 0; }
+      const result = await runSkinnedPerf(options);
+      console.log(JSON.stringify(result));
+      return result.ok ? 0 : 1;
+    }
     if (process.argv.includes("--perf")) {
       const { parseStage3dPerfArgs, runStage3dPerf } = await import("./perf.mjs");
       const options = parseStage3dPerfArgs(process.argv.slice(3));

@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "kind": "sc4-b1-skinned",
+  "environment": {
+    "webgl": 1,
+    "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+    "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+    "device": "WebGLDevice",
+    "pipeline": "WebPipeline",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "previewDevice": "WebpageFullScreen",
+    "viewport": {
+      "cssWidth": 375,
+      "cssHeight": 812,
+      "backingWidth": 750,
+      "backingHeight": 1624,
+      "dpr": 2
+    }
+  },
+  "initialGroups": {
+    "groups": [
+      {
+        "key": [
+          3,
+          5,
+          4
+        ],
+        "count": 99
+      },
+      {
+        "key": [
+          6,
+          5,
+          7
+        ],
+        "count": 1
+      }
+    ],
+    "realtime": 0,
+    "textures": 2,
+    "gfx": {
+      "drawCalls": 5,
+      "triangles": 9794,
+      "instances": 100,
+      "bufferBytes": 120676,
+      "textureBytes": 8409220
+    }
+  },
+  "performance": {
+    "unit": {
+      "frame": "ms",
+      "gfxMemory": "bytes",
+      "drawCalls": "calls/frame",
+      "triangles": "triangles/frame",
+      "instances": "instances/frame"
+    },
+    "clock": "performance.now",
+    "frameEvent": "Director.EVENT_AFTER_DRAW",
+    "sampleIndex": "independent seq; not root.frameCount",
+    "activation": {
+      "intervals": {
+        "count": 120,
+        "p50Ms": 16.699999999254942,
+        "p95Ms": 24.699999999254942,
+        "maxMs": 43.599999997764826,
+        "meanMs": 17.366666666666667
+      },
+      "peak": {
+        "drawCalls": 5,
+        "triangles": 9794,
+        "instances": 100,
+        "bufferBytes": 120676,
+        "textureBytes": 8409220,
+        "totalBytes": 8529896
+      },
+      "firstActiveSeq": 6,
+      "peakActive": 100
+    },
+    "steady": {
+      "intervals": {
+        "count": 240,
+        "p50Ms": 16.699999999254942,
+        "p95Ms": 17.800000000745058,
+        "maxMs": 37.19999999925494,
+        "meanMs": 17.08291666666046
+      },
+      "drawCalls": {
+        "p50": 5,
+        "p95": 5,
+        "max": 5,
+        "last": 5
+      },
+      "triangles": {
+        "p50": 9794,
+        "p95": 9794,
+        "max": 9794,
+        "last": 9794
+      },
+      "instances": {
+        "p50": 100,
+        "p95": 100,
+        "max": 100,
+        "last": 100
+      },
+      "finalMemory": {
+        "bufferBytes": 136036,
+        "textureBytes": 8409220
+      }
+    },
+    "memory": {
+      "prewarmedClosed": {
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "bufferBytes": 42500,
+        "textureBytes": 8409220
+      },
+      "finalClosed": {
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "bufferBytes": 42500,
+        "textureBytes": 8409220
+      },
+      "cycles": 20,
+      "stable": true
+    }
+  },
+  "rgba8FaultInjection": true,
+  "raw": {
+    "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-rgba8/report.json",
+    "sha256": "32bf10b129cb43f4ac5dbd8f9485bec8218991d8b53b90c6a93c777ad71d2bb7"
+  },
+  "limitations": "Desktop two-bone greybox; not complex rig, mobile or WeChat cache evidence. Screenshots require review."
+}

@@ -8,6 +8,7 @@ import { CocosStage3DEngine } from "./cocosStage3DEngine";
 import { readStage3DQuality } from "./quality";
 import { createCocosEntityPool } from "./cocosEntityPool";
 import type { EntityPool, PooledEntity } from "./EntityPool";
+import { SkinnedUnitsFixture } from "./SkinnedUnitsFixture";
 
 /** Independent developer scene; no Main/AppRuntime, no author-scene nodes or lightmap array. */
 @_decorator.ccclass("Stage3dDevScene")
@@ -15,6 +16,10 @@ export class Stage3dDevScene extends Component {
     /** Inspector / preview switch. Actual admission and visibility follow the JSON quality policy. */
     @_decorator.property({})
     entitiesEnabled = false;
+    @_decorator.property({})
+    skinnedEnabled = false;
+    skinned: SkinnedUnitsFixture | undefined;
+    private appliedSkinned = false;
     entityPool: EntityPool<Node> | undefined;
     readonly entities: PooledEntity<Node>[] = [];
     private appliedEntities = false;
@@ -51,9 +56,12 @@ export class Stage3dDevScene extends Component {
             lease.root.addChild(this.content);
             this.entityPool = createCocosEntityPool({ quality: qualityTable, pool, layers }, lease.root,
                 { quality: stage.quality, signal: lease.signal, onError: (error) => { this.error = String(error); } });
+            this.skinned = new SkinnedUnitsFixture({ quality: qualityTable, pool, layers }, lease.root, stage.quality, lease.signal);
             this.frameEntities = (enabled) => lease.camera.setPose(enabled ? { x: 0, y: 110, z: 145 } : { x: 8, y: 7, z: 10 },
                 { x: 0, y: 0, z: 0 });
+            this.frameSkinning = () => lease.camera.setPose({ x: 0, y: 48, z: 66 }, { x: 0, y: 0, z: 0 });
             this.setEntitiesEnabled(this.entitiesEnabled);
+            this.setSkinnedEnabled(this.skinnedEnabled);
             this.status = "ready";
         } catch (error) {
             if (this.owner.signal.aborted) return;
@@ -68,7 +76,19 @@ export class Stage3dDevScene extends Component {
 
     update(): void {
         if (this.entityPool && this.entitiesEnabled !== this.appliedEntities) this.setEntitiesEnabled(this.entitiesEnabled);
+        if (this.skinned && this.skinnedEnabled !== this.appliedSkinned) this.setSkinnedEnabled(this.skinnedEnabled);
     }
+
+    setSkinnedEnabled(enabled: boolean): void {
+        this.skinnedEnabled = enabled;
+        if (!this.skinned || this.appliedSkinned === enabled) return;
+        this.appliedSkinned = enabled;
+        this.frameEntities?.(false);
+        if (enabled) this.frameSkinning?.();
+        void this.skinned.setEnabled(enabled);
+    }
+
+    private frameSkinning: (() => void) | undefined;
 
     /** Queue 500 greyboxes; low hides details, medium admits 300, high admits 500. */
     setEntitiesEnabled(enabled: boolean): void {
@@ -91,6 +111,7 @@ export class Stage3dDevScene extends Component {
     }
 
     private close(): void {
+        this.skinned?.close(); this.skinned = undefined; this.frameSkinning = undefined;
         this.entityPool?.close(); this.entityPool = undefined;
         this.entities.length = 0; this.frameEntities = undefined;
         const retirement = new OwnedRenderingRetirement();

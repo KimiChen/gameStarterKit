@@ -179,6 +179,7 @@ declare module "cc" {
     export const resources: AssetManager.Bundle;
 
     export class Node {
+    getChildByPath(path: string): Node | null;
         lookAt(target: Readonly<Vec3>, up?: Readonly<Vec3>): void;
         rotation: Readonly<Quat>; worldPosition: Readonly<Vec3>;
         setRotation(rotation: Readonly<Quat>): void;
@@ -516,6 +517,7 @@ declare module "cc" {
     /** cc.d.ts:6461,6500,6530,51756–51833. play returns void, not a state. */
     export class Socket { constructor(path?: string, target?: Node | null); path: string; target: Node | null; }
     export class SkeletalAnimation extends Component {
+        playOnLoad: boolean;
         static Socket: typeof Socket;
         useBakedAnimation: boolean;
         clips: (AnimationClip | null)[];
