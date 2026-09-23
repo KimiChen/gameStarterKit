@@ -1,0 +1,98 @@
+{
+  "baselineCommit": "18f4800a",
+  "environment": {
+    "browser": "Chrome 152.0.7977.83",
+    "node": "v22.22.2",
+    "viewport": "1440x1000@1",
+    "httpCache": "disabled",
+    "network": "localhost",
+    "runs": 3
+  },
+  "scenarios": [
+    "initial catalog",
+    "sidebar original-hero",
+    "sidebar v-components"
+  ],
+  "before": [
+    {
+      "homeMs": 4346,
+      "jumpMs": 10244,
+      "backMs": 1220,
+      "homeVisibleCards": 12,
+      "homeRequests": 910,
+      "totalRequests": 3132,
+      "catalogRequests": 46,
+      "specimenRequests": 27,
+      "fontCreates": 46,
+      "imageDecodes": 2994,
+      "transferBytes": 549921602
+    },
+    {
+      "homeMs": 4129,
+      "jumpMs": 9227,
+      "backMs": 1240,
+      "homeVisibleCards": 12,
+      "homeRequests": 910,
+      "totalRequests": 3132,
+      "catalogRequests": 46,
+      "specimenRequests": 27,
+      "fontCreates": 46,
+      "imageDecodes": 2994,
+      "transferBytes": 549920891
+    },
+    {
+      "homeMs": 3933,
+      "jumpMs": 9211,
+      "backMs": 1413,
+      "homeVisibleCards": 12,
+      "homeRequests": 910,
+      "totalRequests": 3132,
+      "catalogRequests": 46,
+      "specimenRequests": 27,
+      "fontCreates": 46,
+      "imageDecodes": 2994,
+      "transferBytes": 549920891
+    }
+  ],
+  "after": [
+    {
+      "homeMs": 1825,
+      "jumpMs": 2276,
+      "backMs": 231,
+      "homeVisibleCards": 12,
+      "homeRequests": 70,
+      "totalRequests": 266,
+      "catalogRequests": 1,
+      "specimenRequests": 1,
+      "fontCreates": 1,
+      "imageDecodes": 249,
+      "transferBytes": 19516740
+    },
+    {
+      "homeMs": 1930,
+      "jumpMs": 1769,
+      "backMs": 220,
+      "homeVisibleCards": 12,
+      "homeRequests": 70,
+      "totalRequests": 266,
+      "catalogRequests": 1,
+      "specimenRequests": 1,
+      "fontCreates": 1,
+      "imageDecodes": 249,
+      "transferBytes": 19516740
+    },
+    {
+      "homeMs": 1875,
+      "jumpMs": 2000,
+      "backMs": 316,
+      "homeVisibleCards": 12,
+      "homeRequests": 70,
+      "totalRequests": 266,
+      "catalogRequests": 1,
+      "specimenRequests": 1,
+      "fontCreates": 1,
+      "imageDecodes": 249,
+      "transferBytes": 19516740
+    }
+  ]
+}

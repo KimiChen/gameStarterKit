@@ -2,6 +2,8 @@ import { UniFlexWebRuntime } from "../client/src/kits/uniflex/api/web/index";
 import { loadGameUI } from "../client/src/ui-uniflex/generated/ui";
 import { webResourceMap } from "../client/src/ui-uniflex/generated/web-resource-map";
 import type { CatalogLeaf } from "./catalog";
+import { PreviewQueue, type PreviewJob } from "./preview-queue";
+import { PreviewResources, createPreviewRuntime } from "./preview-resources";
 import { mountPreviewCatalog, type CatalogPreviewHost } from "./catalog-shell";
 import { findSpecimen } from "../client/src/ui-uniflex/modules/preview/ComponentSpecimen/specimens";
 import { declarePsdOwnership, stampPsdIdentities } from "./psd-ownership";
@@ -44,7 +46,7 @@ function applyEmbedCanvas(): void {
 
 const CARD_BOOTS = 3;
 
-interface CatalogJob {
+interface CatalogJob extends PreviewJob {
     slot: HTMLElement;
     item: CatalogLeaf;
     skin: string;
@@ -69,61 +71,51 @@ function previewEntry(item: CatalogLeaf): ScreenEntry | null {
 
 function mountCatalog(): void {
     document.body.classList.add("is-catalog");
-    const queue: CatalogJob[] = [];
-    const current = new Map<HTMLElement, CatalogJob>();
-    let running = 0;
-    const pump = () => {
-        while (running < CARD_BOOTS && queue.length > 0) {
-            const job = queue.shift();
-            if (!job || job.cancel || current.get(job.slot) !== job) continue;
-            running += 1;
-            void bootCard(job).finally(() => {
-                running -= 1;
-                pump();
-            });
-        }
-    };
+    const resources = new PreviewResources(document, webResourceMap);
+    const queue = new PreviewQueue<HTMLElement>(CARD_BOOTS);
     const preview: CatalogPreviewHost = {
-        show(slot, item, skin) {
-            const restart = current.has(slot);
-            preview.hide(slot);
+        show(slot, item, skin, priority = 1) {
             const job: CatalogJob = {
-                slot,
-                item,
-                skin,
+                slot, item, skin, priority,
                 cancel: false,
                 runtime: null,
+                run: () => bootCard(job),
                 dispose() {
                     this.cancel = true;
                     this.runtime?.dispose();
                     this.runtime = null;
+                    this.slot.dataset.previewState = "idle";
                 },
             };
-            current.set(slot, job);
-            if (restart) queue.unshift(job);
-            else queue.push(job);
-            pump();
+            queue.show(slot, job);
+            slot.dataset.previewState = "queued";
         },
+        prioritize: (slot, priority) => queue.prioritize(slot, priority),
         hide(slot) {
-            const job = current.get(slot);
-            if (!job) return;
-            current.delete(slot);
-            job.dispose();
+            queue.hide(slot);
+            resources.store.trimUnused({ maxContexts: 16 });
         },
     };
+    window.addEventListener("pagehide", (event) => {
+        // A bfcache entry resumes the same document, including its mounted card registry.
+        if (event.persisted) return;
+        queue.dispose();
+        resources.dispose();
+    });
     mountPreviewCatalog(screenCatalog.screens, preview);
 
     async function bootCard(job: CatalogJob): Promise<void> {
-        if (job.cancel || current.get(job.slot) !== job) return;
+        if (job.cancel) return;
+        job.slot.dataset.previewState = "loading";
         const entry = previewEntry(job.item);
         if (!entry || job.cancel) return;
-        const created = new UniFlexWebRuntime({
+        const created = createPreviewRuntime({
             container: job.slot,
             resources: webResourceMap,
             width: entry.canvas.width,
             height: entry.canvas.height,
             loadUI: loadGameUI,
-        });
+        }, resources);
         job.runtime = created;
         if (job.cancel) {
             created.dispose();
@@ -132,13 +124,13 @@ function mountCatalog(): void {
         const session: PreviewSession = {
             get runtime() { return job.runtime ?? created; },
             set runtime(value: UniFlexWebRuntime) { job.runtime = value; },
-            recreate: () => new UniFlexWebRuntime({
+            recreate: () => createPreviewRuntime({
                 container: job.slot,
                 resources: webResourceMap,
                 width: entry.canvas.width,
                 height: entry.canvas.height,
                 loadUI: loadGameUI,
-            }),
+            }, resources),
             back: () => {},
             restored: () => {},
             stopped: () => job.cancel,
@@ -150,8 +142,15 @@ function mountCatalog(): void {
         };
         try {
             await startPreview(session, entry);
+            if (!job.cancel) job.slot.dataset.previewState = "ready";
         } catch (error) {
-            if (!job.cancel) console.error("[UniFlex Web] 卡片预览失败：", error);
+            if (!job.cancel) {
+                job.slot.dataset.previewState = "error";
+                console.error("[UniFlex Web] 卡片预览失败：", error);
+            }
+        } finally {
+            // A cancelled startup can release its lease after hide() has already returned.
+            resources.store.trimUnused({ maxContexts: 16 });
         }
     }
 }

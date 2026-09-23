@@ -3,7 +3,8 @@ import type { ScreenEntry } from "./screens";
 
 /** 目录卡片的预览挂载。卡片画在当前页，不再各开一个 iframe。 */
 export interface CatalogPreviewHost {
-    show(slot: HTMLElement, item: CatalogLeaf, skin: string): void;
+    show(slot: HTMLElement, item: CatalogLeaf, skin: string, priority?: number): void;
+    prioritize(slot: HTMLElement, priority: number): void;
     hide(slot: HTMLElement): void;
 }
 
@@ -290,10 +291,21 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
     };
     const applySkin = () => {
         syncFrameSrc();
-        for (const [slot, item] of mounted) {
+        for (const [frame, record] of frames) {
+            const { slot, item } = record;
+            if (!mounted.has(slot)) continue;
             if (item.kind !== "component") continue;
-            preview.show(slot, item, prefs.skin);
+            const bounds = frame.getBoundingClientRect();
+            const fullscreen = record.host !== record.home;
+            if (fullscreen || (bounds.bottom > -240 && bounds.top < innerHeight + 240)) {
+                preview.show(slot, item, prefs.skin, fullscreen ? 0 : bounds.bottom > 44 && bounds.top < innerHeight ? 1 : 2);
+            } else {
+                mounted.delete(slot);
+                recent.delete(slot);
+                preview.hide(slot);
+            }
         }
+        schedulePreviews();
         for (const frame of Array.from(shadow.querySelectorAll<HTMLElement>('.frame[data-kind="component"]'))) {
             const iframe = frame.querySelector("iframe");
             if (!iframe?.getAttribute("src") || iframe.dataset.ready !== "1") continue;
@@ -443,6 +455,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
             preview.hide(record.slot);
         }
         frames.clear();
+        recent.clear();
         for (const observer of frameSizes.splice(0)) observer.disconnect();
     };
 
@@ -495,16 +508,46 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         return article;
     };
 
-    const frameObserver = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-            const frame = entry.target as HTMLElement;
-            const record = frames.get(frame);
-            if (!record) continue;
-            if (!entry.isIntersecting || mounted.has(record.slot)) continue;
-            mounted.set(record.slot, record.item);
-            preview.show(record.slot, record.item, prefs.skin);
+    // Keep a small recent history for back-scrolling; queued offscreen work is never retained.
+    const recent = new Map<HTMLElement, number>();
+    let useOrder = 0;
+    let previewRaf = 0;
+    const refreshPreviews = () => {
+        previewRaf = 0;
+        const retained: HTMLElement[] = [];
+        for (const [frame, record] of frames) {
+            const bounds = frame.getBoundingClientRect();
+            const fullscreen = record.host !== record.home;
+            const visible = bounds.bottom > 44 && bounds.top < innerHeight;
+            const nearby = bounds.bottom > -240 && bounds.top < innerHeight + 240;
+            if (fullscreen || nearby) {
+                const priority = fullscreen ? 0 : visible ? 1 : 2;
+                recent.set(record.slot, ++useOrder);
+                if (!mounted.has(record.slot)) {
+                    mounted.set(record.slot, record.item);
+                    preview.show(record.slot, record.item, prefs.skin, priority);
+                } else preview.prioritize(record.slot, priority);
+            } else if (mounted.has(record.slot)) {
+                if (record.slot.dataset.previewState === "ready") retained.push(record.slot);
+                else {
+                    mounted.delete(record.slot);
+                    recent.delete(record.slot);
+                    preview.hide(record.slot);
+                }
+            }
         }
-    }, { rootMargin: "240px" });
+        retained.sort((a, b) => (recent.get(b) ?? 0) - (recent.get(a) ?? 0));
+        for (const slot of retained.slice(12)) {
+            mounted.delete(slot);
+            recent.delete(slot);
+            preview.hide(slot);
+        }
+    };
+    const schedulePreviews = () => {
+        if (!previewRaf) previewRaf = requestAnimationFrame(refreshPreviews);
+    };
+    const frameObserver = new IntersectionObserver(schedulePreviews, { rootMargin: "240px" });
+    window.addEventListener("resize", schedulePreviews);
 
     const renderMain = () => {
         closeLightbox?.();
@@ -575,7 +618,9 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         spyLock = Date.now() + 900;
         activeId = null;
         setActive(pinned);
-        target?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+        // Direct navigation must not enqueue every card between the old and new sections.
+        target?.scrollIntoView({ behavior: "instant", block: "start" });
+        schedulePreviews();
     };
 
     const openLightbox = (item: CatalogLeaf) => {
@@ -619,6 +664,10 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         let tempSlot: HTMLElement | null = null;
         if (record) {
             record.host = frame;
+            if (!mounted.has(record.slot)) {
+                mounted.set(record.slot, item);
+                preview.show(record.slot, item, prefs.skin, 0);
+            } else preview.prioritize(record.slot, 0);
             frame.append(record.live);
         } else {
             const live = document.createElement("div");
@@ -629,7 +678,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
             root.append(slot);
             frame.append(live);
             tempSlot = slot;
-            preview.show(slot, item, prefs.skin);
+            preview.show(slot, item, prefs.skin, 0);
         }
         body.append(frame);
         box.append(bar, body);
@@ -660,6 +709,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
             record.host = record.home;
             if (record.live.parentElement !== record.home) record.home.append(record.live);
             fitLive(record.home, record.live, item.width, item.height);
+            schedulePreviews();
         };
         const close = () => {
             restore();
@@ -835,6 +885,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
     });
     let spyRaf = 0;
     document.addEventListener("scroll", () => {
+        schedulePreviews();
         if (!spyRaf) spyRaf = requestAnimationFrame(() => { spyRaf = 0; spy(); });
     }, { passive: true });
 
@@ -846,4 +897,5 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
     const hash = location.hash.match(/^#\/([\w-]+)/)?.[1] ?? null;
     if (hash) route(hash);
     else spy();
+    schedulePreviews();
 }
