@@ -253,7 +253,7 @@ export const MAPO_LOD_SCALE_THRESHOLDS: readonly number[] = Object.freeze([0.13,
 export const MAPO_LOD_HYSTERESIS_RATIO = 0.08;
 export const MAPO_SCALE_MIN = 0.05;
 export const MAPO_SCALE_MAX = 2.0;
-export const MAPO_SCALE_INITIAL = 0.85;
+export const MAPO_SCALE_INITIAL = 1.28;
 // ⚠ 这里**没有** `MAPO_BIRDVIEW_LOD`（2026-09-22 随 3D 迁出）。它溯源的原版 `LOD_4` 是 3D 专属：
 //   在 disasm 里只落在 `viewport_lod/{viewport_lod,camera_default,camera_01..03}` 与
 //   `viewmap_3d_refresher.lua`；推动它的 `on_vp_scale_change` 第一条就是
