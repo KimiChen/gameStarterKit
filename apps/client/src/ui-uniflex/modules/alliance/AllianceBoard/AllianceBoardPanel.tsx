@@ -48,9 +48,14 @@ export const AllianceBoardPanel = defineComponent<AllianceBoardPanelProps>((p) =
                 items={[{ id: 'board', label: '留言板' }, { id: 'apply', label: '申请列表' }]}
                 onSelect={(id) => { if (id === 'board' || id === 'apply') selectTab(id); }} />
 
-            <ScreenFooter onBack={back} />
-            <AllianceBoardMessagePanel visible={tab === 'board'} placeholder={p.placeholder}
-                onSend={p.onSend} onAction={p.onAction} />
+            <ScreenFooter onBack={back}>
+                {() => (
+                    <view style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
+                        <AllianceBoardMessagePanel visible={tab === 'board'} placeholder={p.placeholder}
+                            onSend={p.onSend} onAction={p.onAction} />
+                    </view>
+                )}
+            </ScreenFooter>
         </view>
     );
 });

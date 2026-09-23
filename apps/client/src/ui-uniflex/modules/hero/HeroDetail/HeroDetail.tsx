@@ -1,6 +1,6 @@
 import { defineView, useState } from '@uniflex/compiler';
 import { fontRef, imageRef, type ImageRef } from '../../../../kits/uniflex/api/core/index';
-import { SCREEN_FOOTER_HEIGHT, ScreenFooter } from '../../../components/chrome/ScreenFooter';
+import { ScreenFooter } from '../../../components/chrome/ScreenFooter';
 import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { heroDetailTab } from '../../../components/tab/tabSkins';
 import { HeroStarUpgradePanel } from '../HeroStarUpgrade/HeroStarUpgradePanel';
@@ -58,7 +58,6 @@ export const HeroDetail = defineView<HeroDetailParams | void>({ zIndex: 'window'
         : bgYellow;
     const [tab, setTab] = useState<HeroDetailTab>('attributes');
     const [popup, setPopup] = useState<'none' | 'power' | 'star'>('none');
-    const footerHeight = SCREEN_FOOTER_HEIGHT;
     const footerSource = imageRef('ui/hero-detail/nav-base');
     const selectDetailTab = (id: string) => {
         if (id === 'attributes' || id === 'skills' || id === 'equip') setTab(id);
@@ -89,11 +88,14 @@ export const HeroDetail = defineView<HeroDetailParams | void>({ zIndex: 'window'
                 onStarUp={() => { setPopup('star'); params.onStarUp?.(); }}
                 onUpgrade={params.onUpgrade} />
             <HeroDetailSkills visible={tab === 'skills'} skills={params.skills} onSelectSkill={params.onSelectSkill} />
-            <view style={{ position: 'absolute', left: 0, bottom: 0, width: 750, height: footerHeight }}>
-                <ScreenFooter source={footerSource} onBack={params.onBack} />
-                <TabBar skin={heroDetailTab} left={116} top={0} itemWidth={225} gap={-14} width={647}
-                    selected={tab} items={HERO_DETAIL_TABS} onSelect={selectDetailTab} />
-            </view>
+            <ScreenFooter source={footerSource} onBack={params.onBack}>
+                {() => (
+                    <view style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
+                        <TabBar skin={heroDetailTab} left={116} top={0} itemWidth={225} gap={-14} width={647}
+                            selected={tab} items={HERO_DETAIL_TABS} onSelect={selectDetailTab} />
+                    </view>
+                )}
+            </ScreenFooter>
             <view visible={popup === 'power'} interaction="press" onClick={() => setPopup('none')}
                 style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1334, backgroundColor: '#00000066' }}>
                 <view style={{ position: 'absolute', left: 180, top: 458, width: 390, height: 290 }}>

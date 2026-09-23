@@ -178,10 +178,16 @@ export const AllianceTechPanel = defineComponent<AllianceTechPanelProps>((p) => 
 
             <ScreenHeader title={p.title ?? '科技'} top={144} titleTop={169} titleHeight={50} />
 
-            <ScreenFooter onBack={back} />
-            <IconCaptionButton icon={rankIcon} label={rankLabel} left={646} top={1521}
-                iconWidth={82} iconHeight={78} labelTop={71} labelHeight={26}
-                onClick={() => p.onAction?.('open_tech_rank')} />
+            <ScreenFooter onBack={back}>
+                {() => (
+                    <view style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
+                        <IconCaptionButton icon={rankIcon} label={rankLabel} left={646} top={7}
+                            iconWidth={82} iconHeight={78} labelTop={71} labelHeight={26}
+                            onClick={() => p.onAction?.('open_tech_rank')} />
+                    </view>
+                )}
+            </ScreenFooter>
+
             <AllianceMarchBoostPanel visible={detailOpen} techId={detailTechId}
                 onClose={closeDetail}
                 onPayGem={() => p.onAction?.('donate_gem')}

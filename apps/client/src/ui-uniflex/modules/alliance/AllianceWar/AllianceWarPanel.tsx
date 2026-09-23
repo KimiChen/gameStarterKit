@@ -43,13 +43,18 @@ export const AllianceWarPanel = defineComponent<AllianceWarPanelProps>((p) => {
                 items={[{ id: 'rally', label: '集结' }, { id: 'war', label: '战争' }, { id: 'event', label: '活动' }]}
                 onSelect={(id) => { if (id === 'rally' || id === 'war' || id === 'event') selectTab(id); }} />
 
-            <ScreenFooter onBack={back} />
-            <view style={{ position: 'absolute', left: 111.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
-                <ActionButton skin={cyanButton} label="自动集结" onClick={() => p.onAction?.('auto_rally')} />
-            </view>
-            <view style={{ position: 'absolute', left: 384.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
-                <ActionButton skin={confirmButton} label="发起集结" onClick={() => p.onAction?.('start_rally')} />
-            </view>
+            <ScreenFooter onBack={back}>
+                {() => (
+                    <view style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
+                        <view style={{ position: 'absolute', left: 111.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
+                            <ActionButton skin={cyanButton} label="自动集结" onClick={() => p.onAction?.('auto_rally')} />
+                        </view>
+                        <view style={{ position: 'absolute', left: 384.125, bottom: 3.75, width: 255, height: 102, scale: 0.75 }}>
+                            <ActionButton skin={confirmButton} label="发起集结" onClick={() => p.onAction?.('start_rally')} />
+                        </view>
+                    </view>
+                )}
+            </ScreenFooter>
         </view>
     );
 });

@@ -1,4 +1,4 @@
-import { defineComponent } from '@uniflex/compiler';
+import { defineComponent, ScopedSlot } from '@uniflex/compiler';
 import type { ImageRef } from '../../../kits/uniflex/api/core/index';
 import { ActionButton } from '../button/ActionButton';
 import { backButton } from '../button/buttonSkins';
@@ -10,6 +10,8 @@ export interface ScreenFooterProps {
     readonly backSource?: ImageRef;
     readonly backLeft?: number;
     readonly onBack?: () => void;
+    /** Optional footer content, positioned relative to the footer's top-left corner. */
+    readonly children?: () => unknown;
 }
 
 /** Classic assembled footer height; pages that pin scroll to the bar keep this export. */
@@ -33,6 +35,9 @@ export const ScreenFooter = defineComponent<ScreenFooterProps>((p) => {
                 style={{ position: 'absolute', left: 0, top: 0, width: footerWidth, height: footerHeight, sizeMode: 'sliced' }} />
             <ActionButton skin={backButton} source={backSource} left={backLeft} top={backTop}
                 width={backWidth} height={backHeight} accessibilityLabel="返回" onClick={onBack} />
+            <ScopedSlot args={[]}>
+                <view visible={false} />
+            </ScopedSlot>
         </view>
     );
 });

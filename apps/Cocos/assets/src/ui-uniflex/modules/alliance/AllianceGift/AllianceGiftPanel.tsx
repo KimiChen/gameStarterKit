@@ -73,11 +73,16 @@ export const AllianceGiftPanel = defineComponent<AllianceGiftPanelProps>((p) => 
                 items={[{ id: 'normal', label: '普通礼物' }, { id: 'rare', label: '稀有礼物' }]}
                 onSelect={(id) => { if (id === 'normal' || id === 'rare') selectTab(id); }} />
 
-            <ScreenFooter onBack={back} />
-            <view style={{ position: 'absolute', left: 280, bottom: 16, width: claimWidth, height: claimHeight }}>
-                <ActionButton skin={confirmButton} label={p.claimLabel ?? '一键领取'} width={claimWidth} height={claimHeight}
-                    onClick={claim} />
-            </view>
+            <ScreenFooter onBack={back}>
+                {() => (
+                    <view style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
+                        <view style={{ position: 'absolute', left: 280, bottom: 16, width: claimWidth, height: claimHeight }}>
+                            <ActionButton skin={confirmButton} label={p.claimLabel ?? '一键领取'} width={claimWidth} height={claimHeight}
+                                onClick={claim} />
+                        </view>
+                    </view>
+                )}
+            </ScreenFooter>
         </view>
     );
 });

@@ -82,6 +82,12 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 未传内容时保持原有标题栏用法。内部用 `ScopedSlot args={[]}` + 隐藏空节点兜底，
 因为当前 UniFlex 的普通 `Slot` 要求调用方必须传入一个 JSX 子节点。
 
+`ScreenFooter` 使用相同的可选插槽写法，保留底图、返回按钮和贴底定位，未传内容时无需改调用方。
+底部页签、操作按钮、输入面板由页面通过 `() => <view ... />` 提供，示例见 `HeroDetail`、
+`MailBattleReport`、`AllianceBoardPanel`。多项内容放进绝对定位、`width/height: '100%'` 的容器；
+容器不加 `interaction="press"`，避免拦截返回按钮。插槽坐标相对底栏，页面绝对 `top` 要换算，
+贴底元素的 `bottom` 可保留；不要让内容撑高底栏，`SCREEN_FOOTER_HEIGHT` 仍为经典皮肤的 110。
+
 ## 4. VirtualList
 
 可滚动、重复行必须包 `VirtualList` + `ArrayVirtualListDataSource`。

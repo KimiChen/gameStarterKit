@@ -185,27 +185,32 @@ export const ShopPanel = defineComponent<ShopPanelProps>((p) => {
                 items={[{ id: 'vip', label: 'VIP商店' }, { id: 'alliance', label: '联盟每周商店' }, { id: 'gem', label: '宝石商店' }]}
                 onSelect={(id) => { if (id === 'vip' || id === 'alliance' || id === 'gem') selectTab(id); }} />
 
-            <ScreenFooter onBack={back} />
-            <text visible={showRestock} value={p.restockLabel ?? '每周一补货'}
-                style={{ position: 'absolute', left: 300, bottom: 60, width: 149, height: 30,
-                    font: fontRef('fonts/regular', 700), fontSize: 26, color: '#ffffff', bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-            <image visible={showRestock} source={imageRef('ui/shop/clock')}
-                style={{ position: 'absolute', left: 248, bottom: 14, width: 35, height: 42 }} />
-            <text visible={showRestock} value={p.restockTime ?? '4天17:35:26'}
-                style={{ position: 'absolute', left: 289, bottom: 19, width: 173, height: 27,
-                    font: fontRef('fonts/regular', 700), fontSize: 24, color: '#ffffff', bold: true,
-                    verticalAlign: 'center', overflow: 'shrink' }} />
-            <view visible={isGem} interaction="press" onClick={() => p.onAction?.('open_emoji')}
-                style={{ position: 'absolute', left: 521, bottom: 29, width: 59, height: 60 }}>
-                <image source={imageRef('ui/alliance/board-emoji')}
-                    style={{ width: 59, height: 60 }} />
-            </view>
-            <view visible={isGem} interaction="press" onClick={() => p.onAction?.('send_message')}
-                style={{ position: 'absolute', left: 589, bottom: 19, width: 154, height: 77 }}>
-                <image source={imageRef('ui/alliance/board-send')}
-                    style={{ width: 154, height: 77 }} />
-            </view>
+            <ScreenFooter onBack={back}>
+                {() => (
+                    <view style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
+                        <text visible={showRestock} value={p.restockLabel ?? '每周一补货'}
+                            style={{ position: 'absolute', left: 300, bottom: 60, width: 149, height: 30,
+                                font: fontRef('fonts/regular', 700), fontSize: 26, color: '#ffffff', bold: true,
+                                horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+                        <image visible={showRestock} source={imageRef('ui/shop/clock')}
+                            style={{ position: 'absolute', left: 248, bottom: 14, width: 35, height: 42 }} />
+                        <text visible={showRestock} value={p.restockTime ?? '4天17:35:26'}
+                            style={{ position: 'absolute', left: 289, bottom: 19, width: 173, height: 27,
+                                font: fontRef('fonts/regular', 700), fontSize: 24, color: '#ffffff', bold: true,
+                                verticalAlign: 'center', overflow: 'shrink' }} />
+                        <view visible={isGem} interaction="press" onClick={() => p.onAction?.('open_emoji')}
+                            style={{ position: 'absolute', left: 521, bottom: 29, width: 59, height: 60 }}>
+                            <image source={imageRef('ui/alliance/board-emoji')}
+                                style={{ width: 59, height: 60 }} />
+                        </view>
+                        <view visible={isGem} interaction="press" onClick={() => p.onAction?.('send_message')}
+                            style={{ position: 'absolute', left: 589, bottom: 19, width: 154, height: 77 }}>
+                            <image source={imageRef('ui/alliance/board-send')}
+                                style={{ width: 154, height: 77 }} />
+                        </view>
+                    </view>
+                )}
+            </ScreenFooter>
 
             <ShopGetItemPanel visible={buyOpen} itemId={buyGoods?.itemId}
                 currency={buyGoods?.currency}
