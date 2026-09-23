@@ -197,6 +197,7 @@ apps/Cocos/
 | `shared/logic/lodBands.ts` | `lodForValue` / `lodForValueStable`；消费方传严格升序阈值与 `[0,1)` 滞回比例，0 为最细档，支持一次跨多档。SLG 的 `slgLodForScale` / `slgLodForScaleStable` 已为薄包装，阈值与 8% 滞回仍归 SLG。 |
 | `logic/scene3d/cameraRig.ts` | `CameraRig` 管 pan / pinch / `zoomBy`、惯性、边界、指针及 `version` / `touched`；注入 `projection.offsetAt / halfExtents` 与手感参数，输出 `center / zoom / version`。`follow(target)` 采样目标引用，手动输入或 `cancel` 退出跟随；SLG `MapCamera` 保留 2D 投影和公开 API。 |
 | `logic/scene3d/chunkStreamer.ts` | `ChunkStreamer` 注入地图宽高、chunk 边长、数值 `key / unkey`、加载 / 保留外扩；`update` 产差分，`take / takeBatch` 中心向外调度，`current / accept / reject / defer / reset` 守请求代次。只调度不发请求；`defer` 回队首，重试时机由调用方负责。SLG `MapStreamer` 已为薄包装。 |
+| `logic/scene3d/assetPlan.ts` | `AssetPlan(catalog, { now, graceMs? })`：`update(quality, lod, visibleChunks)` 先按层过滤，再选显式变体，输出 `acquire / release`；共享地址按 kind / bundle / path 去重。出档默认保留 5 秒，`flush()` 处理静止视口的到期释放，重入取消释放；`close()` 立即清空并终结计划。 |
 | `logic/scene3d/pickMath.ts` | `rayPlane` 求水平面 `y = height` 交点，`rayAabb` 求闭合实体盒首次相交；前向命中返回 `{ t, point }`，未命中返回 `null`，方向不必归一化。`unprojectDesignPx(x, y, lease.screenToRay, height)` 经当前舞台相机反投影到水平面。 |
 | `logic/scene3d/viewport.ts` | `resolveViewport / designToScreen` 处理设计矩形、留黑边与屏幕像素换算，由 Stage3D 适配器消费。拾取方使用 `lease.screenToRay`，不重复缩放或翻转 Y。 |
 
@@ -204,6 +205,16 @@ apps/Cocos/
 `step` 为秒；`unprojectDesignPx` 与舞台视口则使用**左下原点的绝对设计像素**，保留已归属拖拽的越界坐标。
 View 接收框架 raw-input，转换坐标后交给 Logic，并在 cancel / hide / 关闭时清空手势；相机姿态和节点更新
 仍由 View 经舞台租约执行。数学模块不自行订阅输入、加载资产或操作节点。
+
+`AssetPlan` 的 catalog 复用已登记的 quality / pool / detail-layers 表；chunk 只引用预制地址、pool id、
+texture id，层归属保持单源。可选 `prefabLods` 显式列出 0 / 1 / 2 档地址，两级模型在后两格重复远档；
+纹理直接选 quality × LOD 单元，不再次应用 textureStepDown，也不改变网格 LOD。缺失单元、未知引用
+或冲突归属在建计划时拒绝；catalog 为脱离输入的快照，内容表改变需创建新计划。
+`now` 注入单调毫秒时钟，调用方每帧执行 `update` 或 `flush`；已有 LOD 滞回仍由 `lodForValueStable` 提供。
+View 将差分中的 kind 映射到 Prefab / Texture2D，并按每个返回 token 管理 AssetLease 请求与租约。
+加载失败后 `reject(token)` 使下一次 update 可重试，完成回调先验 `current(token)`；旧代次不得接管新请求。
+`current` 包括仍在宽限期的持有状态，不能当作当前可见或可激活的判据。降档时 View 立即隐藏被禁用层；
+收到 release 或 close 的结果后取消在途请求，并在节点 / 渲染引用退休后释放成功租约。实体激活与池由 SC3-B3 接续。
 
 玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
 `RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。组合点采用生成式

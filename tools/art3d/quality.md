@@ -25,12 +25,20 @@ RGBA32F 不可采样时，仍保留有顶点纹理采样能力的 RGBA8 路径�
 | --- | --- |
 | `quality.json` | `tiers.low/medium/high`：details、shadows（off/main/all）、maxEffects、maxUnits、maxUnitsWithoutInstancing、textureStepDown、minTextureSize；当前画质判定消费 |
 | `pool.json` | `maxActivationsPerFrame` 的三档整数；entries 的 id、prefab 地址、三档 capacity；SC3-B3 消费 |
-| `detail-layers.json` | layers 的 id（base/details）、prefabs、pools、textures；每张纹理显式登记三种 quality × 三种 lod 的九个地址；SC3-B2/B3 消费 |
+| `detail-layers.json` | layers 的 id（base/details）、prefabs、pools、textures；每张纹理显式登记三种 quality × 三种 lod 的九个地址；SC3-B2 的资产计划已消费，实体激活由 B3 接续 |
 
-每个池只能归属一个层，base 层必需。示例把 cubes 池放在 details 层；low 后续不得加载或激活它。
+每个池只能归属一个层，base 层必需。示例把 cubes 池放在 details 层；low 的资产计划不会请求它，B3 同时禁止激活。
 池的 4 / 8 / 16 次每帧激活与 100 / 300 / 500 静态立方体容量只是灰盒初值，尚未执行队列或证明容量。
 棋盘纹理九个格子共用 SC0 的 64² 精确尺寸例外，供真实资源路径验证；普通内容必须登记实际离线变体。
-纹理降档不改变网格 lod。离线降尺寸、选择和缺失资源处理仍按 SC3/SC5 验收。
+纹理降档不改变网格 lod。SC3-B2 已验证九格精确选择与缺失处理；离线降尺寸仍由 SC5 验收。
+
+SC3-B2 的 `AssetPlan` 接收这三张表及 chunk 内容清单，在选择变体前过滤禁用层。纹理表已经表达
+textureStepDown / minTextureSize 的离线选择，运行时不二次降档或推导文件名。预制可另给三个显式
+LOD 地址；省略则保持登记地址。两级模型在 LOD 1 / 2 重用远档，资源共享按 kind + bundle + path 去重。
+不完整变体 / 未登记引用在建计划时拒绝，真实加载失败由 AssetLease 返回三态错误；View 归还失败请求后
+调用 `reject(token)`，下次更新可重新请求同一地址。计划不接管引擎引用、节点或定时器。
+调用方注入单调毫秒时钟，每帧 `update` 或 `flush`；出档默认延迟 5 秒释放，重入取消等待，关闭立即清空。
+详细消费约定见 [CLIENT §3](../../docs/CLIENT.md#3-view-与-logic-分层)。
 
 quality 默认政策从 JSON 生成小型 TypeScript 镜像，避免同步端口依赖启动时的异步资源加载：
 
@@ -40,7 +48,8 @@ npm run sync:client
 ```
 
 `qualityDefaults.generated.ts` 禁手改；`test:client` 检查它与 JSON 字节一致，单独只读检查可用
-`node tools/art3d/sync-quality-defaults.mjs --check`。其余两张表当前只在验收场景加载校验。
+`node tools/art3d/sync-quality-defaults.mjs --check`。其余两张表由调用方加载后交给资产计划或实体池；
+正式夹具的完整装配与池 / 性能验收仍在 SC3 后续批次。
 
 ## 压缩与验收场景
 

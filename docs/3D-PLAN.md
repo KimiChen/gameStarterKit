@@ -273,10 +273,12 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
 - [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [x] SC2-B5
-- [x] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
+- [x] SC3-B1 [x] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [ ] slg 资源 / 全局设置（SC3）
+
+- 2026-09-23 SC3-B2 完成：纯逻辑 `AssetPlan` 复用 quality / pool / detail-layers 表，以 chunk 内容引用计算按 kind / bundle / path 去重的资产差分；先过滤禁用层，再选显式预制 LOD 与纹理 quality × LOD 单元，纹理降档不改网格 LOD。注入单调毫秒时钟，出档默认保留 5 秒，重复更新不续期、重入取消释放、静止视口可 flush、关闭立即清空；不可变请求 token 隔离迟到完成与失败，reject 后同视口可重试。缺失变体、未知引用及冲突归属拒绝装载，不静默回落。新增 44 项测试，连同画质 / AssetLease / 纯度共 112 项定向回归通过；临时副本删除画质过滤 / 延迟条件，分别打红 9 / 10 项。真实 Creator 3.8.8 声明编译、两套客户端类型检查、独立 1233 项客户端测试及本批 `verify:all` 全过（Node 26.5.0；客户端 1233 / UniFlex 契约 80 / 服务端 1382，加其余门禁合计 2911 项）。WebGL2 / 实际 WebGL1 各 11 项检查、各 20 次计划开关后引用回基线，最后三份探针资源引用均为 0，无运行时诊断。最新地图测试的 cwd 路径问题已独立修复于 `cd937b16`；陈旧 UniFlex 本地生成物经原构建 / 同步链刷新，未修改其真源。CLIENT 与 quality.md 已登记消费约定；持有有效性包括宽限期，不等同于当前可见或可激活，View 仍负责先退节点 / 渲染引用再还租约。源码、日志、变异与两上下文证据哈希见 [B2 验收摘要](perf/stage3d/2026-09-23-sc3-b2.json)。本批没有实体容量、GFX 性能或真机缓存结论；棋盘仍用既有 64² 例外，离线变体保真留 SC5。SC3 未退出，下一批 SC3-B3。
 
 - 2026-09-23 SC3-B1 完成：`AssetLease` 复用同步 retainer，提供按 bundle / path / type 的异步批量加载、保序类型化资产集、默认 15 秒整包 deadline、在途 AbortSignal 取消与三态错误；失败立即清理、迟到成功成对归还，重复地址 / 并发页面 / 取消后重试各持独立引用，成功租约在节点与渲染引用退出后显式幂等释放。`cocosAssetLoader.ts` 经 `getBundle / loadBundle / bundle.load` 接入真实引擎，`resources` 按普通 bundle 处理，不移除共享缓存。新增 32 项回归，连同既有 retainer 共 41 项定向测试通过；临时副本分别删除失败整包回收 / 迟到成功回收，各打红 8 项，正式源码未改。真实 Creator 3.8.8 声明编译为 0 诊断，修正了本地桩未拦住的 `Constructor<T>` 参数兼容问题；独立 `typecheck`（含两套客户端配置）、1187 项客户端测试及最终 `verify:all` 全过（Node 26.5.0；客户端 1187 / UniFlex 契约 77 / 服务端 1382，加其余门禁合计 2862 项）。Creator WebGL2 / 实际 WebGL1 各通过 10 项真实 Prefab / JSON / Texture 加载检查，无运行时诊断；各 20 次循环引用回到基线，最后归还本探针持有的三份引用均为 0，包含取消、实际 500 ms 超时、缺资源与重试。冷 package bundle 分派由生产适配器的 fake transport 验证；真实故障在适配器回调处延迟引擎完成，不冒充网络或真机缓存故障。源码 / 编译镜像、日志与证据哈希见 [B1 验收摘要](perf/stage3d/2026-09-23-sc3-b1.json)。CLIENT 与 view/README 已登记消费方式；3d.md §3.2 澄清为 B1 交付异步加载、B4 接资源型 globals 并迁移 SLG / 临时 loader，持有规则不变。SC3 未退出，本批不代表实体容量或 GFX 性能验收；下一批 SC3-B2。
 

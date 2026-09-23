@@ -1,4 +1,4 @@
-/** JSON contracts shared by quality selection and the later SC3 asset plan/pool. No engine imports. */
+/** JSON contracts shared by quality selection and the SC3 asset plan/pool. No engine imports. */
 export type QualityTier = "low" | "medium" | "high";
 export type ShadowQuality = "off" | "main" | "all";
 export const QUALITY_TIERS: readonly QualityTier[] = Object.freeze(["low", "medium", "high"]);
@@ -57,7 +57,7 @@ function choice<T extends string>(value: unknown, allowed: readonly T[], path: s
     return value as T;
 }
 function version(value: Record<string, unknown>, path: string): void { if (value.version !== 1) fail(`${path}.version`, "expected 1"); }
-function address(value: unknown, path: string): AssetAddress {
+export function parseAssetAddress(value: unknown, path = "asset"): AssetAddress {
     const data = record(value, path); keys(data, ["bundle", "path"], path);
     if (typeof data.bundle !== "string" || !/^[a-zA-Z][a-zA-Z0-9-]*$/.test(data.bundle)) fail(`${path}.bundle`, "expected bundle name");
     if (typeof data.path !== "string" || !/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(data.path)) {
@@ -102,7 +102,7 @@ export function parsePoolTable(value: unknown): PoolTable {
     const entries = list(data.entries, "pool.entries").map((entry, i) => {
         const path = `pool.entries[${i}]`, row = record(entry, path); keys(row, ["id", "prefab", "capacity"], path);
         const name = id(row.id, `${path}.id`); unique(name, seen, path);
-        return Object.freeze({ id: name, prefab: address(row.prefab, `${path}.prefab`), capacity: tierNumbers(row.capacity, `${path}.capacity`) });
+        return Object.freeze({ id: name, prefab: parseAssetAddress(row.prefab, `${path}.prefab`), capacity: tierNumbers(row.capacity, `${path}.capacity`) });
     });
     return Object.freeze({ version: 1, maxActivationsPerFrame: tierNumbers(data.maxActivationsPerFrame, "pool.maxActivationsPerFrame", 1),
         entries: Object.freeze(entries) });
@@ -117,7 +117,7 @@ export function parseDetailLayersTable(value: unknown, pool: PoolTable): DetailL
         const name = choice(row.id, ["base", "details"] as const, `${path}.id`); unique(name, seen, path);
         return Object.freeze({
             id: name,
-            prefabs: Object.freeze(list(row.prefabs, `${path}.prefabs`).map((v, j) => address(v, `${path}.prefabs[${j}]`))),
+            prefabs: Object.freeze(list(row.prefabs, `${path}.prefabs`).map((v, j) => parseAssetAddress(v, `${path}.prefabs[${j}]`))),
             pools: Object.freeze(list(row.pools, `${path}.pools`).map((v) => {
                 const name = id(v, `${path}.pools`); unique(name, usedPools, `${path}.pools`);
                 if (!pool.entries.some((entry) => entry.id === name)) fail(`${path}.pools`, `unknown pool ${name}`);
@@ -134,7 +134,7 @@ export function parseDetailLayersTable(value: unknown, pool: PoolTable): DetailL
                     const quality = choice(cell.quality, QUALITY_TIERS, `${cellPath}.quality`), lod = integer(cell.lod, `${cellPath}.lod`);
                     if (lod > 2) fail(`${cellPath}.lod`, "expected 0 / 1 / 2");
                     unique(`${quality}:${lod}`, cells, cellPath);
-                    return Object.freeze({ quality, lod: lod as 0 | 1 | 2, asset: address(cell.asset, `${cellPath}.asset`) });
+                    return Object.freeze({ quality, lod: lod as 0 | 1 | 2, asset: parseAssetAddress(cell.asset, `${cellPath}.asset`) });
                 });
                 if (cells.size !== 9) fail(texturePath, "expected every quality × LOD variant (3 × 3)");
                 return Object.freeze({ id: name, variants: Object.freeze(variants) });

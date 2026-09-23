@@ -1,0 +1,335 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-23",
+  "batch": "SC3-B2",
+  "status": "complete",
+  "phaseExited": false,
+  "verificationBase": "cd937b1637d29447abdcba7b7fd6b0daed6e630e",
+  "delivered": [
+    "AssetPlan snapshots quality/pool/detail-layer catalogs and chunk references without engine, DOM, timer or host-clock dependencies.",
+    "Layer filtering precedes explicit prefab LOD and quality-by-LOD texture selection. Shared content is coalesced by kind/bundle/path; two-level models can repeat the far address.",
+    "Default 5000ms grace uses an injected monotonic clock. Repeated out-of-view updates preserve the original deadline; reentry cancels expiry; flush services stationary views; close drains immediately and permanently.",
+    "Immutable per-acquisition tokens fence stale completions and failures. reject permits same-viewport retries; loading/cancellation/ref ownership remain with AssetLease and the View.",
+    "Catalog shape, missing cells, unknown references, ambiguous prefab layers and invalid clocks are rejected without silently falling back or mutating active ownership."
+  ],
+  "sources": [
+    {
+      "source": "apps/client/src/logic/scene3d/assetPlan.ts",
+      "mirror": "apps/Cocos/assets/src/logic/scene3d/assetPlan.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/logic/scene3d/assetPlan.ts",
+      "sha256": "807f816e5075fd9cf93ef3d05b92e68403ddd430b81b31110cdb392f10da9f4e",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/f4/f439755fc6b84fcef89209ed7e00e333084f275e.js.map"
+    },
+    {
+      "source": "apps/client/src/logic/scene3d/qualityData.ts",
+      "mirror": "apps/Cocos/assets/src/logic/scene3d/qualityData.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/logic/scene3d/qualityData.ts",
+      "sha256": "362ce5b8f6817179d26f99a6ebf9b7e75481b622d2f5ab7f7468c012fa18838c",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/26/263af1d50f5fe57365db2d4306b96d3a2f46fa3b.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/cocosAssetLoader.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/cocosAssetLoader.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/cocosAssetLoader.ts",
+      "sha256": "4f8f3690cba2614323f569301f8d5a9b93593db411eff41030aa7aca644fc427",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/39/39f5f9daf0a779bbd8d91f321d34bf46eff37ac2.js.map"
+    }
+  ],
+  "test": {
+    "path": "apps/client/test/assetPlan.test.ts",
+    "sha256": "14bc46acb6918186cc3e3705b16ae14ba1614f74d1ffd8a4f0e17b3f1a59b733"
+  },
+  "referenceApi": {
+    "engine": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/bin/.declarations/cc.d.ts",
+    "diagnostics": 0,
+    "report": {
+      "path": ".cache/sc3-b2/real-engine-types.json",
+      "sha256": "ce49e6c2d5690e04d96ee6adb849bc85857288b1777ddc9bfa7745219ca4c7b9"
+    },
+    "note": "No new engine API in the pure plan. Real loading/refcount evidence reuses SC3-B1; cc.d.ts 3.8.8 addRef/decRef lines 28821/28832."
+  },
+  "verification": {
+    "node": "v26.5.0",
+    "assetPlan": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 44,
+      "testGroups": [
+        44
+      ],
+      "log": {
+        "path": ".cache/sc3-b2/asset-plan-final.log",
+        "sha256": "0a8615b935b14a99e7d2210a75e859ee660379306e927f69a4ab2327eb29e1a1"
+      }
+    },
+    "targeted": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 112,
+      "testGroups": [
+        112
+      ],
+      "log": {
+        "path": ".cache/sc3-b2/targeted-final.log",
+        "sha256": "2d4e004d1840a075c76d5ecb07be94a2515f03f34f82b7cf909023440a20fa62"
+      }
+    },
+    "independentTypecheck": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b2/typecheck-final.log",
+        "sha256": "815400662382d23981044f33a45891d33e84802c2f4fe6c5feab1ad29a3ea430"
+      }
+    },
+    "finalTestsTypecheck": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b2/typecheck-tests-final.log",
+        "sha256": "c0008dc634104a7686e8fe718933eb618d154dc8cb4dfa790e86d1f34f061466"
+      }
+    },
+    "independentClientTests": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 1233,
+      "testGroups": [
+        1233
+      ],
+      "log": {
+        "path": ".cache/sc3-b2/test-client-complete.log",
+        "sha256": "865ea05b5d9eff274e048aa17665236fb8d96db4708f53f48cb5625bd5400e1c"
+      }
+    },
+    "verifyAll": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 2911,
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1233,
+        80,
+        1382
+      ],
+      "log": {
+        "path": ".cache/sc3-b2/verify-all.log",
+        "sha256": "34c4caa5ed0cad691cac46fccc97bbecb442dfa001a7ae64a874ced796e006f2"
+      }
+    }
+  },
+  "mutations": {
+    "sourceSha256": "807f816e5075fd9cf93ef3d05b92e68403ddd430b81b31110cdb392f10da9f4e",
+    "testSha256": "14bc46acb6918186cc3e3705b16ae14ba1614f74d1ffd8a4f0e17b3f1a59b733",
+    "cases": [
+      {
+        "name": "details-filter",
+        "mutation": {
+          "before": "if (entry.layer === \"details\" && !this.quality.tiers[quality].details) continue;",
+          "after": "/* mutation: skip quality filter */"
+        },
+        "exitCode": 1,
+        "failedTests": [
+          "AssetPlan: low requests only base prefab and the exact low texture cell",
+          "AssetPlan: low × LOD 0 uses explicit cells and keeps mesh LOD independent",
+          "AssetPlan: low × LOD 1 uses explicit cells and keeps mesh LOD independent",
+          "AssetPlan: low × LOD 2 uses explicit cells and keeps mesh LOD independent",
+          "AssetPlan: the provided quality policy controls filtering, including a disabled medium tier",
+          "AssetPlan: chunks share one hold and removing one consumer cannot start its release clock",
+          "AssetPlan: cut to low acquires no details and retires old details/high textures after grace",
+          "AssetPlan: pool prefabs use explicit mesh variants after their owning layer passes the quality gate",
+          "AssetPlan: checked-in SC1-B8 tables produce the actual framework resource addresses"
+        ],
+        "log": ".cache/sc3-b2/mutation-details-filter-final.log"
+      },
+      {
+        "name": "grace-deadline",
+        "mutation": {
+          "before": "hold.leftAt !== undefined && now - hold.leftAt >= this.graceMs",
+          "after": "hold.leftAt !== undefined"
+        },
+        "exitCode": 1,
+        "failedTests": [
+          "AssetPlan: chunks share one hold and removing one consumer cannot start its release clock",
+          "AssetPlan: grace is 5000ms, is not renewed by empty updates, and expires at the exact deadline",
+          "AssetPlan: reentry cancels release, including an unflushed exact deadline, then starts a fresh grace",
+          "AssetPlan: cut to low acquires no details and retires old details/high textures after grace",
+          "AssetPlan: rapid quality and LOD switches reuse holds until their individual deadlines",
+          "AssetPlan: stabilized scale LOD does not churn within the hysteresis band",
+          "AssetPlan: fractional injected milliseconds are supported and longer grace is honored",
+          "AssetPlan: close drains active and grace tokens without consulting the clock and never reopens",
+          "AssetPlan: a failed grace entry is not re-requested outside the viewport",
+          "AssetPlan: invalid update/clock inputs leave holds and release deadlines intact"
+        ],
+        "log": ".cache/sc3-b2/mutation-grace-deadline-final.log"
+      }
+    ],
+    "report": {
+      "path": ".cache/sc3-b2/mutations-final.json",
+      "sha256": "68941d8a6b17e8019a39a311cf84e2bb3b9873262fcb2495aa2eb77173f2b7d9"
+    },
+    "logs": [
+      {
+        "path": ".cache/sc3-b2/mutation-details-filter-final.log",
+        "sha256": "299750cb332a668f1f008d3e97ce3f5bcaa1555a73df7339f04aa05925aaecc3"
+      },
+      {
+        "path": ".cache/sc3-b2/mutation-grace-deadline-final.log",
+        "sha256": "b347deb933891db15cd9ea248391537ce17f1faee3b766f9c80a7597eba6f6c5"
+      }
+    ],
+    "execution": "Temporary mirrored source/test copies; production source unchanged."
+  },
+  "creator": [
+    {
+      "webgl": 2,
+      "environment": {
+        "version": "3.8.8",
+        "device": "WebGL2Device",
+        "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "contextSelection": "Fresh page; actual WebGL2Device required.",
+      "checkCount": 11,
+      "diagnosticCount": 0,
+      "cycles": 20,
+      "referenceCounts": {
+        "baseline": [
+          1,
+          1,
+          1
+        ],
+        "final": [
+          0,
+          0,
+          0
+        ],
+        "held": 0
+      },
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b2-webgl2/report.json",
+        "sha256": "47691c0be4819c17e8a69f239e0bc9faa1e470679577d99f9f994b5bfb69d79f"
+      }
+    },
+    {
+      "webgl": 1,
+      "environment": {
+        "version": "3.8.8",
+        "device": "WebGLDevice",
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "contextSelection": "Fresh page rejects WebGL2 context before boot; actual WebGLDevice required. No capability masking.",
+      "checkCount": 11,
+      "diagnosticCount": 0,
+      "cycles": 20,
+      "referenceCounts": {
+        "baseline": [
+          1,
+          1,
+          1
+        ],
+        "final": [
+          0,
+          0,
+          0
+        ],
+        "held": 0
+      },
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b2-webgl1/report.json",
+        "sha256": "237f95cee25355f9fcace05ccef3747ebd4ab7647a1ef8863953e4655f4d7544"
+      }
+    }
+  ],
+  "probe": {
+    "path": ".cache/sc3-b2/probe-plan.mjs",
+    "sha256": "1a775bf9270365cc01d926039c6c6c9d15ed929c945bb197665f492a25dfa950"
+  },
+  "baselineRepairs": [
+    {
+      "issue": "Stale ignored UniFlex output lacked RewardObtain and subsequently drifted from its Cocos mirror.",
+      "resolution": "Ran the existing build:uniflex-ui and sync:client tools; no tracked UniFlex source or dependency changes.",
+      "buildLog": {
+        "path": ".cache/sc3-b2/build-uniflex-ui.log",
+        "sha256": "eef8cd25961819b08dbf43a0d564d89b0b9b20050c4990beeb97874286e811e4"
+      },
+      "intermediateTypecheckLog": {
+        "path": ".cache/sc3-b2/typecheck.log",
+        "sha256": "95154a37a11d4aeabc9962548231d6bb7bc24495127f04326ccfff23075f0e6a"
+      }
+    },
+    {
+      "issue": "The mapOriginal selection test used repository-relative paths while test:client executes in apps/server.",
+      "resolution": "Separate prerequisite commit anchors the two file paths to import.meta.url; assertions/assets unchanged.",
+      "commit": "cd937b1637d29447abdcba7b7fd6b0daed6e630e",
+      "failureLog": {
+        "path": ".cache/sc3-b2/test-client.log",
+        "sha256": "6e44fe50ce680abfe6ef7242a23190706853e74b56838e05465609b048b82356"
+      },
+      "rootCwd": {
+        "passed": true,
+        "exitCode": 0,
+        "testCount": 2,
+        "testGroups": [
+          2
+        ],
+        "log": {
+          "path": ".cache/sc3-b2/baseline-root-cwd.log",
+          "sha256": "a011f958dc26415314329e64cae5e0156b97c1226ac914d4018b299eb238f93a"
+        }
+      },
+      "serverCwd": {
+        "passed": true,
+        "exitCode": 0,
+        "testCount": 2,
+        "testGroups": [
+          2
+        ],
+        "log": {
+          "path": ".cache/sc3-b2/baseline-server-cwd.log",
+          "sha256": "159383bfb3661a6e7115c4a8ce743d223055cb7bef124c71e6608e827585ef32"
+        }
+      }
+    }
+  ],
+  "limits": [
+    "Runtime probe loads real framework Prefab/Texture2D resources but does not instantiate entities or claim frame-time/draw-call/GFX capacity; EntityPool and capacity evidence remain SC3-B3/B5.",
+    "Existing checker texture uses the SC0 64x64 exception and shares one address across all nine cells. Unit tests verify distinct cells; offline downsize/mesh simplification fidelity remains SC5.",
+    "Hold validity includes grace; it is not render/activation eligibility. The View must hide excluded content immediately and retire engine references before returning AssetLease holds.",
+    "WebGL1 uses a fresh page rejecting WebGL2 context before boot and verifies actual WebGLDevice. This is desktop compatibility evidence, not WeChat device/cache evidence.",
+    "Formal fixture loader and SLG migration remain SC3-B4. SC3 has not exited; next batch is SC3-B3."
+  ],
+  "postDocumentationChecks": [
+    {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b2/final-inventory.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      }
+    },
+    {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b2/final-mirror.log",
+        "sha256": "abf1d37d7b1526af56400c2db843569eb34876902bd7fec82559f5ada8addc7c"
+      }
+    }
+  ],
+  "preCommitSynchronization": {
+    "sameBase": true,
+    "sameFiles": true,
+    "report": {
+      "path": ".cache/sc3-b2/final-sync.json",
+      "sha256": "32297ec80788c1923c32431c1ca849454295ce13dc60872897932465adb604ce"
+    }
+  }
+}
