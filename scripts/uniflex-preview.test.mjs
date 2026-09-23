@@ -5,8 +5,58 @@ import { PreviewQueue } from "../apps/web-ui-preview/preview-queue.ts";
 import { PreviewResources } from "../apps/web-ui-preview/preview-resources.ts";
 import { jsonHash } from "../apps/client/src/lib/uniflex/core/provider.js";
 import { DOMHostDriver } from "../apps/client/src/lib/uniflex/web/dom-host.js";
+import { defineCompiledComponent, mountComponent } from "../apps/client/src/lib/uniflex/core/index.js";
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
+
+test("a component's For scope stays local when mounted and reused inside another For", () => {
+    const childPlan = { version: 5, name: "Stars", slotCount: 1,
+        root: { kind: "view", planId: 0, children: [{ kind: "view", planId: 1,
+            repeat: { collectionSlot: 0, key: "id", itemSlotCount: 2,
+                template: { kind: "view", planId: 2, props: { name: "star" },
+                    bindings: [{ slot: 0, property: "style" }, { slot: 1, property: "value" }] } } }] } };
+    const child = defineCompiledComponent(childPlan, (props, slots) => {
+        slots[0] = [0, 86, 172, 257, 343].slice(0, props.count).map((left, index) => ({
+            id: String(index), left, lit: Math.max(0, Math.min(5, props.level - index * 5)),
+        }));
+    }, { 1: (items, indices, slots) => {
+        assert.equal(items.length, 1, "outer repeat items must not enter the component");
+        assert.equal(indices.length, 1, "outer repeat indices must not enter the component");
+        slots[0] = { left: items[0].left };
+        slots[1] = items[0].lit;
+    } });
+    const parent = defineCompiledComponent({ version: 5, name: "Cards", slotCount: 1,
+        components: { Stars: childPlan },
+        root: { kind: "view", planId: 0, children: [{ kind: "view", planId: 1,
+            repeat: { collectionSlot: 0, key: "id", itemSlotCount: 2,
+                template: { kind: "component", planId: 2, component: "Stars",
+                    bindings: [{ slot: 0, property: "level" }, { slot: 1, property: "count" }] } } }] } },
+        (props, slots) => { slots[0] = props.cards; },
+        { 1: (items, indices, slots) => { slots[0] = items[0].level; slots[1] = items[0].count; } }, { Stars: child });
+    const driver = { create: () => ({}), validate() {}, commit() {}, flushLayout() {}, scheduleFlush() {},
+        scheduleDelayed: () => () => {}, startEntrance: () => () => {} };
+    const handle = mountComponent(parent, driver, { cards: [
+        { id: "a", level: 6, count: 5 }, { id: "b", level: 12, count: 3 },
+    ] });
+    const stars = () => {
+        const result = [];
+        const visit = (record) => {
+            if (record.props.name === "star") result.push([record.props.style.left, record.props.value]);
+            record.children.forEach(visit);
+        };
+        visit(handle.root);
+        return result;
+    };
+    try {
+        assert.deepEqual(stars(), [[0, 5], [86, 1], [172, 0], [257, 0], [343, 0], [0, 5], [86, 5], [172, 2]]);
+        handle.update({ cards: [{ id: "b", level: 25, count: 5 }, { id: "a", level: 0, count: 1 }] });
+        handle.flushNow();
+        assert.deepEqual(stars(), [[0, 5], [86, 5], [172, 5], [257, 5], [343, 5], [0, 0]]);
+        handle.update({ cards: [{ id: "a", level: 4, count: 0 }] });
+        handle.flushNow();
+        assert.deepEqual(stars(), []);
+    } finally { handle.destroy(); }
+});
 
 test("floating options inside nested shadow roots are not dismissed as outside clicks", (t) => {
     // At document capture, target is the catalog host; composedPath still contains

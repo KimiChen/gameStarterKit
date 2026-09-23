@@ -6,7 +6,7 @@
 - `package.json` 的 `type: module` 让 Cocos 把这些 `.js` 当 ESM，而不是 CJS。
 - `mod/` 下的 `.ts` 入口把无扩展名的项目导入接到带 `.js` 的 ESM 文件；不要手改。
 - 作者态 AOT 仍使用 `@uniflex/compiler` / `@uniflex/tooling`，不要把编译器放进本目录。
-- 本地补丁真源为 `scripts/uniflex-runtime.patch`：保留既有旋转、滑条命中长度与 Web 按压反馈，并修复 Web Floating 在 Shadow DOM 内误判点外关闭。升级时核对并移除上游已合入的补丁。
+- 本地补丁真源为 `scripts/uniflex-runtime.patch`：保留既有旋转、滑条命中长度与 Web 按压反馈，并修复 Web Floating 在 Shadow DOM 内误判点外关闭、子组件继承外层循环作用域。升级时核对并移除上游已合入的补丁。
 
 本目录由 `npm run fetch:uniflex` 生成。不要手改 JS/d.ts；升级时替换 vendor tarball 后重跑脚本，
 再 `npm run sync:client` 并重钉 `scripts/vendor.sha256`。

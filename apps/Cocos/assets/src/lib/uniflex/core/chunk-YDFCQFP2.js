@@ -1440,8 +1440,9 @@ function instantiateComponentPlan(parentInstance, plan, parent, index, scope) {
   const slots = new Array(definition.plan.slotCount);
   const rootScope = {
     path: `${scope.path}/${plan.component}:${plan.planId}`,
-    items: scope.items,
-    indices: scope.indices,
+    // Repeat evaluators are compiled relative to this component, not its caller.
+    items: [],
+    indices: [],
     slots,
     previousSlots: new Array(definition.plan.slotCount),
     recordsByPlanId: /* @__PURE__ */ new Map(),

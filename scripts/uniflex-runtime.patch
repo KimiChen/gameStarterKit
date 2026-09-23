@@ -143,3 +143,17 @@
      }
      property(record, property, value) {
          var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+--- a/core/chunk-YDFCQFP2.js
++++ b/core/chunk-YDFCQFP2.js
+@@ -1440,8 +1440,9 @@
+   const slots = new Array(definition.plan.slotCount);
+   const rootScope = {
+     path: `${scope.path}/${plan.component}:${plan.planId}`,
+-    items: scope.items,
+-    indices: scope.indices,
++    // Repeat evaluators are compiled relative to this component, not its caller.
++    items: [],
++    indices: [],
+     slots,
+     previousSlots: new Array(definition.plan.slotCount),
+     recordsByPlanId: /* @__PURE__ */ new Map(),
