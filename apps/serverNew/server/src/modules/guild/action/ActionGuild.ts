@@ -532,7 +532,7 @@ export class ActionGuild extends ActionUser implements IActionLogic {
         LocalAction.send(
             ActionUserFieldValUpdate,
             {
-                uId: uId,
+                uId: targetId,
                 data: [
                     {
                         field: 'guildRole',
@@ -540,8 +540,8 @@ export class ActionGuild extends ActionUser implements IActionLogic {
                     },
                 ],
             },
-            uId,
-            getServerIdByUid(uId),
+            targetId,
+            getServerIdByUid(targetId),
         )
     }
 

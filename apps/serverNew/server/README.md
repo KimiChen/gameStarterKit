@@ -82,7 +82,7 @@
 - Bean 只能在所属 Action 上下文内修改；异步业务必须等待完成，不能让上下文失效后继续写 Bean。
 - 业务事件必须显式携带其归属实体；事件处理器不得从全局 `Ctx` 反查玩家或请求数据，因为事件可由不同 Action 或延后阶段发布。
 - Bean 集合不是原生集合；修改前核对引擎 API，`DiffArray` 按下标读取只能用 `.at(i)`，禁止按原生数组的 `indexOf` 语义推断。
-- **新增业务 API 的固定动线是 schema → generate → Action → Bean**（逐步说明见 `engine/docs/development.md`）：在 `apps/shared/schema/protocols/C2S/<域>.json` 声明 → `pnpm generate` → 写 `src/modules/<模块>/action/Action<域><动作>.ts` → 字段加在所属 Bean 上。⛔ 不需要新增 Route 文件、Store 或启动注册代码；`generated/**` 一律是产物，不得手改。
+- **新增业务 API 的固定动线是 schema → shared wire → server generate → Action → Bean**（逐步说明见 `engine/docs/development.md`）：在 `apps/shared/schema/protocols/C2S/<域>.json` 声明 → `pnpm gen:kit-protocol` → `pnpm generate` → 写 `src/modules/<模块>/action/Action<域><动作>.ts` → 字段加在所属 Bean 上。⛔ 不需要新增 Route 文件、Store 或启动注册代码；`generated/**` 一律是产物，不得手改。
 - 普通业务 Action **禁止直接 `import RedisInstance`**：Bean setter 由上下文收集变更、随 `RedisTask` 统一提交，手摸 Redis 会绕过提交点与 `ModSync` 同步面。`serverNew` 不保留 Native Lobby 业务 `*Store` 或独立奖励账本；需要钱包事务、私房票据、共享棋盘、跨玩家聚合的域继续由旧 `apps/server` 权威实现，并登记在 `NativeLobbyPendingRoutes`。结构门禁会拒绝 `src/modules/*/lobby/*Store.ts` 与 `NativeLobbyGrants` 复活。
 
 ## 测试约束

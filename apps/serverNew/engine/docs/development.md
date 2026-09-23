@@ -6,8 +6,9 @@
 
 1. **schema 声明**：在 `apps/shared/schema/protocols/C2S/<域>.json` 里加 route 与请求/响应类型
    （schema v1：语言即数据）。改了类型或字段要同批递增该域的 `contractVersion`。
-2. **生成**：`pnpm generate`（`gen:lobby-contract` → 生成器 → `gen:modules` → `gen:error-codes`）。
-   产出 Req/Res、validator、`serviceProto`、`Actions`，以及 `generated/lobby-contract/` 下的域产物。
+2. **生成**：在 `server/` 先运行 `pnpm gen:kit-protocol`，把 schema 生成到 shared 的域文件和路由登记；
+   再运行 `pnpm generate`（`gen:lobby-contract` → Bean/协议生成器 → `gen:modules` → `gen:error-codes`）。
+   两步共同产出 Req/Res、validator、`serviceProto`、`Actions`，以及 `generated/lobby-contract/` 下的域产物。
    ⛔ `generated/` 全是产物，不得手改；`generated/records/record.json` 原地推进，⛔ 不得删除重建。
 3. **Action**：在 `src/modules/<模块>/action/Action<域><动作>.ts` 里继承 `ActionUser`，只做业务规则。
    协议真源是 schema，⛔ 不要再往 `src/modules/*/*C2S.ts` 手写协议声明 —— 生成器已不发现它们
