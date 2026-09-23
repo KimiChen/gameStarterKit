@@ -76,7 +76,9 @@ GRoot 适配器归框架所有，页面不自行安装。完整规则见[客户�
 资源加载使用 SC3-B1 的 `scene3d/cocosAssetLoader.ts` 中 `assetLease.acquire([{ bundle, path, type }], options)`；
 默认 15 秒整包 deadline，失败 / 取消立即归还引用、迟到成功仍回收，成功后按返回的 `release()` 显式释放。
 signal 只取消在途加载，不能代替节点退休后的释放。夹具临时 `FixturePrefabLoader` 与 SLG 的迁移留 SC3-B4，
-细节层 / 激活队列留 B2 / B3。GLB 资源取已登记的 Prefab 子路径；释放先撤节点与渲染引用，再释放资产。
+细节层计划由 `AssetPlan` 计算，`createCocosEntityPool` 消费同一目录并按逐帧预算激活；
+Node 池的 `despawn` 保留闲置租约、`evict` 淘汰闲置节点、`close` 结束整个池。GLB 资源取已登记的 Prefab 子路径；
+释放先撤节点与渲染引用，再释放资产。
 独立 `stage3d-dev.scene` 供资产 / 画质预览，不进构建。租约、画质、资源目录与检查步骤见
 [CLIENT.md §3](../../../../docs/CLIENT.md#3-view-与-logic-分层)。
 

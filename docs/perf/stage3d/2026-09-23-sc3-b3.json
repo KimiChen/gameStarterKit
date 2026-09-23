@@ -1,0 +1,603 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-23",
+  "batch": "SC3-B3",
+  "status": "complete",
+  "phaseExited": false,
+  "verificationBase": "7c2c9a3b11029c1891609b7f1e5771c94e9cacc6",
+  "delivered": [
+    "EntityPool admits logical entities by pool capacity, reuses inactive nodes and shares a frame activation budget across prefab keys. Repeated frame IDs do not reset the allowance; failed attempts consume it.",
+    "Shared AssetCatalog keeps AssetPlan and EntityPool quality/LOD selection aligned. Optional detail-layers.hideAtLod rows use registered prefab addresses and hide from the selected LOD onward; malformed or unknown rows fail before loading.",
+    "LOD/quality/despawn/close invalidate obsolete jobs by bucket identity, abort pending loads, and release late leases without activating. Hidden entities retain admission, downgrades preserve oldest admissions, failed loads retry explicitly.",
+    "Cocos adapter uses AssetLease, inactive instantiation, one shared material per source and instancing capability, monotonic AFTER_UPDATE subscription, and AFTER_DRAW retirement before returning references. Realtime skinning never enables instancing here; baked grouping remains SC4.",
+    "Inactive nodes hold the prefab lease until eviction, incompatible transition or close. Billboard allocations enabled on reuse retire at eviction even when other nodes still use the prefab.",
+    "Stage3dDevScene exposes an inspector/preview 500-spawn toggle; medium admits 300 at 8/frame, high 500 at 16/frame, low skips the details pool. Old SC0 mixed-page fixtures are preserved."
+  ],
+  "sources": [
+    {
+      "source": "apps/client/src/logic/scene3d/assetCatalog.ts",
+      "mirror": "apps/Cocos/assets/src/logic/scene3d/assetCatalog.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/logic/scene3d/assetCatalog.ts",
+      "sha256": "e0ace71337be52b3c7b4929e0f80792e38270f63960a669fd8c6d622ff558afb",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/76/76c212e3eeec0a0bff533cec141be04172d233db.js.map"
+    },
+    {
+      "source": "apps/client/src/logic/scene3d/assetPlan.ts",
+      "mirror": "apps/Cocos/assets/src/logic/scene3d/assetPlan.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/logic/scene3d/assetPlan.ts",
+      "sha256": "75354fd1f46fcd653642b13559c78e91461968d8ff6dcd0dba4ec7c319b753fa",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/f4/f439755fc6b84fcef89209ed7e00e333084f275e.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/EntityPool.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/EntityPool.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/EntityPool.ts",
+      "sha256": "e9e12e0a15bf5ee25625a05e7a5201ffe8641ba335675870b47406d96f8895fa",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/16/168ce701deba9d282d9b307383a8efcb453c0ab9.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/cocosEntityPool.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/cocosEntityPool.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/cocosEntityPool.ts",
+      "sha256": "dff234b7e839aab47d791a49fc98401cbe67700f52e17945897c4bdad77a8d91",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/4f/4f34f9df94050cee07f6e7d33212457539e89c53.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/Stage3dDevScene.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/Stage3dDevScene.ts",
+      "sha256": "2ba4de90d375c645ef57eca780338ab6c0fd4d9a992c2ab597af4c48f19fda23",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/quality.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/quality.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/quality.ts",
+      "sha256": "9a117504c7f34006302d64b7aae7d88b619bc3ba04bbee0f55e9a77fa417a566",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/61/61eeff33de0e5d017be980d571586acd35d56714.js.map"
+    },
+    {
+      "source": "apps/client/src/logic/scene3d/qualityData.ts",
+      "mirror": "apps/Cocos/assets/src/logic/scene3d/qualityData.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/logic/scene3d/qualityData.ts",
+      "sha256": "6cdff63bff5e61729651b793f0b9811513dff0402a74359c45426d7a77186903",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/26/263af1d50f5fe57365db2d4306b96d3a2f46fa3b.js.map"
+    }
+  ],
+  "tests": [
+    {
+      "path": "apps/client/test/entityPool.test.ts",
+      "sha256": "26b528664bd2914a338a80a14e84d4d78cd4da25214400db1076f9c14fff1901"
+    },
+    {
+      "path": "apps/client/test/cocosEntityPool.test.ts",
+      "sha256": "5f4baa8251a9e3e957dc38f852e2093ac1a6aeb0e37b35f84d8422c1d875fc40"
+    },
+    {
+      "path": "apps/client/test/qualityTiers.test.ts",
+      "sha256": "123367b4f964732c780d4cc200b15b4c9f5aee3b84473646b395d7d50159e710"
+    }
+  ],
+  "referenceApi": {
+    "engine": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/bin/.declarations/cc.d.ts",
+    "diagnostics": 0,
+    "report": {
+      "path": ".cache/sc3-b3/real-engine-types.json",
+      "sha256": "801e2082bdde7c377c1c275a41d88ae18789a2078d6f11d030fcee86c67eb59c"
+    },
+    "declarations": {
+      "Component.enabledInHierarchy": 25509,
+      "RenderableComponent.setMaterial": 27365,
+      "Director.EVENT_AFTER_UPDATE": 27584,
+      "instantiate(Prefab)": 28601
+    },
+    "stubs": [
+      {
+        "path": "apps/client/cc-stub.d.ts",
+        "sha256": "c91c043842ca31df875b0ccec6b98c3d35db507e0e0d190cd996ba2b8c1cff9a"
+      },
+      {
+        "path": "apps/client/client-test-stubs.d.ts",
+        "sha256": "28fab081c791b80212c2f5f20579b5dd53a181eb649aa26d2de28bb7ee3e4213"
+      }
+    ]
+  },
+  "verification": {
+    "node": "v26.5.0",
+    "targeted": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b3/targeted-final.log",
+        "sha256": "9f301c485a73b398f12d19a920258ae44fe336f37401a51596c6579a74518d48"
+      },
+      "testCount": 124,
+      "testGroups": [
+        124
+      ]
+    },
+    "typechecks": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b3/typecheck-final.log",
+        "sha256": "893e3e4b108704916ed37a4b6dc997ef2ba69fb95d1c844ab4b9463946ca5ae1"
+      }
+    },
+    "verifyAll": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b3/verify-all-final.log",
+        "sha256": "89614c213c05bc8abbe3e4128e970d56d18eb01fab4bad72a7c432f90f088b07"
+      },
+      "testCount": 2945,
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1267,
+        80,
+        1382
+      ]
+    }
+  },
+  "mutations": [
+    {
+      "name": "activation-budget",
+      "before": "this.used >= this.catalog.pool.maxActivationsPerFrame[this.quality.tier]",
+      "after": "false",
+      "exitCode": 1,
+      "failedTests": [
+        "EntityPool: 500 spawn requests obey low capacity and every frame budget",
+        "EntityPool: 500 spawn requests obey medium capacity and every frame budget",
+        "EntityPool: 500 spawn requests obey high capacity and every frame budget",
+        "EntityPool: LOD swaps invalidate queued work and retire old idle nodes before releasing the prefab",
+        "EntityPool: downgrade keeps oldest admissions, lowers current frame allowance and releases old instancing mode",
+        "EntityPool: shared frame budget spans multiple prefab keys and slow head loads do not block ready work"
+      ],
+      "log": {
+        "path": ".cache/sc3-b3/mutation-activation-budget.log",
+        "sha256": "bc4a3b5a81c677e12b4bc79fb59f3a6a9d76d52f565392f792ea35934f78332f"
+      }
+    },
+    {
+      "name": "details-filter",
+      "before": "if (entry.layer === \"details\" && !this.quality.tiers[quality].details) return undefined;",
+      "after": "/* mutation: no details gate */",
+      "exitCode": 1,
+      "failedTests": [
+        "EntityPool: low details are neither requested nor activated; upgrading and downgrading match AssetPlan"
+      ],
+      "log": {
+        "path": ".cache/sc3-b3/mutation-details-filter.log",
+        "sha256": "e8b9a1a0ad03dd263da30b8a0015735086a5e943941a1f9c56e0a1daf3b2217c"
+      }
+    }
+  ],
+  "runtime": [
+    {
+      "webgl": 2,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b3-webgl2/report.json",
+        "sha256": "b63c6fb7cf0053195ea7b359c3696f4fb27bd26543ec941bffc779817807dda1"
+      },
+      "screenshot": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b3-webgl2/500-cubes.png",
+        "sha256": "e35ab1a874544f581624cc82e460153e05a0d798e69524780b9b1c4e64c1728c"
+      },
+      "environment": {
+        "version": "3.8.8",
+        "device": "WebGL2Device",
+        "gl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "checks": [
+        {
+          "name": "low-details-never-loaded-or-activated",
+          "passed": true,
+          "detail": {
+            "tier": "low",
+            "active": 0,
+            "refs": 1
+          }
+        },
+        {
+          "name": "medium-frame-budget-and-shared-material",
+          "passed": true,
+          "detail": {
+            "quality": "medium",
+            "instancing": true,
+            "count": 300,
+            "budget": 8,
+            "samples": [
+              0,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              4
+            ],
+            "materialCount": 1,
+            "counters": {
+              "drawCalls": 3,
+              "triangles": 3614,
+              "instances": 300
+            }
+          }
+        },
+        {
+          "name": "high-frame-budget-and-shared-material",
+          "passed": true,
+          "detail": {
+            "quality": "high",
+            "instancing": true,
+            "count": 500,
+            "budget": 16,
+            "samples": [
+              0,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              4
+            ],
+            "materialCount": 1,
+            "counters": {
+              "drawCalls": 3,
+              "triangles": 6014,
+              "instances": 500
+            }
+          }
+        },
+        {
+          "name": "inactive-node-reuse-retains-prefab-until-eviction",
+          "passed": true
+        },
+        {
+          "name": "downgrade-cancels-current-queue",
+          "passed": true
+        },
+        {
+          "name": "twenty-full-500-open-close-cycles-return-node-and-asset-baselines",
+          "passed": true,
+          "detail": {
+            "cycles": 20,
+            "baseline": 1,
+            "baselineNodes": 8,
+            "refs": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "nodes": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ]
+          }
+        },
+        {
+          "name": "close-during-activation-never-resumes",
+          "passed": true
+        }
+      ],
+      "diagnostics": 0,
+      "finalPrefabRefs": 0,
+      "baselineAfterProbeRelease": 0
+    },
+    {
+      "webgl": 1,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b3-webgl1/report.json",
+        "sha256": "24a23f11db8b91c7deb06f89cd7247cfbfa730e0668a5d81497e022cde17a10d"
+      },
+      "screenshot": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b3-webgl1/500-cubes.png",
+        "sha256": "e35ab1a874544f581624cc82e460153e05a0d798e69524780b9b1c4e64c1728c"
+      },
+      "environment": {
+        "version": "3.8.8",
+        "device": "WebGLDevice",
+        "gl": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+      },
+      "checks": [
+        {
+          "name": "low-details-never-loaded-or-activated",
+          "passed": true,
+          "detail": {
+            "tier": "low",
+            "active": 0,
+            "refs": 1
+          }
+        },
+        {
+          "name": "medium-frame-budget-and-shared-material",
+          "passed": true,
+          "detail": {
+            "quality": "medium",
+            "instancing": true,
+            "count": 300,
+            "budget": 8,
+            "samples": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              4
+            ],
+            "materialCount": 1,
+            "counters": {
+              "drawCalls": 3,
+              "triangles": 3614,
+              "instances": 300
+            }
+          }
+        },
+        {
+          "name": "high-frame-budget-and-shared-material",
+          "passed": true,
+          "detail": {
+            "quality": "high",
+            "instancing": true,
+            "count": 500,
+            "budget": 16,
+            "samples": [
+              0,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              4
+            ],
+            "materialCount": 1,
+            "counters": {
+              "drawCalls": 3,
+              "triangles": 6014,
+              "instances": 500
+            }
+          }
+        },
+        {
+          "name": "inactive-node-reuse-retains-prefab-until-eviction",
+          "passed": true
+        },
+        {
+          "name": "downgrade-cancels-current-queue",
+          "passed": true
+        },
+        {
+          "name": "twenty-full-500-open-close-cycles-return-node-and-asset-baselines",
+          "passed": true,
+          "detail": {
+            "cycles": 20,
+            "baseline": 1,
+            "baselineNodes": 8,
+            "refs": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "nodes": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ]
+          }
+        },
+        {
+          "name": "close-during-activation-never-resumes",
+          "passed": true
+        }
+      ],
+      "diagnostics": 0,
+      "finalPrefabRefs": 0,
+      "baselineAfterProbeRelease": 0
+    }
+  ],
+  "runtimeProbe": {
+    "path": ".cache/sc3-b3/probe-pool.mjs",
+    "sha256": "7839bf9fff544ca4b7adbb6aef790ca6e87eddd551e014908d55985efdaed232"
+  },
+  "visualReview": "Both final screenshots show the 25 by 20 greybox grid, checker material and independent baked sample. Actual GFX counters submit 500 instances in each context.",
+  "limits": [
+    "These are desktop Creator 3.8.8 functional/activation/reference tests, including actual WebGLDevice on a fresh page that rejects WebGL2 before startup. No GPU capability masking is used.",
+    "Medium/high quality are explicit development policy overrides, including on WebGL1; actual capability limits remain in force. This is not a real WeChat device capacity claim.",
+    "A probe-held Prefab reference anchors the baseline. Low has no pool reference increase, and FakeNode tests independently assert zero loader requests. This does not claim a cold-network measurement.",
+    "Counters are functional snapshots, not formal p95/frame-time or GFX-memory acceptance. The SC3-B5 --perf reports and SC4 real-device/cache gates remain outstanding.",
+    "Existing greyboxes/texture size exception are unchanged. Runtime LOD selects explicit prefabs; offline simplification/fidelity remains SC5. No SC3 phase-exit tag is created."
+  ]
+}

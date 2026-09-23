@@ -42,7 +42,7 @@ declare module "cc" {
     getComponentInChildren<T>(type: new (...args: never[]) => T): T | null;
     addComponent<T>(type: new (...args: never[]) => T): T;
   }
-  export class Component { node: Node; enabled: boolean; destroy(): boolean; }
+  export class Component { node: Node; enabled: boolean; readonly enabledInHierarchy: boolean; destroy(): boolean; }
   export class BlockInputEvents extends Component {}
   export class Button extends Component {}
   export class UITransform {

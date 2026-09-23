@@ -25,10 +25,11 @@ RGBA32F 不可采样时，仍保留有顶点纹理采样能力的 RGBA8 路径�
 | --- | --- |
 | `quality.json` | `tiers.low/medium/high`：details、shadows（off/main/all）、maxEffects、maxUnits、maxUnitsWithoutInstancing、textureStepDown、minTextureSize；当前画质判定消费 |
 | `pool.json` | `maxActivationsPerFrame` 的三档整数；entries 的 id、prefab 地址、三档 capacity；SC3-B3 消费 |
-| `detail-layers.json` | layers 的 id（base/details）、prefabs、pools、textures；每张纹理显式登记三种 quality × 三种 lod 的九个地址；SC3-B2 的资产计划已消费，实体激活由 B3 接续 |
+| `detail-layers.json` | layers 的 id（base/details）、prefabs、pools、textures；每张纹理显式登记三种 quality × 三种 lod 的九个地址；可选 hideAtLod 按预制地址登记隐藏起始档。AssetPlan / EntityPool 共用此表。 |
 
 每个池只能归属一个层，base 层必需。示例把 cubes 池放在 details 层；low 的资产计划不会请求它，B3 同时禁止激活。
-池的 4 / 8 / 16 次每帧激活与 100 / 300 / 500 静态立方体容量只是灰盒初值，尚未执行队列或证明容量。
+池的 4 / 8 / 16 次每帧激活与 100 / 300 / 500 静态立方体容量由 SC3-B3 的 EntityPool 执行；
+low 的 cubes 属 details，因此不激活。容量不等于性能承诺，各画质帧时证据仍归 SC3-B5。
 棋盘纹理九个格子共用 SC0 的 64² 精确尺寸例外，供真实资源路径验证；普通内容必须登记实际离线变体。
 纹理降档不改变网格 lod。SC3-B2 已验证九格精确选择与缺失处理；离线降尺寸仍由 SC5 验收。
 
@@ -49,7 +50,13 @@ npm run sync:client
 
 `qualityDefaults.generated.ts` 禁手改；`test:client` 检查它与 JSON 字节一致，单独只读检查可用
 `node tools/art3d/sync-quality-defaults.mjs --check`。其余两张表由调用方加载后交给资产计划或实体池；
-正式夹具的完整装配与池 / 性能验收仍在 SC3 后续批次。
+实体池已在 `Stage3dDevScene` 装配，完整性能验收仍在 SC3-B5。
+
+`EntityPool` 和计划共用 `AssetCatalog`：detail-layers.json 可加 `hideAtLod` 表（`{ prefab: { bundle, path }, lod }[]`），此档及以上同时停止加载和激活。
+`Stage3dDevScene` 的 `entitiesEnabled` 是 500 灰盒开关（Creator 属性面板可设，预览中可调用
+`setEntitiesEnabled(true / false)`）；每次打开提交 500 次 spawn，由表限制名额及逐帧激活。
+默认关闭，关闭时 despawn + evict，页面退出 close。预览 `?quality=high` 验 500 个，medium 验 300 个，
+low 验 details 零加载；真实 GPU 能力仍由 quality 限制。此开关保留独立烘焙样本，旧 SC0 页面证据不改写。
 
 ## 压缩与验收场景
 

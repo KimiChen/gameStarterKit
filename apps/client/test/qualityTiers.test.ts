@@ -124,3 +124,23 @@ test("pool schema rejects nonpositive activation budgets and duplicate IDs", () 
     data.maxActivationsPerFrame.low = 4; data.entries.push(data.entries[0]);
     assert.throws(() => parsePoolTable(data), /duplicate/);
 });
+
+test("detail-layers hideAtLod snapshots registered pool and plain prefab gates", () => {
+    const data = load("detail-layers"), pool = parsePoolTable(load("pool"));
+    data.hideAtLod = [{ prefab: pool.entries[0].prefab, lod: 2 }, { prefab: data.layers[0].prefabs[0], lod: 1 }];
+    const parsed = parseDetailLayersTable(data, pool);
+    data.hideAtLod[0].lod = 0;
+    assert.equal(parsed.hideAtLod![0].lod, 2); assert.ok(Object.isFrozen(parsed.hideAtLod![0].prefab));
+});
+for (const [name, mutate] of [
+    ["unknown prefab", (x: any) => { x.hideAtLod[0].prefab.path = "missing"; }],
+    ["duplicate prefab", (x: any) => { x.hideAtLod.push(x.hideAtLod[0]); }],
+    ["out of range", (x: any) => { x.hideAtLod[0].lod = 3; }],
+    ["fraction", (x: any) => { x.hideAtLod[0].lod = 0.5; }],
+    ["missing lod", (x: any) => { delete x.hideAtLod[0].lod; }],
+    ["unknown field", (x: any) => { x.hideAtLod[0].lods = [1]; }],
+] as const) test(`detail-layers hideAtLod rejects ${name}`, () => {
+    const data = load("detail-layers"), pool = parsePoolTable(load("pool"));
+    data.hideAtLod = [{ prefab: { ...pool.entries[0].prefab }, lod: 2 }]; mutate(data);
+    assert.throws(() => parseDetailLayersTable(data, pool), /hideAtLod/);
+});

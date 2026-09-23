@@ -214,7 +214,23 @@ texture id，层归属保持单源。可选 `prefabLods` 显式列出 0 / 1 / 2 
 View 将差分中的 kind 映射到 Prefab / Texture2D，并按每个返回 token 管理 AssetLease 请求与租约。
 加载失败后 `reject(token)` 使下一次 update 可重试，完成回调先验 `current(token)`；旧代次不得接管新请求。
 `current` 包括仍在宽限期的持有状态，不能当作当前可见或可激活的判据。降档时 View 立即隐藏被禁用层；
-收到 release 或 close 的结果后取消在途请求，并在节点 / 渲染引用退休后释放成功租约。实体激活与池由 SC3-B3 接续。
+收到 release 或 close 的结果后取消在途请求，并在节点 / 渲染引用退休后释放成功租约。
+`AssetCatalog` 是计划与实体池共用的选择器；detail-layers.json 可给 `hideAtLod: [{ prefab: { bundle, path }, lod: 0 | 1 | 2 }]`，达到此档及更远时
+同时停止请求与激活，已加载计划资产仍按自身宽限期释放。省略该字段不隐藏。
+
+`view/scene3d/EntityPool.ts` 按 pool id 与预制地址复用节点。生产入口
+`createCocosEntityPool(catalog, lease.root, { quality: ports.stage3d.quality, signal: lease.signal })`
+自动订阅引擎帧；`spawn(id, configure)` 返回含 `state / node / error / retry / despawn` 的独立句柄，
+达到当前表中 capacity 时返回 undefined。configure 在 inactive 节点上执行，应重设本实体的变换与状态。
+spawn 只排队，加载完成也不激活；池内所有预制共用每帧预算，失败尝试同样计数。无头适配器用
+`step(frameId)` 注入单调帧序号，同一序号重复调用不刷新额度，不能传每秒归零的 root.frameCount。
+
+`setLod` / `setQuality` 取消不再适用的加载与队列；同一个远档地址保持复用，低档 details 既不请求也不激活。
+capacity 同时约束逻辑实体数和每个池跨 LOD 的 active + inactive 节点数；降档保留最早的实体、释放超额句柄。
+隐藏实体仍占逻辑名额，恢复可见后重新排队。静态池容量来自 pool.json，单位 / 特效的额外预算由 SC4 消费。
+`despawn()` 保留可复用的 inactive 节点和预制租约；`evict()` 只淘汰闲置节点，`close()` 终结所有队列、节点和帧订阅。
+实例只借用源 mesh，材质按源身份与 instancing 能力共享一份池内副本；实时蒙皮在本适配器始终禁用 instancing。
+Cocos 适配器先停用、摘除和销毁节点，再于 AFTER_DRAW 回收渲染缓存、材质与 AssetLease，不由调用方裸 decRef。
 
 玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
 `RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。组合点采用生成式

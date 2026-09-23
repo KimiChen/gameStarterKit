@@ -208,6 +208,8 @@ declare module "cc" {
 
     export class Component {
         node: Node;
+        /** Creator 3.8.8 cc.d.ts:25509; checks both enabled and active hierarchy. */
+        readonly enabledInHierarchy: boolean;
         enabled: boolean;
         destroy(): boolean;
     }

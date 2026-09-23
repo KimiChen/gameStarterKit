@@ -273,10 +273,12 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
 - [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [x] SC2-B5
-- [x] SC3-B1 [x] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
+- [x] SC3-B1 [x] SC3-B2 [x] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [ ] slg 资源 / 全局设置（SC3）
+
+- 2026-09-23 SC3-B3 完成：新增 `EntityPool` 与 Cocos 适配器，按 pool / prefab / instancing 模式复用 inactive 节点，整个池共用逐帧激活预算（4 / 8 / 16）；同帧重复 step 不增额度，失败尝试同样计数。capacity 同时限制逻辑名额与跨 LOD 的 active + inactive 节点，降档保留最早请求；过期加载按桶身份隔离，despawn / 切档 / close 取消旧队列、迟到租约只归还。抽出 B2 的 `AssetCatalog` 供计划与池共用，detail-layers.json 新增可选 `hideAtLod` 地址表，过滤先于选变体，低档 details 不加载、不激活；现有 B2 用例保持原文全绿。Cocos 按源材质与能力共享副本、实时蒙皮禁 instancing，闲置节点保留 AssetLease，淘汰先毁节点、AFTER_DRAW 再退渲染缓存与引用；补齐 Billboard 复用后启用的回收与 onDisable 重入保护。独立 Stage3dDevScene 提供 500 spawn 开关，旧 SC0 页面不改。新增 34 项测试、124 项定向回归、两套客户端类型检查及真实 Creator 3.8.8 声明编译通过；临时副本移除预算 / details 门控分别打红 6 / 1 项。最终 `verify:all` 全过（Node 26.5.0；客户端 1267 / UniFlex 契约 80 / 服务端 1382，加其余门禁合计 2945 项）。WebGL2 / 实际 WebGL1 各 7 项检查与 20 次完整 500 灰盒开关通过，节点均回到 8、探针最终 Prefab 引用为 0，浏览器运行时诊断为 0；medium / high 分别验证每帧 ≤ 8 / 16、300 / 500 实例与一份共享材质，实际 GFX 快照均为 3 draw calls、3614 / 6014 triangles。两张最终截图已目检。源码 / 镜像 / source map、日志、变异及双上下文证据哈希见 [B3 验收摘要](perf/stage3d/2026-09-23-sc3-b3.json)。这是桌面功能与激活证据，WebGL1 的 medium / high 为开发覆写；正式各画质帧时 / 内存证据留 B5，离线简模保真留 SC5，真机缓存留 SC4。镜像经 sync:client、meta 由 Creator 生成；SC3 未退出，下一批 SC3-B4。
 
 - 2026-09-23 SC3-B2 完成：纯逻辑 `AssetPlan` 复用 quality / pool / detail-layers 表，以 chunk 内容引用计算按 kind / bundle / path 去重的资产差分；先过滤禁用层，再选显式预制 LOD 与纹理 quality × LOD 单元，纹理降档不改网格 LOD。注入单调毫秒时钟，出档默认保留 5 秒，重复更新不续期、重入取消释放、静止视口可 flush、关闭立即清空；不可变请求 token 隔离迟到完成与失败，reject 后同视口可重试。缺失变体、未知引用及冲突归属拒绝装载，不静默回落。新增 44 项测试，连同画质 / AssetLease / 纯度共 112 项定向回归通过；临时副本删除画质过滤 / 延迟条件，分别打红 9 / 10 项。真实 Creator 3.8.8 声明编译、两套客户端类型检查、独立 1233 项客户端测试及本批 `verify:all` 全过（Node 26.5.0；客户端 1233 / UniFlex 契约 80 / 服务端 1382，加其余门禁合计 2911 项）。WebGL2 / 实际 WebGL1 各 11 项检查、各 20 次计划开关后引用回基线，最后三份探针资源引用均为 0，无运行时诊断。最新地图测试的 cwd 路径问题已独立修复于 `cd937b16`；陈旧 UniFlex 本地生成物经原构建 / 同步链刷新，未修改其真源。CLIENT 与 quality.md 已登记消费约定；持有有效性包括宽限期，不等同于当前可见或可激活，View 仍负责先退节点 / 渲染引用再还租约。源码、日志、变异与两上下文证据哈希见 [B2 验收摘要](perf/stage3d/2026-09-23-sc3-b2.json)。本批没有实体容量、GFX 性能或真机缓存结论；棋盘仍用既有 64² 例外，离线变体保真留 SC5。SC3 未退出，下一批 SC3-B3。
 

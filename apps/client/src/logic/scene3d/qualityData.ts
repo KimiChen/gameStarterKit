@@ -31,7 +31,12 @@ export interface DetailLayer {
     /** Explicit quality × mesh LOD addresses; lowering texture quality never changes mesh LOD. */
     readonly textures: readonly { readonly id: string; readonly variants: readonly TextureVariant[] }[];
 }
-export interface DetailLayersTable { readonly version: 1; readonly layers: readonly DetailLayer[]; }
+export interface DetailLayersTable {
+    readonly version: 1;
+    readonly layers: readonly DetailLayer[];
+    /** Per-prefab visibility gates, including prefabs referenced through pool IDs. */
+    readonly hideAtLod?: readonly { readonly prefab: AssetAddress; readonly lod: 0 | 1 | 2 }[];
+}
 
 function fail(path: string, expectation: string): never { throw new Error(`${path}: ${expectation}`); }
 function record(value: unknown, path: string): Record<string, unknown> {
@@ -109,7 +114,10 @@ export function parsePoolTable(value: unknown): PoolTable {
 }
 
 export function parseDetailLayersTable(value: unknown, pool: PoolTable): DetailLayersTable {
-    const data = record(value, "detail-layers"); keys(data, ["version", "layers"], "detail-layers"); version(data, "detail-layers");
+    const data = record(value, "detail-layers");
+    const hasHiding = Object.prototype.hasOwnProperty.call(data, "hideAtLod");
+    keys(data, hasHiding ? ["version", "layers", "hideAtLod"] : ["version", "layers"], "detail-layers");
+    version(data, "detail-layers");
     const seen = new Set<string>(), usedPools = new Set<string>(), textures = new Set<string>();
     const layers = list(data.layers, "detail-layers.layers").map((entry, i): DetailLayer => {
         const path = `detail-layers.layers[${i}]`, row = record(entry, path);
@@ -143,5 +151,19 @@ export function parseDetailLayersTable(value: unknown, pool: PoolTable): DetailL
     });
     if (!seen.has("base")) fail("detail-layers.layers", "base layer required");
     for (const entry of pool.entries) if (!usedPools.has(entry.id)) fail("detail-layers.layers", `pool ${entry.id} has no layer`);
-    return Object.freeze({ version: 1, layers: Object.freeze(layers) });
+    const hidden = new Set<string>();
+    const addressKey = (asset: AssetAddress) => `${asset.bundle}:${asset.path}`;
+    const prefabs = new Set(pool.entries.map((entry) => addressKey(entry.prefab)));
+    for (const layer of layers) for (const prefab of layer.prefabs) prefabs.add(addressKey(prefab));
+    const hideAtLod = hasHiding ? Object.freeze(list(data.hideAtLod, "detail-layers.hideAtLod").map((value, index) => {
+        const path = `detail-layers.hideAtLod[${index}]`, row = record(value, path);
+        keys(row, ["prefab", "lod"], path);
+        const prefab = parseAssetAddress(row.prefab, `${path}.prefab`), key = addressKey(prefab);
+        if (!prefabs.has(key)) fail(path, `unknown prefab ${key}`);
+        unique(key, hidden, path);
+        const lod = integer(row.lod, `${path}.lod`);
+        if (lod > 2) fail(`${path}.lod`, "expected 0 / 1 / 2");
+        return Object.freeze({ prefab, lod: lod as 0 | 1 | 2 });
+    })) : undefined;
+    return Object.freeze({ version: 1, layers: Object.freeze(layers), ...(hasHiding ? { hideAtLod } : {}) });
 }
