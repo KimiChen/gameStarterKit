@@ -55,6 +55,7 @@ const README = `# UniFlex 运行时（入库副本）
 - \`package.json\` 的 \`type: module\` 让 Cocos 把这些 \`.js\` 当 ESM，而不是 CJS。
 - \`mod/\` 下的 \`.ts\` 入口把无扩展名的项目导入接到带 \`.js\` 的 ESM 文件；不要手改。
 - 作者态 AOT 仍使用 \`@uniflex/compiler\` / \`@uniflex/tooling\`，不要把编译器放进本目录。
+- 本地补丁真源为 \`scripts/uniflex-runtime.patch\`：保留既有旋转、滑条命中长度与 Web 按压反馈，并修复 Web Floating 在 Shadow DOM 内误判点外关闭。升级时核对并移除上游已合入的补丁。
 
 本目录由 \`npm run fetch:uniflex\` 生成。不要手改 JS/d.ts；升级时替换 vendor tarball 后重跑脚本，
 再 \`npm run sync:client\` 并重钉 \`scripts/vendor.sha256\`。
@@ -85,15 +86,20 @@ try {
         extracted[name] = resolve(stage, "package");
     }
 
+    const runtime = resolve(tmp, "runtime");
+    mkdirSync(runtime, { recursive: true });
+    writeFileSync(resolve(runtime, "README.md"), README);
+    unpackCore(extracted.core, resolve(runtime, "core"));
+    unpackHost(extracted.cocos, resolve(runtime, "cocos"));
+    unpackHost(extracted.web, resolve(runtime, "web"));
+    rewritePackageSpecifiers(runtime);
+    // Apply on a fresh staged runtime; a changed upstream hunk must fail before
+    // replacing the committed files. Keep existing local fixes reproducible too.
+    execFileSync("git", ["apply", "--check", resolve(ROOT, "scripts/uniflex-runtime.patch")], { cwd: runtime, stdio: "pipe" });
+    execFileSync("git", ["apply", resolve(ROOT, "scripts/uniflex-runtime.patch")], { cwd: runtime, stdio: "pipe" });
+    writeCocosEntrypoints(runtime);
     rmSync(DEST, { recursive: true, force: true });
-    mkdirSync(DEST, { recursive: true });
-    writeFileSync(resolve(DEST, "README.md"), README);
-
-    unpackCore(extracted.core, resolve(DEST, "core"));
-    unpackHost(extracted.cocos, resolve(DEST, "cocos"));
-    unpackHost(extracted.web, resolve(DEST, "web"));
-    rewritePackageSpecifiers(DEST);
-    writeCocosEntrypoints(DEST);
+    cpSync(runtime, DEST, { recursive: true });
 } finally {
     rmSync(tmp, { recursive: true, force: true });
 }

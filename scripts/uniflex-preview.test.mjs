@@ -4,8 +4,62 @@ import { createHash } from "node:crypto";
 import { PreviewQueue } from "../apps/web-ui-preview/preview-queue.ts";
 import { PreviewResources } from "../apps/web-ui-preview/preview-resources.ts";
 import { jsonHash } from "../apps/client/src/lib/uniflex/core/provider.js";
+import { DOMHostDriver } from "../apps/client/src/lib/uniflex/web/dom-host.js";
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
+
+test("floating options inside nested shadow roots are not dismissed as outside clicks", (t) => {
+    // At document capture, target is the catalog host; composedPath still contains
+    // the actual option and panel across both preview shadow roots.
+    class ElementStub extends EventTarget {
+        style = {};
+        dataset = {};
+        children = [];
+        append(child) { this.children.push(child); }
+        remove() {}
+        contains(node) { return node === this || this.children.some((child) => child.contains(node)); }
+    }
+    const window = Object.assign(new EventTarget(), {
+        performance, clearTimeout, setTimeout,
+        requestAnimationFrame: () => 1, cancelAnimationFrame() {},
+    });
+    const document = Object.assign(new EventTarget(), { defaultView: window, createElement: () => new ElementStub() });
+    const container = Object.assign(new ElementStub(), { ownerDocument: document });
+    const driver = new DOMHostDriver(container, {}, 320, 352);
+    t.after(() => driver.destroy());
+    const behavior = { floating: { anchor: "child", anchorIndex: 0, panelIndex: 1 } };
+    const record = (id, behavior) => ({ recordId: id, planId: id, kind: "view", behavior,
+        handle: driver.create("view", id, behavior), props: {}, children: [], parent: null });
+    const floating = record(1, behavior), anchor = record(2), panel = record(3);
+    floating.children.push(anchor, panel);
+    anchor.parent = panel.parent = floating;
+    driver.commit([floating, anchor, panel].map((record) => ({ type: "create", record })));
+    const closes = [];
+    floating.props.open = true;
+    Object.assign(floating.handle.props, { open: true, onOpenChange: (open) => closes.push(open) });
+    const catalogHost = new ElementStub(), cardHost = new ElementStub(), option = new ElementStub();
+    panel.handle.element.append(option);
+    const dispatch = (target, path) => {
+        const event = new Event("pointerdown", { cancelable: true });
+        Object.defineProperties(event, { target: { value: target }, composedPath: { value: () => path } });
+        document.dispatchEvent(event);
+        return event.defaultPrevented;
+    };
+    assert.equal(dispatch(catalogHost, [option, panel.handle.element, cardHost, catalogHost, document]), false);
+    assert.equal(dispatch(catalogHost, [anchor.handle.element, cardHost, catalogHost, document]), false);
+    assert.deepEqual(closes, []);
+    // Direct (non-shadow) previews retain the same behavior.
+    assert.equal(dispatch(option, [option, panel.handle.element, container, document]), false);
+    // A sibling control inside the same catalog host is genuinely outside.
+    assert.equal(dispatch(catalogHost, [new ElementStub(), cardHost, catalogHost, document]), true);
+    assert.deepEqual(closes, [false]);
+    const click = new Event("click", { cancelable: true });
+    document.dispatchEvent(click);
+    assert.equal(click.defaultPrevented, true, "outside dismissal must not click through");
+    driver.destroy();
+    dispatch(catalogHost, [catalogHost, document]);
+    assert.deepEqual(closes, [false], "destroy removes the document listener");
+});
 const deferred = () => {
     let resolve;
     const promise = new Promise((r) => { resolve = r; });

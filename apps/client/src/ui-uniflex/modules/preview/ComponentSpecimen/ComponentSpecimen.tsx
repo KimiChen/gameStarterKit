@@ -33,12 +33,21 @@ const TABS: readonly TabBarItem[] = [
 ];
 const QUANTITY_LAYOUT = { width: 674, trackWidth: 365, plusLeft: 460, qtyLeft: 553 };
 const DROPDOWN_ITEMS: readonly DropdownItem[] = [
-    { id: 'all', label: '全部' },
-    { id: 'available', label: '可用' },
-    { id: 'locked', label: '未解锁', disabled: true },
-    { id: 'recent', label: '最近获得' },
-    { id: 'favorite', label: '已收藏' },
-    { id: 'extra', label: '更多选项' },
+    { id: 'all', label: '全部',
+        icon: { source: imageRef('ui/hero/filter-icon'), left: 16, top: 12, width: 29, height: 27 },
+        triggerIcon: { source: imageRef('ui/hero/filter-icon'), left: 15, top: 13, width: 29, height: 27 } },
+    { id: 'shield', label: '盾',
+        icon: { source: imageRef('ui/hero/class-shield'), left: 16, top: 8, width: 26, height: 32 },
+        triggerIcon: { source: imageRef('ui/hero/class-shield'), left: 15, top: 8, width: 26, height: 32 } },
+    { id: 'sword', label: '剑',
+        icon: { source: imageRef('ui/hero/class-sword'), left: 16, top: 8, width: 26, height: 32 },
+        triggerIcon: { source: imageRef('ui/hero/class-sword'), left: 15, top: 8, width: 26, height: 32 } },
+    { id: 'anchor', label: '锚',
+        icon: { source: imageRef('ui/hero/class-anchor'), left: 16, top: 8, width: 26, height: 32 },
+        triggerIcon: { source: imageRef('ui/hero/class-anchor'), left: 15, top: 8, width: 26, height: 32 } },
+    { id: 'unowned', label: '未获得',
+        icon: { source: imageRef('ui/hero/filter-option-icon'), left: 17, top: 12, width: 26, height: 27 },
+        triggerIcon: { source: imageRef('ui/hero/filter-option-icon'), left: 16, top: 13, width: 26, height: 27 } },
 ];
 const GEM_REWARD = { id: 'gem', itemId: 'gem', count: '30000', left: 0, top: 0 };
 const LEAF_REWARD = { id: 'leaf', itemId: 'leaf', count: '30000', left: 211, top: 0 };
@@ -66,10 +75,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const [quantity, setQuantity] = useState(3);
     const [input, setInput] = useState('主题输入');
     const [dropdownValue, setDropdownValue] = useState('all');
-    const dropdownSkin = useMemo(() => ({ ...filterDropdown, font: theme.font, color: theme.input.color,
-        triggerLabel: { left: 16, top: 8, width: 210, height: 36 },
-        itemLabel: { left: 16, top: 11, width: 230, height: 28 },
-    }), [theme]);
+    const dropdownSkin = useMemo(() => ({ ...filterDropdown, font: theme.font, color: theme.tab.color }), [theme]);
     const [navigation, setNavigation] = useState<MainNavSlot>('hero');
     const checkedLabel = checked ? '已勾选' : '未勾选';
     const radioA = radio === 'a';
@@ -230,10 +236,8 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
             <InputText theme={theme} left={0} top={0} width={290} height={56} value={input} placeholder="请输入" onInput={onInput} />
         </view>
         <view visible={showDropdown} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
-            <ActionButton skin={cancelButton} theme={theme} label="重置" left={20} top={280} width={140} height={56}
-                onClick={() => setDropdownValue('all')} />
             <Dropdown items={DROPDOWN_ITEMS} selected={dropdownValue} skin={dropdownSkin}
-                left={20} top={16} maxVisibleItems={4} onSelect={setDropdownValue} />
+                left={20} top={16} onSelect={setDropdownValue} />
         </view>
         <view visible={showProgress} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <ProgressBar theme={theme} left={0} top={0} width={674} height={34} value={72} max={100} label="72%" />

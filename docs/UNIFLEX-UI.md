@@ -84,7 +84,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 不把业务筛选规则写进组件。`HeroFilterBar` 只保留英雄选项与页面位置。
 面板使用 `Floating` 定位并处理点外关闭，不依赖整页固定尺寸；超过 `maxVisibleItems`（默认 6）
 的选项通过 `VirtualList` 滚动。图标 `icon` 的位置相对选项行，`triggerIcon` 可覆盖收起时的图标位置。
-组件目录的「下拉框」示例包含禁用选项、滚动和外部重置选中值。
+组件目录的「下拉框」示例展示带图标的五种英雄筛选选项，切换后收起框同步显示对应图标与文字。
 
 `ScreenHeader` 提供可选内容插槽，内容用 `() => <view ... />` 作为子项传入（单个 JSX 根节点），
 坐标相对标题栏左上角；图片与点击回调由调用页提供。示例见 `HeroScreen` 的招募按钮。

@@ -345,7 +345,8 @@ export class DOMHostDriver {
                 const anchor = (_a = this.floatingAnchorRecord(record)) === null || _a === void 0 ? void 0 : _a.handle.element;
                 const panel = (_b = this.floatingPanel(record)) === null || _b === void 0 ? void 0 : _b.handle.element;
                 const target = event.target;
-                if (target && !(anchor === null || anchor === void 0 ? void 0 : anchor.contains(target)) && !(panel === null || panel === void 0 ? void 0 : panel.contains(target))) {
+                const path = event.composedPath();
+                if (target && !path.includes(anchor) && !path.includes(panel) && !(anchor === null || anchor === void 0 ? void 0 : anchor.contains(target)) && !(panel === null || panel === void 0 ? void 0 : panel.contains(target))) {
                     this.consumeClick = true;
                     this.window.clearTimeout(this.consumeClickReset);
                     this.consumeClickReset = 0;

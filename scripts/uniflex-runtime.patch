@@ -1,0 +1,145 @@
+--- a/cocos/cocos-host.js
++++ b/cocos/cocos-host.js
+@@ -6,6 +6,13 @@
+ import { NestedScrollCoordinator } from '../core/nested-scroll.js';
+ import { createFlexNode } from '../core/flex-types.js';
+ import { layoutFlexTree, layoutFlexTreeIntrinsic, layoutScrollContent, measureScrollContent, } from '../core/flex-layout.js';
++function namedRotation(name) {
++    const text = String(name ?? '');
++    if (!text.startsWith('rot:'))
++        return 0;
++    const value = Number(text.slice(4));
++    return Number.isFinite(value) ? value : 0;
++}
+ /**
+  * Keeps Cocos ScrollView as both the viewport adapter and physics owner. The
+  * nested coordinator only locks the axis and routes deltas to the right native
+@@ -391,7 +398,9 @@
+                 const local = transform.convertToNodeSpaceAR(new Vec3(point.x, point.y, 0));
+                 const min = Number((_a = handle.controlProps.min) !== null && _a !== void 0 ? _a : 0);
+                 const max = Number((_b = handle.controlProps.max) !== null && _b !== void 0 ? _b : 100);
+-                return normalizeRangeValue(min + Math.max(0, Math.min(1, local.x / transform.width + 0.5)) * (max - min), min, max, Number((_c = handle.controlProps.step) !== null && _c !== void 0 ? _c : 1));
++                const rangeWidth = Number(handle.controlProps.rangeWidth);
++                const inputWidth = Number.isFinite(rangeWidth) && rangeWidth > 0 ? Math.min(transform.width, rangeWidth) : transform.width;
++                return normalizeRangeValue(min + Math.max(0, Math.min(1, (local.x + transform.width / 2) / inputWidth)) * (max - min), min, max, Number((_c = handle.controlProps.step) !== null && _c !== void 0 ? _c : 1));
+             };
+             const change = (event) => {
+                 var _a, _b;
+@@ -569,6 +578,7 @@
+                 handle.node.setPosition(position);
+                 handle.node.setScale(scale, scale, 1);
+             }
++            handle.node.angle = -namedRotation(props.name);
+             if (((_a = handle.inputDisplay) === null || _a === void 0 ? void 0 : _a.node.isValid) &&
+                 handle.inputDisplay.node.parent === handle.node.parent)
+                 handle.inputDisplay.node.setPosition(handle.node.position);
+--- a/core/dts/runtime/host-plan.d.ts
++++ b/core/dts/runtime/host-plan.d.ts
+@@ -215,6 +215,8 @@
+ export interface BaseViewProps {
+     children?: unknown;
+     name?: string;
++    /** Optional range hit length; consumed only by range interactions. */
++    rangeWidth?: number;
+     style?: FlexStyle;
+     backgroundColor?: string;
+     opacity?: number;
+@@ -240,6 +242,8 @@
+     min?: number;
+     max?: number;
+     step?: number;
++    /** Optional logical hit length used to map pointer positions when the visual thumb travels a shorter distance. */
++    rangeWidth?: number;
+     interactable?: boolean;
+     accessibilityLabel?: string;
+     onChange?: (value: number) => void;
+--- a/web/dom-host.js
++++ b/web/dom-host.js
+@@ -5,6 +5,13 @@
+ import { HostFrameScheduler, normalizeRangeValue, placeFloating } from '../core/host-plan.js';
+ import { NestedScrollCoordinator } from '../core/nested-scroll.js';
+ import { ScrollMotion } from './scroll-motion.js';
++function namedRotation(name) {
++    const text = String(name ?? '');
++    if (!text.startsWith('rot:'))
++        return 0;
++    const value = Number(text.slice(4));
++    return Number.isFinite(value) ? value : 0;
++}
+ export class DOMHostDriver {
+     constructor(container, assets, width, height, anchorsChanged = () => { }, scrollChanged = undefined) {
+         this.container = container;
+@@ -210,6 +217,7 @@
+                     this.pressedButton = undefined;
+                 }
+                 handle.pressed = pressed;
++                this.writePresentation(handle);
+                 (_c = (_b = handle.props).onPressChange) === null || _c === void 0 ? void 0 : _c.call(_b, pressed);
+             };
+             const down = (event) => {
+@@ -259,7 +267,9 @@
+                 const rect = element.getBoundingClientRect();
+                 const min = Number((_a = handle.props.min) !== null && _a !== void 0 ? _a : 0);
+                 const max = Number((_b = handle.props.max) !== null && _b !== void 0 ? _b : 100);
+-                const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
++                const rangeWidth = Number(handle.props.rangeWidth);
++                const inputWidth = Number.isFinite(rangeWidth) && rangeWidth > 0 ? Math.min(rect.width, rangeWidth) : rect.width;
++                const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / inputWidth));
+                 return normalizeRangeValue(min + ratio * (max - min), min, max, Number((_c = handle.props.step) !== null && _c !== void 0 ? _c : 1));
+             };
+             const down = (event) => {
+@@ -335,7 +345,8 @@
+                 const anchor = (_a = this.floatingAnchorRecord(record)) === null || _a === void 0 ? void 0 : _a.handle.element;
+                 const panel = (_b = this.floatingPanel(record)) === null || _b === void 0 ? void 0 : _b.handle.element;
+                 const target = event.target;
+-                if (target && !(anchor === null || anchor === void 0 ? void 0 : anchor.contains(target)) && !(panel === null || panel === void 0 ? void 0 : panel.contains(target))) {
++                const path = event.composedPath();
++                if (target && !path.includes(anchor) && !path.includes(panel) && !(anchor === null || anchor === void 0 ? void 0 : anchor.contains(target)) && !(panel === null || panel === void 0 ? void 0 : panel.contains(target))) {
+                     this.consumeClick = true;
+                     this.window.clearTimeout(this.consumeClickReset);
+                     this.consumeClickReset = 0;
+@@ -575,12 +586,18 @@
+         const effect = h.entrance;
+         const translateX = Number((_a = h.props.translateX) !== null && _a !== void 0 ? _a : 0);
+         const translateY = Number((_b = h.props.translateY) !== null && _b !== void 0 ? _b : 0);
+-        h.element.style.translate = `${translateX + ((_c = effect === null || effect === void 0 ? void 0 : effect.x) !== null && _c !== void 0 ? _c : 0)}px ${translateY + ((_d = effect === null || effect === void 0 ? void 0 : effect.y) !== null && _d !== void 0 ? _d : 0)}px`;
+-        h.element.style.scale = String(Number((_e = h.props.scale) !== null && _e !== void 0 ? _e : 1));
++        const pressed = this.pressedVisual(h);
++        h.element.style.translate = `${translateX + ((_c = effect === null || effect === void 0 ? void 0 : effect.x) !== null && _c !== void 0 ? _c : 0)}px ${translateY + ((_d = effect === null || effect === void 0 ? void 0 : effect.y) !== null && _d !== void 0 ? _d : 0) + (pressed ? 3 : 0)}px`;
++        h.element.style.scale = String(Number((_e = h.props.scale) !== null && _e !== void 0 ? _e : 1) * (pressed ? 0.92 : 1));
++        h.element.style.filter = pressed ? 'brightness(0.8)' : '';
++        const rotation = namedRotation(h.props.name);
++        h.element.style.rotate = rotation === 0 ? '' : `${rotation}deg`;
+         const duration = Math.max(0, Number((_f = h.props.transformDurationMs) !== null && _f !== void 0 ? _f : 0));
+         h.element.style.transition = duration
+-            ? `translate ${duration}ms linear, scale ${duration}ms linear`
+-            : '';
++            ? `translate ${duration}ms linear, scale ${duration}ms linear, filter ${duration}ms linear`
++            : h.element.dataset.uniflexInteraction === 'press'
++                ? (pressed ? 'none' : 'translate 90ms ease, scale 90ms ease, filter 90ms ease')
++                : '';
+         h.element.style.opacity = String(Number((_g = h.props.opacity) !== null && _g !== void 0 ? _g : 1) * ((_h = effect === null || effect === void 0 ? void 0 : effect.opacity) !== null && _h !== void 0 ? _h : 1));
+     }
+     flushLayout() {
+@@ -734,7 +751,21 @@
+         if (!active.handle.pressed)
+             return;
+         active.handle.pressed = false;
++        this.writePresentation(active.handle);
+         (_b = (_a = active.handle.props).onPressChange) === null || _b === void 0 ? void 0 : _b.call(_a, false);
++    }
++    pressedVisual(h) {
++        if (!h.pressed || h.element.dataset.uniflexInteraction !== 'press')
++            return false;
++        const name = h.element.dataset.name ?? '';
++        if (name.endsWith('Mask'))
++            return false;
++        const frame = h.flex?.frame;
++        const background = h.element.style.backgroundColor;
++        if (frame && frame.width >= this.width * 0.9 && frame.height >= this.height * 0.9 &&
++            background && background !== 'transparent')
++            return false;
++        return true;
+     }
+     property(record, property, value) {
+         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
