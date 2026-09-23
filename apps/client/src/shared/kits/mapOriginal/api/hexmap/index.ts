@@ -246,14 +246,21 @@ export function mapoWorldBounds(rows = MAPO_MAP_ROWS, cols = MAPO_MAP_COLS,
 
 // ── LOD 分档 ─────────────────────────────────────────────────────────────────
 
-/** 6 档（LOD_0 最近 … LOD_5 最远），对齐原作 viewport_lod 的档数。 */
-export const MAPO_LOD_MAX = 5;
+/** 本仓 2D 四档策略；原版 2D 没有运行时 LOD，不能引用其 3D 档界。 */
+export const MAPO_LOD_MAX = 3;
 /** 各档下界，升序；下标 i 是「档 MAPO_LOD_MAX-1-i」的下界。 */
-export const MAPO_LOD_SCALE_THRESHOLDS: readonly number[] = Object.freeze([0.13, 0.21, 0.34, 0.55, 0.85]);
+export const MAPO_LOD_SCALE_THRESHOLDS: readonly number[] = Object.freeze([0.04, 0.20, 0.55]);
 export const MAPO_LOD_HYSTERESIS_RATIO = 0.08;
-export const MAPO_SCALE_MIN = 0.05;
 export const MAPO_SCALE_MAX = 2.0;
 export const MAPO_SCALE_INITIAL = 1.28;
+/** 最远档留 10% 边距；尺寸必须是地图可用视口，不包含页眉、页脚。 */
+export function mapoFitScale(width: number, height: number, rows = MAPO_MAP_ROWS, cols = MAPO_MAP_COLS): number {
+    if (!(width > 0) || !(height > 0) || !Number.isFinite(width + height)) {
+        throw new RangeError("mapOriginal viewport must be positive");
+    }
+    const b = mapoWorldBounds(rows, cols);
+    return Math.min(MAPO_SCALE_MAX, 0.9 * Math.min(width / (b.maxX - b.minX), height / (b.maxY - b.minY)));
+}
 // ⚠ 这里**没有** `MAPO_BIRDVIEW_LOD`（2026-09-22 随 3D 迁出）。它溯源的原版 `LOD_4` 是 3D 专属：
 //   在 disasm 里只落在 `viewport_lod/{viewport_lod,camera_default,camera_01..03}` 与
 //   `viewmap_3d_refresher.lua`；推动它的 `on_vp_scale_change` 第一条就是

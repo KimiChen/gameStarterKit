@@ -288,9 +288,7 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
         ["river-top-atlas.png", "river-top-atlas.png"], ["river-tops.bin", "river-tops.bin"],
         ["desert-top-atlas.png", "desert-top-atlas.png"], ["desert-tops.bin", "desert-tops.bin"],
         ["snow-top-atlas.png", "snow-top-atlas.png"], ["snow-tops.bin", "snow-tops.bin"],
-        ["plate-lod4.png", "plate-lod4.png"], ["plate-lod4.info.json", "plate-lod4.info.json"],
-        ["plate-lod5.png", "plate-lod5.png"], ["plate-lod5.info.json", "plate-lod5.info.json"],
-        ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
+        ["overview.png", "overview.png"], ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
         ["decor-atlas.png", "decor-atlas.png"], ["decor-atlas.info.json", "decor-atlas.info.json"],
         ["region-atlas.png", "region-atlas.png"],
         ["region-atlas.info.json", "region-atlas.info.json"],
@@ -500,7 +498,7 @@ test("mapOriginal 内容：缩略图由地形烘、投影与点选同源（⛔ �
     // ★ 内容占**中间半幅**，上下各 1/4 留白 —— 与 mapoWorldToMinimap 的 `0.25 + v*0.5` 严格对应
     assert.deepEqual(meta.content, [meta.size[0], meta.size[1] / 2]);
     assert.equal(meta.contentTop, meta.size[1] / 4);
-    assert.ok(meta.source.startsWith("terrain.bytes"), "缩略图必须由地形烘");
+    assert.ok(meta.source.startsWith("mapoStaticScene"), "缩略图必须与近景原始地貌几何同源");
     assert.ok(!meta.source.includes("birdview"), "⛔ 不许再贴原版鸟瞰插画");
     // 上下留白必须全透明（否则点选留白区会被当成地图内）
     const png = kit("minimap.png");

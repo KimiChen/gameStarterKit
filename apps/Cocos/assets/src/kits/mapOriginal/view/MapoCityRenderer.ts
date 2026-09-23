@@ -1,5 +1,5 @@
 /**
- * 城址件渲染：一个批、一张城址图集。
+ * 城址件渲染：按 16 位索引拆批、共用一张城址图集。
  *
  * ★ 城是**建筑层**（原版 `MAP_ZORDER.BUILD_TOP = 3900`，MAPORIGINAL-2D §2）——
  *   在资源件（RES 3400）之上、在旗标之下。
@@ -8,15 +8,13 @@
  */
 import { Material, Node } from "cc";
 import { mapoCitiesIn, mapoHasCities } from "../logic/mapoCities";
-import { buildMapoSpriteMesh } from "../logic/mapoMesh";
+import { buildMapoSpriteMeshes } from "../logic/mapoMesh";
 import {
-    createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoUnlitTechnique,
-    uploadMapoBatch, type MapoBatch,
+    syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
+    type MapoBatch,
 } from "./MapoMeshBatch";
 import type { MapoArtResources } from "./MapoArtResources";
 
-/** 一屏最多展开多少件。⚠ 洛阳一座就有 218 个，⛔ 必须有上限。 */
-export const MAPO_CITY_MAX_SPRITES = 4_000;
 
 /**
  * 视口外扩多少世界像素再挑城。
@@ -26,7 +24,7 @@ export const MAPO_CITY_MAX_SPRITES = 4_000;
 export const MAPO_CITY_MARGIN = 360;
 
 export class MapoCityRenderer {
-    private batch: MapoBatch | null = null;
+    private readonly batches: MapoBatch[] = [];
     private material: Material | null = null;
     private disposed = false;
 
@@ -47,20 +45,15 @@ export class MapoCityRenderer {
         }
         const m = MAPO_CITY_MARGIN;
         const sprites = mapoCitiesIn(view.left - m, view.right + m, view.bottom - m,
-                                     view.top + m, MAPO_CITY_MAX_SPRITES);
+                                     view.top + m, Infinity);
         if (sprites.length === 0) { this.clear(); return 0; }
-        const geometry = buildMapoSpriteMesh(sprites);
-        if (!this.batch) {
-            this.batch = createMapoBatch(this.root, "mapo-city", geometry, this.material);
-        } else {
-            uploadMapoBatch(this.batch, geometry);
-        }
+        const geometry = buildMapoSpriteMeshes(sprites);
+        syncMapoBatches(this.root, "mapo-city", this.batches, geometry, this.material);
         return sprites.length;
     }
 
     clear(): void {
-        destroyMapoBatch(this.batch);
-        this.batch = null;
+        clearMapoBatches(this.batches);
     }
 
     dispose(): void {

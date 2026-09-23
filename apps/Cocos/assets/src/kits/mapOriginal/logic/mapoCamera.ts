@@ -7,9 +7,9 @@
  * 这样相机永远悬在一个合法格上，⛔ 不会飘到菱形外的四角。
  */
 import {
-    MAPO_MAP_COLS, MAPO_MAP_ROWS, MAPO_SCALE_INITIAL, MAPO_SCALE_MAX, MAPO_SCALE_MIN,
+    MAPO_MAP_COLS, MAPO_MAP_ROWS, MAPO_SCALE_INITIAL, MAPO_SCALE_MAX,
     MAPO_TILE_HALF_H, MAPO_TILE_HALF_W,
-    mapoClampGrid, mapoGrid2Pos, mapoLodForScale, mapoLodForScaleStable, mapoPos2GridRaw,
+    mapoClampGrid, mapoGrid2Pos, mapoLodForScale, mapoLodForScaleStable, mapoPos2GridRaw, mapoFitScale, mapoWorldBounds,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
 export interface MapoPoint { readonly x: number; readonly y: number }
@@ -43,6 +43,7 @@ export class MapoCamera {
     }
 
     get lod(): number { return this.currentLod; }
+    get minScale(): number { return mapoFitScale(this.width, this.height, this.rows, this.cols); }
     get pointerCount(): number { return this.pointers.size; }
 
     /** 屏幕像素（左上原点，y 向下）→ 世界坐标（y 向上）。 */
@@ -107,7 +108,7 @@ export class MapoCamera {
         if (!Number.isFinite(factor) || factor <= 0) return;
         this.touched = true;
         const anchor = this.worldAt(anchorX, anchorY);
-        const scale = Math.min(MAPO_SCALE_MAX, Math.max(MAPO_SCALE_MIN, this.scale * factor));
+        const scale = Math.min(MAPO_SCALE_MAX, Math.max(this.minScale, this.scale * factor));
         this.commit(
             anchor.x - (anchorX - this.width / 2) / scale,
             anchor.y + (anchorY - this.height / 2) / scale,
@@ -172,6 +173,14 @@ export class MapoCamera {
 
     private commit(x: number, y: number, scale: number, force = false): void {
         if (![x, y, scale].every(Number.isFinite)) return;
+        scale = Math.max(this.minScale, Math.min(MAPO_SCALE_MAX, scale));
+        // 缩远时收紧中心的活动范围；全图装入视口后固定居中，不能把地图拖出画面。
+        const bounds = mapoWorldBounds(this.rows, this.cols);
+        const cx = (bounds.minX + bounds.maxX) / 2, cy = (bounds.minY + bounds.maxY) / 2;
+        const rx = Math.max(0, (bounds.maxX - bounds.minX - this.width * 0.9 / scale) / 2);
+        const ry = Math.max(0, (bounds.maxY - bounds.minY - this.height * 0.9 / scale) / 2);
+        x = Math.max(cx - rx, Math.min(cx + rx, x));
+        y = Math.max(cy - ry, Math.min(cy + ry, y));
         // ★ 钳位走「世界→格→钳→世界」，保证中心永远在可玩菱形内
         const raw = mapoPos2GridRaw(x, y);
         const cell = mapoClampGrid(raw.row, raw.col, this.rows, this.cols);

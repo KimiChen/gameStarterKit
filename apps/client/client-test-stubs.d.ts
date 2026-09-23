@@ -73,6 +73,12 @@ declare module "cc" {
   export class JsonAsset extends Asset { json: unknown; }
   /** ⚠ `.bytes` / `.bin` 资源导入成它；mapOriginal 的 16 类地形显示层走这条（塞不进 shared）。 */
   export class BufferAsset extends Asset { buffer(): ArrayBuffer; }
+  export class RenderTexture extends Asset {
+    readonly width: number; readonly height: number;
+    reset(info: { width: number; height: number; name?: string }): void;
+    setFilters(min: number, mag: number): void;
+    setWrapMode(s: number, t: number): void;
+  }
   export class SpriteFrame extends Asset { texture: Texture2D | null; rect: Rect; rotated: boolean;
       insetTop: number; insetBottom: number; insetLeft: number; insetRight: number;
       /** ⚠ 引擎侧只有 getter：赋值会抛 TypeError，故声明为 readonly 让 typecheck 拦下。 */
@@ -134,6 +140,7 @@ declare module "cc" {
   export class UIMeshRenderer extends Component {}
   /** ⚠ 在 cc 模块里导出，但**不在** cc 全局对象上（全局那份的旧名是 ModelComponent）。 */
   export class MeshRenderer extends Component {
+      priority: number;
       sharedMaterials: (Material | null)[];
       setMaterial(material: Material | null, index: number): void;
     mesh: Mesh | null; material: Material | null;
@@ -450,6 +457,7 @@ declare module "cc" {
     }
     /** cc.d.ts:27003–27247. Component ray arguments differ from renderer.scene.Camera. */
     export class Camera extends Component {
+        targetTexture: RenderTexture | null;
         /** SC1-B3: same-frame picks refresh the public renderer camera (cc.d.ts:27090,11313). */
         readonly camera: { update(forceUpdate?: boolean): void };
         static ProjectionType: typeof renderer.scene.CameraProjection;

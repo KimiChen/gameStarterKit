@@ -32,9 +32,6 @@ export function mapoUnpackOffset(packed: number): { dr: number; dc: number } {
     return { dr: Math.floor(packed / PACK_STRIDE) - PACK_BIAS, dc: (packed % PACK_STRIDE) - PACK_BIAS };
 }
 
-/** 一次可视格数的硬上限：超过就说明该走远档了，⛔ 不要真去铺几万个菱形。 */
-export const MAPO_MAX_STENCIL_CELLS = 24_000;
-
 function buildStencil(parity: 0 | 1, halfWorldW: number, halfWorldH: number,
                       marginTiles: number): Int32Array {
     // 以某个该奇偶的中心格为基准算偏移；偏移表与具体在哪一格无关（只和奇偶有关）
@@ -70,7 +67,6 @@ function buildStencil(parity: 0 | 1, halfWorldW: number, halfWorldH: number,
             if (p.x < left - MAPO_TILE_HALF_W || p.x > right + MAPO_TILE_HALF_W) continue;
             if (p.y < bottom - MAPO_TILE_HALF_H || p.y > top + MAPO_TILE_HALF_H) continue;
             out.push(mapoPackOffset(row - baseRow, col - baseCol));
-            if (out.length > MAPO_MAX_STENCIL_CELLS) return new Int32Array(out.slice(0, MAPO_MAX_STENCIL_CELLS));
         }
     }
     return new Int32Array(out);

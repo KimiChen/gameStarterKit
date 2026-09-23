@@ -1,5 +1,5 @@
 /**
- * snow / desert 的 **block 级地貌带**渲染：一层一个批、一张贴图、GL_REPEAT。
+ * snow / desert 的 **block 级地貌带**渲染：一层按 16 位索引拆批、共用一张贴图、GL_REPEAT。
  *
  * ★ 三层是「**叠**」不是「替」（MAPORIGINAL-2D §1.3）：次序 ground(100) < desert(200) < snow(300)，
  *   同一块可以同时挂草地底 + 沙漠 + 雪（实测 489 块两者兼有）。
@@ -8,19 +8,17 @@
  * ⚠ 贴图与地表底一样要 POT + `WrapMode.REPEAT`。
  */
 import { Material, Node, Texture2D } from "cc";
-import { buildMapoPolygonMesh, type MapoPolygonInput } from "../logic/mapoMesh";
+import { buildMapoPolygonMeshes, type MapoPolygonInput } from "../logic/mapoMesh";
 import { mapoBlocksInRect, mapoHasBlocks, type IMapoBlockRect } from "../logic/mapoBlocks";
 import {
-    createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoUnlitTechnique,
-    uploadMapoBatch, type MapoBatch,
+    syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
+    type MapoBatch,
 } from "./MapoMeshBatch";
 import type { MapoArtResources } from "./MapoArtResources";
 
-/** 一屏最多建多少片。⚠ 全图 desert 4,762 + snow 4,186，远档一屏能框进上千片。 */
-export const MAPO_BLOCK_MAX_PIECES = 900;
 
 export class MapoBlockRenderer {
-    private batch: MapoBatch | null = null;
+    private readonly batches: MapoBatch[] = [];
     private material: Material | null = null;
     private wrapped = false;
     private disposed = false;
@@ -40,23 +38,18 @@ export class MapoBlockRenderer {
             this.wrapped = true;
         }
         if (!this.material) {
-            this.material = createMapoMaterial(mapoUnlitTechnique(), true);
+            this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
         }
-        const polys = mapoBlocksInRect(this.kind, rect, MAPO_BLOCK_MAX_PIECES);
+        const polys = mapoBlocksInRect(this.kind, rect, Infinity);
         if (polys.length === 0) { this.clear(); return []; }
-        const geometry = buildMapoPolygonMesh(polys);
-        if (!this.batch) {
-            this.batch = createMapoBatch(this.root, `mapo-block-${this.kind}`, geometry, this.material);
-        } else {
-            uploadMapoBatch(this.batch, geometry);
-        }
+        const geometry = buildMapoPolygonMeshes(polys);
+        syncMapoBatches(this.root, `mapo-block-${this.kind}`, this.batches, geometry, this.material);
         return polys;
     }
 
     clear(): void {
-        destroyMapoBatch(this.batch);
-        this.batch = null;
+        clearMapoBatches(this.batches);
     }
 
     dispose(): void {

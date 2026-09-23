@@ -25,7 +25,8 @@ export interface MapoBatch {
 function toCcGeometry(data: MapoGeometry) {
     return {
         positions: data.positions, uvs: data.uvs, colors: data.colors, indices16: data.indices16,
-        customAttributes: data.addColors ? [{ attr: new gfx.Attribute("a_colorAdd", gfx.Format.RGBA32F), values: data.addColors }] : undefined,
+        customAttributes: [{ attr: new gfx.Attribute("a_colorAdd", gfx.Format.RGBA32F),
+            values: data.addColors ?? new Float32Array(data.colors.length) }],
         minPos: new Vec3(data.minPos[0], data.minPos[1], data.minPos[2]),
         maxPos: new Vec3(data.maxPos[0], data.maxPos[1], data.maxPos[2]),
     };
@@ -38,11 +39,13 @@ export function mapoUnlitTechnique(): number {
     return index;
 }
 
-export function createMapoMaterial(technique: number, textured: boolean, spriteEffect?: EffectAsset | null): Material {
+export function createMapoMaterial(technique: number, textured: boolean, spriteEffect?: EffectAsset | null,
+                                   fromRenderTexture = false): Material {
     const material = new Material();
     material.initialize({
         ...(spriteEffect ? { effectAsset: spriteEffect, technique: 0 } : { effectName: "builtin-unlit", technique }),
-        defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: textured },
+        defines: { USE_VERTEX_COLOR: true, USE_TEXTURE: textured,
+            SAMPLE_FROM_RT: fromRenderTexture, MAPO_UNPREMULTIPLY: fromRenderTexture },
         states: { rasterizerState: { cullMode: gfx.CullMode.NONE } },
     });
     return material;
@@ -55,7 +58,7 @@ export function mapoPipelineToneMapping(): number {
 }
 
 export function createMapoBatch(root: Node, name: string, data: MapoGeometry,
-                                material: Material, at?: number): MapoBatch {
+                                material: Material, at?: number, captureOrder?: number): MapoBatch {
     const capacity = Math.max(1, data.quads);
     const mesh = utils.MeshUtils.createDynamicMesh(0, toCcGeometry(data), undefined, {
         maxSubMeshes: 1,
@@ -69,7 +72,8 @@ export function createMapoBatch(root: Node, name: string, data: MapoGeometry,
         const model = node.addComponent(MeshRenderer);
         model.mesh = mesh;
         model.material = material;
-        node.addComponent(UIMeshRenderer);   // ★ 必须最后挂
+        if (captureOrder === undefined) node.addComponent(UIMeshRenderer);   // ★ 必须最后挂
+        else model.priority = captureOrder; // 离屏走普通网格，相机投影与图层顺序均独立于 UI 队列。
         return { node, mesh, model, capacity };
     } catch (error) {
         node.destroy();
@@ -100,4 +104,19 @@ export function destroyMapoBatch(batch: MapoBatch | null): void {
     batch.node.active = false;   // ★ 先摘激活态
     batch.node.destroy();
     batch.mesh.destroy();
+}
+
+/** 多批上传共用同一材质，兄弟顺序与几何批次顺序一致，超量不丢件。 */
+export function syncMapoBatches(root: Node, name: string, batches: MapoBatch[],
+                                geometries: readonly MapoGeometry[], material: Material): void {
+    for (let i = 0; i < geometries.length; i += 1) {
+        if (batches[i]) uploadMapoBatch(batches[i], geometries[i]);
+        else batches.push(createMapoBatch(root, i === 0 ? name : `${name}-${i}`, geometries[i], material));
+    }
+    while (batches.length > geometries.length) destroyMapoBatch(batches.pop()!);
+}
+
+export function clearMapoBatches(batches: MapoBatch[]): void {
+    for (const batch of batches) destroyMapoBatch(batch);
+    batches.length = 0;
 }

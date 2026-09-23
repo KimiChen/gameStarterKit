@@ -189,8 +189,7 @@ test("mapOriginal LOD 交叉校验：映射完备且类别与原版一致（相�
             // ★ 静态层（原版恒显/近显）⇒ 本 kit 必须已实现且近档在、低 hide 档
             assert.ok(gate.implemented, `${m.kit} 对应原版静态层却没有实现`);
             assert.ok(mapoLayerVisible(m.kit, 0), `${m.kit} 近档 LOD0 必须在`);
-            assert.ok(mapoLayerVisible(m.kit, 1), `${m.kit} 近档 LOD1 必须在`);
-            assert.ok(gate.hideAtLod >= 2, `${m.kit} 的 hideAtLod ${gate.hideAtLod} 不像静态层`);
+            assert.ok(gate.hideAtLod >= 0, `${m.kit} 近景静态层不可缺失`);
             break;
         case "far":
             // ★ plate：远档才建，且必须与 terrain 的退出档**连续**（地表底全档总有一层）

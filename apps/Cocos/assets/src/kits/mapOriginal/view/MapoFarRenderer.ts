@@ -1,86 +1,94 @@
-/**
- * 远档渲染：整幅底图（带贴图的一个四边形）。
- *
- * ⚠ 底图的世界矩形来自 mapoPlateBounds()（= mapoWorldBounds()），与 bake_content.py 烘图
- * 同一个函数 ⇒ **对齐是构造出来的**，⛔ 不用标定。
- * ⚠ 这也是为什么远档底图是**自己烘的**而不是直接贴原版鸟瞰图：原版那张是 3D 相机的透视
- * 渲染，与正交等距 ⛔ 不存在可靠 2D 对齐（实测 IoU 0.62 / NCC 0.30 / 全仿射退化）。
- * ⛔ v1 无鸟瞰聚合色块（那要服务端分块摘要）。
- */
-import { Material, Node } from "cc";
-import { mapoPlateBounds, mapoPlateLodOf } from "../logic/mapoFar";
+/** 四档共用的静态地貌：L1 原件分块缓存，L2 地貌分块缓存，L3 单张同源概览。 */
+import { Material, Node, RenderTexture } from "cc";
+import { mapoPlateBounds } from "../logic/mapoFar";
 import { buildMapoPlateMesh } from "../logic/mapoMesh";
-import { MAPO_TEXTURED_TINT, mapoCompensate } from "../logic/mapoPalette";
+import { mapoCacheTiles, MapoLodCache, type MapoCacheTile } from "../logic/mapoLodCache";
+import { mapoDecorEnabledFor } from "../logic/mapoSettings";
 import type { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
-import {
-    createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoPipelineToneMapping,
-    mapoUnlitTechnique, uploadMapoBatch, type MapoBatch,
-} from "./MapoMeshBatch";
+import { createMapoBatch, createMapoMaterial, destroyMapoBatch, type MapoBatch } from "./MapoMeshBatch";
+import { MapoChunkBaker } from "./MapoChunkBaker";
 import type { MapoArtResources } from "./MapoArtResources";
 
+interface TileEntry { texture: RenderTexture; material: Material; batch: MapoBatch }
 export class MapoFarRenderer {
     private plate: MapoBatch | null = null;
-    private plateLod: 4 | 5 | 0 = 0;
-    private readonly plateMaterials = new Map<number, Material>();
-    private readonly tone: number;
-    private readonly technique: number;
+    private plateMaterial: Material | null = null;
+    private baker: MapoChunkBaker | null = null;
+    private readonly cache = new MapoLodCache<TileEntry>((entry) => {
+        destroyMapoBatch(entry.batch); entry.material.destroy(); entry.texture.destroy();
+    });
     private disposed = false;
+    private key = "";
+    private wanted: MapoCacheTile[] = [];
+    private pinned = new Set<string>();
+    readyCount = 0;
+    get tileCount(): number { return this.wanted.length; }
+    get bytes(): number { return this.cache.bytes; }
+    constructor(private readonly root: Node, private readonly art: MapoArtResources | null) {}
 
-    constructor(private readonly root: Node, private readonly art: MapoArtResources | null) {
-        this.technique = mapoUnlitTechnique();
-        this.tone = mapoPipelineToneMapping();
-    }
-
-    private plateMaterial(lod: 4 | 5): Material | null {
-        const texture = lod === 5 ? this.art?.plate5 : this.art?.plate4;
-        if (!texture) return null;
-        const hit = this.plateMaterials.get(lod);
-        if (hit) return hit;
-        const material = createMapoMaterial(this.technique, true);
-        material.setProperty("mainTexture", texture);
-        this.plateMaterials.set(lod, material);
-        return material;
-    }
-
+    /** 每帧推进至多一个烘焙任务；L0 提前准备第一次切到 L1 时的可见块。 */
     render(logic: MapOriginalWorldLogic): void {
-        if (this.disposed) return;
-        const wanted = mapoPlateLodOf(logic.camera.lod);
-        const material = this.plateMaterial(wanted);
-        if (material) {
-            // 换档要换贴图 ⇒ 换材质 ⇒ 这张批次要重建
-            if (this.plate && this.plateLod !== wanted) {
-                destroyMapoBatch(this.plate);
-                this.plate = null;
-            }
-            // ⚠ 贴了图集就取纯白：顶点色是**相乘**的，拿地形色去乘会把底图整体染一遍
-            const tint = mapoCompensate(MAPO_TEXTURED_TINT, this.tone);
-            const geometry = buildMapoPlateMesh(mapoPlateBounds(),
-                [tint[0] / 255, tint[1] / 255, tint[2] / 255, 1]);
-            if (!this.plate) {
-                this.plate = createMapoBatch(this.root, `mapo-plate-${wanted}`, geometry, material, 0);
-                this.plateLod = wanted;
-            } else {
-                uploadMapoBatch(this.plate, geometry);
-            }
-        } else if (this.plate) {
-            // 贴图没加载出来：⛔ 不留一张纯白板挡住色块
-            destroyMapoBatch(this.plate);
-            this.plate = null;
-            this.plateLod = 0;
+        if (this.disposed || !this.art?.overview || !this.art.spriteEffect) return;
+        const cam = logic.camera;
+        this.root.active = cam.lod > 0;
+        if (!this.plateMaterial) {
+            this.plateMaterial = createMapoMaterial(0, true, this.art.spriteEffect);
+            this.plateMaterial.setProperty("mainTexture", this.art.overview);
+            this.plate = createMapoBatch(this.root, "mapo-overview", buildMapoPlateMesh(mapoPlateBounds()), this.plateMaterial, 0);
         }
-
+        if (cam.lod === 3) {
+            this.baker?.dispose(); this.baker = null;
+            this.cache.clear(); this.wanted = []; this.pinned.clear(); this.key = "";
+            this.readyCount = 0;
+            return;
+        }
+        const key = `${cam.version}|${cam.lod}|${logic.graphics.quality}`;
+        if (key !== this.key) {
+            this.key = key;
+            const scale = cam.lod === 0 ? 0.50 : cam.scale;
+            const hw = cam.width / scale / 2, hh = cam.height / scale / 2;
+            const lod = cam.lod === 2 ? 2 : 1;
+            this.wanted = mapoCacheTiles({ left: cam.x - hw, right: cam.x + hw, bottom: cam.y - hh, top: cam.y + hh },
+                lod, scale, lod === 2 || mapoDecorEnabledFor(logic.graphics.quality));
+            this.pinned = new Set(this.wanted.map((t) => t.key));
+        }
+        this.readyCount = 0;
+        this.cache.forEach((entry, entryKey) => { entry.batch.node.active = this.pinned.has(entryKey); });
+        let next: MapoCacheTile | undefined;
+        for (const tile of this.wanted) {
+            if (this.cache.get(tile.key)) this.readyCount++;
+            else if (!next) next = tile;
+        }
+        if (next && !this.baker?.busy && this.cache.reserve(next.bytes, this.pinned)) {
+            const tile = next;
+            this.baker ??= new MapoChunkBaker(this.art);
+            this.baker.bake(tile, (texture) => {
+                if (this.disposed) { texture.destroy(); return; }
+                const material = createMapoMaterial(0, true, this.art!.spriteEffect, true);
+                material.setProperty("mainTexture", texture);
+                const b = mapoPlateBounds(), r = tile.rect, c = tile.capture;
+                const bounds = { minX: Math.max(b.minX, r.left), maxX: Math.min(b.maxX, r.right),
+                    minY: Math.max(b.minY, r.bottom), maxY: Math.min(b.maxY, r.top) };
+                const geometry = buildMapoPlateMesh(bounds);
+                // 只显示内块；周围 2 texel 的真实邻域防止线性采样出现接缝。
+                const u0 = (bounds.minX - c.left) / (c.right - c.left), u1 = (bounds.maxX - c.left) / (c.right - c.left);
+                const v0 = (c.top - bounds.maxY) / (c.top - c.bottom), v1 = (c.top - bounds.minY) / (c.top - c.bottom);
+                // 顶边沿用图像 UV；SAMPLE_FROM_RT 负责各图形后端的纹理原点差异。
+                geometry.uvs.set([u0, v0, u1, v0, u1, v1, u0, v1]);
+                const batch = createMapoBatch(this.root, `mapo-cache-${tile.key}`, geometry, material);
+                batch.node.active = this.pinned.has(tile.key);
+                this.cache.put(tile.key, { texture, material, batch }, tile.bytes);
+            });
+        }
     }
 
-    /** 切回近档：底图整批撤掉。 */
-    clear(): void {
-        destroyMapoBatch(this.plate); this.plate = null;
-        this.plateLod = 0;
-    }
-
+    clear(): void { this.root.active = false; }
     dispose(): void {
+        if (this.disposed) return;
         this.disposed = true;
+        this.baker?.dispose(); this.baker = null;
+        this.cache.clear();
         destroyMapoBatch(this.plate); this.plate = null;
-        for (const material of this.plateMaterials.values()) material.destroy();
-        this.plateMaterials.clear();
+        this.plateMaterial?.destroy(); this.plateMaterial = null;
     }
 }

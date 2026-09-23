@@ -207,8 +207,9 @@ export interface MapoSpriteInput {
 }
 
 export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
+    if (sprites.length > MAPO_MAX_QUADS_PER_MESH) throw new RangeError("mapOriginal sprites require split batches");
     sprites.sort(mapoPainterCompare);
-    const n = Math.min(sprites.length, MAPO_MAX_QUADS_PER_MESH);
+    const n = sprites.length;
     const positions = new Float32Array(n * 12);
     const uvs = new Float32Array(n * 8);
     const colors = new Float32Array(n * 16);
@@ -281,7 +282,7 @@ export interface MapoPolygonInput {
  *   ① 顶点数/索引数**逐片不同**（⛔ 不能按「每片 4 顶点 6 索引」预算）；
  *   ② 三角化是**原版 prefab 自带的**（`polygon_2d.indices`），⛔ 我们不做耳切；
  *   ③ UV 是**整片一个点**（原版填充图是 2×2 单一平色）—— 色相走顶点色。
- * ⚠ 顶点上限按 u16 索引封顶（65,535），超了**截断并如实少画**，
+ * ⚠ 顶点上限按 u16 索引封顶（65,535），超量由 buildMapoPolygonMeshes 拆批，单批入口拒收，
  * ⛔ 不要悄悄换 u32：`MapoMeshBatch` 的索引缓冲是 16 位的。
  */
 export const MAPO_MAX_VERTS_PER_MESH = 65_535;
@@ -292,7 +293,7 @@ export function buildMapoPolygonMesh(polys: MapoPolygonInput[]): MapoGeometry {
     let take = 0;
     for (const p of sorted) {
         const vc = p.verts.length >> 1;
-        if (nv + vc > MAPO_MAX_VERTS_PER_MESH) break;
+        if (nv + vc > MAPO_MAX_VERTS_PER_MESH) throw new RangeError("mapOriginal polygons require split batches");
         nv += vc; ni += p.indices.length; take += 1;
     }
     const positions = new Float32Array(nv * 3);
@@ -329,7 +330,7 @@ export function buildMapoPolygonMesh(polys: MapoPolygonInput[]): MapoGeometry {
     }
     if (vAt === 0) { minX = minY = maxX = maxY = 0; }
     // ⚠ `quads` 在多边形网格里没有意义，按「索引数 / 6」折算只为让上传路径统一
-    return { positions, uvs, colors, indices16, quads: Math.ceil(ni / 6),
+    return { positions, uvs, colors, indices16, quads: Math.max(Math.ceil(ni / 6), Math.ceil(nv / 4)),
              minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
 }
 
@@ -352,7 +353,8 @@ export interface MapoGroundInput {
  *   否则两个三角形会自交。UV 表按 W/N/E/S 给（与原版 `GROUND_PIC_TBL` 同序），这里换序取。
  */
 export function buildMapoGroundMesh(blocks: readonly MapoGroundInput[]): MapoGeometry {
-    const n = Math.min(blocks.length, MAPO_MAX_QUADS_PER_MESH);
+    if (blocks.length > MAPO_MAX_QUADS_PER_MESH) throw new RangeError("mapOriginal ground requires split batches");
+    const n = blocks.length;
     const positions = new Float32Array(n * 12);
     const uvs = new Float32Array(n * 8);
     const colors = new Float32Array(n * 16);
@@ -385,4 +387,37 @@ export function buildMapoGroundMesh(blocks: readonly MapoGroundInput[]): MapoGeo
     if (n === 0) { minX = minY = maxX = maxY = 0; }
     return { positions, uvs, colors, indices16, quads: n,
              minPos: [minX, minY, 0], maxPos: [maxX, maxY, 0] };
+}
+
+/** 先全局排序，再拆 16 位批次；不能分别排序后拼接，否则批间画家序会倒置。 */
+export function buildMapoSpriteMeshes(sprites: MapoSpriteInput[]): MapoGeometry[] {
+    sprites.sort(mapoPainterCompare);
+    const out: MapoGeometry[] = [];
+    for (let i = 0; i < sprites.length; i += MAPO_MAX_QUADS_PER_MESH) {
+        out.push(buildMapoSpriteMesh(sprites.slice(i, i + MAPO_MAX_QUADS_PER_MESH)));
+    }
+    return out;
+}
+
+export function buildMapoGroundMeshes(blocks: readonly MapoGroundInput[]): MapoGeometry[] {
+    const out: MapoGeometry[] = [];
+    for (let i = 0; i < blocks.length; i += MAPO_MAX_QUADS_PER_MESH) {
+        out.push(buildMapoGroundMesh(blocks.slice(i, i + MAPO_MAX_QUADS_PER_MESH)));
+    }
+    return out;
+}
+
+export function buildMapoPolygonMeshes(polys: readonly MapoPolygonInput[]): MapoGeometry[] {
+    const out: MapoGeometry[] = [];
+    let batch: MapoPolygonInput[] = [], vertices = 0;
+    for (const p of polys.slice().sort((a, b) => a.s - b.s)) {
+        const count = p.verts.length / 2;
+        if (count > MAPO_MAX_VERTS_PER_MESH) throw new RangeError("mapOriginal polygon exceeds Uint16 capacity");
+        if (vertices + count > MAPO_MAX_VERTS_PER_MESH) {
+            out.push(buildMapoPolygonMesh(batch)); batch = []; vertices = 0;
+        }
+        batch.push(p); vertices += count;
+    }
+    if (batch.length) out.push(buildMapoPolygonMesh(batch));
+    return out;
 }

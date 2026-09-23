@@ -25,6 +25,7 @@ OUT = os.path.join(HERE, CFG["outDir"])
 
 # out/pack/<id>/ 里的名字 -> 出品名。KIT_ONLY 的不进 Cocos 运行时镜像。
 FILES = {
+    "overview.png": "overview.png", "overview.info.json": "overview.info.json",
     "mapo-sprite.effect": "mapo-sprite.effect", "mapo-river.effect": "mapo-river.effect",
     "river-mask.png": "river-mask.png", "river-normal.png": "river-normal.png", "grid-line.png": "grid-line.png",
     "surface.info.json": "surface.info.json", "choose.info.json": "choose.info.json",
@@ -50,8 +51,6 @@ FILES = {
     # ★ 道路层：路片图集 + 摆放表
     "road-atlas.png": "road-atlas.png", "roads.bin": "roads.bin",
     "roads.info.json": "roads.info.json", "minimap.info.json": "minimap.info.json",
-    "plate-lod4.png": "plate-lod4.png", "plate-lod4.info.json": "plate-lod4.info.json",
-    "plate-lod5.png": "plate-lod5.png", "plate-lod5.info.json": "plate-lod5.info.json",
     "minimap.png": "minimap.png", "minimap-mask.png": "minimap-mask.png",
     "decor-atlas.png": "decor-atlas.png", "decor-atlas.info.json": "decor-atlas.info.json",
     # ★ 多格地形的区域件：图集 + 摆放表（regions.bin 也要进运行时，走 BufferAsset）
@@ -68,7 +67,7 @@ FILES = {
     "choose.png": "choose.png",
     "labels.json": "labels.json",
 }
-KIT_ONLY = {"surface.info.json", "choose.info.json","terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
+KIT_ONLY = {"overview.info.json", "surface.info.json", "choose.info.json","terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
             "rivers.info.json", "river-geo.index.json", "ground.info.json",
             "blocks.info.json", "bands.bytes", "bands.info.json", "top-atlas.info.json",
             "roads.info.json", "minimap.info.json", "cities.info.json"}
@@ -172,6 +171,19 @@ def main() -> int:
 
     bad = 0
     manifest = []
+    # 旧 res 调色板底图已退役；避免安装后留下一套看似仍在使用的 L4/L5 资源。
+    for lod in (4, 5):
+        for suffix in ("png", "info.json"):
+            for folder in (kit, coc):
+                for extra in ("", ".meta"):
+                    obsolete = os.path.join(folder, "plate-lod%d.%s%s" % (lod, suffix, extra))
+                    if not os.path.exists(obsolete):
+                        continue
+                    if a.check:
+                        print("  ❌ 遗留旧底图 %s" % os.path.relpath(obsolete, REPO))
+                        bad += 1
+                    else:
+                        os.remove(obsolete)
     for out_name, ship in FILES.items():
         s = os.path.join(HERE, "shaders", out_name) if out_name.endswith(".effect") else os.path.join(src, out_name)
         if not os.path.isfile(s):

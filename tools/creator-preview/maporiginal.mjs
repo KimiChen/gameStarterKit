@@ -3,7 +3,7 @@
  * 证据只来自**渲染出来的节点与文本** + 普通 CDP 输入，⛔ 不调 Logic、⛔ 不直接发 RPC。
  *
  * 覆盖 v1 的五件事：近档地表就位 → 点选（含坐标换算判据）→ 画面设置生效与置灰 →
- * 拉远换远档底图 → 缩略图跳转 → 推回近档。
+ * 四档往返与全图缩放 → 缓存 GPU 邻块一致性/预算 → 缩略图跳转 → 推回近档。
  *
  * ⚠ 本 kit **无服务端**：地形随代码（shared 通行层）与资源（BufferAsset 显示层）走，
  *   所以 ⛔ 没有「占领 / 行军」这类写操作可重放。
@@ -13,8 +13,8 @@ import { sleep } from "./lib.mjs";
 const VIEW = "MapOriginalWorldView";
 const inView = (node) => node.path.includes(`${VIEW}/`);
 
-/** 标题形如「原版大地图 · LOD 2/5」。 */
-const TITLE_RE = /^原版大地图 · LOD ([0-5])\/5$/u;
+/** 标题形如「原版大地图 · LOD 2/3 · 0.1600×」。 */
+const TITLE_RE = /^原版大地图 · LOD ([0-3])\/3(?: · ([0-9.]+)×)?$/u;
 /**
  * 状态形如「s1 · 近档 · 画面：普通 · 层：… · 地表 12+3 · 道路 5 · 摆件 137/312 · 山林 48
  *   · 水面 5 · 点缀 2 · 城 8」（段序固定 = 视图里的拼接序；除「层」外各段都只在 >0 时出现，
@@ -25,7 +25,7 @@ const TITLE_RE = /^原版大地图 · LOD ([0-5])\/5$/u;
  *   组号前移过两次，都踩过。
  */
 const STATUS_RE =
-    /^s1 · (近档|远档) · 画面：([^/·]+?) · 层：(.*?)( · 地表 (\d+)(?:\+(\d+))?)?( · 道路 (\d+))?( · 摆件 (\d+)\/(\d+))?( · 山林 (\d+))?( · 水面 (\d+))?( · 点缀 (\d+))?( · 城 (\d+))?$/u;
+    /^s1 · (近档|远档) · 画面：([^/·]+?) · 层：(.*?)( · 地表 (\d+)(?:\+(\d+))?)?( · 道路 (\d+))?( · 摆件 (\d+)\/(\d+))?( · 山林 (\d+))?( · 水面 (\d+))?( · 点缀 (\d+))?( · 城 (\d+))?(?: · 缓存 (?<cacheReady>\d+)\/(?<cacheTotal>\d+))?$/u;
 /**
  * 详情形如「(750, 751) 木·1级 · 原版值 2」，不可通行多一段，显示层没到位再多「· 读取中…」。
  * ⚠ 地形名里**自带 `·`**（原版调色板就是「类型·等级」），所以这里 ⛔ 不能用 `[^\s·]+` 去截。
@@ -52,13 +52,18 @@ export function readMapOriginalEvidence(walk) {
     return {
         lod: titleMatch ? Number(titleMatch[1]) : null,
         title, status,
+        scale: titleMatch?.[2] ? Number(titleMatch[2]) : null,
+        cacheReady: Number(statusMatch?.groups?.cacheReady ?? 0),
+        cacheTotal: Number(statusMatch?.groups?.cacheTotal ?? 0),
+        cacheQuads: nodes.filter((n) => /^mapo-cache-[12]\//u.test(n.name)).length,
+        markers: has("mapo-city-markers"),
         band: statusMatch ? statusMatch[1] : null,
         graphics: statusMatch ? { quality: statusMatch[2] } : null,
         layers: statusMatch ? statusMatch[3].split(" / ").filter((s) => s && s !== "（无）") : [],
         // ★ 摆件：建出来的件数 / 可视格数。原版每个资源格都有 res_field ⇒ 近档这个比例应在四成上下
         decorPlaced: statusMatch?.[10] !== undefined ? Number(statusMatch[10]) : null,
         visibleCells: statusMatch?.[11] !== undefined ? Number(statusMatch[11]) : null,
-        // ★ 区域件：多格地形每区一件（原版 mountain_patch 锚点优先 + 无锚连通区兜底）
+        // ★ 区域件：res 原始锚点 + mountain_patch 补件。
         regionPieces: statusMatch?.[13] !== undefined ? Number(statusMatch[13]) : null,
         // ★ 其余各段的活体计数（掉到 0 = 对应 bin / 图集没到位；地表 / 摆件仅近档有）
         groundCount: statusMatch?.[5] !== undefined ? Number(statusMatch[5]) : null,
@@ -80,7 +85,7 @@ export function readMapOriginalEvidence(walk) {
         labels: nodes.filter((node) => node.path.includes("/mapo-label-")
             && typeof node.text === "string" && node.text.trim().length > 0)
             .map((node) => node.text.trim()),
-        plate: nodes.find((node) => /^mapo-plate-[45]$/u.test(node.name))?.name ?? null,
+        plate: nodes.find((node) => /^mapo-overview$/u.test(node.name))?.name ?? null,
         minimap: has("mapo-minimap"),
         selection: has("mapo-selection"),
         selectionAt: at("mapo-selection"),
@@ -97,8 +102,9 @@ export function readMapOriginalEvidence(walk) {
                 text: detail,
             }
             : null,
-        nearLoaded: !!titleMatch && has("mapo-ground"),
-        farLoaded: !!titleMatch && nodes.some((node) => /^mapo-plate-[45]$/u.test(node.name)),
+        nearLoaded: !!titleMatch && (has("mapo-ground") || (Number(titleMatch[1]) === 1
+            && Number(statusMatch?.groups?.cacheTotal) > 0 && statusMatch?.groups?.cacheReady === statusMatch?.groups?.cacheTotal)),
+        farLoaded: !!titleMatch && Number(titleMatch[1]) >= 2 && nodes.some((node) => /^mapo-overview$/u.test(node.name)),
     };
 }
 
@@ -144,6 +150,65 @@ export async function mapOriginalWheel(runner, at, deltaY, times) {
         await sleep(60);
     }
     await sleep(300);
+}
+
+/** 读真实 RenderTexture：邻块的 4 texel 重叠带必须来自同一世界区域，能抓出投影/裁剪错位。 */
+export async function readMapOriginalCacheGpuEvidence(client) {
+    return client.evaluate(`(${(() => {
+        const nodes = [];
+        const walk = (n) => { nodes.push(n); n.children.forEach(walk); };
+        walk(cc.director.getScene());
+        const tiles = new Map(), textures = new Set();
+        let bytes = 0;
+        for (const n of nodes) {
+            const match = n.name.match(/^mapo-cache-([12])\/(\d+)\/([01])\/(-?\d+)\/(-?\d+)$/);
+            if (!match) continue;
+            const m = n.getComponent("cc.MeshRenderer"), t = m?.sharedMaterials[0]?.getProperty("mainTexture");
+            if (!t?.readPixels) continue;
+            if (!textures.has(t)) { textures.add(t); bytes += t.width * t.height * 8; }
+            if (!n.activeInHierarchy) continue;
+            tiles.set(match.slice(1).join("/"), { lod: match[1], size: Number(match[2]), detail: match[3],
+                x: Number(match[4]), y: Number(match[5]), pixels: t.readPixels() });
+        }
+        const pending = nodes.find(n => n.name === "mapo-cache-camera")?.getComponent("cc.Camera")?.targetTexture;
+        if (pending && !textures.has(pending)) bytes += pending.width * pending.height * 8;
+        let pairs = 0, total = 0, samples = 0, worstPairMean = 0;
+        for (const t of tiles.values()) for (const axis of [0, 1]) {
+            const peer = tiles.get([t.lod,t.size,t.detail,t.x+(axis===0?1:0),t.y+(axis===1?1:0)].join("/"));
+            if (!peer) continue;
+            let sum = 0;
+            for (let u = 0; u < t.size; u++) for (let v = 0; v < 4; v++) {
+                const a = (axis===0 ? u*t.size+t.size-4+v : (t.size-4+v)*t.size+u)*4;
+                const b = (axis===0 ? u*t.size+v : v*t.size+u)*4;
+                for (let k = 0; k < 4; k++) sum += Math.abs(t.pixels[a+k] - peer.pixels[b+k]);
+            }
+            const count = t.size * 16;
+            pairs++; total += sum; samples += count; worstPairMean = Math.max(worstPairMean, sum/count);
+        }
+        return { tiles: tiles.size, bytes, pairs, mean: samples ? total/samples : null, worstPairMean };
+    }).toString()})()`);
+}
+
+async function zoomToLod(runner, lod, deltaY) {
+    for (let i = 0; i < 60; i++) {
+        const walk = await runner.walk(), got = readMapOriginalEvidence(walk);
+        if (got?.lod === lod) return got;
+        const area = mapOriginalGestureArea(walk);
+        await mapOriginalWheel(runner, area, deltaY, 1);
+    }
+    throw new Error(`滚轮未到 LOD ${lod}`);
+}
+
+async function checkCache(runner, lod) {
+    const value = await runner.waitFor(`L${lod} 缓存全部就位`, (walk) => {
+        const got = readMapOriginalEvidence(walk);
+        return got?.lod === lod && got.cacheTotal > 0 && got.cacheReady === got.cacheTotal ? got : null;
+    }, 30_000);
+    const gpu = await readMapOriginalCacheGpuEvidence(runner.client);
+    if (!gpu.pairs || gpu.bytes > 48*1024*1024 || gpu.worstPairMean > 3) {
+        throw new Error(`缓存邻块或预算不合格：${JSON.stringify(gpu)}`);
+    }
+    return { ...value, gpu };
 }
 
 export async function replayMapOriginalWorld(runner) {
@@ -223,19 +288,46 @@ export async function replayMapOriginalWorld(runner) {
                  shot: await runner.shot("maporiginal-no-3d-rows") };
     });
 
-    const far = await runner.step("拉远：换成远档底图（mapo-plate-4/5）", async () => {
-        const area = mapOriginalGestureArea(await runner.walk());
-        await mapOriginalWheel(runner, { x: area.x, y: area.y }, 240, 14);
-        const value = await runner.waitFor("远档底图就位且 LOD ≥ 3", (walk) => {
-            const got = readMapOriginalEvidence(walk);
-            return got?.farLoaded && got.lod >= 3 ? got : null;
-        }, 30_000);
-        // ⚠ 远档该换成**大区名**（西凉/山东/…），⛔ 不该还挂着郡名
-        const names = [...new Set(value.labels)];
-        const canton = names.filter((t) => !/[郡国]$/u.test(t));
-        return { lod: value.lod, plate: value.plate, band: value.band, layers: value.layers,
-                 canton, stillJun: names.filter((t) => /[郡国]$/u.test(t)),
+    const medium = await runner.step("L1：原件静态缓存就位，GPU 邻块一致且不超 48 MiB", async () => {
+        await zoomToLod(runner, 1, 240);
+        const value = await checkCache(runner, 1);
+        if (value.terrain || value.decor) throw new Error("L1 仍在绘制实时地表/资源件");
+        return { ...value, shot: await runner.shot("maporiginal-medium") };
+    });
+
+    const far = await runner.step("L2：区域地貌缓存、郡名与城市标记", async () => {
+        await zoomToLod(runner, 2, 240);
+        const value = await checkCache(runner, 2);
+        if (!value.markers || value.city) throw new Error("L2 城市应切到固定屏幕标记");
+        return { ...value, names: [...new Set(value.labels)],
                  shot: await runner.shot("maporiginal-far") };
+    });
+
+    const global = await runner.step("L3：全图适配最小缩放、大区名，释放分块缓存", async () => {
+        await zoomToLod(runner, 3, 240);
+        let value = readMapOriginalEvidence(await runner.walk()), stable = 0;
+        for (let i = 0; i < 40 && stable < 2; i++) {
+            await mapOriginalWheel(runner, mapOriginalGestureArea(await runner.walk()), 240, 1);
+            const next = readMapOriginalEvidence(await runner.walk());
+            stable = next.scale === value.scale ? stable + 1 : 0; value = next;
+        }
+        const fit = await runner.client.evaluate(`(async () => {
+            const e=await System.import('cc'), nodes=[];
+            const visit=n=>{nodes.push(n);n.children.forEach(visit)};visit(cc.director.getScene());
+            const plate=nodes.find(n=>n.name==='mapo-overview'), anchor=nodes.find(n=>n.name==='mapo-map-anchor');
+            const points=plate.getComponent(e.MeshRenderer).mesh.readAttribute(0,'a_position');
+            const t=anchor.getComponent(e.UITransform), size=t.contentSize, corners=[];
+            for(let i=0;i<points.length;i+=3){const p=e.Vec3.transformMat4(new e.Vec3(),new e.Vec3(points[i],points[i+1],0),plate.worldMatrix);corners.push(t.convertToNodeSpaceAR(p));}
+            return {width:size.width,height:size.height,scale:plate.worldScale.x,
+                inside:corners.every(p=>Math.abs(p.x)<=size.width/2&&Math.abs(p.y)<=size.height/2)};
+        })()`);
+        const gpu = await readMapOriginalCacheGpuEvidence(runner.client);
+        if (!fit.inside || gpu.bytes !== 0 || !value.markers) throw new Error(`全图适配/释放失败：${JSON.stringify({fit,gpu})}`);
+        return { ...value, fit, gpu, shot: await runner.shot("maporiginal-global") };
+    });
+
+    await runner.step("从全图回 L2：重建区域缓存", async () => {
+        await zoomToLod(runner, 2, -240); return checkCache(runner, 2);
     });
 
     const jumped = await runner.step("缩略图跳转：点一下缩略图，镜头真的挪了", async () => {
@@ -254,11 +346,10 @@ export async function replayMapOriginalWorld(runner) {
     });
 
     const back = await runner.step("推回近档：地表重新铺出来", async () => {
-        const area = mapOriginalGestureArea(await runner.walk());
-        await mapOriginalWheel(runner, { x: area.x, y: area.y }, -240, 16);
+        await zoomToLod(runner, 0, -240);
         const value = await runner.waitFor("回到近档且地表在", (walk) => {
             const got = readMapOriginalEvidence(walk);
-            return got?.nearLoaded && got.lod <= 2 ? got : null;
+            return got?.nearLoaded && got.lod === 0 ? got : null;
         }, 30_000);
         return { lod: value.lod, band: value.band, shot: await runner.shot("maporiginal-back") };
     });
@@ -301,5 +392,5 @@ export async function replayMapOriginalWorld(runner) {
                  shot: await runner.shot("maporiginal-city") };
     });
 
-    return { opened, selected, decorAndLabels, noSandboxRow, far, jumped, back, city };
+    return { opened, selected, decorAndLabels, noSandboxRow, medium, far, global, jumped, back, city };
 }

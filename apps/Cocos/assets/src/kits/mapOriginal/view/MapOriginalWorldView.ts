@@ -1,11 +1,11 @@
 /**
  * 原版大地图全屏路由：多指输入 + 合并网格 + **画面设置**面板。
  *
- * ⚠ 只有一台正交 UI 相机（`docs/3d.md` 零实施）：一切经 UIMeshRenderer 走 2D UI 管线，
- *   深度**只有兄弟序**，⛔ 不要指望 z。
+ * ⚠ 主画面走正交 UI 相机与 UIMeshRenderer，按兄弟顺序绘制。
+ *   分块缓存用隔离的正交相机与普通 MeshRenderer，按显式 priority 保持同一图层顺序。
  * ⚠ 实心矩形一律走 `createSolidPlate`，⛔ 不要每块一个 `Graphics`（docs/CLIENT.md §3：
  *   每个 Graphics 固定吃 ~2.25 MB 显存）。
- * ⚠ 平移**只动 world 节点 transform**，⛔ 不重建网格。
+ * ⚠ 平移优先只动 world transform；跨出可视块才重建，标签按连续相机位置更新。
  *
  * 三套坐标（抄自 sgzzmap，⛔ 别混）：
  *   UI 坐标 `event.getUILocation()`：原点**左下**、x∈[0,W]；
@@ -125,6 +125,8 @@ export class MapOriginalWorldView extends CocosView {
     private mapTop = 0;
     private mapBottom = 0;
     private lastKey = "";
+    private overlayVersion = -1;
+    private overviewFocus = { x: 0, y: 0 };
     private bound = false;
 
     protected onOpen(): void {
@@ -143,7 +145,7 @@ export class MapOriginalWorldView extends CocosView {
         // ⚠ 重放契约节点：不可见、只有 UITransform，位置 = 地图区正中
         const anchor = new Node("mapo-map-anchor");
         anchor.layer = this.root.layer;
-        anchor.addComponent(UITransform);
+        anchor.addComponent(UITransform).setContentSize(w, this.mapTop - this.mapBottom);
         anchor.setPosition(0, (this.mapTop + this.mapBottom) / 2, 0);
         this.root.addChild(anchor);
 
@@ -331,7 +333,7 @@ export class MapOriginalWorldView extends CocosView {
         this.root.addChild(header);
         createSolidPlate(header, w, headerH, PANEL, 0, 0, "mapo-header-plate");
         header.setPosition(0, this.mapTop + headerH / 2, 0);
-        this.titleLabel = this.label(header, "mapo-title", "原版大地图 · LOD 0/5", 26, TEXT, 0, 16, w);
+        this.titleLabel = this.label(header, "mapo-title", "原版大地图 · LOD 0/3", 26, TEXT, 0, 16, w);
         this.status = this.label(header, "mapo-status", "", 18, MUTED, 0, -16, w);
     }
 
@@ -513,7 +515,7 @@ export class MapOriginalWorldView extends CocosView {
 
         const sel = l.selectedCell;
         if (this.selection) {
-            this.selection.active = sel !== null;
+            this.selection.active = sel !== null && cam.lod <= 1;
             if (sel !== null) {
                 // 与 world 节点**同一套换算**，⛔ 不要另写一份（两份迟早对不上）
                 const p = mapoGrid2Pos(Math.floor(sel / 10000), sel % 10000);
@@ -525,16 +527,20 @@ export class MapOriginalWorldView extends CocosView {
 
         const centre = cam.centreCell();
         const near = mapoIsNearField(cam.lod);
-        const key = `${cam.lod}|${l.graphics.quality}|${centre.row}|${centre.col}`;
+        if (near) this.overviewFocus = { x: cam.x, y: cam.y };
+        // 缓存队列每帧推进；标签随连续相机位置更新，不能等中心格变化。
+        this.farRenderer?.render(l);
+        if (this.overlayVersion !== cam.version || force) {
+            this.overlayVersion = cam.version;
+            this.labelRenderer?.render(l, bandCentre, this.overviewFocus);
+            this.minimap?.update(l);
+        }
+        const key = `${cam.lod}|${cam.scale}|${cam.width}|${cam.height}|${l.graphics.quality}|${centre.row}|${centre.col}`
+            + (cam.lod > 0 ? `|${this.farRenderer?.readyCount}` : "");
         if (!force && key === this.lastKey) return;
         this.lastKey = key;
+        this.topCount = 0;
 
-        // 地名全档都画（远档大区、近档郡），⛔ 两档不要一起画
-        if (mapoLayerVisible("label", cam.lod)) {
-            this.labelRenderer?.render(l, bandCentre);
-        } else {
-            this.labelRenderer?.clear();
-        }
         // ★ 河流：在地表之上、山族件之下（原版 MAP_ZORDER 次序）
         // ★ 道路：地表之上、河流之下（原版 MAP_ZORDER 次序）
         if (mapoLayerVisible("road", cam.lod)) {
@@ -567,8 +573,7 @@ export class MapOriginalWorldView extends CocosView {
             this.regionRenderer?.clear();
             this.regionCount = 0;
         }
-        if (near) {
-            this.farRenderer?.clear();
+        if (cam.lod === 0) {
             // ⚠ 可视格用偏移模板：平移时只换中心格，⛔ 不每帧重算整套偏移
             this.stencil.refresh(cam.scale, this.layerWidth, this.mapTop - this.mapBottom);
             const cells: { row: number; col: number }[] = [];
@@ -580,7 +585,6 @@ export class MapOriginalWorldView extends CocosView {
             // ★ snow / desert 叠在地表底之上（⛔ 不是替换）
             if (mapoLayerVisible("blocks", cam.lod)) {
                 this.blockCount = 0;
-                this.topCount = 0;
                 for (let i = 0; i < this.blockRenderers.length; i += 1) {
                     const polys = this.blockRenderers[i].render(cam.worldRect(1), true);
                     this.blockCount += polys.length;
@@ -591,7 +595,6 @@ export class MapOriginalWorldView extends CocosView {
                 for (const r of this.blockRenderers) r.clear();
                 for (const k of MAPO_BLOCK_KINDS) this.topRenderers.get(k)?.clear();
                 this.blockCount = 0;
-                this.topCount = 0;
             }
             // ⚠ 摆件在地表**之上**（兄弟序即绘制序），⛔ 不要反过来
             if (mapoLayerVisible("decor", cam.lod)) {
@@ -605,20 +608,17 @@ export class MapOriginalWorldView extends CocosView {
             this.renderer?.clear();
             this.gridRenderer?.clear();
             this.decorRenderer?.clear();
-            this.farRenderer?.render(l);
             this.groundCount = 0;
             for (const r of this.blockRenderers) r.clear();
             for (const r of this.topRenderers.values()) r.clear();
             this.roadRenderer?.clear();
-            this.cityRenderer?.clear();
-            this.cityCount = 0;
             this.blockCount = 0;
             this.topCount = 0;
             this.roadCount = 0;
             this.decorCount = 0;
             this.visibleCount = 0;
         }
-        if (this.titleLabel) this.titleLabel.string = `原版大地图 · LOD ${cam.lod}/${MAPO_LOD_MAX}`;
+        if (this.titleLabel) this.titleLabel.string = `原版大地图 · LOD ${cam.lod}/${MAPO_LOD_MAX} · ${cam.scale.toFixed(4)}×`;
         if (this.status) {
             const layers = l.layers.join(" / ") || "（无）";
             const g = l.graphics;
@@ -627,7 +627,7 @@ export class MapOriginalWorldView extends CocosView {
             const graphics = MAPO_QUALITY_LABELS[g.quality];
             // ★ 摆件数进状态行：原版每个资源格都有 res_field ⇒ 近档这个数应该接近可视格的四成，
             //   ⛔ 掉到 0 或个位数就说明「按原版值查表」这条链断了（重放据此判定）。
-            const decor = near ? ` · 摆件 ${this.decorCount}/${this.visibleCount}` : "";
+            const decor = cam.lod === 0 ? ` · 摆件 ${this.decorCount}/${this.visibleCount}` : "";
             // ★ 区域件数：多格地形每区一件（原版锚点优先），⛔ 掉到 0 说明 regions.bin 没到位
             const region = this.regionCount > 0 ? ` · 山林 ${this.regionCount}` : "";
             // ★ 水面片数：全图 3.1 万片，⛔ 掉到 0 说明 river-geo/rivers 两件没同时到位
@@ -639,11 +639,12 @@ export class MapOriginalWorldView extends CocosView {
             // ★ 城址件数：15 个原版件 / 249 座，⛔ 掉到 0 说明 cities.bin / city-atlas 没到位
             const city = this.cityCount > 0 ? ` · 城 ${this.cityCount}` : "";
             // ★ 地表块数：⛔ 掉到 0 说明 ground-base.png 没到位（整层不建）
-            const ground = near
+            const ground = cam.lod === 0
                 ? ` · 地表 ${this.groundCount}${this.blockCount > 0 ? `+${this.blockCount}` : ""}` : "";
             this.status.string =
                 `s1 · ${near ? "近档" : "远档"} · 画面：${graphics} · 层：${layers}`
-                + `${ground}${road}${decor}${region}${river}${tops}${city}`;
+                + `${ground}${road}${decor}${region}${river}${tops}${city}`
+                + (cam.lod === 1 || cam.lod === 2 ? ` · 缓存 ${this.farRenderer?.readyCount ?? 0}/${this.farRenderer?.tileCount ?? 0}` : "");
         }
         // ⚠ 置灰与高亮是**两件事**：enabled 决定能不能点（文字变灰），on 决定当前选中（底板变亮）
         for (const chip of this.chips) {

@@ -12,7 +12,7 @@
 - **与 `sgzzmap` 的关系**：机制同源、内容不同。sgzzmap 是「三战**式**」——机制复刻 + AI 概念图派生的
   自造地形；本 kit 是「三战**原版**」——**原版 1500×1500 地块数据 + 原版美术**。
   ⛔ 机检禁 kit 依赖 kit（`docs/KIT.md:162`），所以 `hexmap` 面是**抄改**的一份；
-  ⚠ 两边的六邻表 / 环序 / 投影公式 / LOD 滞回必须保持一致，改一边记得同步另一边。
+  ⚠ 两边的六邻表 / 环序 / 投影公式 / 滞回算法保持一致；LOD 策略独立：mapOriginal 自 2026-09-24 起采用四档，不改变 sgzzmap 的六档。
 
 | 维度 | sgzzmap | mapOriginal |
 |---|---|---|
@@ -26,7 +26,7 @@
 
 ## 二、v1 范围：只做「看得见的原版地图」
 
-有：原版地形 + 原版美术 + 相机（拖拽/捏合/惯性/钳位）+ 6 档 LOD + 远档底图 + 缩略图 +
+有：原版地形 + 原版美术 + 相机（拖拽/捏合/惯性/钳位）+ 4 档 LOD + 同源概览 + 缩略图 +
 点选详情 + **画面设置（现只剩画质一项）**。
 ⛔ 没有：占领、连地、行军、同盟、鸟瞰聚合、AOI —— 那些要服务端，抄 sgzzmap 的现成面即可，
 但 ⛔ 不在 v1 里留半套。
@@ -75,7 +75,7 @@ res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
 2. **原版鸟瞰底图不能当远档 plate**。`noexpo_birdview_map_1.ktx`（4096×2048 ETC2）是
    **3D 相机的透视渲染**，与本仓正交等距 ⛔ 不存在可靠 2D 对齐 ——
    实测相似变换 IoU 0.62、河网 NCC 0.30、全仿射拟合退化成竖条纹假峰（NCC 0.51）。
-   逐格对齐的层必须自己烘（`bake_content.py`，与 `mapoWorldBounds()` 同式 ⇒ **对齐是构造出来的**）。
+   逐格对齐的层由原始几何与贴图烘（`bake_overview.ts`，与 `mapoWorldBounds()` 同式 ⇒ **对齐是构造出来的**）。
    原版那张改作**装饰性缩略图**，落位由客户端现算（`mapoFar.ts` 的 `mapoWorldBounds()` +
    `0.25 + v*0.5`，与 `bake_minimap` 的 resize→paste 构造同式）。
    ⛔ 早先那份 `plate.calib.json` 已删（全仓零消费、生成脚本在 palette schemaVersion 2 后必崩）。
@@ -127,20 +127,36 @@ BUILD_TOP 3900`）。⛔ **留缝是故意的**，新增层往缝里插；机检
 ⚠ **未实现的层 `mapoLayerVisible` 恒回 false** —— ⛔ 不许「门控说该建、渲染器根本没写」的两张皮
 （sgzzmap 真机重放为此红过一次）。
 
-| 层 | 档位 | 状态 |
+缩放越大越近；默认 **1.28**、最大 **2.0**。以下为标称档界，原版 2D 没有这些档界，这是本仓的性能与导航策略。
+
+| 档位 | 缩放范围 | 画面与绘制策略 |
 |---|---|---|
-| `terrain` 地表底 | L0–L2 | ✅ ★ **一块 10×10 格 + 一张 256² 底纹整数次 GL_REPEAT**（原版做法）。⛔ 早先是「8 粗类 × 4 变体的逐格菱形贴片」——本仓自创，M2-B1 已删 |
-| `grid` 网格线 | L0–L1 | ✅ 原版 GROUND_GRID_LINE 的 8×8 线股贴图，FRAME=1400，按菱形格边合批；依据见 MAPORIGINAL-2D §9.1 A12 |
-| `tops` 手摆细节 | 随各多边形层 | ✅ ★ `_top_group` 的 1,899 个手摆件（river 597 / desert 481 / snow 821），紧贴在对应多边形层**之上**（原版 `TOP_LAYER_ORDER` = polygon + 1） |
-| `blocks` 雪 / 沙漠带 | L0–L2 | ✅ ★ **block 级地貌带，叠在地表底之上**（⛔ 不是替换）：`ground_desert`/`ground_snow` 各 152² **行主序**、字节值即路径表下标（51 / 52 条），片是原版 `polygon_group` 的多边形，铺 `underground3` / `underground2`。desert 4,762 块 / snow 4,186 块 / **489 块两者兼有** |
-| `road` 道路 | L0–L2 | ✅ ★ **原版路片**：`road_info.lua` 的 42,018 格，选片制图期烘死（`type_info` 下标 + 水平翻转）。⚠ 路格**自成一套网格**（1125²、半宽 200/半高 100 = 4/3 逻辑格），⛔ 别用逻辑格坐标。⚠ 在地表与河流**之间**（MAP_ZORDER 300 < 900 < 1600） |
-| `river` 河流 | L0–L3 | ✅ ★ **原版水面多边形**：`river.bytes`（504² 列主序、一格 = 3×3 逻辑格、起点偏移 −6）的字节值直接是 `river_path.json` 的下标，102 条几何取自原版 `polygon_group` 的 `vertices`/`indices`。⚠ 必须在地表**之上**、山族件**之下**（原版 `MAP_ZORDER`：TERRAIN 300 < RIVER 1600 < RES 3400） |
-| `plate` 远档底图 | L3–L5 | ✅ 由地形烘焙 |
-| `region` 山族件 | L0–L3 | ✅ ★ **按原版锚点出件**：`res.bytes` 的 55,127 个非零锚点（值 48..61 = `山1..山14`）各一件 + `mountain_patch.bytes` 的 3,942 条补件。件是原版 2D 山体 `m1..m10`，形与贴图由值直接查表。★ **雪带里的锚点换雪山件**（N1）：`mountain_snow` 同形 prefab、transform 逐形重读；**沙带不换**（荒地山 2D 与基础季同件，实测 13/13） |
-| `decor` 摆件 | L0–L2 | ✅ ★ **按原游戏参数摆放**：图集**按原版值建格**（格 id = res 值 2..46），客户端拿到格值直接查到图，⛔ 零概率零哈希。★ **季/地貌变体（N1）**：先判带再选件 —— 雪带 `MAPO_DECOR_SNOW_CELLS` / 沙带 `MAPO_DECOR_DESERT_CELLS` / 否则基础季，带归属 = cell 级 `logic_background`（原版 `check_ground_type` 同一条链，⛔ 不看块带）。⚠ 城**不归这层**（见下行）：城占的 2,689 格一律不叠资源件（原版第 4 道门）。⚠ 超出菱形 ⇒ 必须画在地表之上并按**画家序**排 |
-| `city` 城址 | L0–L3 | ✅ ★ **原版城址件**（2026-09-23）：`base.cw` 两级配置直给（`city[1].client_res_id` → `city_res.editor_brush_res_path` → prefab），**15 个件覆盖 249 座**（东/南/西/北 × 小城/都城 8 + 关卡 3 + 码头 3 + 洛阳专用 1），1,642 个 sprite、158 张贴图。⚠ 件内按 `low_z` 升序（打包期排好）。⚠ 摆位 row/col **打包期已套** `city_shape` 的 `even/odd_res_center`（12 座渡口非零），⛔ 渲染侧别再套。⛔ 早先由摆件层按「面积前 8 大 + 位置散列」挑 —— 本仓自创，已删 |
-| `label` 地名 | L0–L5 | ✅ **原版地名**：9 个大区（西凉/山东/河北/巴蜀/荆楚/江东/司隶/关中/江汉）+ 55 个郡，坐标取原表自带的 `grid`。⚠ 远档只画大区、近档只画郡，⛔ 两档不要一起画 |
-| `banner` 目标旗 | — | ⛔ **未实现**（要服务端的归属数据） |
+| L0 近景 | `0.55 ≤ scale ≤ 2` | 原始地表、雪沙带、河山、道路、资源、动画、格线，实时城市与城名 |
+| L1 中景 | `0.20 ≤ scale < 0.55` | 全部静态地表与资源件烘进 1024 世界单位的分块纹理；关闭格线与小动画，城市模型和城名独立绘制 |
+| L2 区域 | `0.04 ≤ scale < 0.20` | 4096 世界单位的地貌分块纹理，保留雪沙、河山和道路；城市改固定屏幕尺寸的标记，郡名优先、保留重要城名 |
+| L3 全图 | `scaleMin ≤ scale < 0.04` | 单张 2048×1024 同源概览；大区名、8 级以上城市、上次近景浏览位置标记 |
+
+`scaleMin = 0.9 × min(地图视口宽 / 95984, 地图视口高 / 48008)`。例如 750×1055 地图视口为 **0.0070324**；
+缩远时逐步收紧平移边界，最小缩放固定居中，地图完整落入视口。页眉、页脚不计入地图视口。
+
+8% 滞回：向远档的切点依次 **0.506 / 0.184 / 0.0368**，向近档依次 **0.594 / 0.216 / 0.0432**。
+等于向远切点时仍保留原档；等于向近切点时进入近档。
+
+`MAPO_LAYERS` 表示实时渲染器：terrain / blocks / region / road / river / decor / grid 只在 L0；
+city 在 L0–L1；plate 从 L1 承接缓存与概览；label 全档显示并管理城市与浏览位置标记；banner 尚未实现。
+静态副本沿用相同 layer 顺序、prefab 锚点、完整子树、UV 与原始地貌，**不按概率删资源格**。
+
+缓存由 `MapoChunkBaker` 使用独立 layer 的普通 MeshRenderer + 正交相机生成，每帧最多一块；L0 预热进入 L1 的区域。
+离屏网格按显式 priority 保持原图层顺序；不走 UI 收集器，避免 Creator 3.8.8 自定义管线的 UI/Profiler 共享投影影响截图。
+纹理通常为 256²/512²，按屏幕采样密度和预算选尺寸；每块保留 2 texel 邻域后裁内块，避免线性采样接缝。
+LRU 上限 **48 MiB（RGBA8 + depth/stencil 合计，包括待建块）**，不含现有源图集及 8 MiB 概览。
+缓存未到位时显示同源概览，随后补细节；进入 L3 释放分块缓存，关闭页面释放离屏相机、网格、材质和纹理。
+
+地名按优先级做水平、垂直裁剪和碰撞避让；平移不足一格、同格内捏合也更新标注。蓝色标记表示上次近景浏览位置，
+本 kit 没有玩家/部队坐标。所有大网格按 16 位索引拆批，不能再静默截断可视格或精灵。
+
+概览和缩略图由 `bake_overview.ts` 消费运行时同一 `mapoStaticScene`，保留来源与几何哈希。
+旧 `plate-lod4/5` 调色板底图已退役；不再同时加载两张只改变分辨率的远景纹理。
 
 ### 多格地形：**锚点 + 覆盖掩码**，一族 14 形（2026-09-22 M0-B1 改）
 
@@ -369,6 +385,8 @@ size/pivot/mirror/skew/color/add_color、阴影、引用、时间线和帧动画
 
 ### 六·六 ★ 地表图集的源已换成原版 **2D 沙盘**侧（2026-09-22）
 
+以下六·六、六·七保留为旧逐格贴片管线的历史记录；该管线已经退役，当前实现以本章开头的四档表及 `mapoStaticScene` 为准。
+
 本 kit 只承载原版 2D 沙盘 ⇒ 八个粗类的底纹全部从 `scene_3d/**` 换成 2D 侧
 （机检实体在 `apps/server/test/mapOriginal-content.test.ts`，两条：产物 `source` 白/黑名单、`select.json` 入口）：
 
@@ -410,10 +428,10 @@ size/pivot/mirror/skew/color/add_color、阴影、引用、时间线和帧动画
 
 ## 七、客户端五条硬规矩（与 sgzzmap 同，⛔ 别再踩）
 
-1. **只有一台正交 UI 相机**：一切经 `UIMeshRenderer` 走 2D UI 管线，深度**只有兄弟序**。
-2. ⛔ **不写 `director.getScene().globals`**：只**读**管线档位，由 `mapoCompensate` 预补偿顶点色。
-3. **地表必须是合并 mesh**：原作每格一个场景节点（`grid_state_2d_view.lua`），在 Cocos 上会是上万节点。
-4. **平移只动父节点 transform**，⛔ 不重建网格。
+1. **主画面使用正交 UI 相机**：`UIMeshRenderer` 按兄弟序绘制；缓存使用隔离相机与普通网格，按 priority 绘制。
+2. ⛔ **不写 `director.getScene().globals`**：原始贴图使用独立 sprite shader 保持原色；颜色标记才按管线需要补偿。
+3. **地表必须合批**：超过 Uint16 顶点/索引容量就拆批，不能按件数截断。
+4. **平移先改父节点 transform**，跨出缓存/裁剪范围时补块；标签按连续位置更新。
 5. **资源加载失败也 resolve**、路由关掉按代际自收 —— 否则晚到的成功回调会给已 decRef 的资源再 addRef。
 
 ## 八、复现
@@ -424,7 +442,7 @@ $P tools/maporiginal-assets/build_name_map.py          # 素材反查（namehash
 $P tools/maporiginal-assets/decode_batch.py            # 选材解码 KTX → PNG + 存证
 $P tools/maporiginal-assets/slice_atlas.py --all       # 图集切片
 $P tools/maporiginal-assets/build_terrain.py           # 原版层 → terrain.bytes（原版值）+ 通行层 + 调色板
-$P tools/maporiginal-assets/bake_content.py            # 远档底图 / 缩略图 / 近档图集（按粗类）
+node --import tsx tools/maporiginal-assets/bake_overview.ts # 同源概览 / 缩略图（本机 Chrome 9222）
 $P tools/maporiginal-assets/pack_decor.py              # ★ 摆件图集：格 id = 原版 res 值
 $P tools/maporiginal-assets/build_labels.py && $P tools/maporiginal-assets/emit_labels.py
 $P tools/maporiginal-assets/emit_display_palette.py \

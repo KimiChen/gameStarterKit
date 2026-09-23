@@ -113,7 +113,8 @@ export interface IMapoWorldRect {
 export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoRegionPlacement[] {
     if (!view || count === 0) return [];
     // 屏幕越靠下 s 越大 ⇒ 上边界对应最小 s
-    const sTop = Math.floor(mapoRegionSAt(rect.top)) - 1;
+    // 原件按中心 pivot 定位，会同时向锚点上、下外伸；两端都要扩展候选区间。
+    const sTop = Math.floor(mapoRegionSAt(rect.top)) - S_MARGIN;
     const sBottom = Math.ceil(mapoRegionSAt(rect.bottom)) + S_MARGIN;
     const out: IMapoRegionPlacement[] = [];
     for (let i = lowerBound(Math.max(0, sTop)); i < count && out.length < limit; i += 1) {

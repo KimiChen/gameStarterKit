@@ -1,5 +1,5 @@
 /**
- * `_top_group` 的**手摆细节**渲染：一族一个批、一张 top 图集。
+ * `_top_group` 的**手摆细节**渲染：一族按 16 位索引拆批、共用一张 top 图集。
  *
  * ★ 必须紧贴在**对应的多边形层之上**（原版 `TOP_LAYER_ORDER = {ground:101, desert:201, snow:301}`
  *   就在各自 polygon 的 +1 档，MAPORIGINAL-2D §1.3）。
@@ -7,20 +7,18 @@
  * ⚠ 图集是按 0.4× 缩存的：件的世界尺寸走 `prefab.size × scale`，**⛔ 不是图集里的像素**。
  */
 import { Material, Node } from "cc";
-import { buildMapoSpriteMesh } from "../logic/mapoMesh";
+import { buildMapoSpriteMeshes } from "../logic/mapoMesh";
 import type { MapoPolygonInput } from "../logic/mapoMesh";
 import { mapoHasTops, mapoTopsFor, mapoTopsAnimated } from "../logic/mapoTops";
 import {
-    createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoUnlitTechnique,
-    uploadMapoBatch, type MapoBatch,
+    syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
+    type MapoBatch,
 } from "./MapoMeshBatch";
 import type { MapoArtResources } from "./MapoArtResources";
 
-/** 一屏最多展开多少件。⚠ 一片水面能带 30 个件，⛔ 必须有上限。 */
-export const MAPO_TOP_MAX_SPRITES = 3_000;
 
 export class MapoTopRenderer {
-    private batch: MapoBatch | null = null;
+    private readonly batches: MapoBatch[] = [];
     private material: Material | null = null;
     private disposed = false;
     private seconds = 0;
@@ -50,21 +48,16 @@ export class MapoTopRenderer {
         }
         this.visible = polys;
         this.animated = mapoTopsAnimated(this.kind, polys);
-        const sprites = mapoTopsFor(this.kind, polys, MAPO_TOP_MAX_SPRITES, this.seconds);
+        const sprites = mapoTopsFor(this.kind, polys, Infinity, this.seconds);
         if (sprites.length === 0) { this.clear(); return 0; }
-        const geometry = buildMapoSpriteMesh(sprites);
-        if (!this.batch) {
-            this.batch = createMapoBatch(this.root, `mapo-top-${this.kind}`, geometry, this.material);
-        } else {
-            uploadMapoBatch(this.batch, geometry);
-        }
+        const geometry = buildMapoSpriteMeshes(sprites);
+        syncMapoBatches(this.root, `mapo-top-${this.kind}`, this.batches, geometry, this.material);
         return sprites.length;
     }
 
     clear(): void {
         this.visible = [];
-        destroyMapoBatch(this.batch);
-        this.batch = null;
+        clearMapoBatches(this.batches);
     }
 
     dispose(): void {

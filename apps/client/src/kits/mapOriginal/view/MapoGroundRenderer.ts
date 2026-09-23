@@ -8,19 +8,19 @@
  * ⚠ 顶点色恒白：颜色变化来自上层的摆件与山体件，⛔ 不在这一层调色。
  */
 import { Material, Node, Texture2D } from "cc";
-import { buildMapoGroundMesh, type MapoGroundInput } from "../logic/mapoMesh";
+import { buildMapoGroundMeshes, type MapoGroundInput } from "../logic/mapoMesh";
 import {
     MAPO_GROUND_HALF_H, MAPO_GROUND_HALF_W, MAPO_GROUND_UV,
     mapoGroundBlocksInRect, type IMapoGroundRect,
 } from "../logic/mapoGround";
 import {
-    createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoUnlitTechnique,
-    uploadMapoBatch, type MapoBatch,
+    syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
+    type MapoBatch,
 } from "./MapoMeshBatch";
 import type { MapoArtResources } from "./MapoArtResources";
 
 export class MapoGroundRenderer {
-    private batch: MapoBatch | null = null;
+    private readonly batches: MapoBatch[] = [];
     private material: Material | null = null;
     private wrapped = false;
     private disposed = false;
@@ -38,7 +38,7 @@ export class MapoGroundRenderer {
             this.wrapped = true;
         }
         if (!this.material) {
-            this.material = createMapoMaterial(mapoUnlitTechnique(), true);
+            this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
         }
         const blocks: MapoGroundInput[] = mapoGroundBlocksInRect(rect).map((b) => ({
@@ -46,18 +46,13 @@ export class MapoGroundRenderer {
             halfW: MAPO_GROUND_HALF_W, halfH: MAPO_GROUND_HALF_H, uv: MAPO_GROUND_UV,
         }));
         if (blocks.length === 0) { this.clear(); return 0; }
-        const geometry = buildMapoGroundMesh(blocks);
-        if (!this.batch) {
-            this.batch = createMapoBatch(this.root, "mapo-ground", geometry, this.material);
-        } else {
-            uploadMapoBatch(this.batch, geometry);
-        }
+        const geometry = buildMapoGroundMeshes(blocks);
+        syncMapoBatches(this.root, "mapo-ground", this.batches, geometry, this.material);
         return blocks.length;
     }
 
     clear(): void {
-        destroyMapoBatch(this.batch);
-        this.batch = null;
+        clearMapoBatches(this.batches);
     }
 
     dispose(): void {

@@ -3,7 +3,7 @@
  * ⚠ 档界是**本仓自建**的（按 scale 分档 + 滞回），⛔ 不是原作 viewport_lod：
  *   原作按相机距离分档，且 `LOD_4` 那条路在 2D 下永远触发不到（`on_vp_scale_change`
  *   第一条就是 `GETFIELD self.is_in_2d_scene → TEST → RETURN`）。
- *   本 kit 的远档底图实为 `showFromLod: 3`（见下表 plate 行），⛔ 不是「LOD_4 起」。
+ *   本 kit 的 plate 在 L1 起承接静态缓存，L3 只留同源概览。
  *
  * ⚠ v1 只有「看得见的地图」这几层：⛔ 无领地/描边/行军/远档聚合（那些要服务端）。
  */
@@ -40,37 +40,19 @@ interface LayerGate {
     readonly zorder: number;
 }
 
+/** 表示实时绘制的层；L1 静态层合入 plate 缓存，L2 去掉资源件，L3 只留同源概览。 */
 export const MAPO_LAYERS: readonly LayerGate[] = Object.freeze([
-    // ★ 地表底：**一块 10×10 格 + 一张底纹整数次 GL_REPEAT**（原版做法，MAPORIGINAL-2D §1.4）。
-    //   ⛔ 早先是「8 粗类 × 4 变体的逐格菱形贴片」——那是本仓自创的，M2-B1 已换掉。
-    { id: "terrain", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 100 },
-    // [disasm] GroundLayerView.line_layer / MAP_ZORDER.FRAME；使用原版 GROUND_GRID_LINE。
-    { id: "grid", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 1400 },
-    // ★ snow / desert 的 block 级地貌带：**叠**在地表底之上（§1.3，⛔ 不是替换）。
-    //   与 terrain 同档：它就是地表的一部分。
-    { id: "blocks", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 110 },
-    // ★ 道路：原版路片。⚠ 在地表与河流**之间**（原版 MAP_ZORDER：TERRAIN 300 < ROAD 900 < RIVER 1600）。
-    //   ⚠ 路是**纯表现层**，⛔ 别拿它做通行/行军判定。
-    { id: "road", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 900 },
-    // ★ 河流：原版水面多边形。⚠ 必须在地表**之上**、山族件与摆件**之下**
-    //   （原版 MAP_ZORDER：TERRAIN 300 < RIVER 1600 < RES 3400）。
-    //   ⚠ 比逐格摆件多盖一档：远档看水网走向最有用（与 region 同档）。
-    { id: "river", hideAtLod: 3, showFromLod: 0, streamed: true, implemented: true, zorder: 1600 },
-    { id: "plate", hideAtLod: MAPO_LOD_MAX, showFromLod: 3, streamed: false, implemented: true, zorder: 90 },
-    // ★ 摆件：**原版切片**（城/营/建筑/资源地物）立在格上。超出菱形，必须画在地表之上、按画家序排。
-    // ★ 区域件（多格地形：山脉/林丛/散落）。⚠ 比逐格摆件多盖一档：远档看山林轮廓最有用。
-    { id: "region", hideAtLod: 3, showFromLod: 0, streamed: true, implemented: true, zorder: 300 },
-    { id: "decor", hideAtLod: 2, showFromLod: 0, streamed: true, implemented: true, zorder: 3400 },
-    // ★ 城址件：原版 15 个件、249 座真坐标（§5）。⚠ 在资源件**之上**
-    //   （原版 MAP_ZORDER：RES 3400 < BUILD_TOP 3900）。
-    //   ⚠ 比资源件多盖一档（hideAtLod 3）：远档一眼看城的分布最有用，而件只有 249 座、
-    //   一屏撑死几座，⛔ 开销不是这一层的瓶颈。
-    { id: "city", hideAtLod: 3, showFromLod: 0, streamed: false, implemented: true, zorder: 3900 },
-    // ★ 地名：原版 canton/area 名表。⚠ 全档都画（远档大区、近档郡），⛔ 两档不要一起画。
+    { id: "terrain", hideAtLod: 0, showFromLod: 0, streamed: true, implemented: true, zorder: 100 },
+    { id: "grid", hideAtLod: 0, showFromLod: 0, streamed: true, implemented: true, zorder: 1400 },
+    { id: "blocks", hideAtLod: 0, showFromLod: 0, streamed: true, implemented: true, zorder: 110 },
+    { id: "road", hideAtLod: 0, showFromLod: 0, streamed: true, implemented: true, zorder: 900 },
+    { id: "river", hideAtLod: 0, showFromLod: 0, streamed: true, implemented: true, zorder: 1600 },
+    { id: "plate", hideAtLod: MAPO_LOD_MAX, showFromLod: 1, streamed: true, implemented: true, zorder: 90 },
+    { id: "region", hideAtLod: 0, showFromLod: 0, streamed: true, implemented: true, zorder: 300 },
+    { id: "decor", hideAtLod: 0, showFromLod: 0, streamed: true, implemented: true, zorder: 3400 },
+    { id: "city", hideAtLod: 1, showFromLod: 0, streamed: false, implemented: true, zorder: 3900 },
+    // 地名渲染器同时负责屏幕尺寸固定的城市标记和近景浏览位置标记。
     { id: "label", hideAtLod: MAPO_LOD_MAX, showFromLod: 0, streamed: false, implemented: true, zorder: 4000 },
-    // ── 以下**尚未实现**：位置留着，⛔ 别当成能用 ──────────────────────────────
-    // banner 目标旗要服务端的归属数据。
-    // ⚠ banner 从 3900 挪到 3950：3900 是原版 BUILD_TOP，已给城址件；旗标在建筑**之上**。
     { id: "banner", hideAtLod: 1, showFromLod: 0, streamed: false, implemented: false, zorder: 3950 },
 ] as const);
 
@@ -124,7 +106,7 @@ export function mapoVisibleLayers(lod: number): MapoLayerId[] {
     return MAPO_LAYERS.filter((l) => mapoLayerVisible(l.id, lod)).map((l) => l.id);
 }
 
-/** 近档（逐格铺菱形）还是远档（整幅底图）。 */
+/** 是否仍在逐格操作范围（L0 实时原件，L1 原件缓存）。 */
 export function mapoIsNearField(lod: number): boolean {
-    return mapoLayerVisible("terrain", lod);
+    return lod <= 1;
 }

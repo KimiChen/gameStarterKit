@@ -535,3 +535,18 @@ python3 tools/maporiginal-assets/verify_fidelity.py --map s1
 导出需要本目录原有 Pillow/纹理解码依赖，保真检查另需 numpy。
 install_to_kit.py 同步 shared 数据、kit 资产和 Cocos 资产镜像；TS 镜像由 sync 脚本刷新。
 不手改生成物。A01–A12 的证据和边界见 [机制 §9.1](../../docs/MAPORIGINAL-2D.md#91-复刻简化审计-a01a12-的修复记录2026-09-24)。
+
+## 2026-09-24：四档 LOD 的同源概览
+
+先生成并装入 ground / blocks / tops / regions / rivers / roads 的派生包，再运行：
+
+```sh
+node --import tsx tools/maporiginal-assets/bake_overview.ts
+python3 tools/maporiginal-assets/install_to_kit.py
+```
+
+需要本机 Chrome 9222。工具只创建并关闭自己的烘焙标签页，用 WebGL1 对近景共用的
+`mapoStaticScene` 做正交绘制，2× 超采样后生成 `overview.png`（2048×1024）与居中的
+`minimap.png`（512²）；`overview.info.json` 记录输入资产、代码和几何指纹。
+旧 `bake_content.py` 仅转调新入口，旧 `plate-lod4/5` 安装时清理，禁止再用 res 调色板生成地图。
+运行时 L1 / L2 分块缓存复用同一展开逻辑；L3 仅采样 overview，范围和预算见 kit README §六。

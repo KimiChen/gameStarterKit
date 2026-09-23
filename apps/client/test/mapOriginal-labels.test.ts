@@ -5,17 +5,19 @@ import {
 } from "../src/kits/mapOriginal/logic/mapoLabels";
 import { MAPO_CITY_SITES } from "../src/shared/kits/mapOriginal/content/labels.data";
 
-test("mapOriginal 地名：三档分带 —— 近档城名 / 中档郡 / 远档大区，⛔ 不混画", () => {
+test("mapOriginal 地名：按档位突出城名 / 郡 / 大区，保留重要城名参与避让", () => {
     assert.equal(mapoLabelTier(0), "city");
     assert.equal(mapoLabelTier(1), "city");
     assert.equal(mapoLabelTier(2), "area");
     assert.equal(mapoLabelTier(3), "canton");
     assert.equal(mapoLabelTier(5), "canton");
-    // 每档只出一级：集合互不相交
+    // 重要城名跨档保留，其他层级按档位加入候选。
     const city = mapoLabelsFor(0), area = mapoLabelsFor(2), canton = mapoLabelsFor(3);
     assert.equal(city.length, MAPO_LABEL_COUNTS.city);
-    assert.equal(area.length, MAPO_LABEL_COUNTS.area);
-    assert.equal(canton.length, MAPO_LABEL_COUNTS.canton);
+    assert.equal(area.filter(l => l.tier === "area").length, MAPO_LABEL_COUNTS.area);
+    assert.ok(area.some(l => l.name === "洛阳"));
+    assert.equal(canton.filter(l => l.tier === "canton").length, MAPO_LABEL_COUNTS.canton);
+    assert.ok(canton.some(l => l.name === "洛阳"));
     assert.equal(MAPO_LABEL_COUNTS.city, 249, "城名 = 249 座城全量");
     assert.equal(MAPO_LABEL_COUNTS.area, 55);
     assert.equal(MAPO_LABEL_COUNTS.canton, 9);

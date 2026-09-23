@@ -19,6 +19,7 @@ CCEffect %{
 }%
 CCProgram mapo-sprite-vs %{
   precision highp float;
+  #include <common/common-define>
   #include <builtin/uniforms/cc-global>
   #include <builtin/uniforms/cc-local>
   in vec3 a_position;
@@ -30,6 +31,9 @@ CCProgram mapo-sprite-vs %{
   out vec4 v_add;
   vec4 vert () {
     v_uv = a_texCoord;
+    #if SAMPLE_FROM_RT
+      CC_HANDLE_RT_SAMPLE_FLIP(v_uv);
+    #endif
     v_color = a_color;
     v_add = a_colorAdd;
     return cc_matProj * (cc_matView * cc_matWorld) * vec4(a_position, 1.0);
@@ -43,6 +47,9 @@ CCProgram mapo-sprite-fs %{
   uniform sampler2D mainTexture;
   vec4 frag () {
     vec4 texel = texture(mainTexture, v_uv);
+    #if MAPO_UNPREMULTIPLY
+      texel.rgb = texel.a > 0.00001 ? texel.rgb / texel.a : vec3(0.0);
+    #endif
     return vec4(clamp(texel.rgb * v_color.rgb + (1.0 - texel.rgb * v_add.a) * v_add.rgb, 0.0, 1.0),
                 texel.a * v_color.a);
   }

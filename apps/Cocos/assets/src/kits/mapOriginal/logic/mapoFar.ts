@@ -6,17 +6,12 @@
  * ⛔ 少读一个资源、少一处可能漂移的真源。
  */
 import {
-    MAPO_LOD_MAX, mapoGrid2Pos, mapoPos2GridRaw, mapoClampGrid,
+    mapoGrid2Pos, mapoPos2GridRaw, mapoClampGrid,
     type IMapoWorldBounds, mapoWorldBounds,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
-/** 哪一档用哪张底图。⚠ 只烘了 lod4/lod5 两张（近三档的素材是区域特写，⛔ 不能当整幅底图）。 */
-export function mapoPlateLodOf(lod: number): 4 | 5 {
-    return lod >= MAPO_LOD_MAX ? 5 : 4;
-}
-export function mapoPlateAsset(lod: number): string {
-    return `kits/mapOriginal/maps/s1/plate-lod${mapoPlateLodOf(lod)}`;
-}
+/** 同源地貌概览；L2 缓存未就绪时也用它承底，L3 只绘制这一张。 */
+export const MAPO_OVERVIEW_ASSET = "kits/mapOriginal/maps/s1/overview";
 /** ⚠ 显示层地形走 BufferAsset：它塞不进 shared（熵太高），见 logic/mapoTerrain.ts。 */
 export const MAPO_TERRAIN_ASSET = "kits/mapOriginal/maps/s1/terrain";
 /** 摆件图集（原版切片打包，2048²）。 */

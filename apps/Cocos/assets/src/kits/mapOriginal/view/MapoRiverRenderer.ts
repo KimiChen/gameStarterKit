@@ -10,20 +10,14 @@ import { Material, Node, Vec4 } from "cc";
 import {
     MAPO_RIVER_SYSTEMS,
 } from "../../../shared/kits/mapOriginal/content/river.data";
-import { buildMapoPolygonMesh, type MapoPolygonInput } from "../logic/mapoMesh";
+import { buildMapoPolygonMeshes, type MapoPolygonInput } from "../logic/mapoMesh";
 import { mapoHasRivers, mapoRiversInRect, type IMapoWorldRectLike } from "../logic/mapoRivers";
 import {
-    createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoUnlitTechnique,
-    uploadMapoBatch, type MapoBatch,
+    syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
+    type MapoBatch,
 } from "./MapoMeshBatch";
 import type { MapoArtResources } from "./MapoArtResources";
 
-/**
- * 一屏最多建多少片水面。
- * ⚠ 全图 3.1 万片；远档一屏能框进几千片 ⇒ 必须有上限。
- * ⛔ 别靠 `MAPO_MAX_VERTS_PER_MESH` 兜底（那是静默截断，画面会缺一段河而不报）。
- */
-export const MAPO_RIVER_MAX_PIECES = 1_200;
 
 /** 填充图是 `三水系 × 2px` 宽、2px 高；取每块的中心texel。 */
 function uvOfSystem(system: number): readonly [number, number] {
@@ -32,7 +26,7 @@ function uvOfSystem(system: number): readonly [number, number] {
 }
 
 export class MapoRiverRenderer {
-    private batch: MapoBatch | null = null;
+    private readonly batches: MapoBatch[] = [];
     private material: Material | null = null;
     private disposed = false;
     private seconds = 0;
@@ -56,27 +50,22 @@ export class MapoRiverRenderer {
         const texture = flow ? this.art!.riverMask : this.art?.riverFill ?? null;
         if (!texture || !enabled || !mapoHasRivers()) { this.clear(); return []; }
         if (!this.material) {
-            this.material = createMapoMaterial(mapoUnlitTechnique(), true, flow ? this.art!.riverEffect : undefined);
+            this.material = createMapoMaterial(mapoUnlitTechnique(), true, flow ? this.art!.riverEffect : this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
             if (flow) {
                 this.material.setProperty("normalTexture", this.art!.riverNormal);
                 this.material.setProperty("clockCamera", new Vec4(this.seconds, this.cameraX, this.cameraY, 0));
             }
         }
-        const polys = mapoRiversInRect(rect, MAPO_RIVER_MAX_PIECES, uvOfSystem, [1, 1, 1, 1]);
+        const polys = mapoRiversInRect(rect, Infinity, uvOfSystem, [1, 1, 1, 1]);
         if (polys.length === 0) { this.clear(); return []; }
-        const geometry = buildMapoPolygonMesh(polys);
-        if (!this.batch) {
-            this.batch = createMapoBatch(this.root, "mapo-rivers", geometry, this.material);
-        } else {
-            uploadMapoBatch(this.batch, geometry);
-        }
+        const geometry = buildMapoPolygonMeshes(polys);
+        syncMapoBatches(this.root, "mapo-rivers", this.batches, geometry, this.material);
         return polys;
     }
 
     clear(): void {
-        destroyMapoBatch(this.batch);
-        this.batch = null;
+        clearMapoBatches(this.batches);
     }
 
     dispose(): void {

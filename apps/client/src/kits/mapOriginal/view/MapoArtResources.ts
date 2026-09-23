@@ -11,7 +11,7 @@ import {
     MAPO_CHOOSE_ASSET, MAPO_CITIES_ASSET, MAPO_CITY_ATLAS_ASSET,
     MAPO_ROADS_ASSET, MAPO_ROAD_ATLAS_ASSET, MAPO_TERRAIN_ASSET,
     mapoBlockBaseAsset, mapoBlockGeoAsset, mapoBlockTableAsset,
-    mapoPlateAsset, mapoTopAtlasAsset, mapoTopsAsset,
+    MAPO_OVERVIEW_ASSET, mapoTopAtlasAsset, mapoTopsAsset,
 } from "../logic/mapoFar";
 import { MAPO_BLOCK_KINDS } from "../logic/mapoBlocks";
 import { MAPO_TOP_KINDS } from "../logic/mapoTops";
@@ -22,8 +22,8 @@ export interface MapoArtResources {
     readonly riverMask: Texture2D | null;
     readonly riverNormal: Texture2D | null;
     readonly gridLine: Texture2D | null;
-    readonly plate4: Texture2D | null;
-    readonly plate5: Texture2D | null;
+    readonly overview: Texture2D | null;
+    staticTexture(name: string): Texture2D | null;
     readonly minimap: Texture2D | null;
     /** 16 类地形显示层。⚠ 缺席不致命：`mapoTerrain` 会退回 4 类通行层。 */
     readonly terrain: BufferAsset | null;
@@ -97,11 +97,10 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
         loadTexture("kits/mapOriginal/maps/s1/river-mask"), loadTexture("kits/mapOriginal/maps/s1/river-normal"),
         loadTexture("kits/mapOriginal/maps/s1/grid-line"),
     ]);
-    const [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill, groundBase, roadAtlas,
+    const [overview, minimap, decorAtlas, regionAtlas, riverFill, groundBase, roadAtlas,
            terrain, regions, riverGeo, rivers, roads, cityAtlas, cities, choose] =
         await Promise.all([
-            loadTexture(mapoPlateAsset(4)),
-            loadTexture(mapoPlateAsset(5)),
+            loadTexture(MAPO_OVERVIEW_ASSET),
             loadTexture(MAPO_MINIMAP_ASSET),
             loadTexture(MAPO_DECOR_ATLAS_ASSET),
             loadTexture(MAPO_REGION_ATLAS_ASSET),
@@ -130,9 +129,16 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
         table: await loadBuffer(mapoTopsAsset(kind)),
     })));
     const topBy = new Map(tops.map((t) => [t.kind, t]));
+    const textures = new Map<string, Texture2D | null>([
+        ["ground-base", groundBase], ["region-atlas", regionAtlas], ["decor-atlas", decorAtlas],
+        ["road-atlas", roadAtlas], ["river-fill", riverFill],
+        ...blocks.map((b): [string, Texture2D | null] => [`${b.kind}-base`, b.base]),
+        ...tops.map((t): [string, Texture2D | null] => [`${t.kind}-top-atlas`, t.atlas]),
+    ]);
     let released = false;
     return {
-        spriteEffect, riverEffect, riverMask, riverNormal, gridLine, plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
+        spriteEffect, riverEffect, riverMask, riverNormal, gridLine, overview, minimap, terrain, decorAtlas, regionAtlas, regions,
+        staticTexture: (name) => textures.get(name) ?? null,
         riverFill, riverGeo, rivers, groundBase, roadAtlas, roads, cityAtlas, cities, choose,
         blockBase: (kind) => blockBy.get(kind)?.base ?? null,
         blockGeo: (kind) => blockBy.get(kind)?.geo ?? null,
@@ -142,7 +148,7 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
         release() {
             if (released) return;
             released = true;
-            for (const a of [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill,
+            for (const a of [overview, minimap, decorAtlas, regionAtlas, riverFill,
                              groundBase, roadAtlas, cityAtlas, choose]) a?.decRef();
             spriteEffect?.decRef(); riverEffect?.decRef();
             riverMask?.decRef(); riverNormal?.decRef(); gridLine?.decRef();

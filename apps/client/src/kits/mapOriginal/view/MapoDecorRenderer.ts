@@ -9,18 +9,18 @@ import { Material, Node } from "cc";
 import { mapoDecorAt } from "../logic/mapoDecor";
 import { mapoSceneAnimated, mapoSceneSprites } from "../logic/mapoScene";
 import { MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../shared/kits/mapOriginal/content/decor.data";
-import { buildMapoSpriteMesh, type MapoSpriteInput } from "../logic/mapoMesh";
+import { buildMapoSpriteMeshes, type MapoSpriteInput } from "../logic/mapoMesh";
 import { mapoDecorEnabledFor } from "../logic/mapoSettings";
 import { mapoValueAt } from "../logic/mapoTerrain";
 import type { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
 import {
-    createMapoBatch, createMapoMaterial, destroyMapoBatch, mapoUnlitTechnique,
-    uploadMapoBatch, type MapoBatch,
+    syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
+    type MapoBatch,
 } from "./MapoMeshBatch";
 import type { MapoArtResources } from "./MapoArtResources";
 
 export class MapoDecorRenderer {
-    private batch: MapoBatch | null = null;
+    private readonly batches: MapoBatch[] = [];
     private material: Material | null = null;
     private disposed = false;
     private seconds = 0;
@@ -57,26 +57,20 @@ export class MapoDecorRenderer {
                 [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H], this.seconds, place));
         }
         if (sprites.length === 0) { this.clear(); return 0; }
-        const geometry = buildMapoSpriteMesh(sprites);
-        if (!this.batch) {
-            this.batch = createMapoBatch(this.root, "mapo-decor", geometry, this.material);
-        } else {
-            uploadMapoBatch(this.batch, geometry);
-        }
+        const geometry = buildMapoSpriteMeshes(sprites);
+        syncMapoBatches(this.root, "mapo-decor", this.batches, geometry, this.material);
         return sprites.length;
     }
 
     clear(): void {
         this.visible = null;
-        destroyMapoBatch(this.batch);
-        this.batch = null;
+        clearMapoBatches(this.batches);
     }
 
     dispose(): void {
         this.disposed = true;
         this.visible = null;
-        destroyMapoBatch(this.batch);
-        this.batch = null;
+        clearMapoBatches(this.batches);
         this.material?.destroy();
         this.material = null;
     }
