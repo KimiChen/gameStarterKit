@@ -272,11 +272,13 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
-- [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
+- [x] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-23 SC2-B1 完成：`shared/logic/lodBands.ts` 提供 `lodForValue` / `lodForValueStable`，阈值为有限正数的严格升序表，支持任意档数、空表单档、边界相等及一次跨多档；滞回比例范围 `[0,1)`，无环境依赖、兼容 ES2017。SLG 两个函数改为薄包装，阈值 / 8% 滞回 / 签名 / 错误信息不变，`worldmap` API 仍为 v1。新增 7 项通用回归，35 项定向测试通过，`slg-map-lod.test.ts` 原文未改；对 `sc1-exit` 实现与 shared / 客户端镜像做 180666 次返回值及异常比对，全同。分别移除升细 `(1+r)` / 降粗 `(1-r)` 的变异使 4 / 3 项测试转红，均命中阈值抖动回归，恢复后全绿。两级镜像已同步，Creator 3.8.8 实际导入与编译完成、生成新脚本 `.meta`；独立 `typecheck` / 1104 项 `test:client` 及本批 `verify:all` 全过，提交前同步远端预览优化后再次全量复验通过（Node 26.5.0；客户端 1104 / UniFlex 契约 77 / 服务端 1382 项，合计 2779 项）。本批为纯数学抽取，SC2 尚未退出，阶段 WebGL1 证据仍在退出时验收；下一批 SC2-B2。
 
 - 2026-09-23 SC1-B6 完成：CLIENT §3/§9 补齐当前租约、非模态 HUD、画质与资源消费边界，KIT §2 同步五条 3D 硬排除，view/README 与 sidecar 说明明确默认 passive、别名一致性及 FGUI-only overlay。复核 B4/B9/B7/B8/B5 的 139 份证据文件哈希、源码沿革及所有退出面；B4 WebGL2 / 实际 WebGL1 各 21 步、20 次回收与 B9 Snake 取消 / root 重建证据齐全，B7 干净安装和 B5 完整资产闸承接完整。删除 raw-input 模态 cancel 的变异打红 5 / 20 项，恢复后通过；独立 typecheck / test:client / inventory 及最终 `verify:all` 全绿（2766 项）。本地依赖漂移经 `npm ci` 修复后完整重跑，依赖声明与锁未改。最终机检与限制见 [SC1 汇总](perf/stage3d/2026-09-23-sc1-review.json)。阶段退出登记在 3d.md §10，tag `sc1-exit`；lvr 只收到框架先例通知，未勾接入完成。SC2–SC5 未开始，下一批 SC2-B1。
 

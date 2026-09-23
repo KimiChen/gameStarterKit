@@ -1,4 +1,5 @@
 /** SLG worldmap v1：坐标、分块、LOD 与守备规则的零依赖单源。 */
+import { lodForValue, lodForValueStable } from "../../../../logic/lodBands";
 import { assertExactKeys, boundedString, finiteInteger, WireValidationError } from "../../../../protocol/http";
 import { rpcRecord as requireRecord } from "../../../../protocol/lobbyRpc/primitives";
 
@@ -127,10 +128,7 @@ export function gridRectForChunkRect(rect: ISlgChunkRect, mapW: number, mapH: nu
 }
 export function slgLodForScale(scale: number): number {
     if (!Number.isFinite(scale) || scale <= 0) throw new RangeError("SLG scale must be positive");
-    if (scale >= SLG_LOD_SCALE_THRESHOLDS[2]) return 0;
-    if (scale >= SLG_LOD_SCALE_THRESHOLDS[1]) return 1;
-    if (scale >= SLG_LOD_SCALE_THRESHOLDS[0]) return 2;
-    return 3;
+    return lodForValue(scale, SLG_LOD_SCALE_THRESHOLDS);
 }
 /**
  * 滞回分档：以上一档 prevLod 为基准，scale 必须明确越过更细档下界（×1+r）才升细、明确跌破当前档
@@ -139,11 +137,7 @@ export function slgLodForScale(scale: number): number {
 export function slgLodForScaleStable(prevLod: number, scale: number): number {
     if (!Number.isInteger(prevLod) || prevLod < 0 || prevLod > 3) throw new RangeError("SLG prev LOD invalid");
     if (!Number.isFinite(scale) || scale <= 0) throw new RangeError("SLG scale must be positive");
-    let lod = prevLod;
-    // 档 L（L<3）的下界 = THRESHOLDS[2-L]；lod 3 无下界。
-    while (lod > 0 && scale >= SLG_LOD_SCALE_THRESHOLDS[2 - (lod - 1)] * (1 + SLG_LOD_HYSTERESIS_RATIO)) lod -= 1;
-    while (lod < 3 && scale < SLG_LOD_SCALE_THRESHOLDS[2 - lod] * (1 - SLG_LOD_HYSTERESIS_RATIO)) lod += 1;
-    return lod;
+    return lodForValueStable(prevLod, scale, SLG_LOD_SCALE_THRESHOLDS, SLG_LOD_HYSTERESIS_RATIO);
 }
 export function validateSlgTile(value: unknown, path = "tile"): ISlgTile {
     const r = requireRecord(value, path);
