@@ -10,11 +10,13 @@
 
 | 事项 | 状态 |
 |---|---|
-| 分支 | `new`，工作树干净 |
-| **未推提交** | **2 个**：`9fad25c5`（城址件层）、`cdb5f0fb`（尺寸机检）。⚠ 推送需当事人确认 |
-| 机检 | client 997 / server 1373 全绿；`verify:sync`、`verify:protected-paths` 绿 |
+| 分支 | `new` |
+| **未推提交** | 本轮新增 4 个（N0 重放退出 / N2 城名 / N1 季·地貌变体 / N3+N4 调研回写），⚠ 推送需当事人确认 |
+| 机检 | client 1008 / server 1375 全绿；`verify:sync`、`verify:protected-paths` 绿；`verify:all` exit 0 |
 | ⚠ 一条踩过的 | `verify:sync` 的「缺 `.meta`」**只对已入库文件生效** ⇒ `git add` **之前**跑是绿的、之后才红。⛔ 新增镜像文件后要在 `git add` 之后**再跑一遍** |
+| ⚠ 又一条踩过的 | **Creator 的脚本编译器会静默停摆**（文件变了不重编、重放跑旧 bundle，症状 = 新逻辑不生效且 console 0 条）——改完先看 `temp/programming/packer-driver/targets/preview/chunks/` 里出现新代码再跑；不响就重启 Creator（N2 踩过） |
 | 真机重放 | ✅ **N0 已退出**（2026-09-23）：15 步全绿、肉眼四项全过；抓出并修掉 2 条回归（层容器 layer 黑屏 / 重放解析器漂移 + 缩略图 y 翻号），见 §2 |
+| 批次总览 | **N0 / N1 / N2 / N3 全部退出**（§2–§5）；N4 研究项 B1/B2/B3 已查明（§6），B4 按原判不阻塞不做；遗留开放项 = 名胜地标层（N4-B1 `[5]` 桶）、grid 格线（可做，N4-B3 依据已备）、雪季 decorate 换件查号（N4-B2 残余） |
 | 工作树 | ⚠ **被多个会话共用**：测试跑一半树会变、git 会撞 `index.lock`。归因间歇性失败前先看有没有别的会话在写 |
 
 **原始素材永远留仓外只读**（`../apkdecode/`、`../sourceVersion/`），只入派生产物，
@@ -58,7 +60,7 @@ plate 90 < terrain 100 < blocks 110 < region 300 < road 900 < grid 950
 | **`city` 城址** | ✅ **本轮新增 + 已过真机**（N0，2026-09-23：洛阳 218 sprite 在屏、四项肉眼全过） |
 | `label` 地名 | ✅ 大区 9 / 郡 55 |
 | `plate` 远档 | ✅ 由地形自烘 |
-| `grid` 网格线 | ⛔ 未实现（**原版有没有这层目前无证据**，见 N4-B3） |
+| `grid` 网格线 | ⛔ 未实现；原版依据已查明（N4-B3）：**地表内嵌贴图格线**（FRAME=1400、淡黄 α24%、26.57° 菱形边、静态合批、远档隐）——可做，另开批次 |
 | `banner` 目标旗 | ⛔ 未实现（要服务端 AOI 归属数据，v1 不做） |
 
 ---
@@ -274,19 +276,41 @@ npm run sync:shared && npm run sync:client && npm run verify:all
 
 ### N4-B1　`base.cw` 余下的语义
 - `client_res` 行里的 tag-4 子表：`ui_offset` / `vector` / `variant_*_list`（结构可读、含义未考）
-- `city` 命名空间其余 8 个桶（`[1]` 是真城，`[0]` 是「部队攻击/谋略…」，其余未看）
-- `minimap_name_plate` / `minimap_name_area` / `minimap_name_canton` / `minimap_plate`（10 行/17 列）
-  —— 可能能把缩略图的标注也做成原版的
+- `city` 命名空间其余桶 ✅ 已粗筛（2026-09-23，`[实测]`）：`[2]` 城等级数值 / `[3]` 董卓 /
+  `[4]` 要塞 / `[8]` 属性格式 / `[10]` 可占领码头均服务端数值、无关；`[6]` 郡 57 行 / `[7]` 州
+  10 行（含化外）是元数据（命名已被 N2 覆盖）；⚠ `[5]` 8 行**名胜地标**（东海/九寨沟/泰山/
+  长江/黄河…带 `no_show_default_mountain`）是唯一与表现层沾边的 —— 本 kit 无地标层，
+  登记为新开放项。
+- minimap 四表 ✅ 已查明（2026-09-23，`[实测]`）：`minimap_plate`（10 行）= 9 州板块 +
+  世界板块的图键/缩放界（几何列全 0）；`minimap_name_plate`(193)/`_canton`(229)/`_area`(1270)
+  = 板块/州/郡三档的「地图文案_X」key 串清单（含赛季变体）；**坐标不在 base.cw**，在干净集
+  `season_cfg/s1/{canton,area}_name_info.lua`（州 9 条带 grid+bounds、郡 55 条带 grid+area_id）
+  —— 即 N2 已抽的那两份。⇒「缩略图标注原版化」**可行、无数据缺口**（labels.json 已有
+  9+55 带坐标，minimap 投影与 plate 同式），剩样式决策（`show_progress` 语义未考 `[推断]`）。
 - ⚠ 已查过、**不适用**的两个：`land.offset_2d` 只有 2 行非空（赛事城墙楼梯之类）、
   `variant_client_res_id_list` 只有 15 行非空且 id ≥ 220，**都不在 s1 的 res 值域（1..61）内**
 
 ### N4-B2　`decorate_layer_res` / `birdview_build_icon_cfg` / `scene_split`
-名字看着与本 kit 相关，未读。
+✅ 已查明（2026-09-23，`[实测]`），三表勾销：`decorate_layer_res`（235 行）= 地表装饰件
+注册表（含雪季变体列），弱相关且 N1 烘焙已覆盖（残余价值 = 雪季换件查号）；
+`birdview_build_icon_cfg`（183 行）= 鸟瞰视图建筑类型→图标 res 映射，v1 无建筑数据、无关；
+`scene_split`（10 行）= 3D 按州分场景加载登记，与 2D 表现层无关。
 
-### N4-B3　`grid` 层：原版到底有没有线框网格
-⛔ **目前无证据**。原版 2D 的逐格三层是 `res` / `terrain` / `grid_state`，
-而 `grid_state` 是 AOI 驱动的**归属态叠图**、⛔ 不是线框网格。
-⇒ 要做之前**先补证据**，⛔ 别照 sgzzmap 抄了当原版。
+### N4-B3　`grid` 层：原版到底有没有线框网格 —— ✅ 已查明（2026-09-23）
+结论：**没有独立的线框网格层**（两张 lod 表全量导出 `[实测]`，grid 名层全是格子类叠图：
+`grid_state`=占领状态层、`birdview_grid_state`=过渡层地块格子、`forest_grid`=特殊城逐格
+建筑件且 S1 数据为空 `[disasm]`；干净集 6,620 Lua 无 DrawNode 类线框 API、base.cw 串池无
+「线框/格子线」`[干净集+实测]`）。
+**但 2D 地表视图内嵌常显格线子系统** `[disasm]`：`2d/background/ground_layer_view`
+（⛔ 不在干净集 —— 这正是此前「无证据」的原因）建 `line_layer` @ `MAP_ZORDER.FRAME`(=1400)，
+用 `GROUND_GRID_LINE`（`ground_down/grid_line.png`，全季通用）铺 `{pos,width,angle}` 线段、
+angle = deg(atan(0.5)) = **26.57°**（2:1 菱形格边方向），`obj2d.static_nodes` 静态合批、
+随块刷新；贴图实物 `[实测]` = 8×8 仅一条 1px 淡黄线（252,252,133，α≈24%）。3D 侧同语义
+`[disasm]`：昼/夜两张格线贴花、逐格添加、`is_birdview` 远档跳过。⚠ 覆盖粒度
+（逐格密铺 vs 块界）未坐实，标 `[推断]`（3D 逐格语义 + 贴图形态支持逐格）。
+⇒ 本 kit `grid` 行从「无证据」改判为：**可做，原版依据 = 地表内嵌贴图格线**
+（FRAME=1400、淡黄 α24%、26.57°、静态合批、远档隐），⛔ 不是独立层、不是引擎线框 API。
+做不做另开批次，见 §1 层表。
 
 ### N4-B4　短 Proto 的 Lua 明文
 `../sourceVersion/sgzz-2084.1768/` 的干净集是 6,620 个大 Proto；10,486 个短 Proto 因弱 key
