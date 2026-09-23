@@ -8,6 +8,8 @@ export interface IUserOnline {
     uId: int
     /** 当前区服进程内的连接 ID */
     connectionId: int
+    /** 当前玩家写入 Event Worker Owner；原生 Lobby 没有 alloy-core 数值 connectionId 时使用。 */
+    workerId?: int
     /** 固定业务区服 */
     sid: int
     /** 上次活跃时间 */
@@ -40,10 +42,11 @@ export class UserOnlineMgr {
     /**
      * 新增在线玩家
      */
-    static async add(uid: int, sid: int, connectionId: int) {
+    static async add(uid: int, sid: int, connectionId: int, workerId?: int) {
         const info: IUserOnline = {
             uId: uid,
             connectionId,
+            workerId,
             sid,
             activityTime: timestamp(),
         }
@@ -56,6 +59,7 @@ export class UserOnlineMgr {
     static async del(uid: int, sid: int, expectedConnectionId?: int) {
         if (expectedConnectionId !== undefined) {
             const script = `
+                -- user-online-delete-if-current
                 local current = redis.call('HGET', KEYS[1], ARGV[1])
                 if not current then
                     return 0
@@ -80,15 +84,17 @@ export class UserOnlineMgr {
      * 重复登录可能落在不同 Event Worker；先写入新归属，旧连接后续的异步 close
      * 才不会把新连接从 Redis 在线表中删除。
      */
-    static async replace(uid: int, sid: int, connectionId: int): Promise<IUserOnline | null> {
+    static async replace(uid: int, sid: int, connectionId: int, workerId?: int): Promise<IUserOnline | null> {
         const next: IUserOnline = {
             uId: uid,
             connectionId,
+            workerId,
             sid,
             activityTime: timestamp(),
         }
         const previous = await this.redis.client().eval(
             `
+                -- user-online-replace
                 local previous = redis.call('HGET', KEYS[1], ARGV[1])
                 redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
                 return previous or ''
@@ -114,7 +120,7 @@ export class UserOnlineMgr {
         const rs = await this.redis.hGet(RdKey_UserOnline(sid), String(uid))
         if (rs) {
             const user = JSON.parse(rs) as IUserOnline
-            if (user.connectionId > 0) {
+            if (user.connectionId > 0 || (Number.isInteger(user.workerId) && user.workerId! >= 0)) {
                 return user
             }
         }
@@ -129,7 +135,7 @@ export class UserOnlineMgr {
      */
     static async isOnline(uId: int, sId: int) {
         const rs = await UserOnlineMgr.get(uId, sId)
-        return rs !== null && rs.connectionId !== 0
+        return rs !== null
     }
 
     /**
@@ -168,11 +174,36 @@ export class UserOnlineMgr {
                 continue
             }
             const user = JSON.parse(rs[index]) as IUserOnline
-            if (user.connectionId > 0) {
+            if (user.connectionId > 0 || (Number.isInteger(user.workerId) && user.workerId! >= 0)) {
                 users.push(user)
             }
         }
         return users
+    }
+
+    /** 旧数值连接首次解析出共享内存 owner 后，按 connectionId 守卫补齐 workerId。 */
+    static async setWorkerOwner(uid: int, sid: int, expectedConnectionId: int, workerId: int): Promise<boolean> {
+        const result = await this.redis.client().eval(
+            `
+                -- user-online-set-worker-owner
+                local current = redis.call('HGET', KEYS[1], ARGV[1])
+                if not current then
+                    return 0
+                end
+                local decoded = cjson.decode(current)
+                if tonumber(decoded.connectionId) ~= tonumber(ARGV[2]) then
+                    return 0
+                end
+                decoded.workerId = tonumber(ARGV[3])
+                redis.call('HSET', KEYS[1], ARGV[1], cjson.encode(decoded))
+                return 1
+            `,
+            {
+                keys: [RdKey_UserOnline(sid)],
+                arguments: [String(uid), String(expectedConnectionId), String(workerId)],
+            },
+        )
+        return Number(result) === 1
     }
 
     /**

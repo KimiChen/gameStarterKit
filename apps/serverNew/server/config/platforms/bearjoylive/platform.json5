@@ -61,7 +61,7 @@
     // cdn的
     cdn: {
         //cdn的根地址
-        baseUrl: 'http://s1.static.xmpaoyou.com/demontale/bearjoy',
+        baseUrl: '',
     },
     // 访问站点api地址；host 同时是管理 HTTP 的监听地址与「自指 URL」的拼接前缀
     // （loginUrl / 支付回调 / 客户端配置 prefix），改成 0.0.0.0 后这些自指 URL 也变成
@@ -69,13 +69,7 @@
     host: '127.0.0.1',
     port: 25011,
 
-    // /adjust/* 与 /center/sso* 的浏览器 Origin 白名单（见 isAllowedToolOrigin）。
-    // 代码只放行「同源」「hostname 为 localhost / 127.0.0.1 / ::1」，其余一律 sendStatus(404)
-    // 伪装成路由不存在 —— 所以用局域网地址打开预览页或网页版时，登录会「莫名 404」。
-    // 这里是**精确字符串匹配**（不是通配），本机 IP 变了必须同步改；localhost/127.0.0.1
-    // 已由代码放行，不必列。7456 是 Cocos 编辑器预览，8899 是网页版（反代会改写 Host，
-    // 导致同源判定失效，同样要列）。
-    adjustOrigins: ['http://10.130.0.133:7456', 'http://10.130.0.133:8899'],
+    adjustOrigins: [],
 
     log: {
         env: 'dev',

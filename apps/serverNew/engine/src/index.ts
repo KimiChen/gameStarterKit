@@ -89,8 +89,10 @@ export { default as RouteAction } from './task/RouteAction'
 
 /** 在线玩家信息获取 */
 export { UserOnlineMgr, IUserOnline, MONITOR_OFFLINE_TIME } from './net/UserOnlineMgr'
+export { PlayerWorkerOwner } from './net/PlayerWorkerOwner'
 /** 玩家分区分组,uid中编解码区服id相关函数 */
 export { PlatformLineInfo, getServerIdByUid, SID_BASE_NUM } from './Platform'
+export { RedisKey, RdKey_PlayerWorkerOwner, RdKey_UserOnline } from './enums/RedisKey'
 
 /** 当前固定区服的客户端接入服务（原生 WebSocket Lobby） */
 export {
@@ -177,7 +179,12 @@ export { LocalActionRegistry, LocalActionClass } from './action/LocalActionRegis
 
 /** tsprc 调用相关 */
 export { ApiCall } from './net/client/base/ApiCall'
-export { AsyncReturn, AsyncReturnError, AsyncReturnSucc } from './protocol/ProtocolInterface'
+export {
+    AsyncReturn,
+    AsyncReturnError,
+    AsyncReturnSucc,
+    type BackgroundTaskDelivery,
+} from './protocol/ProtocolInterface'
 export { MessageHelper, Call } from './comm/MessageHelper'
 export { MsgType } from './protocol/MsgType'
 

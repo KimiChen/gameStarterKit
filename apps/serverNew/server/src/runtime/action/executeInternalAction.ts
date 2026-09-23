@@ -28,9 +28,9 @@ import {
  * `NativeLobbyAuthProvider.revoke`；`routeOpsForceLogout` 仍会在转发之前接管 `lobbyKick`
  * 并做解析校验，所以「运营入口只接受什么」这件事仍然只有一处定义。
  *
- * `localAction` 是例外：用户维度的动作在**监听进程之外**执行（按 uid 落到 user task worker），
- * 落点判定在 `MultiProcessRuntime.routeInternalAction`。本函数仍然只负责「拿到载荷就执行」，
- * 不判断自己是不是该执行它的那个进程——⛔ 不要在这里补一次路由，那会让目标进程再转发一轮。
+ * `localAction` 会按持久的 uid Owner 进入 Event Worker，并与客户端请求共用该进程的串行组。
+ * Task Worker 发起同一 LocalAction 时也会回到这里。本函数仍然只负责「拿到载荷就执行」，不在
+ * HTTP 层复制玩家写入路由规则。
  */
 export async function executeInternalAction(payload: any, remoteAddress?: string): Promise<unknown> {
     if (payload?.type === OPS_FORCE_LOGOUT_TYPE) {

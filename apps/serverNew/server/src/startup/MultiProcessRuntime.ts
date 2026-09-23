@@ -11,16 +11,15 @@ import {
 import { isForceLogoutReason } from './NativeLobbyRuntime'
 // 角色判定单独成模块（`lobbyRole.ts`）：它是「禁止静默降级单进程」的唯一判定点，必须有直接测试。
 import { lobbyRoleOf, schedulerOwner, workerRole } from './lobbyRole'
-// 对象调用的跨进程转发单独成模块：它和幂等闸的交互只能在「监听进程 → 目标 worker」整条链上验证。
+// 玩家 Owner / 非玩家 Task 的跨进程转发统一装在这里，并直接验证完整监听进程链路。
 import { installNativeLobbyProcessRouter } from './installNativeLobbyProcessRouter'
 import { routeOpsForceLogout } from '../runtime/lobby/NativeLobbyForceLogout'
 import { nativeLobbyProcessRoutes } from '../runtime/lobby/NativeLobbyProcessRoutes'
 import { InternalHttpServer } from '../runtime/http/InternalHttpServer'
 import { RuntimeProbeServer } from '../runtime/http/RuntimeProbeServer'
-import { executeInternalAction, readLocalActionPayload } from '../runtime/action/executeInternalAction'
+import { executeInternalAction } from '../runtime/action/executeInternalAction'
 import { handleProcessPipeRequest, isProcessPipeRequest, type ProcessPipeDependencies } from './processPipe'
-// 用户任务的落点判定单独成模块：它是「一次用户任务落在哪个进程」的唯一判定点，必须有直接测试。
-import { routeUserTask } from './userTaskRouting'
+import { resolvePlayerWorker } from './resolvePlayerWorker'
 import type { RuntimeCallbacksLike, RuntimeServerConstructor, RuntimeServerLike } from './runtimeTypes'
 
 /** alloy-core 共享统计里留给「每个 worker 的用户数」的起始槽位。 */
@@ -90,10 +89,8 @@ async function handlePipeRequest(_runtime: RuntimeServerLike, message: unknown) 
 /**
  * 内部 HTTP 动作的落点。
  *
- * `USER_COUNT_BASE` 槽位不再有人写入：客户端连接只终止在承担原生 Lobby 监听的进程里，
- * 「每个 worker 的在线数」已经不存在，所以这里退化为「第一个就绪的 Event Worker」。
- * 这是删除旧二进制网关后的已知结果，不是随机负载均衡——需要按连接归属分派时必须先
- * 给原生 Lobby 补一个跨进程可见的连接归属表。
+ * 带 uid 的内部动作走持久玩家 Owner；这里只处理没有 uid 的系统动作。
+ * `USER_COUNT_BASE` 槽位目前没人维护，因此相同计数下稳定选择第一个就绪 Event Worker。
  */
 function pickLeastLoadedWorker(runtime: RuntimeServerLike) {
     const stats = runtime.snapshotStats()
@@ -115,48 +112,9 @@ async function routeInternalAction(runtime: RuntimeServerLike, payload: any, rem
     const forcedLogout = await routeOpsForceLogout(runtime, payload, PIPE_TIMEOUT_MS)
     if (forcedLogout) return forcedLogout
 
-    /**
-     * 用户维度的 LocalAction 按 uid 落到 user task worker —— 这是本仓目前**唯一**的
-     * 「用户任务」产生路径：跨服即时派发（`QueuedLocalAction.dispatchImmediate` 的非 SERVICE
-     * 分支）与运营入口共用这一跳。在此之前它就地落在监听进程里，于是 `USER_TASK_WORKER` 只是
-     * 一个「能就位、健康、不绑端点」的结构占位，没有任何真实负载证明它会执行东西。
-     *
-     * 判据刻意保守：载荷形状不合法、`uid` 不是正整数、或 `sId` 不是本区服时**不路由**，
-     * 原样落回下面的就地执行 —— 于是这些情形仍然由 `executeInternalAction` 按原有文案
-     * fail-closed，诊断信息一条都不会丢。
-     *
-     * ⛔ 不要在这里「顺手」把别的载荷也路由出去：`lobbyKick` 依赖监听进程的连接归属，
-     * 字符串路由依赖 `ProtocolConfigMgr` 的进程内上下文，两者都不具备跨进程执行的前提。
-     */
-    const localAction = payload?.type === 'localAction' ? readLocalActionPayload(payload) : undefined
-    if (localAction && localAction.uId > 0 && localAction.sId === SERVER_ID) {
-        const outcome = await routeUserTask(
-            runtime,
-            { apiName: localAction.apiName, req: localAction.req, uid: localAction.uId, sid: localAction.sId },
-            PIPE_TIMEOUT_MS,
-        )
-        // `undefined` = 没有转发（没有 user task 池 / 落点就是本进程），继续走就地执行。
-        if (outcome !== undefined) {
-            if (outcome.ok !== true) {
-                // 与就地执行失败保持同一个出口：内部 HTTP 一律回 `code: -1` + 可诊断消息。
-                throw new Error(`${outcome.err.code}: ${outcome.err.msg}`)
-            }
-            return outcome.res
-        }
-    }
-
     const uid = Number(payload?.actionParams?.uId ?? payload?.uId) || 0
     const deps = pipeDependencies()
-    let targetWorkerId: number | false = false
-    if (uid > 0) {
-        // 在线归属表只存在于监听进程，而本进程就是它：就地查，不要给自己发一条管道请求。
-        const connectionId = await deps.lookupUserConnection(uid, SERVER_ID)
-        if (typeof connectionId === 'number' && connectionId > 0) {
-            const owner = runtime.connection_owner(connectionId)
-            if (typeof owner === 'number' && owner > 0) targetWorkerId = owner
-        }
-    }
-    if (targetWorkerId === false) targetWorkerId = pickLeastLoadedWorker(runtime)
+    const targetWorkerId = uid > 0 ? await resolvePlayerWorker(runtime, uid, SERVER_ID) : pickLeastLoadedWorker(runtime)
     // 目标就是本进程时直接执行：给自己发管道请求只是多一轮序列化，并把失败面扩大一圈。
     if (targetWorkerId === runtime.worker_id) return deps.executeInternalAction(payload, remoteAddress)
     return runtime.requestMessage({ kind: 'internal-action', payload, remoteAddress }, targetWorkerId, PIPE_TIMEOUT_MS)

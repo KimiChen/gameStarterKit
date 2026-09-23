@@ -199,7 +199,7 @@ export default class RouteAction {
      *
      * 优先用 action 声明的 bindId —— 同 bindId 的请求串行执行，保证同一份业务数据
      * （公会、房间、战斗）不会被两个请求并发修改。
-     * 没声明 bindId 时退化为按 uid 串行，保证任何带 uId 的请求至少不会并发改同一个玩家。
+     * 没声明 bindId 时把 uid 提升为 bindId，保证任何带 uId 的请求都会回玩家 Owner 串行执行。
      *
      * 分组键只取 bindId，不带 apiType：带 apiType 会把同一份资源上的不同 api 拆进
      * 不同分组，反而失去串行保护。不同资源 id 撞号只会多串行，不会漏串行。
@@ -218,10 +218,10 @@ export default class RouteAction {
                 return { groupName: `bind:${bindId}`, bindId }
             }
         } catch (error) {
-            // bindId 解析失败不能阻断业务，退化为按 uid 串行
+            // bindId 解析失败不能阻断业务，退化为玩家 uid Owner
             Log.error(`RouteAction#resolveGroupName getBindId failed api=${call.getApiName()} uId=${call.uId}`, error)
         }
-        return call.uId ? { groupName: `uid:${call.uId}` } : {}
+        return call.uId ? { groupName: `bind:${call.uId}`, bindId: call.uId } : {}
     }
 
     /**

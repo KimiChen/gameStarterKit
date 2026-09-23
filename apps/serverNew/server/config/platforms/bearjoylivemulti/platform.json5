@@ -71,14 +71,13 @@
     // cdn的
     cdn: {
         //cdn的根地址
-        baseUrl: 'http://s1.static.xmpaoyou.com/demontale/bearjoy',
+        baseUrl: '',
     },
     // 访问站点api地址；host 同时是管理 HTTP 的监听地址与「自指 URL」的拼接前缀。
     host: '127.0.0.1',
     port: 25015,
 
-    // /adjust/* 与 /center/sso* 的浏览器 Origin 白名单（见 isAllowedToolOrigin）。
-    adjustOrigins: ['http://10.130.0.133:7456', 'http://10.130.0.133:8899'],
+    adjustOrigins: [],
 
     log: {
         env: 'dev',

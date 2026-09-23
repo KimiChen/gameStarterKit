@@ -4,6 +4,10 @@ export interface LoginKeyItem {
     readonly cp_pay_key: string
     readonly verify_class: string
     readonly plats: string[]
+    readonly server_url?: string
+    readonly quick_reg_url?: string
+    readonly login_url?: string
+    readonly login_type?: string
 }
 
 export interface LoginKeyConfig {

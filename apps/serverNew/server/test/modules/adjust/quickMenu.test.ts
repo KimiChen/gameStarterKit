@@ -16,7 +16,7 @@ global.CP = {
     service: {} as any,
 }
 
-const menus = buildAdjustQuickMenus('http://10.130.0.130:25001')
+const menus = buildAdjustQuickMenus('http://127.0.0.1:25001')
 assert.equal(menus.length, 4)
 assert.equal(menus[0].name, '发布平台')
 assert.equal(menus[0].target, '_blank')

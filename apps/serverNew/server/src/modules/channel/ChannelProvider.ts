@@ -17,6 +17,9 @@ export class ChannelProvider {
      */
     public appPayKey: string = ''
 
+    /** 渠道服务地址，由线路配置显式提供。 */
+    public serverUrl: string = ''
+
     /**
      * 从渠道获取的用户id的后缀, 一般都是需要增加后缀的，防止多个渠道用户id有一样的情况
      */

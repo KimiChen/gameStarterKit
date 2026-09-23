@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {
     GameError,
     PlatformLineInfo,
+    RdKey_UserOnline,
     RedisService,
     RouteAction,
     type LobbyConnectionContext,
@@ -122,6 +123,15 @@ describe('business framework integration (BF0 freeze)', () => {
         userBean.loadOnlyRead = async () => undefined
         try {
             await assembly.onAuthenticated(uid, internalUid, SID)
+            const online = JSON.parse((await redis.hGet(RdKey_UserOnline(SID), String(internalUid))) ?? 'null') as {
+                connectionId?: number
+                workerId?: number
+            } | null
+            assert.deepEqual(
+                online && { connectionId: online.connectionId, workerId: online.workerId },
+                { connectionId: 0, workerId: 0 },
+                '原生 Lobby 登录必须重建 uid 到 Event Worker 的在线归属',
+            )
             assert.equal(
                 await redis.hGet(LEGACY_INCOME_ACCOUNT_KEY, field),
                 null,

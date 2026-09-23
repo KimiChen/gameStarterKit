@@ -6,7 +6,6 @@ import { AdjustWstoolUserModel } from '../../../../generated/persistence/AdjustW
 import { createSsoSessionToken, parseSsoSessionToken } from './sso.token'
 import { AdjustSsoUser, SsoRemoteUser, SsoSessionPayload, SsoSessionRecord } from './sso.types'
 
-const DEFAULT_SSO_SERVER = 'https://account.xmpaoyou.com'
 const DEFAULT_LOGIN_PATH = '/sso'
 const VERIFY_PATH = '/api/game-account/login-by-token'
 const DEFAULT_SESSION_TTL_SECONDS = 3 * 86400
@@ -33,7 +32,7 @@ export class AdjustSsoAuthenticator {
         const config = CP.platform.adjustSso
         return {
             enabled: config?.enabled === true,
-            serverUrl: normalizeString(config?.serverUrl) || DEFAULT_SSO_SERVER,
+            serverUrl: normalizeString(config?.serverUrl),
             loginPath: normalizeString(config?.loginPath) || DEFAULT_LOGIN_PATH,
             isGameLine: config?.isGameLine === true,
             whiteOpen: config?.whiteOpen === true,
@@ -197,7 +196,12 @@ export class AdjustSsoAuthenticator {
             return JSON.parse(cached) as SsoRemoteUser
         }
 
-        const loginConfig = CA.login_key[PLATFORM] ?? CA.login_key.bearjoy ?? CA.login_key.paoyou
+        const config = this.getConfig()
+        if (!config.serverUrl) {
+            throw new Error('adjustSso.serverUrl 未配置')
+        }
+
+        const loginConfig = CA.login_key[PLATFORM] ?? CA.login_key.bearjoy
         if (!loginConfig) {
             throw new Error(`login_key 未配置 ${PLATFORM} 的 SSO 应用信息`)
         }
@@ -209,7 +213,7 @@ export class AdjustSsoAuthenticator {
         }
         params.sign = ChannelSign.createSign(params, loginConfig.cp_app_key)
 
-        const response = await axios.get(`${this.getConfig().serverUrl}${VERIFY_PATH}`, {
+        const response = await axios.get(`${config.serverUrl}${VERIFY_PATH}`, {
             params,
             timeout: 10000,
         })

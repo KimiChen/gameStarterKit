@@ -1,6 +1,4 @@
 {
-    release: {
-        bearjoy: 'http://s13-demontale.xmpaoyou.com/',
-    },
+    release: {},
     dev: {},
 }

@@ -34,6 +34,21 @@ export class FakeCenterRedis {
         return Promise.resolve(Object.fromEntries(this.hash(key) ?? new Map()))
     }
 
+    hmGet(key: string, fields: Array<string | number>): Promise<Record<string, string>> {
+        const hash = this.hash(key)
+        const result: Record<string, string> = {}
+        for (const value of fields) {
+            const field = String(value)
+            const item = hash?.get(field)
+            if (item !== undefined) result[field] = item
+        }
+        return Promise.resolve(result)
+    }
+
+    hmGetToMap(key: string, fields: Array<string | number>): Promise<Record<string, string>> {
+        return this.hmGet(key, fields)
+    }
+
     hSet(key: string, field: string, value: string): Promise<number> {
         const hash = this.hash(key, true)!
         const created = hash.has(field) ? 0 : 1
@@ -200,6 +215,15 @@ export class FakeCenterRedis {
         return this.zset(key)?.delete(member) ? 1 : 0
     }
 
+    zRange(key: string, start: number, stop: number, isRev = false): Promise<string[]> {
+        const members = [...(this.zset(key) ?? [])].sort(
+            (left, right) => left[1] - right[1] || left[0].localeCompare(right[0]),
+        )
+        if (isRev) members.reverse()
+        const end = stop < 0 ? members.length + stop + 1 : stop + 1
+        return Promise.resolve(members.slice(start, end).map(([member]) => member))
+    }
+
     /**
      * 与真实 `ZRANGEBYSCORE` **同形**：`LIMIT` 是下推给存储层的条数上限，
      * 用于「多读一条判断是否还有积压」。⛔ 不做成「先取全量再切片」——
@@ -268,10 +292,244 @@ export class FakeCenterRedis {
         if (script.includes('done-oversize')) return this.idempotencyComplete(options.keys, options.arguments)
         if (script.includes('record.leaseId == ARGV[1]'))
             return this.idempotencyRelease(options.keys, options.arguments)
+        if (script.includes('user-online-replace')) return this.userOnlineReplace(options.keys, options.arguments)
+        if (script.includes('user-online-delete-if-current'))
+            return this.userOnlineDeleteIfCurrent(options.keys, options.arguments)
+        if (script.includes('user-online-set-worker-owner'))
+            return this.userOnlineSetWorkerOwner(options.keys, options.arguments)
+        if (script.includes('player-worker-owner-claim'))
+            return this.playerWorkerOwnerClaim(options.keys, options.arguments)
+        if (script.includes('queued-local-action-enqueue-v2'))
+            return this.queuedActionEnqueue(options.keys, options.arguments)
+        if (script.includes('queued-local-action-claim-v2'))
+            return this.queuedActionClaim(options.keys, options.arguments)
+        if (script.includes('queued-local-action-ack-v2')) return this.queuedActionAck(options.keys, options.arguments)
+        if (script.includes('queued-local-action-fail-v2'))
+            return this.queuedActionFail(options.keys, options.arguments)
+        if (script.includes('queued-local-action-renew-v2'))
+            return this.queuedActionRenew(options.keys, options.arguments)
+        if (script.includes('queued-local-action-cancel-v2'))
+            return this.queuedActionCancel(options.keys, options.arguments)
         if (script.includes("'t:' .. ARGV[3]")) return this.creationTicketIssue(options.keys, options.arguments)
         if (script.includes('redis.call("GET", KEYS[1]) == ARGV[1]'))
             return this.lockRelease(options.keys, options.arguments)
         throw new Error('FakeCenterRedis: 未镜像的 Lua 脚本（脚本已变而假体未跟上）')
+    }
+
+    private userOnlineReplace(keys: string[], args: string[]): string {
+        const [key] = keys
+        const [field, next] = args
+        const hash = this.hash(key, true)!
+        const previous = hash.get(field) ?? ''
+        hash.set(field, next)
+        return previous
+    }
+
+    private userOnlineDeleteIfCurrent(keys: string[], args: string[]): number {
+        const [key] = keys
+        const [field, expectedConnectionId] = args
+        const hash = this.hash(key)
+        const raw = hash?.get(field)
+        if (!raw) return 0
+        const current = JSON.parse(raw) as { connectionId?: number }
+        if (Number(current.connectionId) !== Number(expectedConnectionId)) return 0
+        return hash!.delete(field) ? 1 : 0
+    }
+
+    private userOnlineSetWorkerOwner(keys: string[], args: string[]): number {
+        const [key] = keys
+        const [field, expectedConnectionId, workerId] = args
+        const hash = this.hash(key)
+        const raw = hash?.get(field)
+        if (!raw) return 0
+        const current = JSON.parse(raw) as { connectionId?: number; workerId?: number }
+        if (Number(current.connectionId) !== Number(expectedConnectionId)) return 0
+        current.workerId = Number(workerId)
+        hash!.set(field, JSON.stringify(current))
+        return 1
+    }
+
+    private playerWorkerOwnerClaim(keys: string[], args: string[]): number {
+        const [key] = keys
+        const [field, workerNum, candidate] = args
+        const hash = this.hash(key, true)!
+        const current = Number(hash.get(field))
+        if (Number.isInteger(current) && current >= 0 && current < Number(workerNum)) return current
+        hash.set(field, candidate)
+        return Number(candidate)
+    }
+
+    private queuedActionEnqueue(keys: string[], args: string[]): [string, string] {
+        const [tasksKey, readyKey] = keys
+        const [taskId, fingerprint, raw, availableAt] = args
+        const tasks = this.hash(tasksKey, true)!
+        const existing = tasks.get(taskId)
+        if (existing) {
+            const record = JSON.parse(existing) as { fingerprint?: string }
+            return record.fingerprint === fingerprint ? ['existing', existing] : ['conflict', existing]
+        }
+        tasks.set(taskId, raw)
+        this.zset(readyKey, true)!.set(taskId, Number(availableAt))
+        return ['enqueued', raw]
+    }
+
+    private queuedActionClaim(keys: string[], args: string[]): string | null {
+        const [tasksKey, readyKey, inflightKey, failedKey, legacyKey] = keys
+        const [readyNowRaw, leaseNowRaw, leaseUntilRaw, owner, maxAttemptsRaw, legacyTaskId, legacyFingerprint] = args
+        const readyNow = Number(readyNowRaw)
+        const leaseNow = Number(leaseNowRaw)
+        const leaseUntil = Number(leaseUntilRaw)
+        const maxAttempts = Number(maxAttemptsRaw)
+        const tasks = this.hash(tasksKey, true)!
+        const ready = this.zset(readyKey, true)!
+        const inflight = this.zset(inflightKey, true)!
+        const failed = this.zset(failedKey, true)!
+
+        const storeFailed = (taskId: string, record: Record<string, unknown>, reason: string) => {
+            Object.assign(record, {
+                state: 'failed',
+                failedAt: readyNow,
+                updatedAt: readyNow,
+                lastError: reason,
+            })
+            delete record.leaseOwner
+            delete record.leaseUntil
+            tasks.set(taskId, JSON.stringify(record))
+            failed.set(taskId, readyNow)
+        }
+        const claim = (taskId: string, record: Record<string, unknown>) => {
+            record.attempts = Number(record.attempts ?? 0) + 1
+            Object.assign(record, { state: 'running', leaseOwner: owner, leaseUntil, updatedAt: readyNow })
+            tasks.set(taskId, JSON.stringify(record))
+            ready.delete(taskId)
+            inflight.set(taskId, leaseUntil)
+            return JSON.stringify(record)
+        }
+
+        for (const [taskId, score] of [...inflight].sort((left, right) => left[1] - right[1])) {
+            if (score > leaseNow) break
+            inflight.delete(taskId)
+            const raw = tasks.get(taskId)
+            if (!raw) continue
+            const record = JSON.parse(raw) as Record<string, unknown>
+            if (record.state !== 'running') continue
+            if (Number(record.attempts ?? 0) >= maxAttempts) {
+                storeFailed(taskId, record, 'execution lease expired after final attempt')
+                continue
+            }
+            return claim(taskId, record)
+        }
+
+        for (const [taskId, score] of [...ready].sort((left, right) => left[1] - right[1])) {
+            if (score > readyNow) break
+            ready.delete(taskId)
+            const raw = tasks.get(taskId)
+            if (!raw) continue
+            const record = JSON.parse(raw) as Record<string, unknown>
+            if (record.state === 'pending') return claim(taskId, record)
+        }
+
+        const legacy = this.zset(legacyKey)
+        const legacyEntry = legacy
+            ? [...legacy].sort((left, right) => left[1] - right[1]).find(([, score]) => score <= readyNow)
+            : undefined
+        if (!legacyEntry) return null
+        legacy!.delete(legacyEntry[0])
+        let item: Record<string, unknown>
+        try {
+            item = JSON.parse(legacyEntry[0]) as Record<string, unknown>
+        } catch {
+            storeFailed(
+                legacyTaskId,
+                { version: 2, taskId: legacyTaskId, attempts: maxAttempts },
+                'corrupt legacy task record',
+            )
+            return null
+        }
+        const record: Record<string, unknown> = {
+            version: 2,
+            taskId: legacyTaskId,
+            fingerprint: legacyFingerprint,
+            apiName: item.apiName,
+            uId: Number(item.uId ?? 0),
+            sId: Number(item.sId ?? 0),
+            req: item.req,
+            createdAt: readyNow,
+            availableAt: legacyEntry[1],
+            attempts: 0,
+            state: 'pending',
+        }
+        tasks.set(legacyTaskId, JSON.stringify(record))
+        return claim(legacyTaskId, record)
+    }
+
+    private queuedActionAck(keys: string[], args: string[]): number {
+        const [tasksKey, inflightKey] = keys
+        const [taskId, owner, now] = args
+        const tasks = this.hash(tasksKey)
+        const raw = tasks?.get(taskId)
+        if (!raw) return 0
+        const record = JSON.parse(raw) as Record<string, unknown>
+        if (record.state !== 'running' || record.leaseOwner !== owner) return 0
+        Object.assign(record, { state: 'done', completedAt: Number(now), updatedAt: Number(now) })
+        delete record.leaseOwner
+        delete record.leaseUntil
+        tasks!.set(taskId, JSON.stringify(record))
+        this.zset(inflightKey)?.delete(taskId)
+        return 1
+    }
+
+    private queuedActionFail(keys: string[], args: string[]): string {
+        const [tasksKey, readyKey, inflightKey, failedKey] = keys
+        const [taskId, owner, nowRaw, error, maxAttemptsRaw, retryDelayRaw] = args
+        const tasks = this.hash(tasksKey)
+        const raw = tasks?.get(taskId)
+        if (!raw) return 'lost'
+        const record = JSON.parse(raw) as Record<string, unknown>
+        if (record.state !== 'running' || record.leaseOwner !== owner) return 'lost'
+        const now = Number(nowRaw)
+        const maxAttempts = Number(maxAttemptsRaw)
+        this.zset(inflightKey)?.delete(taskId)
+        Object.assign(record, { lastError: error, updatedAt: now })
+        delete record.leaseOwner
+        delete record.leaseUntil
+        if (Number(record.attempts ?? 0) < maxAttempts) {
+            Object.assign(record, { state: 'pending', availableAt: now + Number(retryDelayRaw) })
+            tasks!.set(taskId, JSON.stringify(record))
+            this.zset(readyKey, true)!.set(taskId, Number(record.availableAt))
+            return 'retry'
+        }
+        Object.assign(record, { state: 'failed', failedAt: now })
+        tasks!.set(taskId, JSON.stringify(record))
+        this.zset(failedKey, true)!.set(taskId, now)
+        return 'failed'
+    }
+
+    private queuedActionRenew(keys: string[], args: string[]): number {
+        const [tasksKey, inflightKey] = keys
+        const [taskId, owner, leaseUntilRaw] = args
+        const tasks = this.hash(tasksKey)
+        const raw = tasks?.get(taskId)
+        if (!raw) return 0
+        const record = JSON.parse(raw) as Record<string, unknown>
+        if (record.state !== 'running' || record.leaseOwner !== owner) return 0
+        record.leaseUntil = Number(leaseUntilRaw)
+        tasks!.set(taskId, JSON.stringify(record))
+        this.zset(inflightKey, true)!.set(taskId, Number(leaseUntilRaw))
+        return 1
+    }
+
+    private queuedActionCancel(keys: string[], args: string[]): number {
+        const [tasksKey, readyKey] = keys
+        const [taskId] = args
+        const tasks = this.hash(tasksKey)
+        const raw = tasks?.get(taskId)
+        if (!raw) return 0
+        const record = JSON.parse(raw) as { state?: string }
+        if (record.state !== 'pending') return 0
+        tasks!.delete(taskId)
+        this.zset(readyKey)?.delete(taskId)
+        return 1
     }
 
     private lockRelease(keys: string[], args: string[]): unknown {

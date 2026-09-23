@@ -1,6 +1,6 @@
 {
     sid: 1,
-    clientHost: '10.130.0.130',
+    clientHost: '127.0.0.1',
     clientPort: 18080,
     heartbeatTimeoutMs: 60000,
     authTimeoutMs: 30000,

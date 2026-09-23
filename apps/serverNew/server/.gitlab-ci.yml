@@ -19,10 +19,9 @@ variables:
     before_script:
         - apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
         - corepack enable
+        - corepack prepare pnpm@8.15.9 --activate
+        - pnpm -C ../engine install --frozen-lockfile
         - corepack prepare pnpm@10.33.0 --activate
-        - git clone --depth 1 "http://gitlab-ci-token:${CI_JOB_TOKEN}@git.paoyou.work/alloy/alloy-engine.git" ../../alloy-engine
-        - cp .npmrc ../../alloy-engine/.npmrc
-        - pnpm -C ../../alloy-engine install --frozen-lockfile
         - pnpm install --frozen-lockfile
 
 validate:
@@ -62,8 +61,6 @@ build:
               - deploy/docker/Dockerfile.dockerignore
               - .gitlab-ci.yml
               - pnpm-lock.yaml
-              - .npmrc
-              - patches/**/*
 package:
     stage: package
     image: docker:dind
@@ -83,5 +80,3 @@ package:
               - deploy/docker/Dockerfile.dockerignore
               - .gitlab-ci.yml
               - pnpm-lock.yaml
-              - .npmrc
-              - patches/**/*

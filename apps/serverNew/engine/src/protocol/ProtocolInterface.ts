@@ -91,3 +91,9 @@ export interface BaseProtocolType {
         [pushName: string]: any
     }
 }
+
+/** 后台可靠任务的投递身份；随 LocalAction 跨进程透传，不混入业务请求结构。 */
+export interface BackgroundTaskDelivery {
+    readonly taskId: string
+    readonly attempt: number
+}

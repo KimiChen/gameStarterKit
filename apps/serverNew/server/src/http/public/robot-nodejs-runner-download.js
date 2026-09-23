@@ -16086,7 +16086,7 @@ async function ssoLogout(token) {
     }
   });
 }
-const SSO_SERVER = "https://account.xmpaoyou.com";
+const SSO_SERVER = process.env.GAME_SSO_SERVER?.replace(/\/$/, "") || "";
 const SSO_LOGIN_PATH = "/sso";
 const useAuthStore = /* @__PURE__ */ defineStore(
   "auth",
@@ -29392,7 +29392,10 @@ const buildWsLogTitle = (route, child) => {
   return `${route.id}.${child.method} [${route.label}-${child.label}]`;
 };
 const workerBatchLogin = async (accounts) => {
-  const response = await fetch("https://account.xmpaoyou.com/api/game-account/batch-login", {
+  if (!SSO_SERVER) {
+    throw new Error("GAME_SSO_SERVER 未配置");
+  }
+  const response = await fetch(`${SSO_SERVER}/api/game-account/batch-login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"

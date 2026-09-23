@@ -57,37 +57,11 @@ export class AdjustController {
     @OpenAPI({ summary: '获取线路列表' })
     @Get('/domain')
     async domain() {
-        const ret: AdjustDoMainResponse = {
+        return {
             status: 0,
             msg: '操作成功',
             data: [],
-        }
-
-        if (PLATFORM !== 'bearjoy') {
-            return ret
-        }
-
-        const result = await Url.postJson('http://10.20.250.13:8100/mongoDB', {
-            name: 'line_list',
-            type: 'find',
-            where: {
-                game: CP.platform.project,
-            },
-            sort: {
-                sort: 1,
-            },
-        })
-
-        if (result.status != 200) {
-            Log.error('post 请求 http://10.20.250.13:8100/mongoDB failed! status: ', result.status)
-            return ret
-        }
-
-        for (const item of result.data) {
-            ret.data.push({ name: item.name, value: item.value })
-        }
-
-        return ret
+        } satisfies AdjustDoMainResponse
     }
 
     @OpenAPI({ summary: '获取自定义功能' })

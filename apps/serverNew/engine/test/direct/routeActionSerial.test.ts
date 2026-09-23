@@ -109,12 +109,14 @@ async function main() {
     GameError.apiCallQueueTimeout = new GameError(504, 'queue timeout')
 
     await runTest('同分组的请求串行执行，并保持投递顺序', async () => {
-        const calls = ['a', 'b', 'c'].map((name, index) => makeCall({
-            name,
-            traceId: 100 + index,
-            uId: 7,
-            getBindId: async () => 42,
-        }))
+        const calls = ['a', 'b', 'c'].map((name, index) =>
+            makeCall({
+                name,
+                traceId: 100 + index,
+                uId: 7,
+                getBindId: async () => 42,
+            }),
+        )
 
         await Promise.all(calls.map((call) => RouteAction.onApiCall(call)))
 
@@ -138,15 +140,15 @@ async function main() {
     await runTest('bindId 为 0 或未声明时退化为按 uid 分组', async () => {
         const zero = makeCall({ name: 'zero', traceId: 1, uId: 7, getBindId: async () => 0 })
         await RouteAction.onApiCall(zero)
-        assert.equal(zero.groupName, 'uid:7', 'bindId=0 是未绑定的哨兵，不能当成分组键')
+        assert.equal(zero.groupName, 'bind:7', 'bindId=0 时必须退化到玩家 uid Owner')
 
         const unset = makeCall({ name: 'unset', traceId: 2, uId: 9, getBindId: async () => undefined })
         await RouteAction.onApiCall(unset)
-        assert.equal(unset.groupName, 'uid:9')
+        assert.equal(unset.groupName, 'bind:9')
 
         const noHandler = makeCall({ name: 'noHandler', traceId: 3, uId: 11 })
         await RouteAction.onApiCall(noHandler)
-        assert.equal(noHandler.groupName, 'uid:11')
+        assert.equal(noHandler.groupName, 'bind:11')
     })
 
     await runTest('既没有 bindId 也没有 uid 的请求不分组，直接执行', async () => {

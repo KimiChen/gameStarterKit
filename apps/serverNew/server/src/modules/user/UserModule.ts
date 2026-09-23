@@ -63,9 +63,10 @@ export const UserModule = defineGameModule({
                     await NativeLobbyUserEnter.enter(internalUid, sId)
                     await services.registerCharacter(uid, sId)
                 },
-                onReleased: async ({ internalUid }) => {
+                onReleased: async ({ internalUid, sId }) => {
                     const user = await User.load(internalUid)
                     if (user) await UserSessionLifecycle.leave(user)
+                    else await NativeLobbyUserEnter.clearOnlinePresence(internalUid, sId)
                 },
             },
         ],

@@ -3,6 +3,7 @@ import {
     Call,
     ContextEngine,
     GameError,
+    LocalActionRegistry,
     MessageHelper,
     RedisService,
     RouteAction,
@@ -128,18 +129,26 @@ describe('native Lobby process pipe', () => {
         assert.equal(isProcessPipeRequest(null), false)
     })
 
-    it('keeps a bindable internal LocalAction on the current worker', async () => {
+    it('routes client and background player actions to the same owner Event Worker', async () => {
         const savedRouter = RouteAction.processRouter
         const forwarded: unknown[] = []
         const runtime = {
             worker_id: 0,
-            setting: { worker_num: 1, task_worker_num: 1 },
-            requestMessage: async (message: unknown) => {
+            setting: { worker_num: 2, task_worker_num: 1 },
+            requestMessage: async (message: unknown, targetWorkerId: number) => {
                 forwarded.push(message)
-                throw new Error('internal LocalAction must not enter the Lobby pipe')
+                assert.equal(targetWorkerId, 1)
+                return (message as ProcessPipeRequest).kind === 'routed-lobby-route'
+                    ? {
+                          ok: true,
+                          res: { kind: 'lobby-route-outcome', data: { accepted: 'client' } },
+                      }
+                    : { ok: true, res: { accepted: 'background' } }
             },
         }
-        installNativeLobbyProcessRouter(runtime as never, 5000)
+        installNativeLobbyProcessRouter(runtime as never, 5000, {
+            resolvePlayerWorker: async () => 1,
+        })
         try {
             let executed = false
             const result = await MessageHelper.syncDoAction(
@@ -148,7 +157,7 @@ describe('native Lobby process pipe', () => {
                 new Call('user.lobbyEnter', {}),
                 class {
                     async getBindId() {
-                        return BIND_ID
+                        return INTERNAL_UID
                     }
                     async actionBefore() {
                         return
@@ -159,8 +168,42 @@ describe('native Lobby process pipe', () => {
                 },
             )
             assert.equal(result.isSucc, true)
-            assert.equal(executed, true)
-            assert.deepEqual(forwarded, [])
+            assert.deepEqual(result.res, { accepted: 'background' })
+            assert.equal(executed, false)
+            const objectResult = await executeObjectAction(
+                'user.ownerProbe',
+                {},
+                {},
+                {
+                    async getBindId() {
+                        return INTERNAL_UID
+                    },
+                    async doAction() {
+                        throw new Error('forwarded client request must not execute on the source worker')
+                    },
+                },
+                { uid: INTERNAL_UID, externalUid: EXTERNAL_UID, sId: SID },
+            )
+            assert.deepEqual(objectResult, { ok: true, data: { accepted: 'client' } })
+            assert.equal(forwarded.length, 2)
+            const forwardedMessage = forwarded[0] as ProcessPipeRequest
+            assert.equal(forwardedMessage.kind, 'routed-local-action')
+            if (forwardedMessage.kind !== 'routed-local-action') throw new Error('unexpected pipe message')
+            assert.equal(typeof forwardedMessage.traceId, 'number')
+            assert.deepEqual(
+                { ...forwardedMessage, traceId: TRACE_ID },
+                {
+                    kind: 'routed-local-action',
+                    apiName: 'user.lobbyEnter',
+                    req: {},
+                    uid: INTERNAL_UID,
+                    sid: SID,
+                    bindId: INTERNAL_UID,
+                    traceId: TRACE_ID,
+                    invokeLayer: 1,
+                },
+            )
+            assert.equal((forwarded[1] as ProcessPipeRequest).kind, 'routed-lobby-route')
         } finally {
             RouteAction.processRouter = savedRouter
             RouteAction.callGroups.clear()
@@ -375,6 +418,67 @@ describe('native Lobby process pipe', () => {
         assert.deepEqual(first, { ok: true, res: { kind: 'lobby-route-outcome', data: { ok: true } } })
         assert.deepEqual(second, { ok: true, res: { kind: 'lobby-route-outcome', data: { ok: true } } })
         assert.equal(maxActive, 1)
+        assert.equal(RouteAction.callGroups.size, 0)
+    })
+
+    it('serializes a client request and a background player action on the same routed bindId', async () => {
+        const registry = new NativeLobbyRouteRegistry()
+        const routes = new NativeLobbyProcessRoutes()
+        routes.install(registry)
+
+        let active = 0
+        let maxActive = 0
+        let localGetBindIdCalls = 0
+        let observedBackgroundTask: unknown
+        const enter = async () => {
+            active++
+            maxActive = Math.max(maxActive, active)
+            await new Promise<void>((resolve) => setImmediate(resolve))
+            active--
+        }
+
+        registry.register(UserRpc.GetInfo, async () => {
+            await enter()
+            return { source: 'client' }
+        })
+        LocalActionRegistry.register({
+            'mail/TracelessAwardOwnerProbe': class {
+                async getBindId() {
+                    localGetBindIdCalls++
+                    return BIND_ID + 999
+                }
+                async actionBefore() {
+                    return
+                }
+                async doAction(_req: unknown, res: { source?: string }) {
+                    observedBackgroundTask = ContextEngine.currentCtxEngine?.ctxLogic.backgroundTask
+                    await enter()
+                    res.source = 'background'
+                }
+            },
+        })
+
+        const { deps } = makeDeps(routes)
+        const [client, background] = await Promise.all([
+            handleProcessPipeRequest(deps, routedMessage(UserRpc.GetInfo, INTERNAL_UID, TRACE_ID)),
+            handleProcessPipeRequest(deps, {
+                kind: 'routed-local-action',
+                apiName: 'mail/TracelessAwardOwnerProbe',
+                req: { award: 10 },
+                uid: INTERNAL_UID,
+                sid: SID,
+                bindId: INTERNAL_UID,
+                traceId: TRACE_ID + 1,
+                invokeLayer: 1,
+                backgroundTask: { taskId: 'task-route-probe', attempt: 2 },
+            }),
+        ])
+
+        assert.equal((client as { ok: boolean }).ok, true)
+        assert.deepEqual(background, { ok: true, res: { source: 'background' } })
+        assert.equal(localGetBindIdCalls, 0, '目标 worker 必须复用源进程解析出的 bindId')
+        assert.deepEqual(observedBackgroundTask, { taskId: 'task-route-probe', attempt: 2 })
+        assert.equal(maxActive, 1, '客户端写入与后台发奖必须进入同一个进程内串行组')
         assert.equal(RouteAction.callGroups.size, 0)
     })
 

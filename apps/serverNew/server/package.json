@@ -46,7 +46,6 @@
         "pm2启动service,http服务": "pm2 start deploy/pm2/development.config.cjs",
         "service.js测试": "node dist/app/index.js -p bearjoy -v dev --sid 1",
         "smoke:multiprocess": "node scripts/smoke/multiprocess.cjs",
-        "syncGameConf:同步游戏配置": "ts-node --project scripts/generator/tsconfig.record-refresh.json ./scripts/generator/configTypes/SyncConfigTypes.ts conf all",
         "test": "node test/run-tests.js",
         "test:bean-compile": "pnpm test:suite -- bean-compile",
         "test:build-artifacts": "node scripts/structure-baseline/verify-build-artifacts.js all",
@@ -62,6 +61,7 @@
         "verify": "pnpm check:generated && pnpm check:static && pnpm test -- --skip-bean-validation && pnpm build",
         "verify:module": "ts-node --project scripts/tsconfig.json scripts/modules/VerifyModule.ts",
         "verify:native-lobby-live": "node scripts/verify/native-lobby-live.cjs",
+        "verify:queued-action-recovery": "node scripts/verify/queued-local-action-recovery.cjs",
         "verify:quick": "pnpm check:quick",
         "一键生成代码": "pnpm generate",
         "启动http": "pnpm dev:http",
@@ -112,7 +112,6 @@
         "ws": "^8.16.0"
     },
     "devDependencies": {
-        "@arthropoda/game-sync": "^0.0.36",
         "@arthropoda/mysql-tool": "^0.0.70",
         "@redis/client": "^1.5.14",
         "@types/cookie-parser": "^1.4.7",
@@ -154,10 +153,5 @@
     "packageManager": "pnpm@10.33.0",
     "engines": {
         "node": ">=20 <23"
-    },
-    "pnpm": {
-        "patchedDependencies": {
-            "@arthropoda/game-sync@0.0.36": "patches/@arthropoda__game-sync@0.0.36.patch"
-        }
     }
 }

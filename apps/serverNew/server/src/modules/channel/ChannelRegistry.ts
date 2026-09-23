@@ -1,5 +1,4 @@
 import { ChannelProvider } from './ChannelProvider'
-import { ChannelPaoyou } from './paoyou/ChannelPaoyou'
 import { ChannelYueChi } from './yuechi/ChannelYueChi'
 
 export class ChannelRegistry {
@@ -7,19 +6,12 @@ export class ChannelRegistry {
 
     static readonly SDK_LINGQUAN = 'lingquan'
 
-    static readonly SDK_PAOYOU = 'paoyou'
-
-    static readonly SDK_BEARJOY = 'bearjoy'
-
     static readonly SDK_YOURON = 'youron'
 
     static readonly SDK_YOURON_DEV = 'youronDev'
 
     private static createObj(sdkName: string): ChannelProvider {
         switch (sdkName) {
-            case this.SDK_BEARJOY:
-            case this.SDK_PAOYOU:
-                return new ChannelPaoyou()
             case this.SDK_YUECHI:
                 return new ChannelYueChi()
             default:
@@ -38,6 +30,7 @@ export class ChannelRegistry {
         obj.appId = appConfig.cp_app_id
         obj.appKey = appConfig.cp_app_key
         obj.appPayKey = appConfig.cp_pay_key
+        obj.serverUrl = appConfig.server_url ?? ''
 
         return obj
     }

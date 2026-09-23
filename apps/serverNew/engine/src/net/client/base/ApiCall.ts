@@ -3,7 +3,12 @@ import { MsgType } from '../../../protocol/MsgType'
 import { BaseCall, BaseCallOptions } from './BaseCall'
 import { CallGroup } from '../../../task/RouteAction'
 import { timestamp } from '../../../utils/common'
-import { ApiProtocol, ApiReturn, BaseProtocolType } from '../../../protocol/ProtocolInterface'
+import {
+    ApiProtocol,
+    ApiReturn,
+    BackgroundTaskDelivery,
+    BaseProtocolType,
+} from '../../../protocol/ProtocolInterface'
 import { GameError } from '../../../error/GameError'
 import { ErrorData } from '../../../error/ErrorData'
 import { MsgError } from '../../../protocol/MsgError'
@@ -43,8 +48,11 @@ export abstract class ApiCall<
     /** 绑定分组id */
     public groupName?: string
 
-    /** Event Worker 首次解析后随 IPC 透传的 bindId；Task Worker 不得重复计算。 */
+    /** 入口 Worker 首次解析后随 IPC 透传的 bindId；目标执行 Worker 不得重复计算。 */
     public routedBindId?: int
+
+    /** 后台可靠任务身份；业务可用 taskId 做存储幂等，不得从 req 中猜。 */
+    public backgroundTask?: BackgroundTaskDelivery
 
     public callGroup?: CallGroup
 

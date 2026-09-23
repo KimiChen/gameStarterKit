@@ -1,16 +1,1 @@
-{
-    paoyou: {
-        cp_app_id: '1',
-        cp_app_key: '52a2cafa26b1c',
-        cp_pay_key: '',
-        verify_class: 'Paoyou',
-        plats: ['bearjoy'],
-    },
-    bearjoy: {
-        cp_app_id: '1',
-        cp_app_key: '52a2cafa26b1c',
-        cp_pay_key: '',
-        verify_class: 'Paoyou',
-        plats: ['bearjoy'],
-    },
-}
+{}

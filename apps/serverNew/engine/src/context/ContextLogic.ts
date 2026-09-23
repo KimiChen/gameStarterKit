@@ -1,6 +1,7 @@
 import { ApiCall } from '../net/client/base/ApiCall'
 import { getServerIdByUid } from '../Platform'
 import { UserOnlineMgr } from '../net/UserOnlineMgr'
+import type { BackgroundTaskDelivery } from '../protocol/ProtocolInterface'
 
 export class ContextLogic {
     now = new Date()
@@ -26,6 +27,10 @@ export class ContextLogic {
 
     get apiName(): string {
         return this.call?.getApiName() ?? ''
+    }
+
+    get backgroundTask(): BackgroundTaskDelivery | undefined {
+        return this.call?.backgroundTask
     }
 
     get uid(): int {

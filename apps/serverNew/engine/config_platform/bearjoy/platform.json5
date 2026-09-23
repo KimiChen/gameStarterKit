@@ -34,7 +34,7 @@
     // cdn的
     cdn: {
         //cdn的根地址
-        baseUrl: 'http://s1.static.xmpaoyou.com/demontale/bearjoy',
+        baseUrl: '',
     },
     // 访问站点api地址
     host: '127.0.0.1',

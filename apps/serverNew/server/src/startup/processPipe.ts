@@ -1,4 +1,4 @@
-import { Call, MessageHelper, executeForwardedRoute } from '@arthropoda/game-engine'
+import { Call, MessageHelper, executeForwardedRoute, type BackgroundTaskDelivery } from '@arthropoda/game-engine'
 import { writeProcessRouteTrace } from './writeProcessRouteTrace'
 
 /**
@@ -43,9 +43,10 @@ export type ProcessPipeRequest =
           readonly req: unknown
           readonly uid: number
           readonly sid: number
-          readonly bindId?: number
+          readonly bindId: number
           readonly traceId: number
           readonly invokeLayer: number
+          readonly backgroundTask?: BackgroundTaskDelivery
       }
     /**
      * 原生 Lobby 字符串路由：payload 已由 shared 校验，handler 由目标 worker 自己的登记表解析。
@@ -63,23 +64,6 @@ export type ProcessPipeRequest =
           readonly bindId: number
           readonly traceId: number
           readonly invokeLayer: number
-      }
-    /**
-     * 用户维度任务：目标 worker 用**本进程**的 `LocalActionRegistry` 以携带的 uid/sId 执行。
-     *
-     * 与 `routed-local-action` 的区别在**路由键**：那个按 `bindId` 路由、带请求上下文
-     * （`traceId` / `invokeLayer`），只出现在持有连接的调用链上；这个按 `uid` 路由，来源是
-     * 「没有请求上下文」的用户任务入口（跨服即时派发、运营入口），因此不带 traceId。
-     * ⛔ 不要为了省一个分支把它并进 `routed-local-action`：那会让 `traceId=0` 变成「无上下文」
-     * 与「上下文丢了」两种含义共用同一个字段。
-     */
-    | {
-          readonly kind: 'user-task'
-          readonly apiName: string
-          readonly req: unknown
-          /** 引擎内部数值 uid（不是原生 Lobby 的外部字符串 uid）。 */
-          readonly uid: number
-          readonly sid: number
       }
     /** 跨进程唤醒推送：只有持有连接的进程能写 wire 消息。 */
     | {
@@ -113,7 +97,6 @@ const PIPE_KINDS = new Set([
     'lookup-user-connection',
     'internal-action',
     'routed-local-action',
-    'user-task',
     'routed-lobby-route',
     'lobby-push',
     'lobby-sync',
@@ -131,19 +114,15 @@ export async function handleProcessPipeRequest(
         case 'internal-action':
             return deps.executeInternalAction(message.payload, message.remoteAddress)
         case 'routed-local-action':
-            return executeLocalAction(message.apiName, message.uid, message.sid, message.req)
-        case 'user-task':
-            // 路由痕迹只能证明「源进程发起了转发」。落地必须由目标进程**自己**留痕，并且带上
-            // 自己的 pid：这样自检才能把「执行者」与 `/health` 的 `workerId → pid` 交叉核对，
-            // 而不是相信请求里自报的槽位（那正是「痕迹打在 requestMessage 之前」的假绿形态）。
             writeProcessRouteTrace({
                 event: 'exec',
                 kind: message.kind,
                 route: message.apiName,
                 uid: message.uid,
+                bindId: message.bindId,
                 pid: process.pid,
             })
-            return executeLocalAction(message.apiName, message.uid, message.sid, message.req)
+            return executeLocalAction(message)
         case 'routed-lobby-route': {
             const identity: LobbyRouteIdentity = {
                 uid: message.uid,
@@ -182,16 +161,23 @@ export async function handleProcessPipeRequest(
 }
 
 /**
- * 对象 LocalAction 的执行体：按 apiName 从**本进程**的登记表解析 handler，用携带的 uid/sId 执行。
+ * LocalAction 的执行体：按 apiName 从**本进程**的登记表解析 handler，用携带的 uid/sId 执行。
  *
- * 没有连接也能跑：`callLocalAction` 只消费传入的 uid/sId，不查在线归属表。这正是
- * 「只有用户维度、没有连接」的动作能在 user task worker 上执行的前提。
+ * 没有连接也能跑：`callLocalAction` 只消费传入的 uid/sId，不查在线归属表。
  */
-async function executeLocalAction(apiName: string, uid: number, sid: number, req: unknown): Promise<unknown> {
+async function executeLocalAction(
+    message: Extract<ProcessPipeRequest, { kind: 'routed-local-action' }>,
+): Promise<unknown> {
     const result = await MessageHelper.callLocalAction(
-        uid,
-        sid,
-        new Call(apiName, (req ?? {}) as Record<string, unknown>),
+        message.uid,
+        message.sid,
+        new Call(message.apiName, (message.req ?? {}) as Record<string, unknown>, message.backgroundTask),
+        {
+            routedBindId: message.bindId,
+            traceId: message.traceId,
+            invokeLayer: message.invokeLayer,
+            backgroundTask: message.backgroundTask,
+        },
     )
     return result.isSucc
         ? { ok: true, res: result.res }

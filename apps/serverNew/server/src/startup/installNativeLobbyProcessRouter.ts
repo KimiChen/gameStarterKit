@@ -1,10 +1,11 @@
 import { isLobbyRouteOutcome, RouteAction, type ApiCall, type ObjectActionCall } from '@arthropoda/game-engine'
 import type { ProcessPipeOutcome, ProcessPipeRequest } from './processPipe'
+import { resolvePlayerWorker } from './resolvePlayerWorker'
 import type { RuntimeServerLike } from './runtimeTypes'
 import { writeProcessRouteTrace } from './writeProcessRouteTrace'
 
 /**
- * 把「对象调用按 bindId 转到 task worker」装进 `RouteAction.processRouter`。
+ * 玩家 Action 落到 uid 的 Event Worker；非玩家资源 Action 继续按 bindId 落普通 Task Worker。
  *
  * 单独成模块是为了让这条链路**可被直接验证**：它的缺陷形态是「跨进程两侧各进一次幂等闸」，
  * 只在「监听进程 → 目标 worker」这条完整链路上才暴露——只测目标 worker 那一跳（
@@ -12,28 +13,25 @@ import { writeProcessRouteTrace } from './writeProcessRouteTrace'
  *
  * 装配一次即可（进程级钩子）；缺省不装，因此单进程下不会有第二条转发路径。
  */
-export function installNativeLobbyProcessRouter(runtime: RuntimeServerLike, pipeTimeoutMs: number): void {
+export function installNativeLobbyProcessRouter(
+    runtime: RuntimeServerLike,
+    pipeTimeoutMs: number,
+    options: {
+        readonly resolvePlayerWorker?: typeof resolvePlayerWorker
+    } = {},
+): void {
+    const playerWorker = options.resolvePlayerWorker ?? resolvePlayerWorker
     RouteAction.processRouter = async (call, bindId) => {
-        // `RouteAction` 同时服务原生 Lobby 的对象调用与 `MessageHelper` 的进程内 LocalAction。
-        // 后者没有可信外部 uid，也不应借「routed-lobby-route」绕过它自己的调度语义：例如认证
-        // 成功后的 `user.lobbyEnter` 必须在持有连接的 worker 里完成，才能继续同一条登录链。
-        if (call.responseTransport !== 'object') return false
-
-        // `user-task` 管道已经把这次 LocalAction 投递到按 uid 选出的 USER_TASK_WORKER。
-        // 该进程再按 ActionUser 的 bindId 转去普通 task worker，不但违背用户任务所有权，
-        // 还会因 LocalAction 没有对象 response transport 被 fail-closed。user task worker 是这类
-        // 调用的最终落点，必须就地执行。
-        if (
-            runtime.worker_id !== null &&
-            runtime.worker_id >= runtime.setting.worker_num + runtime.setting.task_worker_num
-        ) {
-            return false
+        let targetWorkerId: number
+        if (call.uId > 0 && bindId === call.uId) {
+            targetWorkerId = await playerWorker(runtime, call.uId, call.messageHead.serverId ?? 0)
+        } else {
+            const taskWorkerNum = runtime.setting.task_worker_num
+            if (taskWorkerNum === 0) {
+                throw new Error(`action ${call.getApiName()} 声明非玩家 bindId=${bindId}，但 taskWorkerNum=0`)
+            }
+            targetWorkerId = runtime.setting.worker_num + (bindId % taskWorkerNum)
         }
-        const taskWorkerNum = runtime.setting.task_worker_num
-        if (taskWorkerNum === 0) {
-            throw new Error(`action ${call.getApiName()} 声明 bindId=${bindId}，但 taskWorkerNum=0`)
-        }
-        const targetWorkerId = runtime.setting.worker_num + (bindId % taskWorkerNum)
         if (runtime.worker_id === targetWorkerId) return false
         const request = buildRoutedRequest(call, bindId)
         if (!request) return false
@@ -62,13 +60,21 @@ function buildRoutedRequest(call: ApiCall, bindId: number): ProcessPipeRequest |
     const sid = call.messageHead.serverId ?? 0
     // 本地队列占位路由（`default/Default`）没有业务语义，就地执行即可。
     if (call.getApiName() === 'default/Default') return undefined
-    // 非对象调用是本地 Action，调用方必须保持就地执行（见 router 顶层的短路）。这里再留一层
-    // 防御，避免将来复用本函数时把内部 Action 错编码成原生 Lobby 管道请求。
-    if (call.responseTransport !== 'object') return undefined
-    const externalUid = (call as ObjectActionCall<unknown, unknown>).externalUid
-    if (!externalUid) {
-        throw new Error(`routed object route without a trusted external uid: ${call.getApiName()}`)
+    if (call.responseTransport !== 'object') {
+        return {
+            kind: 'routed-local-action',
+            apiName: call.getApiName(),
+            req: call.req,
+            uid: call.uId,
+            sid,
+            bindId,
+            traceId: call.messageHead.traceId,
+            invokeLayer: call.messageHead.invokeLayer,
+            ...(call.backgroundTask ? { backgroundTask: call.backgroundTask } : {}),
+        }
     }
+    const externalUid = (call as ObjectActionCall<unknown, unknown>).externalUid
+    if (!externalUid) throw new Error(`routed object route without a trusted external uid: ${call.getApiName()}`)
     return {
         kind: 'routed-lobby-route',
         route: call.getApiName(),

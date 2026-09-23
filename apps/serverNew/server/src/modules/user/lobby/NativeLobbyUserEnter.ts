@@ -1,4 +1,4 @@
-import { Call, MessageHelper } from '@arthropoda/game-engine'
+import { Call, MessageHelper, PlayerWorkerOwner, UserOnlineMgr } from '@arthropoda/game-engine'
 import { ActionUserLobbyEnter } from '../action/ActionUserLobbyEnter'
 
 /**
@@ -18,12 +18,30 @@ import { ActionUserLobbyEnter } from '../action/ActionUserLobbyEnter'
  */
 export class NativeLobbyUserEnter {
     static async enter(internalUid: number, sId: number): Promise<void> {
+        const workerId = (globalThis as typeof globalThis & { WORKER_ID?: number | null }).WORKER_ID
+        if (workerId === null) throw new Error('native Lobby authentication cannot run in master')
+        const workerNum = Math.max(1, (globalThis as typeof globalThis & { WORKER_NUM?: number }).WORKER_NUM ?? 1)
+        const owner = await PlayerWorkerOwner.claim(
+            internalUid,
+            sId,
+            workerNum,
+            PlayerWorkerOwner.preferred(internalUid, workerNum),
+        )
+        // 原生 Lobby 不占 alloy-core 的数值 session；在线表直接镜像玩家 Event Worker Owner。
+        await UserOnlineMgr.replace(internalUid, sId, 0, owner)
         const result = await MessageHelper.syncDoAction(
             internalUid,
             sId,
             new Call('user.lobbyEnter', {}),
             ActionUserLobbyEnter,
         )
-        if (!result.isSucc) throw result.res ?? new Error(result.errMsg)
+        if (!result.isSucc) {
+            await UserOnlineMgr.del(internalUid, sId)
+            throw result.res ?? new Error(result.errMsg)
+        }
+    }
+
+    static async clearOnlinePresence(internalUid: number, sId: number): Promise<void> {
+        await UserOnlineMgr.del(internalUid, sId)
     }
 }

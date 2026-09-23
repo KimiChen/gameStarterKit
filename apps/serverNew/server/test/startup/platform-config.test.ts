@@ -110,14 +110,14 @@ describe('platform config fallback', () => {
         const exactDirectory = path.join(tempRoot, 'config', 'platforms', 'bearjoydev')
         fs.mkdirSync(exactDirectory, { recursive: true })
         fs.writeFileSync(path.join(exactDirectory, 'platform.json5'), `{ source: 'exact' }`)
-        fs.writeFileSync(path.join(exactDirectory, 's2.json5'), `{ clientHost: '10.0.0.2', clientPort: 24002 }`)
+        fs.writeFileSync(path.join(exactDirectory, 's2.json5'), `{ clientHost: '192.0.2.2', clientPort: 24002 }`)
 
         Config.loadAllConf(true)
 
         assert.equal((CP.platform as any).source, 'exact')
         assert.deepEqual(CP.service, {
             sid: 2,
-            clientHost: '10.0.0.2',
+            clientHost: '192.0.2.2',
             clientPort: 24002,
             internalHost: '0.0.0.0',
             internalPort: 34002,

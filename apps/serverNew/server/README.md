@@ -8,7 +8,7 @@
 - 数据库迁移必须复用已加载的 `config/platforms/` 配置和 TypeORM 数据源；禁止恢复或依赖旧 `config_platform/` 路径。
 - 本地 MySQL 账号必须使用当前数据库驱动兼容的 `mysql_native_password`；出现 `ER_NOT_SUPPORTED_AUTH_MODE` 时先检查账号认证插件。
 - 调试工具 SSO 统一由线路配置控制；`/adjust`、`/config` 和 `/center/sso*` 必须共享服务端认证与写权限边界。
-- 上述调试路径的浏览器 `Origin` 默认只放行同源与 `localhost`/`127.0.0.1`/`::1`；用局域网 IP 或反代地址访问时会被 `sendStatus(404)` 伪装成路由不存在（响应体固定 9 字节 `Not Found`，区别于业务侧 52 字节的「无法找到该玩家」）。必须在该线路 `platform.json5` 的 `adjustOrigins` 中**精确**列出（不支持通配），改本机 IP 后同步更新并重启管理 HTTP。
+- 上述调试路径的浏览器 `Origin` 默认只放行同源与 `localhost`/`127.0.0.1`/`::1`；仓库配置不得提交开发机局域网 IP 或反代 Origin，需要远程访问时由部署侧线路覆盖并重启管理 HTTP。
 - AI 调试能力必须显式配置开放，审计日志不得记录账号、密钥、Prompt 正文、工具参数或业务数据值。
 - 多进程下 service 的启动流程在每个 worker 各执行一遍：startup 贡献必须声明 `scope`（`process` 每进程一次，`server` 全区服一次且必须幂等）；全局副作用禁止挂进 `AppStartEvent` 处理器。
 - service 的 dev 启动（`pnpm dev`、pm2 dev、多进程子进程）统一经 `deploy/dev/entrypoint.cjs`；禁止裸 `ts-node/register` 或 transpileOnly —— bean transform 会被静默跳过，垫片的 `_class_info` 金丝雀负责 fail-fast。
@@ -26,10 +26,14 @@
 - 外置 runtime ESM 必须使用带 `webpackIgnore` 的原生变量 `import()`；否则 NCC 会改写成 bundle 内 lazy context，生产包将无法加载独立的 runtime 文件。
 - 排查 `bindId` 路由时可临时设 `ALLOY_PROCESS_ROUTE_TRACE=1`；trace 只输出 API 名、bindId 和源/目标 worker，不得扩展为输出用户或请求业务数据。trace 打在 `requestMessage` **之前**，它证明的是「发起了转发」而不是「已经送达」——拿它当跨进程证据时必须同时有对端的行为观测（对端真的执行了、客户端真的收到了），否则「请求根本没送达」也是绿的。
 - 跨进程转发只传已解析对象：字符串路由、业务 payload、可信身份（字符串 uid、内部 uid、`sId`）、源 worker 首次解析的 `bindId` 与 traceId。禁止把客户端原始帧或数字协议号交给目标 worker 重放，目标 worker 也不得重算 `bindId`。
-- `RouteAction.processRouter` 只转发 `responseTransport === 'object'` 的原生 Lobby 调用；`MessageHelper` 发起的 LocalAction（包括认证后的建档与离线收益暂存）必须留在当前 worker，⛔ 不得编码成 `routed-lobby-route` 或以「非对象 transport」为由拒绝。
+- 玩家写入 Owner 记录在 center Redis 的 `PlayerWorkerOwner`，值是 Event Worker 槽位，离线后仍保留。首次登记优先复用在线表或共享内存 `connection_owner(connectionId)`，否则按 uid 稳定分配；映射缺失或超出当前 Event Worker 池时原子重建。
+- `RouteAction.processRouter` 同时转发原生 Lobby 对象调用与玩家 LocalAction：`bindId === uid` 时回到玩家 Event Worker，非玩家资源才按 `bindId` 进入普通 Task Worker。Task Worker 不得直接写玩家 Bean，只能发送玩家 LocalAction/事件回 Owner；匿名 `default/Default` 才允许就地执行。
 - 客户端入口**只有**原生 Lobby；旧二进制网关（`ClientServer` + PB 编解码）已随 P6 删除。多进程下 `CP.service.clientPort` 仍被 alloy-core 绑定，因此该端口上的连接会被显式关闭（1008）而不是静默丢弃帧；⛔ 不要为「让端口安静」恢复旧的帧解析路径。
 - 原生 Lobby 的监听进程与转发 worker 必须共用同一份路由组装和进程级执行点；只有持有连接的一端能写 wire 消息，其余 worker 的推送与踢人必须转交监听进程，关闭时卸载进程级路由表。
 - worker 意外退出（崩溃 / OOM / SIGKILL）由 alloy-core 自动重拉：同一槽位重新 fork，`generation` +1，`restartCount` +1；重拉走的是**同一套** `onWorkerStart` → `initializeWorker`，所以调度器所有权（`taskWorkerNum > 0` 时归 `workerNum` 那个槽位）也会被重新获取。重启预算是 10s 窗口内最多 5 次，超出即判 crash loop 并**停掉整个 runtime**，因此排查时不要靠反复杀进程复现。崩溃的可观测出口只有主控的 `onWorkerError`：worker 自己的 `onWorkerExit` 只在优雅 drain 时才跑，硬杀根本轮不到它，而 alloy-core 内部的 `context.log` 不落服务进程 stdout —— ⛔ 删掉 `onWorkerError` 会让「崩了又被重拉」在日志里完全无声。
+- `QueuedLocalAction` 的立即与延迟调用都先按唯一 `taskId` 持久登记，再由调度 worker 认领；执行成功后 ACK，认领进程崩溃则租约到期后接管，确定失败只重试一次并进入失败清单。业务 Action 通过 `Ctx.backgroundTask` 读取同一个 `taskId`，跨进程 `bindId` 路由不得丢失它。
+- 可靠任务崩溃接管的小验证运行 `pnpm verify:queued-action-recovery`：它在隔离 Redis DB 中让子进程认领任务后被 `SIGKILL`，再由新 owner 在租约到期后接管并完成，结束时清理一次性 key。
+- 关键状态与后续任务不能只依赖提交后回调：生产者应把稳定 `taskId` 随权威业务状态一起保存，重启时按该状态幂等补登记；业务副作用必须用 `taskId` 作为自身存储的幂等操作号。队列只能保证至少一次投递，不能替跨 Redis / MySQL 写入制造不存在的分布式原子性。
 
 ## 所有权
 
@@ -98,6 +102,5 @@
 - 修改协议 Action 前先运行 `pnpm --silent modules:list --action <module>/<Action>`；需要模块内基类和会话链路时加 `--context`。默认输出只给直接依赖、关联的框架契约和模块验证命令，避免为查询读取无关源码。
 - 调用 S2S 本地 Action 时，优先向 `LocalAction.send/call/broadcast` 传协议路由字符串；它会从生成的 `ServiceType` 精确推导请求和响应。传 Action 类仅保留给历史代码兼容。
 - 路径别名以所属 `tsconfig.json` 的现有 `baseUrl` 与 `paths` 为准；变更解析规则时同时验证 TypeScript 与 `tsconfig-paths` 运行时解析，禁止新增第二套别名规则。
-- `tools-cfg.json` 因 game-sync 固定发现规则暂留项目根；密码只能由 `GAME_SYNC_PASSWORD` 注入，禁止重新提交明文凭据。
 - 配置类型生成结果归 `generated/configTypes/`；`src/typings/` 只保留仍被编译器和生成器使用的全局声明，禁止恢复旧 `src/autogen`。
 - Adjust 运行文档归 `generated/adjust/`，数数工作簿输入归 `scripts/taToModel/source/`；两者都不得重新放入 `resources/`。

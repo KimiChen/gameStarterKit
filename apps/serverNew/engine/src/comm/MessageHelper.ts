@@ -1,7 +1,7 @@
 import { ApiCallInner, PendingApiItem } from '../net/client/base/ApiCallInner'
 import { MessageDirection, MessageHead } from '../net/client/base/message'
 import { ContextEngine } from '../context/ContextEngine'
-import { AsyncReturn, ApiReturn } from '../protocol/ProtocolInterface'
+import { AsyncReturn, ApiReturn, BackgroundTaskDelivery } from '../protocol/ProtocolInterface'
 import { TraceIdGen } from '../net/client/codec/TraceIdGen'
 import RouteAction from '../task/RouteAction'
 import { IActionLogic } from '../action/IActionLogic'
@@ -13,6 +13,7 @@ export class Call<T extends {}> {
     constructor(
         public name: string,
         public msg: T,
+        public backgroundTask?: BackgroundTaskDelivery,
     ) {}
 }
 
@@ -21,6 +22,16 @@ interface LocalCallOptions {
     anonymousActionArgs?: {
         handler: { new (): IActionLogic }
     }
+    forwarded?: LocalActionForwarding
+}
+
+export interface LocalActionForwarding {
+    /** 源进程首次解析出的串行键；目标进程不得重新调用业务 getBindId。 */
+    routedBindId: number
+    /** 复用源调用的链路信息，保证嵌套调用和死锁检测语义不变。 */
+    traceId: number
+    invokeLayer: number
+    backgroundTask?: BackgroundTaskDelivery
 }
 
 /**
@@ -41,9 +52,10 @@ export class MessageHelper {
         uId: int,
         sId: int,
         call: Call<Req>,
+        forwarded?: LocalActionForwarding,
     ): Promise<AsyncReturn<Res>> {
         try {
-            return (await this.doLocalCall(uId, sId, call, { waitReturn: true })) as AsyncReturn<Res>
+            return (await this.doLocalCall(uId, sId, call, { waitReturn: true, forwarded })) as AsyncReturn<Res>
         } catch (error) {
             Log.error(`[callLocalAction] call '${call.name}' error`, error)
             return {
@@ -117,9 +129,11 @@ export class MessageHelper {
             direction: MessageDirection.request,
             uId,
             serverId: sId,
-            traceId: options.waitReturn ? (currentCall?.messageHead.traceId ?? TraceIdGen.next()) : 0,
+            traceId:
+                options.forwarded?.traceId ??
+                (options.waitReturn ? (currentCall?.messageHead.traceId ?? TraceIdGen.next()) : 0),
             isError: 0,
-            invokeLayer: currentCall?.messageHead.invokeLayer ?? 0,
+            invokeLayer: options.forwarded?.invokeLayer ?? currentCall?.messageHead.invokeLayer ?? 0,
         }
 
         let resolveResult: (result: AsyncReturn<any>) => void = () => undefined
@@ -146,6 +160,8 @@ export class MessageHelper {
             },
             { handler: actionClass },
         )
+        actionCall.routedBindId = options.forwarded?.routedBindId
+        actionCall.backgroundTask = options.forwarded?.backgroundTask ?? call.backgroundTask
 
         if (options.waitReturn) {
             await RouteAction.onApiCall(actionCall)
