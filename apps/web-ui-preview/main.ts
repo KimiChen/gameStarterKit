@@ -7,7 +7,7 @@ import { PreviewResources, createPreviewRuntime } from "./preview-resources";
 import { mountPreviewCatalog, type CatalogPreviewHost } from "./catalog-shell";
 import { findSpecimen } from "../client/src/ui-uniflex/modules/preview/ComponentSpecimen/specimens";
 import { declarePsdOwnership, stampPsdIdentities } from "./psd-ownership";
-import { specimenSkin, startPreview, type PreviewSession } from "./preview-screen";
+import { previewSkin, startPreview, type PreviewSession } from "./preview-screen";
 import { findPreviewScreen, psdComponents, screenCatalog, type ScreenEntry } from "./screens";
 
 const params = new URLSearchParams(location.search);
@@ -136,7 +136,7 @@ function mountCatalog(): void {
             stopped: () => job.cancel,
             dispose: () => job.dispose(),
             part: job.item.kind === "component" ? job.item.id : "",
-            skin: specimenSkin(job.skin),
+            skin: previewSkin(job.skin),
             embedSkin: false,
             setTitle: false,
         };
@@ -224,7 +224,7 @@ const session: PreviewSession = {
     stopped: () => stopped,
     dispose,
     part: specimen?.id ?? "",
-    skin: specimenSkin(params.get("skin")),
+    skin: previewSkin(params.get("skin")),
     embedSkin: params.get("embed") === "1",
     setTitle: true,
 };

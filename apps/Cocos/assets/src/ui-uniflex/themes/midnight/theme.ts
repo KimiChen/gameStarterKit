@@ -1,4 +1,5 @@
 import { defineTheme, fontRef, imageRef } from '../../../kits/uniflex/api/core/index';
+import { classicTheme } from '../classic/theme';
 
 /** Second skin. Art IDs currently match classic; swap them here when a midnight pack exists. */
 export const midnightTheme = defineTheme({
@@ -127,6 +128,11 @@ export const midnightTheme = defineTheme({
         background: imageRef('ui/settings/button'), font: fontRef('fonts/regular', 700), color: '#5b3d6e',
         width: 326, height: 114, iconCenterX: 60, fontSize: 28,
         labelLeft: 108, labelTop: 28, labelWidth: 200, labelHeight: 58, labelAlign: 'left',
+    },
+    settings: {
+        ...classicTheme.settings,
+        titleColor: '#ffe9c2', titleOutline: '#ff7b9c',
+        menuColor: '#5b3d6e',
     },
     iconCaption: {
         font: fontRef('fonts/regular', 700), color: '#ffb4d2',

@@ -144,6 +144,7 @@ type CanvasMode = "light" | "dark" | "checker" | "custom";
 const PREVIEW_SKINS = [
     { id: "classic", label: "经典" },
     { id: "midnight", label: "午夜" },
+    { id: "restored", label: "还原" },
 ] as const;
 type PreviewSkin = (typeof PREVIEW_SKINS)[number]["id"];
 
@@ -294,7 +295,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         for (const [frame, record] of frames) {
             const { slot, item } = record;
             if (!mounted.has(slot)) continue;
-            if (item.kind !== "component") continue;
+            if (item.kind !== "component" && item.id !== "settings") continue;
             const bounds = frame.getBoundingClientRect();
             const fullscreen = record.host !== record.home;
             if (fullscreen || (bounds.bottom > -240 && bounds.top < innerHeight + 240)) {
@@ -642,7 +643,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         alone.addEventListener("click", () => {
             location.href = item.kind === "component"
                 ? `?ui=component-specimen&part=${encodeURIComponent(item.id)}&skin=${prefs.skin}`
-                : `?ui=${encodeURIComponent(item.id)}`;
+                : `?ui=${encodeURIComponent(item.id)}&skin=${prefs.skin}`;
         });
         const closeBtn = document.createElement("button");
         closeBtn.type = "button";

@@ -5,6 +5,7 @@ import type { BackpackEditedRestoredAction } from "../client/src/ui-uniflex/gene
 import type { BackpackRestoredAction } from "../client/src/ui-uniflex/generated/BackpackRestored";
 import type { MailBattleReportParams } from "../client/src/ui-uniflex/generated/MailBattleReport";
 import type { ScreenEntry } from "./screens";
+import { themes } from "../client/src/ui-uniflex/themes/active";
 
 const previewParams = new URLSearchParams(location.search);
 
@@ -16,6 +17,12 @@ function previewStars(fallback: number): number {
 }
 
 export type SpecimenSkin = "classic" | "midnight";
+export type PreviewSkinName = SpecimenSkin | "restored";
+
+export function previewSkin(value: string | null): PreviewSkinName {
+    if (value === "midnight" || value === "restored") return value;
+    return "classic";
+}
 
 export function specimenSkin(value: string | null): SpecimenSkin {
     return value === "midnight" ? "midnight" : "classic";
@@ -30,7 +37,7 @@ export interface PreviewSession {
     stopped(): boolean;
     dispose(): void;
     part: string;
-    skin: SpecimenSkin;
+    skin: PreviewSkinName;
     embedSkin: boolean;
     setTitle: boolean;
 }
@@ -54,7 +61,7 @@ export async function startPreview(session: PreviewSession, entry: ScreenEntry):
                 width: entry.canvas.width,
                 height: entry.canvas.height,
             });
-            let activeSkin = session.skin;
+            let activeSkin = specimenSkin(session.skin);
             let swapping = false;
             let pending: SpecimenSkin | null = null;
             if (session.embedSkin) {
@@ -160,12 +167,16 @@ export async function startPreview(session: PreviewSession, entry: ScreenEntry):
             await session.runtime.start(BackpackEditedRestored, { onAction });
             return;
         }
-        case "settings":
+        case "settings": {
+            const theme = session.skin === "restored" ? themes.restored
+                : session.skin === "midnight" ? themes.midnight : themes.classic;
             await session.runtime.start(Settings, {
+                theme,
                 onClose: session.back,
                 onSelect: (id) => console.info("[UniFlex Settings] select", id),
             });
             return;
+        }
         case "character":
             await session.runtime.start(CharacterManage, {
                 onClose: session.back,
