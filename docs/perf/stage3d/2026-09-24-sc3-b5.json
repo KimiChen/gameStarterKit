@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "batch": "SC3-B5",
+  "date": "2026-09-24",
+  "status": "passed",
+  "scope": "Creator stage3d-dev greybox desktop performance; low hides details, medium admits 300 cubes, high admits 500 cubes",
+  "method": {
+    "clock": "performance.now",
+    "event": "Director.EVENT_AFTER_DRAW",
+    "activationFrames": 120,
+    "warmupFrames": 60,
+    "measuredFrames": 240,
+    "memoryCyclesAfterPrewarm": 20,
+    "viewportCss": [
+      375,
+      812
+    ],
+    "backingPixels": [
+      750,
+      1624
+    ],
+    "note": "Engine frameTime is auxiliary. Raw long frames and invalid visibility windows are preserved."
+  },
+  "runs": [
+    {
+      "webgl": 2,
+      "quality": "low",
+      "summary": "docs/perf/stage3d/2026-09-24-sc3-b5-low-webgl2.json",
+      "summarySha256": "93d81a1e32ca55d0217b0cb98df65663acdae71a7f682fb87fae13a7292f8129",
+      "raw": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc3-b5/low-webgl2/report.json",
+        "sha256": "8b2184a0cac042bbfcba232c7359eb9a9f85590ef4adb350659aca8185cda535",
+        "activationFrames": 121,
+        "steadyFrames": 301
+      },
+      "population": {
+        "requested": 500,
+        "admitted": 100,
+        "active": 0,
+        "pending": 0,
+        "hidden": 100,
+        "failed": 0
+      },
+      "frameIntervalMs": {
+        "count": 240,
+        "p50Ms": 17,
+        "p95Ms": 33.5,
+        "maxMs": 35.19999999925494,
+        "meanMs": 20.832500000003105
+      },
+      "drawCalls": 3,
+      "triangles": 194,
+      "instances": 0,
+      "activationPeak": {
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "bufferBytes": 42484,
+        "textureBytes": 4556932,
+        "totalBytes": 4599416
+      },
+      "memory": {
+        "prewarmedClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "finalClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "cycles": 20,
+        "stable": true
+      },
+      "consoleEntries": 0,
+      "visibilityChanges": 0
+    },
+    {
+      "webgl": 2,
+      "quality": "medium",
+      "summary": "docs/perf/stage3d/2026-09-24-sc3-b5-medium-webgl2.json",
+      "summarySha256": "bbe65361bcb79d7e1a1f2a0a220102ebccc71908bdf685a472b01e826671cab1",
+      "raw": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc3-b5/medium-webgl2/report.json",
+        "sha256": "ca06a5d04401588fc1a4d6d80d5bf7c9cfabb3c99d2a8b5ce32924b45ab070bb",
+        "activationFrames": 121,
+        "steadyFrames": 301
+      },
+      "population": {
+        "requested": 500,
+        "admitted": 300,
+        "active": 300,
+        "pending": 0,
+        "hidden": 0,
+        "failed": 0
+      },
+      "frameIntervalMs": {
+        "count": 240,
+        "p50Ms": 17,
+        "p95Ms": 33.900000002235174,
+        "maxMs": 35.80000000074506,
+        "meanMs": 20.492499999996895
+      },
+      "drawCalls": 4,
+      "triangles": 3794,
+      "instances": 300,
+      "activationPeak": {
+        "drawCalls": 4,
+        "triangles": 3794,
+        "instances": 300,
+        "bufferBytes": 152724,
+        "textureBytes": 4556932,
+        "totalBytes": 4709656
+      },
+      "memory": {
+        "prewarmedClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "finalClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "cycles": 20,
+        "stable": true
+      },
+      "consoleEntries": 0,
+      "visibilityChanges": 0
+    },
+    {
+      "webgl": 2,
+      "quality": "high",
+      "summary": "docs/perf/stage3d/2026-09-24-sc3-b5-high-webgl2.json",
+      "summarySha256": "a1b93f7457e5fc91e3798f77d9edb33a9a4d62c04c5d9ad0814fd1cf99410e26",
+      "raw": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc3-b5/high-webgl2/report.json",
+        "sha256": "ee3a66f7ad0d25a083d5c9027b8fccb378bb9eb53779502b07189162129dcd91",
+        "activationFrames": 121,
+        "steadyFrames": 301
+      },
+      "population": {
+        "requested": 500,
+        "admitted": 500,
+        "active": 500,
+        "pending": 0,
+        "hidden": 0,
+        "failed": 0
+      },
+      "frameIntervalMs": {
+        "count": 240,
+        "p50Ms": 17.600000001490116,
+        "p95Ms": 34,
+        "maxMs": 34.899999998509884,
+        "meanMs": 23.88375000000621
+      },
+      "drawCalls": 4,
+      "triangles": 6194,
+      "instances": 500,
+      "activationPeak": {
+        "drawCalls": 4,
+        "triangles": 6194,
+        "instances": 500,
+        "bufferBytes": 203924,
+        "textureBytes": 4556932,
+        "totalBytes": 4760856
+      },
+      "memory": {
+        "prewarmedClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "finalClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "cycles": 20,
+        "stable": true
+      },
+      "consoleEntries": 0,
+      "visibilityChanges": 0
+    },
+    {
+      "webgl": 1,
+      "quality": "low",
+      "summary": "docs/perf/stage3d/2026-09-24-sc3-b5-low-webgl1.json",
+      "summarySha256": "9344dff76feca6cb10dccaf1dfb25f62bb4494d2dd76a03b97cd11915c9a7dd0",
+      "raw": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc3-b5/low-webgl1/report.json",
+        "sha256": "e7da195617abdd73ffe1610b7fc3b4cfccfd52bb42837ad05dad8cec6c6942c7",
+        "activationFrames": 121,
+        "steadyFrames": 301
+      },
+      "population": {
+        "requested": 500,
+        "admitted": 100,
+        "active": 0,
+        "pending": 0,
+        "hidden": 100,
+        "failed": 0
+      },
+      "frameIntervalMs": {
+        "count": 240,
+        "p50Ms": 16.899999998509884,
+        "p95Ms": 33.600000001490116,
+        "maxMs": 34.899999998509884,
+        "meanMs": 20.76333333333023
+      },
+      "drawCalls": 3,
+      "triangles": 194,
+      "instances": 0,
+      "activationPeak": {
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "bufferBytes": 42484,
+        "textureBytes": 4556932,
+        "totalBytes": 4599416
+      },
+      "memory": {
+        "prewarmedClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "finalClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "cycles": 20,
+        "stable": true
+      },
+      "consoleEntries": 0,
+      "visibilityChanges": 0
+    },
+    {
+      "webgl": 1,
+      "quality": "medium",
+      "summary": "docs/perf/stage3d/2026-09-24-sc3-b5-medium-webgl1.json",
+      "summarySha256": "f36f785dc39776984a2f32ac7ec768b60eb7fd944c93e72022e882926b472042",
+      "raw": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc3-b5/medium-webgl1/report.json",
+        "sha256": "70a96b5b40759282a6d0c2989f97cc2ba69c23b51aea953d8861c4d056e9ee09",
+        "activationFrames": 121,
+        "steadyFrames": 301
+      },
+      "population": {
+        "requested": 500,
+        "admitted": 300,
+        "active": 300,
+        "pending": 0,
+        "hidden": 0,
+        "failed": 0
+      },
+      "frameIntervalMs": {
+        "count": 240,
+        "p50Ms": 16.600000001490116,
+        "p95Ms": 17.899999998509884,
+        "maxMs": 35.30000000074506,
+        "meanMs": 16.72583333333023
+      },
+      "drawCalls": 4,
+      "triangles": 3794,
+      "instances": 300,
+      "activationPeak": {
+        "drawCalls": 4,
+        "triangles": 3794,
+        "instances": 300,
+        "bufferBytes": 152724,
+        "textureBytes": 4556932,
+        "totalBytes": 4709656
+      },
+      "memory": {
+        "prewarmedClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "finalClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "cycles": 20,
+        "stable": true
+      },
+      "consoleEntries": 0,
+      "visibilityChanges": 0
+    },
+    {
+      "webgl": 1,
+      "quality": "high",
+      "summary": "docs/perf/stage3d/2026-09-24-sc3-b5-high-webgl1.json",
+      "summarySha256": "029c0920fc0bdbe2a5f411fe69e132e413261830e52b4eaea006a419b95b5cfb",
+      "raw": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc3-b5/high-webgl1/report.json",
+        "sha256": "ec3c9019314339dee18b85de78449b3fce47f49652ca0b3ec072e5bdb1c3b270",
+        "activationFrames": 121,
+        "steadyFrames": 301
+      },
+      "population": {
+        "requested": 500,
+        "admitted": 500,
+        "active": 500,
+        "pending": 0,
+        "hidden": 0,
+        "failed": 0
+      },
+      "frameIntervalMs": {
+        "count": 240,
+        "p50Ms": 30.300000000745058,
+        "p95Ms": 34.600000001490116,
+        "maxMs": 35.69999999925494,
+        "meanMs": 25.146666666663563
+      },
+      "drawCalls": 4,
+      "triangles": 6194,
+      "instances": 500,
+      "activationPeak": {
+        "drawCalls": 4,
+        "triangles": 6194,
+        "instances": 500,
+        "bufferBytes": 203924,
+        "textureBytes": 4556932,
+        "totalBytes": 4760856
+      },
+      "memory": {
+        "prewarmedClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "finalClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42484,
+          "textureBytes": 4556932
+        },
+        "cycles": 20,
+        "stable": true
+      },
+      "consoleEntries": 0,
+      "visibilityChanges": 0
+    }
+  ],
+  "verification": {
+    "verifyAll": {
+      "result": "passed",
+      "log": ".cache/stage3d/sc3-b5/verify-all.log",
+      "sha256": "1f81cb515bff16b1ccd8e31bb84497847932d32d730118b1ff4fdf53d56e7564",
+      "clientTests": 1295,
+      "uniflexContractTests": 80,
+      "serverTests": 1384
+    },
+    "targeted": [
+      "node --import tsx --test apps/server/test/creator-preview-tool.test.ts",
+      "node --import tsx --test apps/server/test/stage3d-probe.test.ts"
+    ],
+    "targetedResult": {
+      "result": "passed",
+      "tests": 64,
+      "log": ".cache/stage3d/sc3-b5/targeted-tests.log",
+      "sha256": "f1120028e486e89efd858edbedc2db0e1ec53af918dfeab7e246c29b606f796e"
+    },
+    "preflight": "Regenerated ignored UniFlex AOT output and synchronized its ignored Cocos mirror before the passing full run; no source change was required."
+  },
+  "limitations": [
+    "Desktop Creator 3.8.8 + Chrome 153 / Apple M4; no phone or WeChat capacity claim.",
+    "Performance varies with browser and host load; numbers are observations, not a 60 fps guarantee.",
+    "The pilot with the iPhone 14 Pro preview preset was discarded; all listed runs use native WebpageFullScreen."
+  ]
+}

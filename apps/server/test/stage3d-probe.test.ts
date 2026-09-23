@@ -112,6 +112,19 @@ test("stage3d keeps a 1.2s long frame, independent sequence across frameCount re
   h.assertClean();
 });
 
+test("stage3d perf captures entity population on the same AFTER_DRAW frames as GFX", async () => {
+  const h = harness();
+  let active = 0;
+  h.context.__population = () => ({ admitted: 2, active });
+  const pending = h.evaluate(createStage3dSamplingSource({ warmupFrames: 0, sampleFrames: 2 }, "__population"));
+  h.frame(10);
+  active = 1; h.device.numInstances = 1; h.frame(30);
+  active = 2; h.device.numInstances = 2; h.frame(50);
+  const report = transported(await pending);
+  assert.deepEqual(report.frames.map((frame: any) => [frame.extra.active, frame.gfx.instances]), [[0, 7], [1, 1], [2, 2]]);
+  h.assertClean();
+});
+
 test("stage3d visibility pollution fails and cleans up even during warmup", async () => {
   const h = harness();
   const pending = h.sample();

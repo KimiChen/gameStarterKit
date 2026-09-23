@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "kind": "stage3d-perf",
+  "scenario": "stage3d",
+  "quality": {
+    "details": true,
+    "shadows": "off",
+    "maxEffects": 48,
+    "maxUnits": 100,
+    "maxUnitsWithoutInstancing": 50,
+    "textureStepDown": 0,
+    "minTextureSize": 256,
+    "tier": "high",
+    "detectedTier": "low",
+    "overridden": true,
+    "instancing": true,
+    "jointTexture": "float",
+    "bakedSkinningInstancing": true,
+    "realtimeSkinningInstancing": false,
+    "textureFormat": "astc",
+    "device": {
+      "platform": "desktop",
+      "api": "webgl1",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "capabilities": {
+        "instancing": true,
+        "floatJointTexture": true,
+        "rgba8JointTexture": true,
+        "shadowMap": true,
+        "astc": true
+      }
+    }
+  },
+  "environment": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "webgl": 1,
+    "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+    "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+    "device": "WebGLDevice",
+    "pipeline": "WebPipeline",
+    "previewDevice": "WebpageFullScreen",
+    "viewport": {
+      "cssWidth": 375,
+      "cssHeight": 812,
+      "backingWidth": 750,
+      "backingHeight": 1624,
+      "dpr": 2
+    }
+  },
+  "summary": {
+    "unit": {
+      "frame": "ms",
+      "gfxMemory": "bytes",
+      "drawCalls": "calls/frame",
+      "triangles": "triangles/frame",
+      "instances": "instances/frame"
+    },
+    "clock": "performance.now",
+    "frameEvent": "Director.EVENT_AFTER_DRAW",
+    "sampleIndex": "independent seq; not root.frameCount",
+    "activation": {
+      "intervals": {
+        "count": 120,
+        "p50Ms": 17.100000001490116,
+        "p95Ms": 33.900000002235174,
+        "maxMs": 39.5,
+        "meanMs": 22.229999999981374
+      },
+      "peak": {
+        "drawCalls": 4,
+        "triangles": 6194,
+        "instances": 500,
+        "bufferBytes": 203924,
+        "textureBytes": 4556932,
+        "totalBytes": 4760856
+      },
+      "firstActiveSeq": 4,
+      "peakActive": 500
+    },
+    "steady": {
+      "intervals": {
+        "count": 240,
+        "p50Ms": 30.300000000745058,
+        "p95Ms": 34.600000001490116,
+        "maxMs": 35.69999999925494,
+        "meanMs": 25.146666666663563
+      },
+      "drawCalls": {
+        "p50": 4,
+        "p95": 4,
+        "max": 4,
+        "last": 4
+      },
+      "triangles": {
+        "p50": 6194,
+        "p95": 6194,
+        "max": 6194,
+        "last": 6194
+      },
+      "instances": {
+        "p50": 500,
+        "p95": 500,
+        "max": 500,
+        "last": 500
+      },
+      "finalMemory": {
+        "bufferBytes": 203924,
+        "textureBytes": 4556932
+      }
+    },
+    "memory": {
+      "prewarmedClosed": {
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "bufferBytes": 42484,
+        "textureBytes": 4556932
+      },
+      "finalClosed": {
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "bufferBytes": 42484,
+        "textureBytes": 4556932
+      },
+      "cycles": 20,
+      "stable": true
+    }
+  },
+  "raw": {
+    "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/stage3d/sc3-b5/high-webgl1/report.json",
+    "sha256": "ec3c9019314339dee18b85de78449b3fce47f49652ca0b3ec072e5bdb1c3b270",
+    "activationFrames": 121,
+    "steadyFrames": 301
+  },
+  "limitations": "Desktop Creator preview and greybox scene; not mobile or WeChat capacity evidence."
+}

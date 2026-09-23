@@ -14,6 +14,8 @@ import { REFUSAL_RE, judgeSelectionUnderCursor, readSgzzmapEvidence, sgzzmapGest
 // @ts-expect-error 纯 ESM 场景工具，无类型声明。
 import { assertSlgSettingsScrollUnchanged, readSlgMapEvidence, readSlgOverviewEvidence, SLG_WORLD_SIZE, slgFrameStability, slgMapGestureArea, slgRenderAssetsSource, slgSettingsScrollSource } from "../../../tools/creator-preview/slg.mjs";
 import { SLG_MAPS } from "@game/shared/kits/slg/api/worldmap/index";
+// @ts-expect-error The preview tool is pure ESM without TypeScript declarations.
+import { aggregateStage3dPerfEvidence, parseStage3dPerfArgs } from "../../../tools/creator-preview/perf.mjs";
 
 const UUID = "33a6cd88-ca61-42f3-97e1-6b18a9096a34";
 
@@ -34,6 +36,44 @@ test("parseArgs：场景名是首个位置参数，选项带默认值，坏值 f
   assert.throws(() => parseArgs(["a", "b"]), /多余的位置参数/u);
   assert.throws(() => parseArgs(["--boot-timeout", "0"]), /正整数/u);
   assert.throws(() => parseArgs(["--nope"]), /未知参数/u);
+});
+
+test("stage3d --perf 参数与原始毫秒报告：长帧、frameCount 重置、GFX 单位均不混用", () => {
+  const options = parseStage3dPerfArgs(["--perf", "--quality", "medium", "--expect-webgl", "1", "--force-webgl1"]);
+  assert.equal(options.quality, "medium");
+  assert.equal(options.expectWebgl, 1);
+  assert.throws(() => parseStage3dPerfArgs(["--quality", "ultra"]), /quality/u);
+  assert.throws(() => parseStage3dPerfArgs(["--force-webgl1"]), /expect-webgl/u);
+  const makeWindow = (warmupFrames: number, sampleFrames: number, longFrame = false) => {
+    let atMs = 100;
+    const frames = Array.from({ length: warmupFrames + sampleFrames + 1 }, (_, index) => {
+      const intervalMs = index === 0 ? null : longFrame && index === warmupFrames + 2 ? 1200 : 16.7;
+      if (intervalMs !== null) atMs += intervalMs;
+      return { seq: index + 1, phase: index === 0 ? "anchor" : index <= warmupFrames ? "warmup" : "sample",
+        atMs, intervalMs, engineDtMs: 16.7, frameCount: index < 150 ? index : index - 150,
+        gfx: { drawCalls: 3, triangles: 6000, instances: 500, bufferBytes: 200, textureBytes: 300, totalBytes: 500 },
+        extra: { admitted: 300, active: index < 3 ? 0 : 300 } };
+    });
+    return { schemaVersion: 1, status: "completed", valid: true, options: { warmupFrames, sampleFrames, timeoutMs: 60_000 },
+      clock: "performance.now", frameEvent: "Director.EVENT_AFTER_DRAW", visibilityChanges: 0, reasons: [], frames };
+  };
+  const closed = { sceneNodes: 8, population: { admitted: 0, active: 0 }, gfx: { bufferBytes: 200, textureBytes: 300 } };
+  const perf = { activation: { raw: makeWindow(0, 120, true) }, steady: { raw: makeWindow(60, 240, true) },
+    memory: { prewarmedClosed: closed, cycles: Array.from({ length: 20 }, (_, index) => ({ index: index + 1, closed })) } };
+  const summary = aggregateStage3dPerfEvidence(perf);
+  assert.equal(summary.steady.intervals.maxMs, 1200);
+  assert.equal(summary.activation.intervals.maxMs, 1200);
+  assert.equal(summary.steady.drawCalls.last, 3);
+  assert.equal(summary.steady.triangles.last, 6000);
+  assert.equal(summary.unit.frame, "ms");
+  assert.equal(summary.memory.stable, true);
+  assert.throws(() => aggregateStage3dPerfEvidence({ ...perf, steady: { raw: { ...perf.steady.raw, frames: [] } } }), /Invalid real-frame window/u);
+  const secondsInsteadOfMs = perf.steady.raw.frames.map((frame, index) => index === 62 ? { ...frame, intervalMs: 1.2 } : frame);
+  assert.throws(() => aggregateStage3dPerfEvidence({ ...perf, steady: { raw: { ...perf.steady.raw,
+    frames: secondsInsteadOfMs } } }), /invalid-frame-interval/u);
+  assert.throws(() => aggregateStage3dPerfEvidence({ ...perf, steady: { raw: { ...perf.steady.raw, visibilityChanges: 1 } } }), /visibility-contaminated/u);
+  assert.throws(() => aggregateStage3dPerfEvidence({ ...perf, memory: { ...perf.memory,
+    cycles: [{ closed: { ...closed, gfx: { bufferBytes: 201, textureBytes: 300 } } }, ...perf.memory.cycles.slice(1)] } }), /prewarmed closed baseline/u);
 });
 
 test("sceneUuidFromMeta：只认严格 JSON 里的 36 位 uuid", () => {

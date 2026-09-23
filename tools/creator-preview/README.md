@@ -240,5 +240,30 @@ Main 所属 AppRuntime 的 ports；探针核对它与 gameplay services 的 stag
 资源退休等待所有替换前 model 的独立 instancing 缓冲退出 AFTER_DRAW，禁止释放外来 owner、源 mesh 缓冲或全局池。
 `fixtureSession` 只提供 DEV 观测；页面与 HUD 捕获各自世代，旧回调不得写入新开页面的状态。
 
+## SC3-B5 3D 性能证据
+
+先在 Creator 原生预览设备菜单选择「网页全屏」（`WebpageFullScreen`），关闭 Rotate。`--perf` 加载独立的
+`stage3d-dev.scene`，在现有 Chrome 9222 进程中开可见窗口；不需要登录或游戏服。每档单独运行：
+
+```bash
+node tools/creator-preview/run.mjs stage3d --perf --quality low --expect-webgl 2 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --quality medium --expect-webgl 2 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --quality high --expect-webgl 2 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --quality low --expect-webgl 1 --force-webgl1 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --quality medium --expect-webgl 1 --force-webgl1 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --quality high --expect-webgl 1 --force-webgl1 --new-window
+```
+
+默认预览为 `127.0.0.1:7456`，可加 `--preview`、`--devtools`、`--out` 和 `--summary`。要求实际
+`375×812` CSS、DPR 2、`750×1624` backing，报告记录 GPU、WebGL 版本、实际画质与设备配置。
+low 档按资料表禁止 details，500 次 spawn 请求中的立方体保持隐藏；medium / high 分别激活 300 / 500。
+
+`.cache` 下 `report.json` 的 `perf` 字段保留首次加载与激活的 120 帧、稳态 60 帧预热加 240 帧采样的
+原始 `performance.now()` 相邻间隔（毫秒）、独立序号、引擎 dt 辅助值及每帧末 draw call / 三角数 /
+instances / GFX 字节数与实体数。包含超过 1 秒的长帧；前后台切换会使整窗无效，需在可见窗口重跑。
+首次关闭并稳定 60 帧后记录内存基线，再进行 20 次开关；每次关闭均检查节点、业务实体与 GFX
+buffer / texture 字节数回到该基线。数字摘要写入 `docs/perf/stage3d/<日期>-sc3-b5-<画质>-webgl<版本>.json`，
+用 SHA256 关联原始报告。此命令只做真实桌面 Creator 灰盒性能证据，不进 `verify:all`，也不代表手机容量。
+
 完整剧本保留原 SC0 的人工复核 pending（exit 2 表示已执行检查通过但仍需按阶段审阅）；
 SC1-B4 摘要须同时引用两上下文的原报告、截图与逐项接受理由，不能把历史 SC0、B9 或 SC4 的范围混为本批交付。

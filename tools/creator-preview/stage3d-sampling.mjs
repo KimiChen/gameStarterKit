@@ -18,7 +18,7 @@ export function normalizeStage3dSamplingOptions(input = {}) {
 }
 
 /** Self-contained browser function: all dependencies are browser/Cocos globals. */
-function sampleStage3dFrames(options, key) {
+function sampleStage3dFrames(options, key, extraKey) {
   return new Promise((resolve) => {
     const frames = [];
     const reasons = [];
@@ -92,7 +92,13 @@ function sampleStage3dFrames(options, key) {
         const phase = seq === 0 ? "anchor" : seq <= options.warmupFrames ? "warmup" : "sample";
         // Engine dt is auxiliary only. Never use engine frameCount as sequence.
         const engineDtMs = typeof root.frameTime === "number" && Number.isFinite(root.frameTime) ? root.frameTime * 1000 : null;
-        frames.push({ seq: ++seq, phase, atMs, intervalMs, engineDtMs, gfx });
+        const frame = { seq: ++seq, phase, atMs, intervalMs, engineDtMs, gfx };
+        if (extraKey) {
+          const readExtra = globalThis[extraKey];
+          if (typeof readExtra !== "function") throw new Error(`frame probe ${extraKey} is unavailable`);
+          frame.extra = readExtra();
+        }
+        frames.push(frame);
         previousAtMs = atMs;
         if (seq === 1 + options.warmupFrames + options.sampleFrames) finish("completed");
       } catch (error) { finish("failed", message(error)); }
@@ -125,8 +131,8 @@ function sampleStage3dFrames(options, key) {
   });
 }
 
-export function createStage3dSamplingSource(options = {}) {
-  return `(${sampleStage3dFrames.toString()})(${JSON.stringify(normalizeStage3dSamplingOptions(options))},${JSON.stringify(STAGE3D_SAMPLER_KEY)})`;
+export function createStage3dSamplingSource(options = {}, extraKey = null) {
+  return `(${sampleStage3dFrames.toString()})(${JSON.stringify(normalizeStage3dSamplingOptions(options))},${JSON.stringify(STAGE3D_SAMPLER_KEY)},${JSON.stringify(extraKey)})`;
 }
 
 export function stopStage3dSamplingSource(reason = "cancelled") {

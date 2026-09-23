@@ -267,7 +267,7 @@ export async function acquireTab({ devtools, preview, reuse }) {
  * 导航到预览并把 `scene=` 改写为目标场景；轮询到场景里出现 Canvas 且已渲染 >30 帧为止。
  * 首次加载会按需编译全部 TS（实测 77～125 s），超时默认 5 分钟。
  */
-export async function openScene(client, { preview, sceneUuid, timeoutMs, query = {} }) {
+export async function openScene(client, { preview, sceneUuid, timeoutMs, query = {}, ready = (walk) => walk.nodes.some((node) => node.depth === 1 && node.name === "Canvas") }) {
   const off = client.on((message) => {
     if (message.method !== "Fetch.requestPaused") return;
     const { requestId, request } = message.params;
@@ -293,7 +293,7 @@ export async function openScene(client, { preview, sceneUuid, timeoutMs, query =
       } catch {
         last = null;
       }
-      if (last && last.frames > 30 && last.nodes.some((node) => node.depth === 1 && node.name === "Canvas")) return last;
+      if (last && last.frames > 30 && ready(last)) return last;
     }
     throw new Error(`场景 ${sceneUuid} 在 ${timeoutMs} ms 内未就绪；最后状态：${last ? `${last.frames} 帧、顶层 ${last.nodes.filter((n) => n.depth === 1).map((n) => n.name).join(",")}` : "cc 未初始化"}`);
   } finally {

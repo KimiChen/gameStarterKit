@@ -3,6 +3,7 @@
  * Creator 预览证据生成器：在真实引擎桌面预览里重放「登录 → 首屏 → 设置 → 插件入口」并落盘截图 + report.json。
  *
  *   node tools/creator-preview/run.mjs <home|settings|redeem|tally|all> [--out <dir>] [--code <兑换码>]
+ *   node tools/creator-preview/run.mjs stage3d --perf --quality low|medium|high --expect-webgl 1|2
  *        [--format jpeg|png] [--devtools http://127.0.0.1:9222] [--preview http://localhost:7456]
  *        [--scene <uuid>] [--boot-timeout <ms>] [--step-timeout <ms>] [--reuse]
  *
@@ -1235,6 +1236,14 @@ async function scenarioMmoHold(runner) {
 
 async function main() {
   if (process.argv[2] === "stage3d") {
+    if (process.argv.includes("--perf")) {
+      const { parseStage3dPerfArgs, runStage3dPerf } = await import("./perf.mjs");
+      const options = parseStage3dPerfArgs(process.argv.slice(3));
+      if (options.help) { console.log("stage3d --perf: --quality low|medium|high --expect-webgl 1|2 [--force-webgl1] [--preview <loopback>] [--new-window] [--out <dir>]"); return 0; }
+      const result = await runStage3dPerf(options);
+      console.log(JSON.stringify({ ok: result.report.ok, report: result.reportPath, summary: result.summaryPath, error: result.report.error ?? null }));
+      return result.report.ok ? 0 : 1;
+    }
     const { parseStage3dProbeArgs, runStage3dProbe } = await import("./probe-stage3d.mjs");
     const options = parseStage3dProbeArgs(process.argv.slice(3));
     if (options.help) { console.log("stage3d: --preview <loopback> --expect-webgl 1|2 [--force-webgl1] --out <dir> [--summary <file>]"); return 0; }
