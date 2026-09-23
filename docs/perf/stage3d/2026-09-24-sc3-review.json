@@ -1,0 +1,523 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-24",
+  "stage": "SC3",
+  "batch": "SC3-B6",
+  "status": "exited",
+  "tag": "sc3-exit",
+  "commit": "resolve refs/tags/sc3-exit",
+  "verificationBase": "24d74a686badcb9cb218a074291152bf7f94d414",
+  "scope": "Documentation, evidence reconciliation and phase exit. No runtime TypeScript, asset, contract, lockfile or test changes in B6.",
+  "delivered": [
+    "CLIENT section 8.2 documents real Creator --perf commands, manual-only execution, raw clocks, GFX counters and scope limits; section 3 reflects delivered scheduling.",
+    "AssetLease performs bundle-addressed batch loading with deadline, cancellation, failure and late-completion cleanup.",
+    "AssetPlan and AssetCatalog select quality/LOD assets, filter details and hideAtLod, deduplicate references and defer release by 5000ms.",
+    "EntityPool reuses inactive nodes, limits capacity and frame activation, cancels obsolete work and retires rendering before releasing leases.",
+    "SLG resources and both tone-mapping renderers consume the framework; Stage3D retains covered resource patches and the temporary fixture loader is removed.",
+    "Six B5 WebGL/quality reports establish desktop greybox frame and GFX observations; SLG and lvr documents record framework readiness without completing content integration."
+  ],
+  "priorBatches": [
+    {
+      "batch": "SC3-B1",
+      "commit": "19265da10661b282e7a723ee8bc8ba505338e6b6",
+      "path": "docs/perf/stage3d/2026-09-23-sc3-b1.json",
+      "sha256": "5cb5357345d73d73cd28dd73a7ec1b709d990d6f100b77ec98cb3865a49012bd"
+    },
+    {
+      "batch": "SC3-B2",
+      "commit": "7c2c9a3b11029c1891609b7f1e5771c94e9cacc6",
+      "path": "docs/perf/stage3d/2026-09-23-sc3-b2.json",
+      "sha256": "244bd231658665e47f6028f0cd7e1d13565c933b6b3ad0349338140f4b01be35"
+    },
+    {
+      "batch": "SC3-B3",
+      "commit": "71ca02cbfc30139a92bdd8bb05648087db95003d",
+      "path": "docs/perf/stage3d/2026-09-23-sc3-b3.json",
+      "sha256": "866c21f4f410d9c71c48065c853f45c5a322b9effec948768eb6878992f73c71"
+    },
+    {
+      "batch": "SC3-B4",
+      "commit": "44413fed4f8a24b8db5c3a8f68b9b65238dbaeae",
+      "path": "docs/perf/stage3d/2026-09-23-sc3-b4.json",
+      "sha256": "80cc8bef1c6505b3b69b574023227598f771a3f1fb0924146671e5f87ecaac7b"
+    },
+    {
+      "batch": "SC3-B5",
+      "commit": "24d74a686badcb9cb218a074291152bf7f94d414",
+      "path": "docs/perf/stage3d/2026-09-24-sc3-b5.json",
+      "sha256": "8a29d94411937faa0ea760080339be2cf038ac9ed640c016500fd2ad40f7186e"
+    }
+  ],
+  "evidenceAudit": {
+    "method": {
+      "path": ".cache/stage3d/sc3-b6/audit-evidence.py",
+      "sha256": "957da03a8f9488f222ba76ad694c38ee46b60b642d78e1581eedc2fe71557f28"
+    },
+    "record": {
+      "path": ".cache/stage3d/sc3-b6/evidence-audit.json",
+      "sha256": "1f7202d57aaccdcd64e1653d8c61fe97479a80e0025942654ec2e8f3e5e3a465"
+    },
+    "originalEvidenceRoot": "/Volumes/KimData/unlockTheWorld/kitVersion",
+    "hashReferences": 116,
+    "uniquePaths": 110,
+    "unchangedReferences": 108,
+    "supersededReferences": 8,
+    "sourceFilesChecked": 33,
+    "lineage": [
+      "B2 assetPlan extraction and hideAtLod/qualityData evolution are covered by B3.",
+      "B1/B2 cocosAssetLoader resources-bundle dispatch, B3 Stage3dDevScene loader migration, the Cocos pool test harness and skybox stub additions are covered by B4.",
+      "Two stubs additionally gained gfx.Attribute in 001b91d4 for mapOriginal. The diff adds only that constructor; B6 reruns both client typechecks as part of verify:all.",
+      "All recorded runtime sources and Cocos mirrors match the latest committed implementations; B5 sampling-tool files match 24d74a68."
+    ],
+    "legacySlgTests": [
+      {
+        "path": "apps/client/test/slg-art-resources.test.ts",
+        "sha256": "ce5dfe5e3e35a5265a26d3977b1af582b40c7c5e8b71aac9a8fc91015979477b",
+        "unchangedSinceB4": true,
+        "originalTestBodiesUnchanged": 4,
+        "bodyHash": "2ef841b613c134cab2088de09bd574ea35c518eae6f2783e595d23051867e641"
+      },
+      {
+        "path": "apps/client/test/slg-input.test.ts",
+        "sha256": "d7733fd9b33d5ca80725bacf9a5a9a157b46cecd33228976dede14078e019751",
+        "unchangedSinceB4": true,
+        "originalTestBodiesUnchanged": 5,
+        "bodyHash": "4c2e14ce7a582312578d432c254d365a064f1a88ed381bff5c015f7c2712edfa"
+      }
+    ],
+    "slgDirectSceneAccessMatches": 0,
+    "fixturePrefabLoaderRemoved": true
+  },
+  "inheritedCreatorChecks": [
+    {
+      "batch": "SC3-B1",
+      "webgl": 2,
+      "checks": 10,
+      "passed": true,
+      "diagnostics": 0,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b1-webgl2/report.json",
+        "sha256": "7f6fb304bc884d6e465b6d7f7c506765690780b5ef136364ee01af6be00fd5d8"
+      }
+    },
+    {
+      "batch": "SC3-B1",
+      "webgl": 1,
+      "checks": 10,
+      "passed": true,
+      "diagnostics": 0,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b1-webgl1/report.json",
+        "sha256": "137e011daf33b644a6d42ddf3b04a41e4eb25354c056790b8f5242b8b2eaa1e1"
+      }
+    },
+    {
+      "batch": "SC3-B2",
+      "webgl": 2,
+      "checks": 11,
+      "passed": true,
+      "diagnostics": 0,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b2-webgl2/report.json",
+        "sha256": "47691c0be4819c17e8a69f239e0bc9faa1e470679577d99f9f994b5bfb69d79f"
+      }
+    },
+    {
+      "batch": "SC3-B2",
+      "webgl": 1,
+      "checks": 11,
+      "passed": true,
+      "diagnostics": 0,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b2-webgl1/report.json",
+        "sha256": "237f95cee25355f9fcace05ccef3747ebd4ab7647a1ef8863953e4655f4d7544"
+      }
+    },
+    {
+      "batch": "SC3-B3",
+      "webgl": 2,
+      "checks": 7,
+      "passed": true,
+      "diagnostics": 0,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b3-webgl2/report.json",
+        "sha256": "b63c6fb7cf0053195ea7b359c3696f4fb27bd26543ec941bffc779817807dda1"
+      }
+    },
+    {
+      "batch": "SC3-B3",
+      "webgl": 1,
+      "checks": 7,
+      "passed": true,
+      "diagnostics": 0,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b3-webgl1/report.json",
+        "sha256": "24a23f11db8b91c7deb06f89cd7247cfbfa730e0668a5d81497e022cde17a10d"
+      }
+    },
+    {
+      "batch": "SC3-B4",
+      "webgl": 2,
+      "checks": 7,
+      "passed": true,
+      "diagnostics": 0,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b4-webgl2/report.json",
+        "sha256": "2e94d178af0c88ef9e0385561222d30553bd4efff3c6683b3fe699d757e9db1b"
+      }
+    },
+    {
+      "batch": "SC3-B4",
+      "webgl": 1,
+      "checks": 7,
+      "passed": true,
+      "diagnostics": 0,
+      "report": {
+        "path": "docs/evidence/creator-2026-09-23/sc3-b4-webgl1/report.json",
+        "sha256": "46d362ed3c86d8919a5d3dc16b3ddbea35e46a7188e5b110549bbc2f7233382f"
+      }
+    }
+  ],
+  "inheritedMutationChecks": [
+    {
+      "batch": "SC3-B1",
+      "name": "failed-batch-release",
+      "failedTests": 8,
+      "exitCode": 1
+    },
+    {
+      "batch": "SC3-B1",
+      "name": "late-success-release",
+      "failedTests": 8,
+      "exitCode": 1
+    },
+    {
+      "batch": "SC3-B2",
+      "name": "details-filter",
+      "failedTests": 9,
+      "exitCode": 1
+    },
+    {
+      "batch": "SC3-B2",
+      "name": "grace-deadline",
+      "failedTests": 10,
+      "exitCode": 1
+    },
+    {
+      "batch": "SC3-B3",
+      "name": "activation-budget",
+      "failedTests": 6,
+      "exitCode": 1
+    },
+    {
+      "batch": "SC3-B3",
+      "name": "details-filter",
+      "failedTests": 1,
+      "exitCode": 1
+    },
+    {
+      "batch": "SC3-B4",
+      "name": "missing-covered-holds",
+      "failedTests": 7,
+      "exitCode": 1
+    },
+    {
+      "batch": "SC3-B4",
+      "name": "premature-failed-candidate-release",
+      "failedTests": 1,
+      "exitCode": 1
+    }
+  ],
+  "b6MutationScope": "No new runtime change or mutation in this documentation batch. B1-B4 eight existing mutation results and their hashed evidence were reviewed; B5 long-frame, sequence-reset and unit-rejection tests run through verify:all.",
+  "performance": {
+    "method": {
+      "path": ".cache/stage3d/sc3-b6/recompute-perf.mjs",
+      "sha256": "d91c6c79231156d4df983e05fbcd3ca4e2e73d90e14423bc409992852c6752ee"
+    },
+    "record": {
+      "path": ".cache/stage3d/sc3-b6/perf-recalculation.json",
+      "sha256": "04ca9a210137144e7d9629466fe5caf33b622f954c1ebff435ac112ff03f79c5"
+    },
+    "basis": "Recomputed existing B5 raw reports; no fresh browser capture in B6 because the relevant runtime and sampling sources are unchanged.",
+    "rawFrames": 2532,
+    "postPrewarmMemoryCycles": 120,
+    "runs": [
+      {
+        "webgl": 2,
+        "quality": "low",
+        "summary": {
+          "path": "docs/perf/stage3d/2026-09-24-sc3-b5-low-webgl2.json",
+          "sha256": "93d81a1e32ca55d0217b0cb98df65663acdae71a7f682fb87fae13a7292f8129"
+        },
+        "independentlyRecomputed": true,
+        "population": {
+          "requested": 500,
+          "admitted": 100,
+          "active": 0,
+          "pending": 0,
+          "hidden": 100,
+          "failed": 0
+        },
+        "frameIntervalsMs": {
+          "count": 240,
+          "p50Ms": 17,
+          "p95Ms": 33.5,
+          "maxMs": 35.19999999925494,
+          "meanMs": 20.832500000003105
+        },
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "memoryCycles": 20,
+        "memoryReturnedExactlyToBaseline": true,
+        "consoleEntries": 0,
+        "visibilityChanges": 0
+      },
+      {
+        "webgl": 2,
+        "quality": "medium",
+        "summary": {
+          "path": "docs/perf/stage3d/2026-09-24-sc3-b5-medium-webgl2.json",
+          "sha256": "bbe65361bcb79d7e1a1f2a0a220102ebccc71908bdf685a472b01e826671cab1"
+        },
+        "independentlyRecomputed": true,
+        "population": {
+          "requested": 500,
+          "admitted": 300,
+          "active": 300,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "frameIntervalsMs": {
+          "count": 240,
+          "p50Ms": 17,
+          "p95Ms": 33.900000002235174,
+          "maxMs": 35.80000000074506,
+          "meanMs": 20.492499999996895
+        },
+        "drawCalls": 4,
+        "triangles": 3794,
+        "instances": 300,
+        "memoryCycles": 20,
+        "memoryReturnedExactlyToBaseline": true,
+        "consoleEntries": 0,
+        "visibilityChanges": 0
+      },
+      {
+        "webgl": 2,
+        "quality": "high",
+        "summary": {
+          "path": "docs/perf/stage3d/2026-09-24-sc3-b5-high-webgl2.json",
+          "sha256": "a1b93f7457e5fc91e3798f77d9edb33a9a4d62c04c5d9ad0814fd1cf99410e26"
+        },
+        "independentlyRecomputed": true,
+        "population": {
+          "requested": 500,
+          "admitted": 500,
+          "active": 500,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "frameIntervalsMs": {
+          "count": 240,
+          "p50Ms": 17.600000001490116,
+          "p95Ms": 34,
+          "maxMs": 34.899999998509884,
+          "meanMs": 23.88375000000621
+        },
+        "drawCalls": 4,
+        "triangles": 6194,
+        "instances": 500,
+        "memoryCycles": 20,
+        "memoryReturnedExactlyToBaseline": true,
+        "consoleEntries": 0,
+        "visibilityChanges": 0
+      },
+      {
+        "webgl": 1,
+        "quality": "low",
+        "summary": {
+          "path": "docs/perf/stage3d/2026-09-24-sc3-b5-low-webgl1.json",
+          "sha256": "9344dff76feca6cb10dccaf1dfb25f62bb4494d2dd76a03b97cd11915c9a7dd0"
+        },
+        "independentlyRecomputed": true,
+        "population": {
+          "requested": 500,
+          "admitted": 100,
+          "active": 0,
+          "pending": 0,
+          "hidden": 100,
+          "failed": 0
+        },
+        "frameIntervalsMs": {
+          "count": 240,
+          "p50Ms": 16.899999998509884,
+          "p95Ms": 33.600000001490116,
+          "maxMs": 34.899999998509884,
+          "meanMs": 20.76333333333023
+        },
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "memoryCycles": 20,
+        "memoryReturnedExactlyToBaseline": true,
+        "consoleEntries": 0,
+        "visibilityChanges": 0
+      },
+      {
+        "webgl": 1,
+        "quality": "medium",
+        "summary": {
+          "path": "docs/perf/stage3d/2026-09-24-sc3-b5-medium-webgl1.json",
+          "sha256": "f36f785dc39776984a2f32ac7ec768b60eb7fd944c93e72022e882926b472042"
+        },
+        "independentlyRecomputed": true,
+        "population": {
+          "requested": 500,
+          "admitted": 300,
+          "active": 300,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "frameIntervalsMs": {
+          "count": 240,
+          "p50Ms": 16.600000001490116,
+          "p95Ms": 17.899999998509884,
+          "maxMs": 35.30000000074506,
+          "meanMs": 16.72583333333023
+        },
+        "drawCalls": 4,
+        "triangles": 3794,
+        "instances": 300,
+        "memoryCycles": 20,
+        "memoryReturnedExactlyToBaseline": true,
+        "consoleEntries": 0,
+        "visibilityChanges": 0
+      },
+      {
+        "webgl": 1,
+        "quality": "high",
+        "summary": {
+          "path": "docs/perf/stage3d/2026-09-24-sc3-b5-high-webgl1.json",
+          "sha256": "029c0920fc0bdbe2a5f411fe69e132e413261830e52b4eaea006a419b95b5cfb"
+        },
+        "independentlyRecomputed": true,
+        "population": {
+          "requested": 500,
+          "admitted": 500,
+          "active": 500,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "frameIntervalsMs": {
+          "count": 240,
+          "p50Ms": 30.300000000745058,
+          "p95Ms": 34.600000001490116,
+          "maxMs": 35.69999999925494,
+          "meanMs": 25.146666666663563
+        },
+        "drawCalls": 4,
+        "triangles": 6194,
+        "instances": 500,
+        "memoryCycles": 20,
+        "memoryReturnedExactlyToBaseline": true,
+        "consoleEntries": 0,
+        "visibilityChanges": 0
+      }
+    ]
+  },
+  "verification": {
+    "node": "v26.5.0",
+    "worktree": "/Users/kimi/.codex/worktrees/sc3-b6-exit/kitVersion",
+    "isolation": "Original checkout has concurrent uncommitted mapOriginal work. Validation uses the committed 24d74a68 baseline plus B6 documents in an isolated worktree.",
+    "setup": "npm ci installs the locked workspace dependencies. UniFlex AOT and Cocos ignored outputs are rebuilt; package manifests and locks remain unchanged.",
+    "attempts": [
+      {
+        "result": "failed",
+        "reason": "Copying only root node_modules omitted nested workspace uuid declarations; repaired with npm ci.",
+        "log": {
+          "path": ".cache/stage3d/sc3-b6/verify-all-attempt-1.log",
+          "sha256": "bf874840dc2c4cb4270e592a2d420835790a090197a0284e04536546c497d897"
+        }
+      },
+      {
+        "result": "failed",
+        "reason": "Inventory ran while the new linked phase-review JSON was not yet written; the review now exists.",
+        "log": {
+          "path": ".cache/stage3d/sc3-b6/verify-all-attempt-2.log",
+          "sha256": "37e2ccbbbec550c056a13ab0687992b8b1829a1a0fadadb4fe9c7a4e313ed795"
+        }
+      }
+    ],
+    "verifyAll": {
+      "result": "passed",
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/stage3d/sc3-b6/verify-all.log",
+        "sha256": "573900e7f57c6af82d45158c89f8d5d741c55e1faf4b42a14f632bb51f99a263"
+      },
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1295,
+        80,
+        1384
+      ],
+      "testCount": 2975,
+      "clientTests": 1295,
+      "uniflexContractTests": 80,
+      "serverTests": 1384,
+      "includes": [
+        "both client typechecks",
+        "synchronization",
+        "assets3d",
+        "protected paths",
+        "inventory",
+        "sampling-tool tests",
+        "SLG resource/input regressions"
+      ]
+    },
+    "npmCi": {
+      "path": ".cache/stage3d/sc3-b6/npm-ci.log",
+      "sha256": "caaf5cff7d813c0af133f9707a596205e42ddf1d5260b6e2d086ba4f7f4ccb5a"
+    },
+    "preflight": {
+      "path": ".cache/stage3d/sc3-b6/preflight.log",
+      "sha256": "f9aa0f8977233573c182d91b694521cc7af5a42223e00c4d173d588669ec6ef7"
+    },
+    "finalInventory": {
+      "result": "passed",
+      "log": {
+        "path": ".cache/stage3d/sc3-b6/final-inventory.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      }
+    }
+  },
+  "limitations": [
+    "Desktop Apple M4 / Chrome 153 / Creator 3.8.8 WebPipeline, 375x812 CSS and DPR 2. No phone or WeChat capacity claim and no 60fps guarantee.",
+    "WebGL1 is an actual WebGLDevice after rejecting WebGL2 context at page boot; medium/high are development overrides. Low hides the details-only cubes (100 admissions, zero active).",
+    "The activation capture starts after the developer scene is ready and covers the EntityPool first prefab request/activation; it does not measure editor import or whole-scene cold boot.",
+    "B1 faults delay actual engine completions at the adapter callback boundary; they are not network faults or real WeChat cache failures.",
+    "B4 SLG ViewMgr retirement probe injects the production Stage3D port; B4 retains the separate normal login/settings SLG replay.",
+    "SkinnedUnits, Vfx and real WeChat cache evidence remain SC4; conversion/LOD fidelity and final API freeze remain SC5. SLG 2b and lvr content work are not marked complete."
+  ],
+  "nextBatch": "SC4-B1",
+  "synchronization": {
+    "command": "git pull --rebase --autostash origin new",
+    "result": "Already up to date",
+    "baseUnchanged": "24d74a686badcb9cb218a074291152bf7f94d414",
+    "log": {
+      "path": ".cache/stage3d/sc3-b6/git-pull-final.log",
+      "sha256": "d05549dae4bfc516206e473e7dea63ab56c6c12e7a02217d8bae2980f5eb2612"
+    }
+  }
+}

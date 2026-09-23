@@ -458,6 +458,12 @@ ground-tiles 二次去重（海色占比 >85% 按产物判）：1762→370 块 3
 > 这部分可直接沿用，无需重新抽取；`pickMath` 也已可用，接法见 [CLIENT §3](docs/CLIENT.md#3-view-与-logic-分层)。
 > SLG 继续使用 2D 渲染；异步 `AssetLease` 与两处场景全局设置租约迁移留 SC3-B4，2b 自身的房间 / 网络接线与验收仍按下表推进，未因此标记完成。
 
+> **2026-09-24 SC3 消费通知**：资源与实体阶段已退出（tag `sc3-exit`，见 [SC3 汇总](docs/perf/stage3d/2026-09-24-sc3-review.json)）。
+> `SlgArtResources` 已包装正式 `AssetLease`，mini 独立持有；页面关闭 / 切图取消在途加载，旧节点退休后于 AFTER_DRAW 归还资源。
+> 两个 Renderer 的 linear tone mapping 已由页面注入同一个 Stage3D 端口，经 `acquireGlobals` 持有，SLG 已无 `director.getScene` 直改。
+> B4 双 WebGL 的资源 / 全局租约、乱序关闭及页面回收证据已复核，既有资源 / 输入测试体和断言保持不变；接法见 [CLIENT §3](docs/CLIENT.md#3-view-与-logic-分层)。
+> 2b 可沿用这些包装，继续保持 2D 渲染；房间 / 网络接线及内容性能仍由 2b 自身验收。此通知更新上述 SC2 通知中的等待项，不将 2b 标为完成。
+
 按 docs/MMO.md §5 MF5 规格逐项核对框架现状（`apps/server/src/rooms/core/` 实列目录 + 全文检索），结论：**MF5 尚未实施，2b 全部 14/15/20–24 条被阻塞**；2a 与 shared 数学已就绪，MF5 的泛化源（snake）质量良好。
 
 **已具备（2b 不需要重做）**：

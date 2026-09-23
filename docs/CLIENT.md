@@ -305,8 +305,8 @@ SLG 的八件套包装逐件取得租约、收齐结果后统一校验，保留�
 读取 `ports.stage3d.quality`（或 `services.stage3d.quality`）取得只读画质快照，不占舞台。
 微信、WebGL1 / GLES2、未知平台或 GPU 默认 low；消费 `details`、`shadows`、`maxUnits`、`maxEffects`、
 纹理及蒙皮能力字段，不自行重新判档。开发预览可用 `?quality=low|medium|high&shadows=0`；生产忽略覆写，
-开发覆写也不能开启硬件缺失的能力。SC1 交付判档、数据表校验和压缩预设，细节层加载门控与每帧激活预算的
-执行仍归 SC3，蒙皮容量与真机缓存验收归 SC4。数据表和保守回退政策见 [画质说明](../tools/art3d/quality.md)。
+开发覆写也不能开启硬件缺失的能力。SC1 已交付判档、数据表校验和压缩预设，SC3 已交付 `AssetPlan` / `EntityPool`
+的细节层加载门控与逐帧激活预算；蒙皮容量与真机缓存验收归 SC4。数据表和保守回退政策见 [画质说明](../tools/art3d/quality.md)。
 
 正式先例为 `Stage3dFixtureView` 与独立 `stage3d-dev.scene`（后者不进构建）；资产路径使用
 `{ bundle, path }`，GLB 取已登记的 Prefab 子路径，不能按 GLB 根路径加载 Prefab。
@@ -639,6 +639,39 @@ npm run --silent perf:client -- --json --deterministic --output docs/perf/client
 
 Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交互；它仍然是开发活动。
 
+### 8.2 3D 性能证据
+
+`creator-preview stage3d --perf` 在真实 Creator 3.8.8 的独立 `stage3d-dev.scene` 运行静态实体灰盒。
+**此动线由人工触发，不进 `verify:core` / `verify:all`**；聚合门禁只运行采样器和报告格式的无头测试。
+先打开 `apps/Cocos` 并完成导入，确认预览服务与本机 Chrome 9222 可用；在 Creator 原生预览设备菜单选择
+「网页全屏」（`WebpageFullScreen`），关闭 Rotate。工具打开可见窗口并校验 375×812 CSS、DPR 2、750×1624
+backing；此独立场景不需要登录或游戏服。
+
+```bash
+node tools/creator-preview/run.mjs stage3d --perf --quality high --expect-webgl 2 --new-window \
+  --out .cache/stage3d/sc3-b6/high-webgl2 --summary docs/perf/stage3d/2026-09-24-sc3-b6-high-webgl2.json
+node tools/creator-preview/run.mjs stage3d --perf --quality high --expect-webgl 1 --force-webgl1 --new-window \
+  --out .cache/stage3d/sc3-b6/high-webgl1 --summary docs/perf/stage3d/2026-09-24-sc3-b6-high-webgl1.json
+```
+
+这是复跑示例；按实际日期 / 批次命名 `--out` 与 `--summary`，保留已有证据。依次把 `high` 改为 `low`、
+`medium` 并使用各自输出路径即可覆盖三档；完整六条命令及可选端口见
+[creator-preview 说明](../tools/creator-preview/README.md#sc3-b5-3d-性能证据)。`--force-webgl1` 在新页面启动前
+拒绝 WebGL2 context，`--expect-webgl 1` 再断言实际设备；WebGL1 的 medium / high 是开发覆写，缺省仍为 low。
+
+采样从开发场景就绪后开始，覆盖实体池首次预制请求 / 激活的 120 个帧间隔，以及稳态 60 帧预热后 240 个帧间隔；
+不测编辑器导入或整个场景的冷启动。`report.json.perf` 中的原始
+样本取 `AFTER_DRAW` 回调的 `performance.now()` 相邻差值（毫秒），使用独立递增序号；同帧记录实体数、draw call、
+三角数、实例数与 GFX buffer / texture 字节数。引擎 dt 仅为辅助字段，超过 1 秒的长帧照常保留；前后台切换或
+窗口不完整会保留失败报告并拒绝出 PASS 摘要，需重新采样。首次关闭并稳定 60 帧后建立内存基线，再做 20 次开关，
+每次检查节点、业务实体和 GFX 字节回到基线。原始报告留本地，入库数字摘要通过 SHA256 关联它。
+
+SC3 退出沿用并复核 [B5 六份报告](perf/stage3d/2026-09-24-sc3-b5.json)：每档请求 500 个立方体，low 的 100 个
+名额受 details 门控而隐藏，medium / high 激活 300 / 500 个；两种上下文各档 draw call 为 3 / 4 / 4、三角数为
+194 / 3794 / 6194。桌面 M4 的稳态 p95 范围为 17.9–34.6 ms，六组各 20 次开关的 GFX 内存均回基线。
+这些数字不构成 60fps、移动端或微信容量承诺；蒙皮 / 特效与真实微信缓存门仍在 SC4，阶段证据索引见
+[SC3 汇总](perf/stage3d/2026-09-24-sc3-review.json)。
+
 ## 9. 新页面开发清单
 
 1. 在 FairyGUI 编辑器中修改并导出组件。
@@ -663,7 +696,7 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 3D 页另按 §3 注入舞台端口并绑定打开世代，消费 `stage3d.quality`，验证 HUD / 世界双指、跨边界、wheel
 和模态取消；资源依所属包登记 `art3d.config.json` / `LICENSES.md` 后跑 `verify:assets3d`。
 参照正式夹具，在 WebGL2 / 实际 WebGL1 验证加载失败、提前关闭及预热后反复开关的节点 / 引用 / GFX 回收；
-无头测试和类型桩通过不能替代 Creator 证据。SC1 当前可用面及后续资源 / 调度边界以 §3 为准。
+无头测试和类型桩通过不能替代 Creator 证据。SC1–SC3 的消费接口见 §3，3D 性能证据按 §8.2 执行。
 
 ## 10. 范围
 
