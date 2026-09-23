@@ -29,6 +29,9 @@ apps/shared/src ──npm run sync:shared──▶ apps/client/src/shared ──
 - 改完跑 `npm run sync:client`（或常驻 `npm run dev:client` 双 watcher 全链自动同步）；
   忘跑有机检兜底：`npm run verify:sync`（挂在 `typecheck` 尾部）漂移即红。
 - `src/lib/bitecs/` 12 个 .ts 是字节锁区（`npm run verify:ecs`），禁改。
+- 原生客户端的登录首页由 `src/native/host.ts` 选择；必须经过 PluginHost 装载并登记 authenticated base，让登录与断线恢复使用同一路由。首页不能提供会关闭自身留下空白画面的按钮。
+- Native 登录和断线恢复以 `auth.ok` 为建档完成边界，玩法页面拉取自己的快照；不再调用已停用的旧 `user.getInfo`，也不伪造 `IUserView`。Colyseus 登录仍校验并提交旧档案。
+- 开发登录默认首次生成独立 devKey，通过 `sys.localStorage` 保存到 `<PROJECT_ID>.dev-account.v1`，然后调用既有 dev-login 注册 / 登录；刷新复用缓存，不持久化 token。`?devKey=` 只临时覆盖、不改默认缓存。清理站点数据会生成新账号；同源多标签共享账号，多人测试应使用独立浏览器缓存或显式不同 devKey。
 
 ## 目录
 

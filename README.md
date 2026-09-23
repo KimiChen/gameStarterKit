@@ -165,6 +165,12 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run verify:perf` | 校验固定输入下的客户端性能基线结构和 checksum |
 | `npm run verify:mmo-fixture-matrix` | MMO 框架侧完成夹具矩阵：一次性检出里物化 kitfix / kitfixContent（只新增文件）跑 pack / install / codegen / sync / check / typecheck 与所有权分类；⛔ 不进 verify:core |
 | `npm run test:client` | 客户端全部无头行为测试（Node/tsx） |
+| `npm run kit:native -- check gameDemo` | 原生 kit 独立检查；同入口支持 pack/install/test/uninstall，不写旧服 |
+| `npm run codegen:native-kits` | 生成 serverNew kit 的 shared/native 与 client/native 注册表；首次准备后再 sync:shared |
+| `npm run verify:native-kits` | 只读检查原生注册表是否与清单、协议真源一致 |
+| `npm run test:native-kits` | 原生包工具严格类型检查与行为测试 |
+| `npm run verify:dual-lobby` | 既有双通道真实联调，需要配置独立测试数据库 |
+| `npm run ui:verify-fgui-dom` | 校验 FGUI DOM 预览导出 |
 | `npm run test:changed` | 内循环收窄：改动整个落在包内才只跑那些包，否则退回 `verify:all` |
 | `npm run test:vendor` | 运行第三方运行时内容锁专项反例测试 |
 | `npm run test:uniflex-ui-contract` | UniFlex 导入 / 美术往返 / 组件目录 / FGUI 导出契约测试（`verify:all` 的一环） |

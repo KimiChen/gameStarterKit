@@ -433,6 +433,48 @@
       }
     },
     {
+      "name": "gameDemo",
+      "source": "src/modules/gameDemo/GameDemoModule.ts",
+      "systems": {
+        "startup": [
+          {
+            "moduleName": "gameDemo",
+            "source": "src/modules/gameDemo/GameDemoModule.ts",
+            "contribution": {
+              "name": "gameDemo-boss-rooms",
+              "app": "service",
+              "phase": "runtime-ready",
+              "scope": "process",
+              "run": "startGameDemoRooms"
+            }
+          },
+          {
+            "moduleName": "gameDemo",
+            "source": "src/modules/gameDemo/GameDemoModule.ts",
+            "contribution": {
+              "name": "gameDemo-season-scheduler",
+              "app": "service",
+              "phase": "runtime-ready",
+              "scope": "server",
+              "run": "startGameDemoSeason"
+            }
+          }
+        ],
+        "nativeLobby": [
+          {
+            "moduleName": "gameDemo",
+            "source": "src/modules/gameDemo/GameDemoModule.ts",
+            "contribution": {
+              "kind": "route",
+              "name": "gameDemo-lobby-routes",
+              "app": "service",
+              "register": "registerGameDemoRoutes"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "gm",
       "source": "src/modules/gm/GmModule.ts",
       "systems": {
@@ -527,6 +569,18 @@
       "name": "income",
       "source": "src/modules/income/IncomeModule.ts",
       "systems": {
+        "configuration": [
+          {
+            "moduleName": "income",
+            "source": "src/modules/income/IncomeModule.ts",
+            "contribution": {
+              "kind": "initializer",
+              "name": "register-income-session-actions",
+              "app": "service",
+              "handler": "() => {\n            LocalActionRegistry.register({ 'income.parkOffline': ActionIncomeParkOffline })\n        }"
+            }
+          }
+        ],
         "nativeLobbyAuth": [
           {
             "moduleName": "income",
@@ -880,6 +934,16 @@
               ],
               "handler": "initializeUserConfig"
             }
+          },
+          {
+            "moduleName": "user",
+            "source": "src/modules/user/UserModule.ts",
+            "contribution": {
+              "kind": "initializer",
+              "name": "register-user-session-actions",
+              "app": "service",
+              "handler": "() => {\n                LocalActionRegistry.register({ 'user.lobbyEnter': ActionUserLobbyEnter, 'user.lobbyLeave': ActionUserLobbyLeave })\n            }"
+            }
           }
         ],
         "events": [
@@ -977,7 +1041,7 @@
               "name": "user-native-lobby-auth",
               "app": "service",
               "onAuthenticated": "async (uid, internalUid, sId, services) => {\n                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`\n                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。\n                    await NativeLobbyUserEnter.enter(internalUid, sId)\n                    await services.registerCharacter(uid, sId)\n                }",
-              "onReleased": "async ({ internalUid, sId }) => {\n                    const user = await User.load(internalUid)\n                    if (user) await UserSessionLifecycle.leave(user)\n                    else await NativeLobbyUserEnter.clearOnlinePresence(internalUid, sId)\n                }"
+              "onReleased": "async ({ internalUid, sId }) => {\n                    await NativeLobbyUserEnter.leave(internalUid, sId)\n                }"
             }
           }
         ]
@@ -1061,6 +1125,26 @@
             "user"
           ],
           "handler": "initializeEquipConfig"
+        }
+      },
+      {
+        "moduleName": "income",
+        "source": "src/modules/income/IncomeModule.ts",
+        "contribution": {
+          "kind": "initializer",
+          "name": "register-income-session-actions",
+          "app": "service",
+          "handler": "() => {\n            LocalActionRegistry.register({ 'income.parkOffline': ActionIncomeParkOffline })\n        }"
+        }
+      },
+      {
+        "moduleName": "user",
+        "source": "src/modules/user/UserModule.ts",
+        "contribution": {
+          "kind": "initializer",
+          "name": "register-user-session-actions",
+          "app": "service",
+          "handler": "() => {\n                LocalActionRegistry.register({ 'user.lobbyEnter': ActionUserLobbyEnter, 'user.lobbyLeave': ActionUserLobbyLeave })\n            }"
         }
       }
     ],
@@ -1662,6 +1746,18 @@
         }
       }
     ],
+    "nativeLobby": [
+      {
+        "moduleName": "gameDemo",
+        "source": "src/modules/gameDemo/GameDemoModule.ts",
+        "contribution": {
+          "kind": "route",
+          "name": "gameDemo-lobby-routes",
+          "app": "service",
+          "register": "registerGameDemoRoutes"
+        }
+      }
+    ],
     "nativeLobbyAuth": [
       {
         "moduleName": "user",
@@ -1671,7 +1767,7 @@
           "name": "user-native-lobby-auth",
           "app": "service",
           "onAuthenticated": "async (uid, internalUid, sId, services) => {\n                    // 建档必须排在最前：`User` 档是所有 Bean 类业务的前提，且 `income-native-lobby-auth`\n                    // 已声明 `after: ['user-native-lobby-auth']`，本 handler 是它唯一的上游。\n                    await NativeLobbyUserEnter.enter(internalUid, sId)\n                    await services.registerCharacter(uid, sId)\n                }",
-          "onReleased": "async ({ internalUid, sId }) => {\n                    const user = await User.load(internalUid)\n                    if (user) await UserSessionLifecycle.leave(user)\n                    else await NativeLobbyUserEnter.clearOnlinePresence(internalUid, sId)\n                }"
+          "onReleased": "async ({ internalUid, sId }) => {\n                    await NativeLobbyUserEnter.leave(internalUid, sId)\n                }"
         }
       },
       {
@@ -1743,6 +1839,28 @@
           "phase": "runtime-ready",
           "scope": "process",
           "run": "reloadActivityAtStartup"
+        }
+      },
+      {
+        "moduleName": "gameDemo",
+        "source": "src/modules/gameDemo/GameDemoModule.ts",
+        "contribution": {
+          "name": "gameDemo-boss-rooms",
+          "app": "service",
+          "phase": "runtime-ready",
+          "scope": "process",
+          "run": "startGameDemoRooms"
+        }
+      },
+      {
+        "moduleName": "gameDemo",
+        "source": "src/modules/gameDemo/GameDemoModule.ts",
+        "contribution": {
+          "name": "gameDemo-season-scheduler",
+          "app": "service",
+          "phase": "runtime-ready",
+          "scope": "server",
+          "run": "startGameDemoSeason"
         }
       },
       {

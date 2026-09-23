@@ -8,6 +8,7 @@ import { ClientConfigModule } from '../../src/modules/clientConfig/ClientConfigM
 import { DiagnosticsModule } from '../../src/modules/diagnostics/DiagnosticsModule'
 import { EquipModule } from '../../src/modules/equip/EquipModule'
 import { FriendModule } from '../../src/modules/friend/FriendModule'
+import { GameDemoModule } from '../../src/modules/gameDemo/GameDemoModule'
 import { GmModule } from '../../src/modules/gm/GmModule'
 import { GongModule } from '../../src/modules/gong/GongModule'
 import { GuildModule } from '../../src/modules/guild/GuildModule'
@@ -36,6 +37,7 @@ export const gameModuleRegistry = Object.freeze([
     { moduleName: 'diagnostics', source: 'src/modules/diagnostics/DiagnosticsModule.ts', module: DiagnosticsModule },
     { moduleName: 'equip', source: 'src/modules/equip/EquipModule.ts', module: EquipModule },
     { moduleName: 'friend', source: 'src/modules/friend/FriendModule.ts', module: FriendModule },
+    { moduleName: 'gameDemo', source: 'src/modules/gameDemo/GameDemoModule.ts', module: GameDemoModule },
     { moduleName: 'gm', source: 'src/modules/gm/GmModule.ts', module: GmModule },
     { moduleName: 'gong', source: 'src/modules/gong/GongModule.ts', module: GongModule },
     { moduleName: 'guild', source: 'src/modules/guild/GuildModule.ts', module: GuildModule },

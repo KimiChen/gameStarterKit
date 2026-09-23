@@ -67,9 +67,7 @@ export async function runAuthenticatedLoginFlow<TUser extends { readonly uid: st
     deps: AuthenticatedLoginFlowDeps<TUser>,
     signal?: AbortSignal,
 ): Promise<TUser> {
-    try {
-        deps.setSession(response);
-        await deps.join(response.accessToken, signal);
+    return runAuthenticatedConnectionFlow(response, deps, signal, async () => {
         const info = await deps.getInfo();
         if (!info || info.user === null || info.user === undefined) {
             throw new Error("登录成功但角色档案为空");
@@ -81,6 +79,30 @@ export async function runAuthenticatedLoginFlow<TUser extends { readonly uid: st
             throw new Error("登录事务已失效");
         }
         return info.user;
+    });
+}
+
+/** Native auth.ok 已完成服务端建档；玩法通过自己的 RPC 加载数据，不伪造旧 IUserView。 */
+type AuthenticatedConnectionDeps = Pick<AuthenticatedLoginFlowDeps<{ uid: string }>,
+    "setSession" | "join" | "clearSession" | "leave" | "shouldRollback">;
+export function runAuthenticatedConnectionFlow<TResult>(
+    response: WebPlatformLoginResponse, deps: AuthenticatedConnectionDeps,
+    signal: AbortSignal | undefined, complete: () => Promise<TResult>,
+): Promise<TResult>;
+export function runAuthenticatedConnectionFlow(
+    response: WebPlatformLoginResponse, deps: AuthenticatedConnectionDeps,
+    signal?: AbortSignal,
+): Promise<void>;
+export async function runAuthenticatedConnectionFlow<TResult = void>(
+    response: WebPlatformLoginResponse,
+    deps: AuthenticatedConnectionDeps,
+    signal?: AbortSignal,
+    complete?: () => Promise<TResult>,
+): Promise<TResult | undefined> {
+    try {
+        deps.setSession(response);
+        await deps.join(response.accessToken, signal);
+        return complete ? await complete() : undefined;
     } catch (error) {
         let shouldRollback = true;
         try { shouldRollback = deps.shouldRollback?.() ?? true; } catch {

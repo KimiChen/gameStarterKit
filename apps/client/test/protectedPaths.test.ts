@@ -197,12 +197,16 @@ test("generatedWriterOwned：登记的 writer 命令真实存在（防止规则�
   for (const entry of rules.generatedWriterOwned.entries) {
     const workspace = entry.writer.match(/^npm --workspace @game\/server run ([A-Za-z0-9:_-]+)$/u);
     const root = entry.writer.match(/^npm run ([A-Za-z0-9:_-]+)$/u);
+    const native = entry.writer.match(/^pnpm -C apps\/serverNew\/server ([A-Za-z0-9:_-]+)$/u);
     // 直调 writer：仓内 scripts/ 或 tools/ 下的 .mjs（可带子目录与参数）。玩法自有生成物的
     // writer 刻意不做成根 npm script——根命令表是 AGENTS/CLAUDE/README 三份文档的双向相等
     // 集合，把玩法名塞进去正是本轮要拆掉的中央耦合。
     const script = entry.writer.match(/^node ((?:scripts|tools)\/(?:[A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+\.mjs)(?: |$)/u);
     if (workspace) {
       assert.ok(Object.hasOwn(serverScripts, workspace[1]), `writer 指向不存在的 @game/server 脚本：${entry.writer}`);
+    } else if (native) {
+      const scripts = JSON.parse(readFileSync(join(ROOT, "apps/serverNew/server/package.json"), "utf8")).scripts;
+      assert.ok(Object.hasOwn(scripts, native[1]), `writer 指向不存在的 serverNew 脚本：${entry.writer}`);
     } else if (root) {
       assert.ok(Object.hasOwn(rootScripts, root[1]), `writer 指向不存在的根脚本：${entry.writer}`);
     } else if (script) {

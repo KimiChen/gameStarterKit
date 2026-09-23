@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   SESSION_PROFILE_RECONCILE_TIMEOUT_MS,
   reconcileSessionProfile,
+  reconcileSessionConnection,
 } from "../src/logic/page/SessionReconcileLogic";
 import {
   clearSession,
@@ -37,6 +38,26 @@ function login(uid: string): SessionReconcileIdentity {
   assert.ok(identity);
   return identity;
 }
+
+test("Native reconnect：恢复连接不读取旧档案，迟到连接只释放自身", async () => {
+  const identity = login("native-reconcile");
+  let leaves = 0;
+  const ready = deferred<void>();
+  let current = true;
+  const deps = {
+    connect: () => ({ ready: ready.promise, leave: () => { leaves++; } }),
+    isCurrent: () => current,
+  };
+  const running = reconcileSessionConnection(identity, deps);
+  current = false;
+  ready.resolve();
+  assert.deepEqual(await running, { status: "stale" });
+  assert.equal(leaves, 1);
+  current = true;
+  assert.deepEqual(await reconcileSessionConnection(identity, deps), { status: "reconciled", user: null });
+  assert.equal(leaves, 1);
+  clearSession();
+});
 
 function profile(uid: string, ver: number): IUserView {
   return {

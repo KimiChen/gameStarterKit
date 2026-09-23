@@ -1,0 +1,9 @@
+{
+  "extends": "../../../../client/tsconfig.test.json",
+  "include": [
+    "client/**/*.ts",
+    "../../../../client/client-test-stubs.d.ts",
+    "../../../../client/uniflex-jsx.d.ts",
+    "../../../../client/src/**/*.d.ts"
+  ]
+}

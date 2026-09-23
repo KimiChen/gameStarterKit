@@ -51,6 +51,22 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 
 ## 3. 包格式：`kit.json`
 
+### 原生服务端 kit（2026-09-23）
+
+`serverNew` 使用独立原生 kit 工具链，登记目录为 `apps/serverNew/kits/<id>/`，命令为 `npm run kit:native -- <command>`。旧 `apps/kits/`、旧 `plugin` 命令和下文旧服 schema 保持原有语义；原生操作不调用旧服 codegen，也不写 `apps/server/`。
+
+- 服务端源和测试：`apps/serverNew/server/{src,test}/modules/<id>/`；API 位于模块 `api/<surface>/index.ts`。
+- shared 真源：`apps/shared/src/kits/<id>/`；原生 RPC descriptor：`apps/shared/src/native/lobbyRpc/domains/`。
+- 客户端真源：`apps/client/src/kits/<id>/`；清单生成独立 native catalog，经宿主扩展点合并。业务使用类型明确的 `AppPorts.nativeLobbyRpc`，默认旧服连接行为不变。
+- RPC 合集继承已有通用协议并加入原生域，旧服注册表不包含 gameDemo。信封和传输编解码从既有真源生成链接版本，不另维护手写副本。
+- `verify/routes.cjs` 提供真实协议场景，`verify/protocolVectors/` 提供请求/响应向量，均随包分发。
+
+当前原生格式为 `native-kit.json` 格式 1，仅支持代码与 Cocos View 清单，不支持 SQL、旧服 mode/worker/effect、FGUI 资源、运行配置或引擎文件。旧版原生试验包 0.2.x 使用旧工具链，不能直接交给新安装器；须先排空旧部署，在具备原生扩展点的宿主安装新包，再恢复保留的数据。原生独立制品从 gameDemo 0.3.0 开始。
+
+宿主能力声明为 `apps/serverNew/server/native-kit-capabilities.json`，kit 通过 `native-requires.json` 消费版本窗口。`native-data.json` 声明持久键、数据版本和 preserve 策略。安装前显式指定 `NATIVE_KIT_PROFILE` 并排空、停止所有 worker；写文件前进入 detached，成功生成后转 drained，须显式 resume。卸载或安装失败保留全部业务数据并保持 detached；没有迁移器时拒绝跨数据版本、删减持久键、降级和同版本内容变更。
+
+工具实现与完整命令见 [原生 kit 工具](../apps/serverNew/tools/kit/README.md)，运维状态机见 [生命周期](../apps/serverNew/server/src/runtime/kit/README.md)，本轮验证以 [实施记录](gameDemo实施记录.md) 为准。正式分发仍须审核与签名。
+
 `kit.json` 有自己的 schema（`apps/server/tools/plugin/kit-schema-v1.json`）：登记面字段与 `plugin.json` v2 同名同义，但路径
 pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`——⛔ 不是「复用 plugin schema 片段」，是两份 schema 共用一个解释器。
 

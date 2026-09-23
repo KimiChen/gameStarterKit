@@ -110,8 +110,8 @@ test("登记：promoHome 是 authenticated base route；旧 FGUI Home 仍是可�
   const flow = source("apps/client/src/app/loginFlow.ts");
   assert.match(flow, /setAuthenticatedBase\("promoHome"/u,
     "authenticated base 必须登记为 promoHome");
-  assert.match(flow, /baseHandle = await openPromoHome\(/u,
-    "登录成功的导航目标必须是宣传首屏");
+  assert.match(flow, /baseHandle = await openAuthenticatedHome\(/u,
+    "登录成功必须经过宿主首页选择入口");
 
   // 从分组页进的战斗打完要回那一组：base 恢复闭包必须消费返回位并把设置面板 + 分组页一起还原。
   // ⚠ 这是组合根里的接线，纯逻辑那半（记一次/消费一次/清位）在 entryGroup.test.ts 有真单测。
@@ -119,6 +119,6 @@ test("登记：promoHome 是 authenticated base route；旧 FGUI Home 仍是可�
     "authenticated base 恢复时必须消费分组返回位");
   assert.match(flow, /await openSettings\(\);\n\s*await openEntryGroup\(groupId\);/u,
     "恢复顺序必须是设置面板 → 分组页（关掉分组页露出的仍是设置面板，与 route 形态同一条回路）");
-  assert.match(flow, /rememberGroupReturn\(item\.launch\.kind === "gameplay" \? resolved\.group\.id : null\)/u,
+  assert.match(flow, /rememberGroupReturn\(\s*item\.launch\.kind === "gameplay" \? resolved\.group\.id : null,?\s*\)/u,
     "只有 gameplay 形态的成员需要返回位（route 形态关掉自然露出分组页）");
 });

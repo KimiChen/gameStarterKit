@@ -4,7 +4,7 @@ import {
     LobbyPush,
     forceLogoutReasonOf,
     type ForceLogoutReasonType,
-} from '../../generated/lobby-contract/protocol/lobbyRpc'
+} from '../../generated/lobby-contract/native/lobbyRpc/index.generated'
 import { NativeLobbyAuthProvider } from '../runtime/identity/NativeLobbyAuthProvider'
 import { NativeLobbyIdentityMap } from '../runtime/identity/NativeLobbyIdentityMap'
 import { WebPlatformSessionVerifier } from '../runtime/identity/WebPlatformSessionVerifier'

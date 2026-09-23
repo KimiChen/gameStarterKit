@@ -11,6 +11,7 @@ import {
   joinSelectedServerLobby,
   LoginLogic,
   runAuthenticatedLoginFlow,
+  runAuthenticatedConnectionFlow,
 } from "../src/logic/page/LoginLogic";
 import { ConfirmLogic } from "../src/logic/page/ConfirmLogic";
 import {
@@ -446,6 +447,26 @@ test("Login：签发请求失败不自动重试（由用户明确再次发起）
   assert.equal(await logic.doLogin("dev_b"), null);
   assert.equal(calls, 1, "登录会签发/轮换 token，客户端不得盲目自动重试");
   assert.equal(texts[texts.length - 1], "登录失败，请重试");
+});
+
+test("Native Login：只等待鉴权建档，失败回滚且旧事务不清新会话", async () => {
+  const response = { userId: "native-user", accessToken: "native-token", isNewAccount: false };
+  const events: string[] = [];
+  const deps = {
+    setSession: () => { events.push("session"); },
+    join: async () => { events.push("auth.ok"); },
+    clearSession: () => { events.push("clear"); },
+    leave: () => { events.push("leave"); },
+  };
+  await runAuthenticatedConnectionFlow(response, deps);
+  assert.deepEqual(events, ["session", "auth.ok"]);
+  const failed = { ...deps, join: async () => { throw new Error("auth failed"); } };
+  events.length = 0;
+  await assert.rejects(runAuthenticatedConnectionFlow(response, failed), /auth failed/);
+  assert.deepEqual(events, ["session", "clear", "leave"]);
+  events.length = 0;
+  await assert.rejects(runAuthenticatedConnectionFlow(response, { ...failed, shouldRollback: () => false }), /auth failed/);
+  assert.deepEqual(events, ["session"]);
 });
 
 test("Login：join/GetInfo 任一失败都清会话并释放大厅，不进入半状态", async () => {

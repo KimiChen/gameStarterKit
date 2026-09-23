@@ -1,11 +1,72 @@
 {
+  "schemaVersion": 1,
   "id": "gameDemo",
-  "version": "1.0.0",
-  "domain": "gameDemo",
-  "module": "gameDemo",
-  "files": [
-    "apps/shared/schema/protocols/C2S/gameDemo.json",
-    "apps/serverNew/server/src/modules/gameDemo/GameDemoModule.ts",
-    "apps/serverNew/server/src/modules/gameDemo/action/ActionGameDemoPing.ts"
+  "version": "0.4.0",
+  "serverRuntime": "serverNew",
+  "description": "原生框架能力验证：英雄、生产冲榜邮件、仙盟邀请与多 Boss 恢复",
+  "api": {
+    "growth": {
+      "version": 2,
+      "minSupported": 1
+    },
+    "production": {
+      "version": 1,
+      "minSupported": 1
+    },
+    "season": {
+      "version": 1,
+      "minSupported": 1
+    },
+    "guild": {
+      "version": 1,
+      "minSupported": 1
+    },
+    "boss": {
+      "version": 2,
+      "minSupported": 1
+    }
+  },
+  "domains": [
+    "gameDemo",
+    "gameDemoHero",
+    "gameDemoAlchemy",
+    "gameDemoSeason",
+    "gameDemoGuild",
+    "gameDemoBoss"
+  ],
+  "category": "extra",
+  "docs": [
+    "apps/serverNew/kits/gameDemo/README.md"
+  ],
+  "resident": false,
+  "entry": "apps/client/src/kits/gameDemo/index.ts",
+  "viewDirs": [
+    "apps/client/src/kits/gameDemo/view"
+  ],
+  "views": [
+    "apps/client/src/kits/gameDemo/view/GameDemoView.view.json"
+  ],
+  "owners": [
+    {
+      "id": "gameDemo",
+      "logicDir": "apps/client/src/kits/gameDemo/logic"
+    }
+  ],
+  "routes": [
+    {
+      "id": "gameDemo",
+      "view": "GameDemo"
+    }
+  ],
+  "menu": [
+    {
+      "entryId": "main",
+      "label": "玩法验证",
+      "labelKey": "menu.gameDemo.main",
+      "launch": {
+        "kind": "route",
+        "routeId": "gameDemo"
+      }
+    }
   ]
 }

@@ -6,11 +6,14 @@
 - 线路配置只读取精确的 `<platform><version>` 目录，且 `platform.json5` 只做顶层浅覆盖；目录或文件缺失时使用基础配置，AI 和运行流程不得**为迁就当前目标**代建目录或回退到其他线路。唯一例外是 `bearjoylive`：它是真实环境联调自检的固定线路（隔离 Redis 库号 + 单进程 + 短认证超时），只允许 `pnpm verify:native-lobby-live` 使用，并必须保持该文件头部注释写明的、与基础配置的三处差异。
 - 未指定平台和版本的本地启动或重启固定使用 `bearjoy/dev`；IDE 活动文件不改变目标，`clientHost` / `clientPort` 也不代表部署或 SSH 主机。
 - 数据库迁移必须复用已加载的 `config/platforms/` 配置和 TypeORM 数据源；禁止恢复或依赖旧 `config_platform/` 路径。
-- 本地 MySQL 账号必须使用当前数据库驱动兼容的 `mysql_native_password`；出现 `ER_NOT_SUPPORTED_AUTH_MODE` 时先检查账号认证插件。
+- MySQL 连接使用显式注入的 `mysql2` 驱动，支持 MySQL 8 的 `caching_sha2_password`，不需要修改现有账号的认证插件。出现 `ER_NOT_SUPPORTED_AUTH_MODE` 时检查 engine/server 依赖是否安装完整、是否仍在运行旧构建。
+- 遇到 worker `READY_TIMEOUT`，先检查同一启动时段的 `log/redis/<sid>/`、`log/game/<sid>/` 与实际线路配置中的依赖端点。Redis 连接重试会使初始化一直等待，最终由主控报 READY 超时；先排除连接拒绝、认证失败和数据库不存在，再判断编译或进程池问题，不要仅延长 READY 时限。
 - 调试工具 SSO 统一由线路配置控制；`/adjust`、`/config` 和 `/center/sso*` 必须共享服务端认证与写权限边界。
 - 上述调试路径的浏览器 `Origin` 默认只放行同源与 `localhost`/`127.0.0.1`/`::1`；仓库配置不得提交开发机局域网 IP 或反代 Origin，需要远程访问时由部署侧线路覆盖并重启管理 HTTP。
 - AI 调试能力必须显式配置开放，审计日志不得记录账号、密钥、Prompt 正文、工具参数或业务数据值。
 - 多进程下 service 的启动流程在每个 worker 各执行一遍：startup 贡献必须声明 `scope`（`process` 每进程一次，`server` 全区服一次且必须幂等）；全局副作用禁止挂进 `AppStartEvent` 处理器。
+- 玩家 Owner 跨进程调用的可选调度字段必须在无值时省略，不能把 `undefined` 写进 JSON-safe IPC envelope。登录建档、离线暂存和退出保存的内部 Action 必须在所有 service worker 的 `LocalActionRegistry` 登记；退出保存也通过玩家 Owner 的 Action 执行，不能在裸连接回调里修改 Bean。
+- 独立原生房间循环通过 `NativeLobbyRoomHost` 登记，由宿主进入 Action 上下文并管理停机；不要另起未追踪的常驻计时器。启动失败和正常 drain 都先停止新 tick、等待在途任务，再关闭 Redis。推送等待不能占用房间变更 FIFO。
 - service 的 dev 启动（`pnpm dev`、pm2 dev、多进程子进程）统一经 `deploy/dev/entrypoint.cjs`；禁止裸 `ts-node/register` 或 transpileOnly —— bean transform 会被静默跳过，垫片的 `_class_info` 金丝雀负责 fail-fast。
 - `workerNum`、`taskWorkerNum`、`userTaskWorkerNum` 全为 0 才走单进程；多进程适配模块必须在分支内惰性加载，再动态加载 ESM runtime bundle。`ALLOY_MULTI_PROCESS_ENABLED=0` 仅作显式逃生门，禁止在 bundle/addon 失败时静默降级。
 - 内部 HTTP 必须在合并 `sN.json5` 后解析 `internalPort`（缺省为最终 `clientPort + 10000`）；`gmSecret` 为空或端口冲突时 fail-fast，客户端端口不承载内部路由。
@@ -23,6 +26,7 @@
 - 多进程的独立探针由主控在 `healthPort`（缺省为最终 `clientPort + 20000`）承载：`GET /livez` 只证明主控存活，`GET /readyz` 要求完整 worker 池就绪。监听 worker 重拉时，内部 `/health` 与 `/internal/action` 可暂不可用，但独立探针必须继续可达；探针是只读端点，⛔ 不得在其上增加内部动作。
 - `/gm/api` 的原生 Lobby 强制下线沿用内部数值 `role_id`：管理进程只把它投递到目标区服，监听 worker 用当前在线会话中的 `internalUid` 定位连接并复用 4903 `revoked` 语义。⛔ 不要新增持久化的 role_id → 外部 uid 反查表，离线用户必须诚实返回 `kicked: false`，也不得把外部 uid 视为数字。
 - Runtime bundle 固定由 `pnpm build:runtime` 生成；bundle 目录与 `build/Release/ts_swoole_runtime_state.node` 的相对位置不可拆开复制。
+- 本地使用 Node 22。runtime 源码构建可用 `ALLOY_CORE_ROOT` 指向独立 alloy-core 仓库；迁入仓库只有已构建产物时，显式使用 `ALLOY_CORE_RUNTIME_PREBUILT=1 pnpm dev`，入口先加载校验 bundle 与原生扩展，保留既有多进程配置。缺失或损坏时拒启，production 不接受预编译选项。
 - 外置 runtime ESM 必须使用带 `webpackIgnore` 的原生变量 `import()`；否则 NCC 会改写成 bundle 内 lazy context，生产包将无法加载独立的 runtime 文件。
 - 排查 Action 路由时可临时设 `ALLOY_PROCESS_ROUTE_TRACE=1`；trace 只输出 API 名、`taskGroupId`、`bindId` 和源/目标 worker，不得扩展为输出用户或请求业务数据。trace 打在 `requestMessage` **之前**，跨进程证据仍需同时观察目标执行或客户端结果。
 - 跨进程转发只传已解析对象：字符串路由、业务 payload、可信身份（字符串 uid、内部 uid、`sId`）、源 Worker 首次解析的 `taskGroupId` / `bindId` 与 traceId。目标进程及其同步嵌套调用复用两项结果，不得重算。

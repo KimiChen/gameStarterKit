@@ -75,6 +75,13 @@ export function installNativeLobbyProcessRouter(
  */
 function buildRoutedRequest(call: ApiCall, routing: ActionRouting): ProcessPipeRequest {
     const sid = call.messageHead.serverId ?? 0
+    // IPC rejects explicit undefined values, including optional routing metadata.
+    const metadata = {
+        ...(routing.taskGroupId !== undefined ? { taskGroupId: routing.taskGroupId } : {}),
+        ...(routing.bindId !== undefined ? { bindId: routing.bindId } : {}),
+        traceId: call.messageHead.traceId,
+        invokeLayer: call.messageHead.invokeLayer,
+    }
     if (call.responseTransport !== 'object') {
         return {
             kind: 'routed-local-action',
@@ -82,9 +89,7 @@ function buildRoutedRequest(call: ApiCall, routing: ActionRouting): ProcessPipeR
             req: call.req,
             uid: call.uId,
             sid,
-            ...routing,
-            traceId: call.messageHead.traceId,
-            invokeLayer: call.messageHead.invokeLayer,
+            ...metadata,
             ...(call.backgroundTask ? { backgroundTask: call.backgroundTask } : {}),
         }
     }
@@ -97,9 +102,7 @@ function buildRoutedRequest(call: ApiCall, routing: ActionRouting): ProcessPipeR
         uid: externalUid,
         internalUid: call.uId,
         sid,
-        ...routing,
-        traceId: call.messageHead.traceId,
-        invokeLayer: call.messageHead.invokeLayer,
+        ...metadata,
     }
 }
 

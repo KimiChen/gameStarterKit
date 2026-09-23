@@ -33,7 +33,9 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CLIENT_ROOT = path.resolve(HERE, "..", "..");
 const APPS_ROOT = path.resolve(CLIENT_ROOT, "..");
 const OLD_SERVER_ROOT = path.join(APPS_ROOT, "server");
-const NEW_SERVER_ROOT = path.join(APPS_ROOT, "serverNew", "server");
+const NEW_SERVER_ROOT = process.env.DUAL_LOBBY_NATIVE_ROOT
+    ? path.resolve(process.env.DUAL_LOBBY_NATIVE_ROOT)
+    : path.join(APPS_ROOT, "serverNew", "server");
 const require_ = createRequire(import.meta.url);
 
 const RUN_ID = `${Date.now().toString(36)}`;
@@ -57,10 +59,12 @@ process.on("unhandledRejection", (reason) => {
 process.on("uncaughtException", (error) => {
     harnessFaults.push(describeFault("uncaughtException", error));
 });
-/** 旧 dev-stack 的固定端口（`apps/server/tools/dev-stack.sh`）。 */
-const DURABLE_REDIS_PORT = 6401;
-const CACHE_REDIS_PORT = 6402;
-const MYSQL_PORT = 3316;
+/** 与子进程继承的连接配置一致；未指定时使用旧 dev-stack 的默认端口。 */
+const STACK_ENDPOINTS = [
+    [process.env.REDIS_DURABLE_URL ?? "redis://127.0.0.1:6401", 6379, "旧 durable Redis"],
+    [process.env.REDIS_CACHE_URL ?? "redis://127.0.0.1:6402", 6379, "旧 cache Redis"],
+    [process.env.MYSQL_URL ?? "mysql://127.0.0.1:3316", 3306, "旧 MySQL"],
+] as const;
 /** 新线路 fixture 固定绑定的两个端口（`config/platforms/bearjoylive/platform.json5`）。 */
 const NEW_CLIENT_PORT = 18090;
 const NEW_INTERNAL_PORT = 28090;
@@ -208,9 +212,9 @@ async function assertPortFree(port: number, label: string): Promise<void> {
     await new Promise<void>((resolve) => probe.close(() => resolve()));
 }
 
-async function tcpReachable(port: number): Promise<boolean> {
+async function tcpReachable(port: number, host = "127.0.0.1"): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
-        const socket = net.connect({ port, host: "127.0.0.1" });
+        const socket = net.connect({ port, host });
         const done = (ok: boolean) => {
             socket.removeAllListeners();
             socket.destroy();
@@ -307,13 +311,11 @@ const clientModule = (relative: string): string => new URL(`../../src/${relative
 async function main(): Promise<void> {
     console.log(`双链联合验证：run=${RUN_ID}`);
 
-    for (const [port, label, hint] of [
-        [DURABLE_REDIS_PORT, "旧 durable Redis", "cd apps/server && npm run stack"],
-        [CACHE_REDIS_PORT, "旧 cache Redis", "cd apps/server && npm run stack"],
-        [MYSQL_PORT, "旧 MySQL", "cd apps/server && npm run stack"],
-    ] as const) {
-        if (!(await tcpReachable(port))) {
-            fail(`前置不成立：${label} (127.0.0.1:${port}) 不可达。请先执行：${hint}`);
+    for (const [connectionUrl, defaultPort, label] of STACK_ENDPOINTS) {
+        const endpoint = new URL(connectionUrl);
+        const port = Number(endpoint.port || defaultPort);
+        if (!(await tcpReachable(port, endpoint.hostname))) {
+            fail(`前置不成立：${label} (${endpoint.hostname}:${port}) 不可达。请启动所配置的测试栈；默认栈使用 cd apps/server && npm run stack`);
         }
     }
 

@@ -17,12 +17,13 @@
  * view/pages.ts 保留为零状态纯转发 façade（既有 import 面不断）。
  *
  * cc 值导入允许清单：本文件与 Main.ts / CocosLifecycleBridge.ts 同列（仅
- * `sys.localStorage`，公告「今日不再提醒」的存取；⛔ 不得扩散到其它 app/ 模块）。
+ * `sys.localStorage`，本地开发账号与公告「今日不再提醒」的存取；⛔ 不得扩散到其它 app/ 模块）。
  *
  * 选服链路：openLogin 时拉 WebPlatform GET /v1/areas 存 serverSession + 默认选中服 →
  * Login 显示当前服 → 选服改 currentServer → HTTP 使用 gameHttpUrl、Colyseus 使用 gameWsUrl。
  */
 import { sys } from "cc";
+import { LOCAL_DEV_ACCOUNT_KEY, resolveLocalDevAccount, validDevAccountKey } from "../logic/page/LocalDevAccount";
 import type { LoginView } from "../view/LoginView";
 import type { AreaListView } from "../view/AreaListView";
 import type { LoginNoticeView } from "../view/LoginNoticeView";
@@ -42,10 +43,12 @@ import {
   SettingsLogic,
   type SettingsProfilePatch,
 } from "../logic/page/SettingsLogic";
-import { reconcileSessionProfile } from "../logic/page/SessionReconcileLogic";
+import { reconcileSessionConnection, reconcileSessionProfile, type SessionProfileReconcileDeps } from "../logic/page/SessionReconcileLogic";
 import {
   LoginLogic,
   runAuthenticatedLoginFlow,
+  runAuthenticatedConnectionFlow,
+  type AuthenticatedLoginFlowDeps,
 } from "../logic/page/LoginLogic";
 import { AreaListLogic } from "../logic/page/AreaListLogic";
 import {
@@ -57,6 +60,7 @@ import { ConfirmLogic } from "../logic/page/ConfirmLogic";
 import { initHttp } from "../core/http";
 import { devLogin } from "../net/http/account";
 import { lobbyTransportHub } from "../net/LobbyTransportHub";
+import { resolveNativeHomeRoute } from "../native/host";
 import {
   attachSessionNavigator,
   clearSession,
@@ -92,33 +96,25 @@ import {
 
 const NOTICE_DONT_REMIND_DATE_KEY = "game.notice.dont-remind-date";
 
-/** 本地开发登录身份（dev-login 的 devKey：同 key 恒同账号，换号 = 换 key）。
- *  微信侧接入后此处换 wx.login 取 code → wxLogin(code)。 */
-const DEV_LOGIN_KEY = "dev_local";
-
-/** `?devKey=` 的格式闸：与 WebPlatform 契约的 validateDevKey 同一条规则。 */
-const DEV_LOGIN_KEY_PATTERN = /^[a-zA-Z0-9_-]{1,32}$/u;
-
-/**
- * 预览调试：`?devKey=` 覆盖本地开发身份（同 key 恒同号，换号 = 换 key）。
- * 与 bootstrap 的 `?server=` / `?lobby=` 同一约定：查询参数覆盖编译期缺省。
- *
- * ⚠ 这里**不**照抄 bootstrap 的 fail-fast。本函数的调用点在 `onEnter` 的异步 IIFE 内，
- * 而该 IIFE 收尾的 `.then(onFulfilled, onRejected)` 只清 enterInFlight、**吞掉**拒绝，
- * 抛错会表现为「点进入游戏毫无反应」——比回落更难排查。所以非法值改为 warn + 回落缺省；
- * 这仍可观测（console 警告 + 登录后 `user.getUserId` 核对 uid），不是静默。
- */
-function devLoginKeyFromQuery(): string {
+/** First login creates a cached development identity; the existing dev-login API registers it. */
+async function localDevLoginKey(): Promise<string> {
   const search = (globalThis as { location?: { search?: string } }).location?.search;
-  if (!search) return DEV_LOGIN_KEY;
-  const raw = new URLSearchParams(search).get("devKey");
-  if (raw === null) return DEV_LOGIN_KEY;
-  const value = raw.trim();
-  if (DEV_LOGIN_KEY_PATTERN.test(value)) return value;
-  console.warn(
-    `[loginFlow] 忽略非法的 ?devKey=${JSON.stringify(raw)}（需 1-32 位 [a-zA-Z0-9_-]），回落到 ${DEV_LOGIN_KEY}`,
-  );
-  return DEV_LOGIN_KEY;
+  const raw = new URLSearchParams(search ?? "").get("devKey");
+  const explicit = validDevAccountKey(raw);
+  if (explicit) return explicit;
+  if (raw !== null) console.warn("[loginFlow] 忽略非法 devKey，使用本地缓存账号");
+  const resolve = () => resolveLocalDevAccount(null, sys.localStorage, () => {
+    const bytes = new Uint8Array(16);
+    const crypto = (globalThis as { crypto?: { getRandomValues(array: Uint8Array): Uint8Array } }).crypto;
+    if (crypto?.getRandomValues) crypto.getRandomValues(bytes);
+    else for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+    return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+  });
+  // Serialize first-use registration across tabs where Web Locks is available.
+  const locks = (globalThis as { navigator?: { locks?: {
+    request(name: string, callback: () => string): Promise<string>;
+  } } }).navigator?.locks;
+  return locks ? locks.request(LOCAL_DEV_ACCOUNT_KEY, resolve) : resolve();
 }
 
 /** 应用级不可变 plugin/route 目录（codegen:plugins 生成的 descriptor 单源）。 */
@@ -134,6 +130,7 @@ export const appNavigation = new NavigationService(appPluginRegistry);
  */
 export interface HomeMenuRuntime {
   launch(target: PluginLaunchTarget): Promise<void>;
+  openRoute?(routeId: string): Promise<NavRouteHandle | null>;
   /** PluginHost 运行时可用性（catalog 之外的可变叠加层；built-in 恒 available）。 */
   availabilityOf(pluginId: string): "available" | "failed" | "disabled";
 }
@@ -303,9 +300,7 @@ async function reconcilePageSession(
   const server = getCurrentServer();
   if (!server) return false;
 
-  const result = await reconcileSessionProfile<IUserView>(
-    identity,
-    {
+  const deps: SessionProfileReconcileDeps<IUserView> = {
       connect: (captured, control) => {
         return lobbyTransportHub.connectOwned(
           server,
@@ -322,9 +317,10 @@ async function reconcilePageSession(
         isPageOwnerActive(owner, wiredAppGeneration) &&
         isSessionIdentityCurrent(captured),
       commitProfile: commitSessionProfile,
-    },
-    owner.controller.signal,
-  );
+    };
+  const result = lobbyTransportHub.currentConfig.kind === "native-websocket"
+    ? await reconcileSessionConnection(identity, deps, owner.controller.signal)
+    : await reconcileSessionProfile(identity, deps, owner.controller.signal);
   if (!isSessionIdentityCurrent(identity)) return true;
   if (
     result.status === "stale" ||
@@ -355,6 +351,7 @@ async function reconcilePageSession(
  * 未登录 / 无 base / owner 失效时不发任何请求（非活跃不得后台请求快照）。
  */
 export function refreshAuthenticatedBaseProfile(): Promise<void> {
+  if (lobbyTransportHub.currentConfig.kind === "native-websocket") return Promise.resolve();
   const owner = activePageOwner;
   if (!owner || owner.disposed) return Promise.resolve();
   const identity = getSessionIdentity();
@@ -770,15 +767,22 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
         let user: IUserView | null = null;
         let flowFailed = false;
         let flowSessionGen = -1;
-        const r = await logic.doLoginFlow(devLoginKeyFromQuery(), async (response) => {
+        let devKey: string;
+        try { devKey = await localDevLoginKey(); }
+        catch {
+          if (!isFlightActive(flight) || !context.isActive()) return;
+          logic.onProgress(0, "无法保存本地账号，请允许本地存储后重试");
+          await openConfirm({ title: "账号创建失败", content: "无法保存本地账号，请允许本地存储后重试", noText: null });
+          return;
+        }
+        if (!isFlightActive(flight) || !context.isActive()) return;
+        const r = await logic.doLoginFlow(devKey, async (response) => {
           if (!isFlightActive(flight) || !context.isActive()) {
             flowFailed = true;
             return;
           }
           try {
-            user = await runAuthenticatedLoginFlow(
-              response,
-              {
+            const deps: AuthenticatedLoginFlowDeps<IUserView> = {
                 setSession: (next) => {
                   setSession(next);
                   flowSessionGen = getSessionGeneration();
@@ -826,9 +830,12 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
                   context.isActive() &&
                   (flowSessionGen < 0 ||
                     getSessionGeneration() === flowSessionGen),
-              },
-              context.signal,
-            );
+              };
+            if (lobbyTransportHub.currentConfig.kind === "native-websocket") {
+              await runAuthenticatedConnectionFlow(response, deps, context.signal);
+            } else {
+              user = await runAuthenticatedLoginFlow(response, deps, context.signal);
+            }
           } catch (e) {
             if (!isFlightActive(flight) || !context.isActive()) {
               flowFailed = true;
@@ -869,8 +876,7 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
           return;
         let baseHandle: NavRouteHandle;
         try {
-          // authenticated base = 宣传首屏（PLUGIN.md §6）；旧 FGUI Home 仍是可达 route。
-          baseHandle = await openPromoHome(r.userId, user);
+          baseHandle = await openAuthenticatedHome(r.userId, user);
         } catch (e) {
           if (
             !isFlightActive(flight) ||
@@ -923,6 +929,23 @@ async function openLoginImpl(flight: LoginFlight): Promise<void> {
  * ⚠ 它同时是最终断线对账后的恢复目标：base 登记先于打开，恢复经
  * restoreAuthenticatedBase 走同一入口并带回刷新后的角色快照（会话摘要行消费它）。
  */
+export async function openAuthenticatedHome(
+  userId = "",
+  user: IUserView | null = null,
+): Promise<NavRouteHandle> {
+  const routeId = resolveNativeHomeRoute(
+    lobbyTransportHub.currentConfig.kind,
+    (id) => appPluginRegistry.hasRoute(id),
+  );
+  if (!routeId) return openPromoHome(userId, user);
+  const openRoute = homeMenuRuntime?.openRoute;
+  if (!openRoute) throw new Error("原生首页的插件装载入口未接线");
+  appNavigation.setAuthenticatedBase(routeId, () => openAuthenticatedHome());
+  const handle = await openRoute(routeId);
+  if (!handle) throw new Error("原生首页打开失败");
+  return handle;
+}
+
 export async function openPromoHome(
   userId = "",
   user: IUserView | null = null,

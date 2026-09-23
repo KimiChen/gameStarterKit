@@ -1,3 +1,5 @@
+import { NativeKitLifecycle } from '../runtime/kit/NativeKitLifecycle'
+import { NativeLobbyRoomHost } from '../runtime/lobby/NativeLobbyRoomHost'
 import { CronService, EngineInitHelper, ModSync, RouteAction } from '@arthropoda/game-engine'
 import { DelayedActionQueueWorker } from '../runtime/scheduling/DelayedActionQueueWorker'
 import { RuntimeCronScheduler } from '../runtime/scheduling/RuntimeCronScheduler'
@@ -56,6 +58,7 @@ export async function initializeServiceRuntime(options: ServiceRuntimeOptions) {
     try {
         await startServiceRuntime(options)
     } catch (error) {
+        await NativeLobbyRoomHost.stop()
         rollbackServiceRuntimeStart()
         throw error
     }
@@ -125,6 +128,7 @@ export async function shutdownServiceRuntime() {
     // 关闭后必须卸载进程级路由表：残留的 handler 会继续被跨进程请求命中，而它依赖的
     // 鉴权校验器与在线归属已经释放，那是「静默执行」而不是 fail-closed。
     nativeLobbyProcessRoutes.reset()
+    await NativeKitLifecycle.stopRuntimes()
     await EngineInitHelper.stopInfrastructure()
     nativeLobby = undefined
     forwardedLobbyRoutes = undefined
@@ -189,6 +193,7 @@ function installCommittedSyncDelivery(
 export async function prepareServiceRuntimeShutdown() {
     if (!initialized || shutdownPrepared) return
     shutdownPrepared = true
+    await NativeLobbyRoomHost.stop()
     await RouteAction.waitDealAction()
     DelayedActionQueueWorker.stop()
     CronService.stopAndClearCronTask()

@@ -1,0 +1,35 @@
+import { Application } from '<%= applicationJS %>';
+
+const canvas = document.getElementById('GameCanvas');
+const $p = canvas.parentElement;
+const bcr = $p.getBoundingClientRect();
+canvas.width = bcr.width;
+canvas.height = bcr.height;
+
+function topLevelImport (url) {
+    return System.import(url);
+}
+
+const application = new Application();
+
+topLevelImport('cc')
+.then((engine) => {
+    // Let the engine measure the portrait container instead of the browser window.
+    engine.game.onPostBaseInitDelegate.add(() => {
+        engine.settings.overrideSettings('screen', 'exactFitScreen', false);
+    });
+    return Promise.resolve(application.init(engine)).then(() => application.start()).then(() => {
+        const frame = document.getElementById('PortraitFrame');
+        const resize = () => {
+            if (engine.screen.fullScreen()) return;
+            const dpr = engine.screen.devicePixelRatio;
+            engine.screen.windowSize = new engine.Size(frame.clientWidth * dpr, frame.clientHeight * dpr);
+        };
+        // Cocos 3.8 checks inline frame styles; CSS-only resizing needs notification.
+        if (typeof ResizeObserver !== 'undefined') new ResizeObserver(resize).observe(frame);
+        window.addEventListener('resize', resize);
+        resize();
+    });
+}).catch((err) => {
+    console.error(err);
+});

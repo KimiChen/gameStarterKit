@@ -453,6 +453,7 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
     }
     dispose(): void { this.disposals++; }
   }
+  const localAccountStorage = new Map<string, string>();
   const cc = {
     Node: FakeNode,
     UITransform: FakeUITransform,
@@ -466,7 +467,11 @@ async function loadViewRuntime(): Promise<ViewRuntime> {
     },
     sys: {
       getSafeAreaRect: () => ({ x: 0, y: 0, width: 750, height: 1334 }),
-      localStorage: {},
+      localStorage: {
+        getItem: (key: string) => localAccountStorage.get(key) ?? null,
+        setItem: (key: string, value: string) => { localAccountStorage.set(key, value); },
+        removeItem: (key: string) => { localAccountStorage.delete(key); },
+      },
     },
     view: { getVisibleSize: () => ({ width: 750, height: 1334 }) },
   };
@@ -1466,7 +1471,7 @@ test("page navigation boundary observes rejected async actions without unhandled
     );
     assert.match(
       pagesSource,
-      /view\.onSelectServer\s*=\s*\(\)\s*=>\s*\{\s*observePageAction\(\(\)\s*=>\s*openAreaList\(/,
+      /view\.onSelectServer\s*=\s*\(\)\s*=>\s*\{\s*observePageAction\(\s*\(\)\s*=>\s*openAreaList\(/,
       "Login 选服导航调用点必须经过被测 observePageAction 边界",
     );
   } finally {

@@ -1,4 +1,7 @@
-import { ForceLogoutReason, type ForceLogoutReasonType } from '../../../generated/lobby-contract/protocol/lobbyRpc'
+import {
+    ForceLogoutReason,
+    type ForceLogoutReasonType,
+} from '../../../generated/lobby-contract/native/lobbyRpc/index.generated'
 import { forwardLobbyKick } from '../../startup/lobbyRole'
 import { hasNativeLobbyEnvironment, type NativeLobbyRuntime } from '../../startup/NativeLobbyRuntime'
 import { nativeLobbyRuntime } from '../../startup/ServiceRuntime'

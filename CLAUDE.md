@@ -71,6 +71,11 @@ npm run typecheck:client
 npm run typecheck:client:legacy
 npm run verify:sync
 npm run test:client
+npm run kit:native -- check gameDemo
+npm run codegen:native-kits
+npm run verify:native-kits
+npm run test:native-kits
+npm run verify:dual-lobby
 npm run test:changed
 npm run test:fgui
 npm run test:vendor

@@ -72,3 +72,20 @@ apps/website/
 #  - apps/Cocos/settings/ 需要提交（工程配置）
 #  - 运行时产物（colyseus.js×2、fairygui-cc/runtime/）**入库**：版本钉死、新机 clone 即可用；
 #    仅框架维护团队显式升级时运行 `npm run fetch:colyseus` / `fetch:fgui`（拉新版 + 验完整性）后提交 diff
+
+# serverNew native kit derived catalogs and local installation state
+/apps/serverNew/server/.cache/
+/apps/serverNew/.kit-operation-lock/
+/apps/serverNew/kit-locks/
+/apps/shared/src/native/index.ts
+/apps/shared/src/native/kits.generated.ts
+/apps/shared/src/native/lobbyRpc/*.generated.ts
+/apps/client/src/native/generated/
+/apps/client/src/shared/native/
+/apps/Cocos/assets/src/native/
+/apps/Cocos/assets/src/shared/native/
+/apps/client/src/shared/kits/gameDemo/
+/apps/Cocos/assets/src/shared/kits/gameDemo/
+/apps/Cocos/assets/src/shared/kits/gameDemo.meta
+/apps/Cocos/assets/src/kits/gameDemo/
+/apps/Cocos/assets/src/kits/gameDemo.meta

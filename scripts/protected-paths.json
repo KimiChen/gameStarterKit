@@ -66,6 +66,14 @@
   "generatedWriterOwned": {
     "note": "生成物 / 锁 / 镜像：普通动线里禁手改，只能由登记的 writer 命令刷新（铁律 2 与 §5.5 provenance 表的机读投影）。autoHeader=true 的条目其文件首三行必须含 Do not edit 标记（目录条目递归到每个 .ts）。含 `*` 的条目是单段通配（每 kit 一份的生成物家族，MMO MF9），家族可为空，逐个现有文件检查抬头。",
     "entries": [
+      { "path": "apps/shared/src/native/index.ts", "writer": "npm run codegen:native-kits", "autoHeader": true },
+      { "path": "apps/shared/src/native/kits.generated.ts", "writer": "npm run codegen:native-kits", "autoHeader": true },
+      { "path": "apps/shared/src/native/lobbyRpc/*.generated.ts", "writer": "npm run codegen:native-kits", "autoHeader": true },
+      { "path": "apps/client/src/native/generated/**", "writer": "npm run codegen:native-kits", "autoHeader": true },
+      { "path": "apps/serverNew/server/generated/modules/**", "writer": "pnpm -C apps/serverNew/server gen:modules", "autoHeader": false },
+      { "path": "apps/serverNew/server/generated/records/**", "writer": "pnpm -C apps/serverNew/server generate", "autoHeader": false },
+      { "path": "apps/serverNew/server/generated/protocol/server/**", "writer": "pnpm -C apps/serverNew/server generate", "autoHeader": false },
+      { "path": "apps/serverNew/server/generated/lobby-contract/**", "writer": "pnpm -C apps/serverNew/server gen:lobby-contract", "autoHeader": false },
       { "path": "apps/shared/src/gameplays/index.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/shared/src/gameplays/catalog.generated.ts", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },
       { "path": "apps/shared/src/gameplays/generated/**", "writer": "npm --workspace @game/server run codegen:gameplays", "autoHeader": true },

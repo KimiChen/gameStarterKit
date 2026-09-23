@@ -1,4 +1,4 @@
-import { Call, MessageHelper } from '@arthropoda/game-engine'
+import { Call, LocalActionRegistry, MessageHelper } from '@arthropoda/game-engine'
 import { ActionIncomeParkOffline } from '../action/ActionIncomeParkOffline'
 
 /**
@@ -17,6 +17,10 @@ import { ActionIncomeParkOffline } from '../action/ActionIncomeParkOffline'
  * （见 `test/support/FakeCenterRedis.ts` 的 `player` 选项），而不是让生产代码容忍缺失。
  */
 export class IncomeNativeLobbyAuth {
+    static registerActions(): void {
+        LocalActionRegistry.register({ 'income.parkOffline': ActionIncomeParkOffline })
+    }
+
     static async onAuthenticated(internalUid: number, sId: number): Promise<void> {
         const result = await MessageHelper.syncDoAction(
             internalUid,

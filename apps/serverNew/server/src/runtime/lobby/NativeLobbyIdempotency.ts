@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { RedisInstance } from '@arthropoda/game-engine'
-import { canonicalJsonString } from '../../../generated/lobby-contract/protocol/lobbyRpc'
+import { canonicalJsonString } from '../../../generated/lobby-contract/native/lobbyRpc/index.generated'
 
 /** 幂等记录形态（Non-intrusive §6.12）；`done-oversize` 是「确定执行过、结果不可得」的墓碑。 */
 type StoredIdemRecord =

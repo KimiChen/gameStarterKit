@@ -1,3 +1,4 @@
+import { NATIVE_VIEWS } from "../native/generated/kits";
 /**
  * 页面注册表（稳定 façade，Non-intrusive §7.5 阶段 6）。
  *
@@ -18,4 +19,8 @@
 import type { ViewMeta } from "./defineView";
 import { GENERATED_VIEW_CATALOG } from "../generated/views.generated";
 
-export const VIEW_REGISTRY: Readonly<Record<string, ViewMeta>> = GENERATED_VIEW_CATALOG;
+export const VIEW_REGISTRY: Readonly<Record<string, ViewMeta>> = mergeViews(GENERATED_VIEW_CATALOG,NATIVE_VIEWS);
+function mergeViews(base:Readonly<Record<string,ViewMeta>>, native:Readonly<Record<string,ViewMeta>>):Readonly<Record<string,ViewMeta>> {
+  for(const name of Object.keys(native)) if(Object.prototype.hasOwnProperty.call(base,name)) throw new Error("Duplicate view: "+name);
+  return {...base,...native};
+}

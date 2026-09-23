@@ -56,10 +56,11 @@ import {
     openLogin,
     refreshAuthenticatedBaseProfile,
     setHomeMenuRuntime,
+    openSettings,
     setProfileWriteRuntime,
     type PageSessionScope,
 } from "./loginFlow";
-import type { NavigationService } from "./NavigationService";
+import type { NavigationService, NavRouteHandle } from "./NavigationService";
 
 /**
  * launch target(gameplayId) → 贡献它的 plugin id：menu contribution 是唯一映射源
@@ -168,6 +169,7 @@ export class AppRuntime {
         // PluginHost（disabled/failed 叠加层）。注销器身份守卫，随 dispose 强制释放。
         this.unsubs.push(setHomeMenuRuntime({
             launch: (target) => this.ports.launch.launch(target),
+            openRoute: (routeId) => this.launchRoute(routeId),
             availabilityOf: (pluginId) => this.pluginAvailability(pluginId),
         }));
         // 设置面板的档案写接线：走 ports.lobbyRpc.sendIdempotent（clientReqId +
@@ -446,7 +448,10 @@ export class AppRuntime {
      */
     async launch(target: PluginLaunchTarget): Promise<void> {
         if (this.disposed) return;
-        if (target.kind === "route") return this.launchRoute(target.routeId);
+        if (target.kind === "route") {
+            await this.launchRoute(target.routeId);
+            return;
+        }
         const pluginId = this.launchPluginIds.get(target.gameplayId) ?? null;
         // 映射指向未托管 plugin 时不误伤、直通——与渲染侧 pluginAvailability 对未登记
         // id 返回 "available" 的防御裁定一致（⛔ 不用 try/catch 吞异常：真实 install
@@ -472,22 +477,23 @@ export class AppRuntime {
      * 先让 route 归属的 plugin 过同一道 PluginHost 闸（userIntent），再经 navigation 打开 route。
      * 未登记的 route 不猜测、不打开（生成器已闸，这里只是防御）。
      */
-    private async launchRoute(routeId: string): Promise<void> {
+    private async launchRoute(routeId: string): Promise<NavRouteHandle | null> {
+        if (this.disposed) return null;
         if (!appPluginRegistry.hasRoute(routeId)) {
             console.error(`[AppRuntime] launch 引用未登记的 route ${routeId}，忽略`);
-            return;
+            return null;
         }
         const pluginId = appPluginRegistry.routeOf(routeId).pluginId;
         if (this.pluginHost.hosts(pluginId)) {
             const sessionGeneration = getSessionGeneration();
             const status = await this.pluginHost.launch(pluginId, { userIntent: true });
-            if (this.disposed || getSessionGeneration() !== sessionGeneration) return;
+            if (this.disposed || getSessionGeneration() !== sessionGeneration) return null;
             if (status !== "active") {
                 console.error(`[AppRuntime] plugin ${pluginId} 不可用（${status}），取消打开 route ${routeId}`);
-                return;
+                return null;
             }
         }
-        await this.navigation.open(routeId);
+        return routeId === "settings" ? openSettings() : this.navigation.open(routeId);
     }
 
     private launchGameplay(target: Extract<PluginLaunchTarget, { readonly kind: "gameplay" }> | null): Promise<void> {

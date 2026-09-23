@@ -10301,6 +10301,26 @@
                 "value": "lock:global_mail_init"
             },
             {
+                "sourceName": "NativeKitLifecycle.lifecycleKey",
+                "value": "nativeKit:lifecycle:v1"
+            },
+            {
+                "sourceName": "NativeKitLifecycle.runtimesKey",
+                "value": "nativeKit:runtimes:v1"
+            },
+            {
+                "sourceName": "NativeLobbyAssets.balanceKey",
+                "value": "nativeLobby:shop:balance:v1"
+            },
+            {
+                "sourceName": "NativeLobbyAssets.itemsKey",
+                "value": "nativeLobby:grants:items:v1"
+            },
+            {
+                "sourceName": "NativeLobbyAssets.versionsKey",
+                "value": "nativeLobby:assets:versions:v1"
+            },
+            {
                 "sourceName": "NativeLobbyIdentityMap.key",
                 "value": "nativeLobby:identity:v1"
             },
@@ -15291,26 +15311,6 @@
                     "sourceName": "ActionDefault"
                 },
                 {
-                    "route": "C2S:heroRecruit.buy",
-                    "sourceName": "ActionHeroRecruitBuy"
-                },
-                {
-                    "route": "C2S:heroRecruit.getCatalog",
-                    "sourceName": "ActionHeroRecruitGetCatalog"
-                },
-                {
-                    "route": "C2S:income.claimOffline",
-                    "sourceName": "ActionIncomeClaimOffline"
-                },
-                {
-                    "route": "C2S:income.getPending",
-                    "sourceName": "ActionIncomeGetPending"
-                },
-                {
-                    "route": "C2S:income.settleOnline",
-                    "sourceName": "ActionIncomeSettleOnline"
-                },
-                {
                     "route": "S2S:activity/ActivityClose",
                     "sourceName": "ActionActivityClose"
                 },
@@ -15908,7 +15908,7 @@
         "beanFields": 626,
         "mods": 30,
         "errorCodes": 312,
-        "redisKeys": 19,
+        "redisKeys": 24,
         "databaseTables": 32,
         "databaseFields": 346,
         "classListEntries": 28

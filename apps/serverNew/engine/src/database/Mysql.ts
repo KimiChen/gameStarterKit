@@ -1,4 +1,5 @@
 import { DataSource, EntitySchema, MixedList, QueryRunner } from '@arthropoda/typeorm'
+import * as mysql2 from 'mysql2'
 
 export interface MysqlConfig {
     host: string
@@ -19,7 +20,8 @@ export class Mysql {
     readonly link
 
     constructor(private config: MysqlConfig) {
-        this.link = new DataSource(config)
+        // 显式注入驱动，避免 TypeORM 默认选择不支持 caching_sha2_password 的 mysql。
+        this.link = new DataSource({ ...config, connectorPackage: 'mysql2', driver: mysql2 })
     }
 
     initialize() {

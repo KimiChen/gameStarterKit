@@ -26,7 +26,7 @@ test("loginFlow transition：按 flight identity 延后重开，不能 await 自
     "当前 flight 未完成时必须挂 settle 后的一次性重开 continuation");
   assert.match(source, /current\.onEnterBattle = onEnterBattle/,
     "合流调用必须更新到最新宿主的 enterBattle 回调");
-  assert.match(source, /runAuthenticatedLoginFlow\(response/,
+  assert.match(source, /runAuthenticatedLoginFlow\(\s*response/,
     "页面登录必须经统一的 setSession→join→GetInfo 回滚编排");
   assert.match(source, /shouldRollback: \(\) =>/,
     "旧页面世代失败时必须按 owner/session 世代跳过全局清理");

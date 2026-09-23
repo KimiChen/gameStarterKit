@@ -1,7 +1,5 @@
 import { defineGameModule } from '../../startup/GameModule'
 import { CenterController } from './http/CenterController'
-import { UserSessionLifecycle } from './lifecycle/UserSessionLifecycle'
-import { User } from './bean/User'
 import { PowerScoreRules } from './rules/PowerScoreRules'
 import { UserTelemetryProperties } from './telemetry/UserTelemetryProperties'
 import { SsoController } from './http/SsoController'
@@ -11,7 +9,9 @@ import { NativeLobbyUserEnter } from './lobby/NativeLobbyUserEnter'
 export const UserModule = defineGameModule({
     name: 'user',
     configuration: {
-        initializers: [{ name: 'initialize-user-config', app: 'all', after: ['attr'], handler: initializeUserConfig }],
+        initializers: [{ name: 'initialize-user-config', app: 'all', after: ['attr'], handler: initializeUserConfig },
+            { name: 'register-user-session-actions', app: 'service', handler: () => NativeLobbyUserEnter.registerActions() },
+        ],
     },
     events: {
         actionHandlers: [
@@ -64,9 +64,7 @@ export const UserModule = defineGameModule({
                     await services.registerCharacter(uid, sId)
                 },
                 onReleased: async ({ internalUid, sId }) => {
-                    const user = await User.load(internalUid)
-                    if (user) await UserSessionLifecycle.leave(user)
-                    else await NativeLobbyUserEnter.clearOnlinePresence(internalUid, sId)
+                    await NativeLobbyUserEnter.leave(internalUid, sId)
                 },
             },
         ],

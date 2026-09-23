@@ -11,7 +11,7 @@ import {
     ForceLogoutReason,
     KICK_CLOSE_CODE,
     type ForceLogoutReasonType,
-} from '../../../generated/lobby-contract/protocol/lobbyRpc'
+} from '../../../generated/lobby-contract/native/lobbyRpc/index.generated'
 import type { NativeLobbyReleasedIdentity } from '../lobby/NativeLobbyRouteRegistry'
 import { WebPlatformSessionVerifier } from './WebPlatformSessionVerifier'
 

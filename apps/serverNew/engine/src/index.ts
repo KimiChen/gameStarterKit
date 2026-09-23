@@ -151,6 +151,9 @@ export { RefHash, FromData } from './differ/RefHash'
 export { HashLoadOpts, OtherLoadOpts } from './differ/subs/optsInterface'
 export { ReadonlyBean, ReadonlyDiffArray, ReadonlyDiffMap } from './differ/readonly'
 export { RedisService } from './differ/RedisService'
+export { AtomicOperation, AtomicOperationConflict } from './differ/AtomicOperation'
+export { AtomicHash, AtomicHashTransaction, AtomicHashConflict, atomicCounterCodec, atomicJsonCodec, atomicStringCodec,
+    type AtomicHashCodec, type AtomicReadonly } from './differ/AtomicHash'
 export { isLobbyRouteOutcome, lobbyRouteOutcome, type LobbyRouteOutcome } from './net/lobby/LobbyRouteOutcome'
 
 /** Redis,Mysql连接使用相关 */
@@ -199,3 +202,6 @@ export { Listen, ListenArgs, ListenHandler } from './event/EventSystem'
 export { ActionEventSystem, ActionEventHandlerBase, ActionEventArgs } from './event/ActionEventSystem'
 
 import './utils/DeclareExtends'
+
+export { AtomicLease, AtomicLeaseLost, type AtomicLeaseToken } from './differ/AtomicLease'
+export { OwnedRoom, OwnedRoomUnavailable, type RoomSubscriber } from './room/OwnedRoom'

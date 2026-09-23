@@ -17,6 +17,7 @@
 
 ## 依赖约束
 
+- MySQL 由 `Mysql` 显式注入 `mysql2` 驱动，支持 `caching_sha2_password`；不要退回 TypeORM 默认的旧 `mysql` 连接器，也不要通过降级数据库账号认证方式解决兼容问题。
 - engine 的 `pnpm-lock.yaml` 仍是 v6，使用 pnpm 8 维护；不要用 server 的 pnpm 10 强制重建 engine 锁文件。
 - `@arthropoda/typeorm` 使用 `vendor/arthropoda-typeorm-0.3.22.tgz` 内嵌制品；安装和更新锁文件不得改回远程 registry 版本。
 - 仓库不提交项目级 `.npmrc`、私有 registry 或内网配置中心地址；依赖安装使用开发机或 CI 的标准包管理器配置。

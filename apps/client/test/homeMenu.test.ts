@@ -68,6 +68,7 @@ function readManifestMenu(): GeneratedMenuContribution[] {
   const roots = [
     { dir: join(REPO_ROOT, "apps/plugins"), manifest: "plugin.json" },
     { dir: join(REPO_ROOT, "apps/kits"), manifest: "kit.json" },
+    { dir: join(REPO_ROOT, "apps/serverNew/kits"), manifest: "kit.json" },
   ];
   return roots.flatMap(({ dir, manifest: manifestName }) => {
     if (!existsSync(dir)) return [];
@@ -100,14 +101,14 @@ test("generated contributions 按 pluginId → entryId 排序且 = 手写 manife
   assert.deepEqual([...GENERATED_MENU_CONTRIBUTIONS], sortedByRule(GENERATED_MENU_CONTRIBUTIONS),
     "generated 排序必须与独立重算一致");
   const manifestMenu = readManifestMenu();
-  assert.deepEqual([...GENERATED_MENU_CONTRIBUTIONS], sortedByRule(manifestMenu),
+  assert.deepEqual(sortedByRule(APP_PLUGINS.flatMap(p=>p.menu)), sortedByRule(manifestMenu),
     "generated 菜单必须 = 手写 manifest 菜单并集按 pluginId → entryId 排序（⛔ 无第二真源）");
   for (const item of manifestMenu as unknown as Record<string, unknown>[]) {
     assert.ok(!("slot" in item) && !("order" in item), `manifest 入口不得再声明位置字段（slot/order）：${String(item.entryId)}`);
   }
   // PluginRegistry 暴露同一数据源（设置面板的读取面）。
   const registry = new PluginRegistry(APP_PLUGINS);
-  assert.deepEqual([...registry.menuContributions()], [...GENERATED_MENU_CONTRIBUTIONS]);
+  assert.deepEqual([...registry.menuContributions()], sortedByRule(manifestMenu));
   // ballMove 保留为可选 contribution（内部回归样例，⛔ 不物理删除）——这是「不得删除」
   // 的登记断言，不是「谁是默认入口」的断言。
   assert.ok(BUILTIN_PLUGIN.menu.some((item) => item.entryId === "ballMove"));

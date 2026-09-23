@@ -2,7 +2,7 @@
 # writer: node scripts/protected-paths-lock.mjs --write ；checker: --check（npm run verify:protected-paths）
 # 每行 `<路径> <sha256>`（内容哈希，可用 shasum -a 256 复核）；范围见 scripts/protected-paths.json。
 apps/client/src/Main.ts bc4e226749d68d77449252bdc6efa8fcc261f1c45c629ae43668f9b987fe5b64
-apps/client/src/app/AppRuntime.ts 0257c58f7de9e782f6cd0cccf524ed2fac1a5989ef677609e20a47db09301a78
+apps/client/src/app/AppRuntime.ts 430fff579f4f69940227c658c75c896275a099d66754a6c43717606d555b0ab7
 apps/client/src/app/CocosLifecycleBridge.ts 333e689f1657019ab7e2f6dbf87a524b87af3988a2a1a6748b5fbf1c6e72361d
 apps/client/src/app/FrameScheduler.ts 04766a657ba81991e085d5cc960c1a4caa700686eee2ca69c9dd8a2d9ec3c262
 apps/client/src/app/LifecycleBus.ts 1b6a8730a81a67eaaad7de2939eb58e8fb484a78271f6a10e3315cb8bf83c358
@@ -14,9 +14,9 @@ apps/client/src/app/RefreshCoordinator.ts ebeb171a1653b2dff66bbcffbc353902dda5c1
 apps/client/src/app/SessionCoordinator.ts 7830dc31b8bb08b8b2933bcc17eb50a8121c30bca64a678c3a1565277e0d2aad
 apps/client/src/app/appGeneration.ts d305935b381780a644e03cad8fd5fb87152b9965b04c43d3df95d26fc73d1d4b
 apps/client/src/app/bootstrap.ts 8e5ef10ee7078d163444f3e55844ed1625a4e01066bbc0f7b5534033c178ce64
-apps/client/src/app/builtinPlugin.ts ccce2e9e5e79acd16afb23a2e6881bc2d03c0de5a5e6317090e487c7279dd4df
-apps/client/src/app/loginFlow.ts 67f43493fcb2892ce48180dd1695d6eed53609f1b5d25f68c64a3de97c0dc63e
-apps/client/src/app/ports.ts 03fb41eba962856c6e0b62d05bfadb473f611f59c34a9de6348d217451311c17
+apps/client/src/app/builtinPlugin.ts 20a1df525a347d36ce3665e77929583bee70970c5a86382b81025a80e9ccfa5c
+apps/client/src/app/loginFlow.ts 6a4b3ef5b8a77a677d485578cea7cf91e644f5231d3be25bf5f3f872cf50f960
+apps/client/src/app/ports.ts 9a6aedac56f886d1e136e07c6f46446d39af95168a5b4e566aa5592e948d037e
 apps/client/src/app/wiring.ts 58d704e9b8dc2fa6f847620db2ae1d611511753b88ef80f494de8267e3865a42
 apps/client/src/gameplay/catalog.ts 5cd68321b5fc2de84a389e7cc97c6874132953382e34661325ce1baef90e308f
 apps/client/src/gameplay/services.ts a7fa769a8f193794aaf88f3081c81345d0681adae6abc064b7a7a939938b06ef
@@ -35,7 +35,7 @@ apps/client/src/view/ViewMgr.ts cec47546c7aab8509691168b483d6520103eb6ee0932e35a
 apps/client/src/view/defineView.ts 3c435c751573824c5dfc1253483a85a861119726ca4217871456aeba2da1f913
 apps/client/src/view/fguiContracts.ts 93841ad5d394e9ab99be9999943264079ecaa667c844e283f9d0b2180d9e99d1
 apps/client/src/view/pages.ts 9cee05d4b1ee7374414154909de2afc2f9c965e034a104853493e2a7486cdd5c
-apps/client/src/view/viewRegistry.ts b8a289a1d56dbf35a9d5200c6206d22c72f3e3b7d8e8088bca2edbe8424ecd74
+apps/client/src/view/viewRegistry.ts 5e525aa760762aeeedf99b799a1f4e4a012c79eb4271172a57447d84783341fb
 apps/server/sql/schema.sql 2d8d9261295b22b13cafef8db023e8afad69e02234ca3fa7eca344b7cee15ef5
 apps/server/src/app.config.ts 31927aa8bd12f2c178e176a4adcc699ba7453de2abd90ca6f465894e5056f73d
 apps/server/src/core/errors.ts 2dc152a880428e86b5e7fe21dd09f1ab409df5458956e08496edaf750730c1fc

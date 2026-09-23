@@ -113,6 +113,7 @@ PreviewHome 与还原预览首页不进 art catalog。从首页点入口验收�
 - 相同字节只登记一次
 - 优先复用：`ui/hero/bond-bg`、`ui/mail/back`、`ui/mail/header`、`ui/button/confirm` / `cancel` / `cyan`、`ui/backpack/item-blue`
 - 构建会校验 hash 和 nineSlice 不超过原图
+- `build:uniflex-ui` 同时生成 Cocos 图片 `.meta`，指定 `userData.type = sprite-frame`，把 manifest 的 `nineSlice` 同步到 SpriteFrame 的四边 border，并保留既有 UUID；运行时资源路径以 `/spriteFrame` 结尾。只有路径而没有导入设置时，Creator 默认仅产出 Texture；缺少 border 则无法通过运行时的九宫格校验，二者都会导致弹窗打不开。生成后须用 Creator CLI 重新构建；验收包含主动触发连接失败、打开并关闭提示框。
 
 ## 7. AOT
 

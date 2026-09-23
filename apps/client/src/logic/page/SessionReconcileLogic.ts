@@ -29,6 +29,28 @@ export type SessionProfileReconcileResult<TUser> =
     | { readonly status: "reconciled"; readonly user: TUser }
     | { readonly status: "stale" };
 
+/** Native 只恢复已鉴权连接；玩法页面自行重新拉取快照。保留相同的世代与连接 ownership 守卫。 */
+export async function reconcileSessionConnection(
+    identity: SessionReconcileIdentity,
+    deps: Pick<SessionProfileReconcileDeps<{ uid: string }>, "connect" | "isCurrent">,
+    signal?: AbortSignal,
+): Promise<SessionProfileReconcileResult<null>> {
+    if (signal?.aborted || !deps.isCurrent(identity)) return { status: "stale" };
+    let ownership: SessionReconcileOwnership | null = null;
+    let keepOwnership = false;
+    try {
+        ownership = deps.connect(identity, { timeoutMs: SESSION_PROFILE_RECONCILE_TIMEOUT_MS, signal });
+        await ownership.ready;
+        if (signal?.aborted || !deps.isCurrent(identity)) return { status: "stale" };
+        keepOwnership = true;
+        return { status: "reconciled", user: null };
+    } finally {
+        if (!keepOwnership && ownership) {
+            try { await ownership.leave(); } catch { /* preserve original failure */ }
+        }
+    }
+}
+
 /**
  * Reconcile one captured session generation. Cancellation is cooperative for
  * GetInfo (the RPC has its own bounded timeout), while Lobby join receives both

@@ -54,6 +54,11 @@ export class LobbyTransportHub {
       : WebSocketClient.inst;
   }
 
+  get nativeCurrent(): NativeLobbyTransport {
+    if(this.config.kind !== "native-websocket") throw new Error("Native kit RPC requires explicit native Lobby configuration");
+    return this.native ?? (this.native = new NativeLobbyTransport());
+  }
+
   get currentConfig(): LobbyTransportConfig {
     return this.config;
   }

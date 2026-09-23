@@ -2,7 +2,7 @@ import type { RuntimeServerLike } from './runtimeTypes'
 import { hasNativeLobbyEnvironment, type LobbyPushForwarder, type LobbySyncForwarder } from './NativeLobbyRuntime'
 import type { ProcessPipeRequest } from './processPipe'
 import { writeProcessRouteTrace } from './writeProcessRouteTrace'
-import type { ForceLogoutReasonType } from '../../generated/lobby-contract/protocol/lobbyRpc'
+import type { ForceLogoutReasonType } from '../../generated/lobby-contract/native/lobbyRpc/index.generated'
 
 /**
  * 多进程下原生 Lobby 的角色判定。

@@ -54,7 +54,7 @@ declare module "cc" {
         uploadData(source: Uint8Array): void;
     }
     export class JsonAsset { json: unknown; addRef(): unknown; decRef(): unknown; }
-    export class SpriteFrame { texture: Texture2D | null; rect: Rect; rotated: boolean;
+    export class SpriteFrame { texture: Texture2D | null; rect: Rect; rotated: boolean; addRef(): unknown; decRef(): unknown;
         insetTop: number; insetBottom: number; insetLeft: number; insetRight: number;
         /** ⚠ 引擎侧只有 getter：赋值会抛 TypeError，故声明为 readonly 让 typecheck 拦下。 */
         readonly pivot: Vec2;
@@ -66,6 +66,7 @@ declare module "cc" {
         static Type: { SIMPLE: number; SLICED: number; TILED: number; FILLED: number };
     }
     export class Label extends Component {
+    enableOutline: boolean; outlineColor: Color; outlineWidth: number;
         string: string; fontSize: number; color: Color; horizontalAlign: number; verticalAlign: number;
         lineHeight: number; overflow: number; enableWrapText: boolean; isBold: boolean;
         static Overflow: { NONE: number; CLAMP: number; SHRINK: number; RESIZE_HEIGHT: number };

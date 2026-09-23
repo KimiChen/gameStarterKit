@@ -1,5 +1,6 @@
-import { Call, MessageHelper, PlayerWorkerOwner, UserOnlineMgr } from '@arthropoda/game-engine'
+import { Call, LocalActionRegistry, MessageHelper, PlayerWorkerOwner, UserOnlineMgr } from '@arthropoda/game-engine'
 import { ActionUserLobbyEnter } from '../action/ActionUserLobbyEnter'
+import { ActionUserLobbyLeave } from '../action/ActionUserLobbyLeave'
 
 /**
  * user 的会话开始入口：认证成功后**先保证 `User` 档存在**。
@@ -17,6 +18,10 @@ import { ActionUserLobbyEnter } from '../action/ActionUserLobbyEnter'
  * ⛔ 也不要在这里预读「档是否存在」：`loadOrCreate` 本身就是幂等的。
  */
 export class NativeLobbyUserEnter {
+    static registerActions(): void {
+        LocalActionRegistry.register({ 'user.lobbyEnter': ActionUserLobbyEnter, 'user.lobbyLeave': ActionUserLobbyLeave })
+    }
+
     static async enter(internalUid: number, sId: number): Promise<void> {
         const workerId = (globalThis as typeof globalThis & { WORKER_ID?: number | null }).WORKER_ID
         if (workerId === null) throw new Error('native Lobby authentication cannot run in master')
@@ -43,5 +48,12 @@ export class NativeLobbyUserEnter {
 
     static async clearOnlinePresence(internalUid: number, sId: number): Promise<void> {
         await UserOnlineMgr.del(internalUid, sId)
+    }
+
+    static async leave(internalUid: number, sId: number): Promise<void> {
+        const result = await MessageHelper.syncDoAction(
+            internalUid, sId, new Call('user.lobbyLeave', {}), ActionUserLobbyLeave,
+        )
+        if (!result.isSucc) throw result.res ?? new Error(result.errMsg)
     }
 }

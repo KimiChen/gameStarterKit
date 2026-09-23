@@ -6,7 +6,7 @@ import {
     schedulerOwner,
     workerRole,
 } from '../../src/startup/lobbyRole'
-import { ForceLogoutReason } from '../../generated/lobby-contract/protocol/lobbyRpc'
+import { ForceLogoutReason } from '../../generated/lobby-contract/native/lobbyRpc/index.generated'
 import type { RuntimeServerLike } from '../../src/startup/runtimeTypes'
 
 /**

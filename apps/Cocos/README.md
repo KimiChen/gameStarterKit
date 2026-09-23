@@ -25,6 +25,11 @@ Cocos Dashboard 3.8.8 打开本目录，等首次导入（生成 `temp/`、`libr
 已打开的 Creator 预览在外部同步写入 `assets/src` 后可能继续使用旧的 `temp/` 编译产物；真实预览验证前，
 在 Creator 中执行 **Developer → Reload**，再刷新浏览器页面。不要修改 `temp/` 或 `library/` 来规避缓存。
 
+Web 手机发布页的适配维护在 `build-templates/web-mobile/`，使用官方 CLI 构建即可带入。
+桌面窗口按 750×1624 比例居中，手机竖屏铺满可用区域。容器 CSS 与启动时的
+`screen.exactFitScreen=false` 必须配套，否则引擎仍按浏览器全窗口计算尺寸，造成画面裁切和点击偏移。
+不要只修改临时构建目录中的 HTML/CSS；验证需覆盖桌面、手机及窗口缩放后的真实引擎输入。
+
 UniFlex 独立场景预览使用独立 Cocos CLI，并要求兼容的 Node.js 22 环境：
 
 ```bash

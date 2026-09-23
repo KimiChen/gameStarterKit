@@ -6,11 +6,13 @@ import {
     LocalActionRegistry,
     MessageHelper,
     RedisService,
+    ModSync,
     RouteAction,
     executeForwardedRoute,
     executeObjectAction,
+    lobbyRouteOutcome,
 } from '@arthropoda/game-engine'
-import { UserRpc, type LobbyRpcType } from '../../generated/lobby-contract/protocol/lobbyRpc'
+import { UserRpc, type LobbyRpcType } from '../../generated/lobby-contract/native/lobbyRpc/index.generated'
 import { NativeLobbyProcessRoutes, nativeLobbyProcessRoutes } from '../../src/runtime/lobby/NativeLobbyProcessRoutes'
 import { NativeLobbyRouteRegistry } from '../../src/runtime/lobby/NativeLobbyRouteRegistry'
 import { installForwardedNativeLobbyRoutes } from '../../src/startup/NativeLobbyRuntime'
@@ -92,6 +94,7 @@ function deferred() {
 describe('native Lobby process pipe', () => {
     let originalProcessRouter: typeof RouteAction.processRouter
     let originalSave: typeof RedisService.save
+    let originalMods: typeof ModSync.autoGetModChanged
 
     before(() => {
         const noop = () => undefined
@@ -106,6 +109,8 @@ describe('native Lobby process pipe', () => {
         // 进程内没有 DifferCache 注入，提交阶段必须替身掉，否则会因 APP_TYPE 未初始化直接抛错。
         originalSave = RedisService.save
         RedisService.save = async () => undefined
+        originalMods = ModSync.autoGetModChanged
+        ModSync.autoGetModChanged = () => undefined
         // 本文件验证的是「目标 worker 就地执行」，必须保证测试进程自身不会再往外转发。
         originalProcessRouter = RouteAction.processRouter
         RouteAction.processRouter = undefined
@@ -114,6 +119,7 @@ describe('native Lobby process pipe', () => {
     after(() => {
         RouteAction.processRouter = originalProcessRouter
         RedisService.save = originalSave
+        ModSync.autoGetModChanged = originalMods
         RouteAction.callGroups.clear()
     })
 
@@ -136,6 +142,7 @@ describe('native Lobby process pipe', () => {
             worker_id: 0,
             setting: { worker_num: 2, task_worker_num: 1 },
             requestMessage: async (message: unknown, targetWorkerId: number) => {
+                assert.deepEqual(message, JSON.parse(JSON.stringify(message)), 'IPC payload must not contain undefined')
                 forwarded.push(message)
                 assert.equal(targetWorkerId, 1)
                 return (message as ProcessPipeRequest).kind === 'routed-lobby-route'
@@ -198,7 +205,6 @@ describe('native Lobby process pipe', () => {
                     req: {},
                     uid: INTERNAL_UID,
                     sid: SID,
-                    taskGroupId: undefined,
                     bindId: INTERNAL_UID,
                     traceId: TRACE_ID,
                     invokeLayer: 1,

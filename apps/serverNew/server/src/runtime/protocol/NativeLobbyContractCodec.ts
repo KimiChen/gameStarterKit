@@ -11,7 +11,7 @@ import {
     validateLobbyTransportClientFrame,
     validateLobbyTransportServerFrame,
     type LobbyRpcType,
-} from '../../../generated/lobby-contract/protocol/lobbyRpc'
+} from '../../../generated/lobby-contract/native/lobbyRpc/index.generated'
 
 /**
  * 原生 Lobby 的 wire 编解码：CommonJS 宿主直接消费 shared 编译结果，不维护第二份字段或路由校验器。

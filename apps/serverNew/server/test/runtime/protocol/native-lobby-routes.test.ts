@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+import path from 'node:path'
+import { KIT_CATALOG } from '../../../generated/lobby-contract/native/kits.generated'
+import { LOBBY_RPC_ROUTE_MODES as HOST_ROUTE_MODES } from '../../../generated/lobby-contract/protocol/lobbyRpc'
 import {
     DiffArray,
     GameError,
@@ -15,7 +18,7 @@ import {
     ALL_LOBBY_RPC_TYPES,
     LOBBY_RPC_ROUTE_MODES,
     type LobbyRpcType,
-} from '../../../generated/lobby-contract/protocol/lobbyRpc'
+} from '../../../generated/lobby-contract/native/lobbyRpc/index.generated'
 import { User } from '../../../src/modules/user/bean/User'
 import { UserSessionLifecycle } from '../../../src/modules/user/lifecycle/UserSessionLifecycle'
 import { NativeLobbyIdentityMap } from '../../../src/runtime/identity/NativeLobbyIdentityMap'
@@ -35,6 +38,7 @@ describe('native Lobby owned route contract', () => {
     let savedSave: typeof RedisService.save
     let savedProcessRouter: typeof RouteAction.processRouter
     let savedPlatformIdMap: Record<string, number>
+    let redis: ReturnType<typeof installFakeCenterRedis>
 
     before(() => {
         const noop = () => undefined
@@ -71,7 +75,7 @@ describe('native Lobby owned route contract', () => {
         RedisService.save = async () => undefined
         savedProcessRouter = RouteAction.processRouter
         RouteAction.processRouter = undefined
-        installFakeCenterRedis({ player: true })
+        redis = installFakeCenterRedis({ player: true })
         identities = new NativeLobbyIdentityMap()
         assembly = assembleNativeLobbyRoutes({
             identities,
@@ -120,9 +124,10 @@ describe('native Lobby owned route contract', () => {
     it('keeps execution modes sourced only from shared', () => {
         const modes = Object.entries(LOBBY_RPC_ROUTE_MODES)
         assert.equal(modes.length, ALL_LOBBY_RPC_TYPES.length)
-        assert.equal(modes.filter(([, mode]) => mode === 'idempotent-write').length, 21)
-        assert.equal(modes.filter(([, mode]) => mode === 'natural-write').length, 6)
-        assert.equal(modes.filter(([, mode]) => mode === 'query').length, 15)
+        const hostModes = modes.filter(([type]) => Object.hasOwn(HOST_ROUTE_MODES, type))
+        assert.equal(hostModes.filter(([, mode]) => mode === 'idempotent-write').length, 21)
+        assert.equal(hostModes.filter(([, mode]) => mode === 'natural-write').length, 6)
+        assert.equal(hostModes.filter(([, mode]) => mode === 'query').length, 15)
     })
 
     it('executes income only through the User Bean lifecycle', async () => {
@@ -265,6 +270,36 @@ describe('native Lobby owned route contract', () => {
         }
         assert.deepEqual(loaded, [internalUid])
         assert.deepEqual(cleaned, [internalUid])
+    })
+
+    it('runs installed native kits through their packaged route scenarios', async () => {
+        for (const kit of KIT_CATALOG) {
+            if (kit.serverRuntime !== 'serverNew' || kit.domains.length === 0) continue
+            const verify = require(path.resolve(process.cwd(), '../kits', kit.id, 'verify/routes.cjs'))
+            const contexts = new Map<string, LobbyConnectionContext>()
+            const contextFor = async (uid: string) => {
+                // Kit route vectors consume an authenticated identity; host auth is tested separately.
+                if (!contexts.has(uid))
+                    contexts.set(uid, {
+                        uid,
+                        sId: SID,
+                        internalUid: await identities.resolve(uid, SID),
+                        sessionEpoch: 'kit-vector',
+                        connectionId: `kit-${uid}`,
+                        ip: '127.0.0.1',
+                    })
+                return contexts.get(uid)!
+            }
+            await verify({
+                call: async (uid: string, type: LobbyRpcType, payload: unknown) =>
+                    rpc(await contextFor(uid), type, payload),
+                fails: async (uid: string, type: LobbyRpcType, payload: unknown, code: string) =>
+                    fails(await contextFor(uid), type, payload, code),
+                redis,
+                sid: SID,
+                contractRoot: path.resolve(process.cwd(), 'generated/lobby-contract'),
+            })
+        }
     })
 
     it('exercises every route still owned by serverNew', () => {

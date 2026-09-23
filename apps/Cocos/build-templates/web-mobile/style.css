@@ -1,0 +1,91 @@
+html {
+  -ms-touch-action: none;
+}
+
+body, canvas, div {
+  display: block;
+  outline: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -khtml-user-select: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* Remove spin of input type number */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
+body {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  margin: 0;
+
+  cursor: default;
+  color: #888;
+  background-color: #333;
+
+  text-align: center;
+  font-family: Helvetica, Verdana, Arial, sans-serif;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+canvas {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+#GameDiv, #Cocos3dGameContainer, #GameCanvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Desktop opens in the project's 750 x 1624 portrait format without DevTools. */
+#PortraitFrame {
+  flex: none;
+  position: relative;
+  overflow: hidden;
+  width: min(430px, 100vw, calc(100vh * 750 / 1624));
+  width: min(430px, 100vw, calc(100dvh * 750 / 1624));
+  height: auto;
+  aspect-ratio: 750 / 1624;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Real portrait phones use all available space, including short screens. */
+@media (max-width: 600px) and (orientation: portrait) {
+  body {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  #PortraitFrame {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    box-shadow: none;
+  }
+}
+
+:root {
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+}

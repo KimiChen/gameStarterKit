@@ -128,6 +128,15 @@ export async function handleProcessPipeRequest(
             })
             return executeLocalAction(message)
         case 'routed-lobby-route': {
+            writeProcessRouteTrace({
+                event: 'exec',
+                kind: message.kind,
+                route: message.route,
+                uid: message.uid,
+                taskGroupId: message.taskGroupId ?? null,
+                bindId: message.bindId ?? null,
+                pid: process.pid,
+            })
             const identity: LobbyRouteIdentity = {
                 uid: message.uid,
                 sId: message.sid,

@@ -1,13 +1,13 @@
 import { access, readdir, readFile, rm, stat } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { relative, resolve } from "node:path";
+import { createHash, randomUUID } from "node:crypto";
+import { dirname, relative, resolve } from "node:path";
 import { create as createFont } from "fontkit";
 import ts from "typescript";
 import { canonicalJson, jsonHash, parseResourceCatalog } from "@uniflex/core/provider";
 import { discoverPsdComponents } from "./lib/uniflex-component-catalog.mjs";
 import { createOutputWriter } from "./lib/uniflex-output.mjs";
-import { createImageResourceEntry } from "./lib/uniflex-resources.mjs";
+import { createImageResourceEntry, cocosSpriteFrameMeta } from "./lib/uniflex-resources.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const client = resolve(root, "apps/client");
@@ -68,7 +68,8 @@ const transformed = ts.transform(source, [(context) => {
     const visit = (node) => {
         if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)
             && node.moduleSpecifier.text.startsWith(".")) {
-            const target = resolve(client, "src/ui-uniflex", node.moduleSpecifier.text);
+            // 编译器输出相对原始页面的导入；页面已按 modules/<域>/<页>/ 组织，不能再按 UI 根解析。
+            const target = resolve(dirname(sourceName), node.moduleSpecifier.text);
             const path = relative(generated, target).replace(/\.js$/, "");
             return context.factory.updateImportDeclaration(node, node.modifiers,
                 node.importClause, context.factory.createStringLiteral(
@@ -83,10 +84,13 @@ transformed.dispose();
 return result;
 }
 const aotFiles = (await readdir(resolve(cache, "aot"))).filter(file => file.endsWith(".logic.ts")).sort();
+const authoringFiles = await readdir(resolve(client, "src/ui-uniflex"), { recursive: true });
 for (const file of aotFiles) {
     const name = file.replace(/\.logic\.ts$/, "");
+    const candidates = authoringFiles.filter(path => path === `${name}.tsx` || path.endsWith(`/${name}.tsx`));
+    if (candidates.length !== 1) throw new Error(`Expected one authoring source for ${name}, got ${candidates.join(", ")}`);
     await emit(resolve(generated, `${name}.ts`),
-        relocateLogic(file, await readFile(resolve(cache, "aot", file), "utf8")));
+        relocateLogic(resolve(client, "src/ui-uniflex", candidates[0]), await readFile(resolve(cache, "aot", file), "utf8")));
 }
 await emit(resolve(generated, "plan-refs.ts"), await readFile(resolve(cache, "aot/plan-refs.ts")));
 
@@ -162,6 +166,15 @@ for (const destination of [cocosResources, resolve(cache, "uniflex")]) {
         for (const resource of resourcePackage.resources) {
             await emit(resolve(destination, `ui/${resourcePackage.name}/${resource.file}`),
                 await readFile(resolve(uiResources, resourcePackage.name, resource.file)));
+            if (destination === cocosResources && resource.kind !== "font") {
+                const metaPath = resolve(destination, `ui/${resourcePackage.name}/${resource.file}.meta`);
+                const existing = await readFile(metaPath, "utf8").then(JSON.parse).catch(error => {
+                    if (error.code !== "ENOENT") throw error;
+                    return undefined;
+                });
+                const meta = cocosSpriteFrameMeta(existing, existing?.uuid ?? randomUUID(), resource.nineSlice);
+                await emit(metaPath, JSON.stringify(meta, null, 2) + "\n");
+            }
         }
     }
     await emit(resolve(destination, "catalog.json"), canonicalJson(catalog) + "\n");

@@ -1,5 +1,34 @@
 # tools/creator-preview — Creator 预览证据生成器
 
+## gameDemo：仅 CLI 构建与双客户端回放
+
+`game-demo.mjs` 不依赖已打开的 Creator，不启动编辑器窗口。它启动两个独立 profile 的 headless Chrome，加载官方 CLI 的 web-mobile 产物，通过 CDP 鼠标和键盘驱动真实 Cocos 节点。
+验证购买材料、炼制 5 炉（服务端提交即结算、客户端整批播放 2 秒动画）、升级、活动结束与邮件领取、邀请入盟、三 Boss 切换与同房推送；随后 SIGKILL 自己启动的原生服务，重新登录并校验原局 ID、HP、完整伤害列表、阶段和继续攻击。
+它读取公开场景与网络响应作为断言，不从页面直接调用业务逻辑或 RPC。重启段明确使用刷新页面/重新登录，不宣称自动重连成功。
+
+前置：Node 22、Chrome、已安装 gameDemo 的兼容宿主、独立 Redis/MySQL 测试库（新服配置关闭多进程自动建表；先完成建表），旧服 HTTP 所需数据库也已 bootstrap。脚本会提前结束活动并保留测试数据，只用于隔离线路。身份签发使用本地 WebPlatform 契约夹具，玩法和存储均为真实服务。
+
+```bash
+# 只运行官方构建 CLI；Creator 3.8.8 成功退出码为 36。
+/Applications/CocosCreator.app/Contents/MacOS/CocosCreator \
+  --project "$PWD/apps/Cocos" \
+  --build 'platform=web-mobile;debug=false;buildPath=/tmp/gameDemo-cocos-build'
+
+# 先显式设置 PROJECT_ID、MYSQL_URL、REDIS_DURABLE_URL、REDIS_CACHE_URL，指向隔离测试栈。
+node tools/creator-preview/game-demo.mjs \
+  --build /tmp/gameDemo-cocos-build/web-mobile \
+  --native-root /tmp/gameDemo-clean-host/apps/serverNew/server \
+  --profile '{"platform":"bearjoy","version":"livemulti","sid":1}' \
+  --health-port 28095 --out /tmp/gameDemo-cocos-evidence
+```
+
+`--profile` 必须对应原生宿主真实配置，`--health-port` 对应该线路内网 HTTP；端口已被占用会拒绝启动。Chrome 可用 `--chrome <binary>` 指定。每轮使用新账号；测试库须有足够 Boss HP/参与席位，活动中无其他账号竞争前三奖励。脚本不会清库或伪造生产结果。
+输出编号 PNG、步骤文本、收到的 WS 帧、进程日志及 `report.json`；失败保留 `error`、`failureScene` 和 `failure.png`。脚本在 finally 回收自己启动的进程和浏览器 profile，保留服务数据与证据。
+
+默认传输回归仍用 `npm run verify:dual-lobby`。它读取显式 Redis/MySQL URL 做连通性检查，可用 `DUAL_LOBBY_NATIVE_ROOT` 指向兼容宿主副本；缺省配置保持旧开发栈不变。
+
+以下为既有的编辑器预览工作流，与上述 CLI 回放互相独立。
+
 把 Cocos Creator 3.8.8 的**桌面预览**（真实引擎，⛔ 不是 Node 无头测试）当被测对象，经 Chrome DevTools
 Protocol 重放「登录 → 首屏 → 设置面板 → 插件入口（route 形态 redeem / gameplay 形态 tally）」，落盘编号截图
 与 `report.json`（每一步的判据、读到的文本、点击坐标、页面 console 的 error/uncaught）。
@@ -118,10 +147,9 @@ node tools/creator-preview/native-lobby-stack.mjs --secret <gmSecret> --out /tmp
   是独立服务、不在本仓。`apps/serverNew/server/scripts/verify/webplatform-local.cjs` 按契约补了 Public `:2570` + Internal `:2571`；
   **唯一非真实件只在「账号签发」一层，属非生产件**——它给不出「对真实身份服务验证过」的结论。另需回 CORS 预检：客户端对每个请求都设
   `Content-Type: application/json`，连 `GET /v1/areas` 也要先过 `OPTIONS`，缺了会报 `WebPlatform 区服目录加载失败 (status=0)`。
-- **同一个 devKey 恒同一个账号，换号要显式给 `?devKey=`**：预览身份取自 `?devKey=`（缺省 `dev_local`），
-  副本按 `dev-` + `sha256("<devKey>:<serverId>")[:16]` 派生 uid。所以**两个浏览器打开同一个 URL 必然是同一个号**，
-  不是缓存问题——换号就换这个参数（非法值 warn + 回落 `dev_local`，⛔ 故意不抛错）。
-  客户端不把 token 存 `localStorage`，所以同一浏览器开两个标签页、只要 `?devKey=` 不同就是两个号。
+- **同一个 devKey 恒同一个账号**：未指定时首次登录生成随机标识，存入 `sys.localStorage` 的 `<PROJECT_ID>.dev-account.v1`，后续复用；独立浏览器缓存默认产生不同账号。
+  副本按 `dev-` + `sha256("<devKey>:<serverId>")[:16]` 派生 uid。`?devKey=` 可显式选号且不覆盖默认缓存，非法值 warn 后回落本地账号；访问旧固定账号可使用 `?devKey=dev_local`。
+  同源标签页共享缓存，支持 Web Locks 的浏览器会串行化首次生成；多人回放显式传不同 devKey，避免账号互顶。客户端不把 token 存 `localStorage`，存储失败时显示提示并停止注册，不创建无法恢复的临时账号。
   改了客户端源码**必须重启 Creator 进程**才会重编译（激活 + touch 都不够）。
 - **单按钮模态必须点按钮本身**：`SessionCoordinator` 阻塞在 `await navigator.prompt(...)` 上直到按钮被点，**它自己不会超时**。
   点「提示正文那枚 label 的中心」会落在按钮上方约 116px 的空白处（`ConfirmButton` 是 255×102，`Confirm/Message` 在它上方），
@@ -139,3 +167,11 @@ node tools/creator-preview/native-lobby-stack.mjs --secret <gmSecret> --out /tmp
 - `native-lobby.mjs` / `native-lobby-stack.mjs`：原生 Lobby 通道的场景与一键编排（见上节）。
 - `slg.mjs`：SLG 地图场景与公开 UI 证据解析。只遍历渲染节点/文本、发送普通 CDP 点击/拖动/滚轮，不访问页面 Logic、RPC 端口或私有相机字段；场景只验证阶段 1，行军面板和房间 AOI 不在本轮范围。
 - 钉：`apps/server/test/creator-preview-tool.test.ts`。
+
+## gameDemo CLI 验收
+
+`game-demo.mjs` 加载官方 CLI 生成的 web-mobile 构建，以两个隔离 headless Chrome 账号驱动 Cocos 真实按钮。仅启动本地身份契约测试服务和 `serverNew`，不启动或依赖 `apps/server`。不打开 Creator 编辑器。所选 native profile 必须指向隔离数据库；脚本会结束活动、强杀自己启动的 native 进程并验证恢复。
+
+```bash
+node tools/creator-preview/game-demo.mjs --build /tmp/gameDemo-native-cocos-build/web-mobile --native-root /tmp/gameDemo-native-host/apps/serverNew/server --profile '{"platform":"bearjoy","version":"live","sid":1}' --health-port 28090 --out /tmp/gameDemo-native-ui
+```
