@@ -1,0 +1,26 @@
+{
+  "screen": "shop",
+  "componentName": "Shop",
+  "restoredName": "ShopRestored",
+  "source": "apps/client/src/ui-uniflex/modules/shop/Shop/Shop.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1624
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "3ea617e38844ec38ce692d0a5a1a12d9ea2551d89a9dfeaf98ffbf6654233524",
+    "psdSha256": "a08f3fdb6889290156000119f20207044c94b5d041a05fe3b467111a01227ba0",
+    "at": "2026-09-22T13:29:02.471Z"
+  },
+  "linkedComponents": [
+    "ResourceCounter",
+    "ItemSlot",
+    "ShopCard",
+    "Tab",
+    "TabBar",
+    "BackButton",
+    "ScreenFooter",
+    "ShopPanel"
+  ]
+}

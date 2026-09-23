@@ -10,8 +10,8 @@
   "applyTarget": "restored",
   "export": {
     "uniflexSha256": "e2295b416548880b2badbf17ab9568fd8e205e15baff3210ea6ffe5dcf8191ce",
-    "psdSha256": "52bd738e4706272afab0d2fc4bf55eb4fe1598faad6fe0206cbd03555c190e75",
-    "at": "2026-09-22T02:50:52.760Z"
+    "psdSha256": "2455354473877528219d1f57e052d09ffe9b77061a83461dde5332c09524aa13",
+    "at": "2026-09-22T13:29:02.423Z"
   },
   "import": {
     "psdSha256": "eca93da7a420bc52d83fb3d2d841692366227bec46f93bac0a972e353c280af4",
@@ -25,6 +25,7 @@
     "AllianceTerritoryLandCard",
     "AllianceTerritoryLandPanel",
     "Tab",
+    "TabBar",
     "BackButton",
     "ScreenFooter",
     "AllianceTerritoryPanel"

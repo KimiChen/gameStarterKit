@@ -9,9 +9,9 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "ad16736c3d14718bd448a039aba91e4de065828165785fcc53d3c5c50307f928",
-    "psdSha256": "d33ce3b9d35a481c1f8727013988830b470449f607890c250a735067a729c2de",
-    "at": "2026-09-22T02:51:36.989Z"
+    "uniflexSha256": "61b09b7483f50d26798e4e63e16a0b3839486b82ff0c8882c946ce536cd59f61",
+    "psdSha256": "aed312c9f12bba3bf7fee13d33188d9db9a40090addaa8eb87dde92f0ab0de34",
+    "at": "2026-09-22T13:29:02.335Z"
   },
   "import": {
     "psdSha256": "bc3f807dd4132c784915eaa5a8d640b00eeb1adff46d060593951de6562e6fe0",
@@ -22,6 +22,7 @@
     "ScreenHeader",
     "NotificationBadge",
     "Tab",
+    "TabBar",
     "MailBattleRow",
     "BackButton",
     "ScreenFooter",

@@ -3,7 +3,7 @@
   "source": "apps/client/src/ui-uniflex/components/tab/Tab.tsx",
   "export": {
     "uniflexSha256": "0dcf7f31ecb2d3c5a34878fdc1471880ad353d65b74e2a216606d6d4a7c04432",
-    "psdSha256": "6188e883c8989716c3d1b90347e3de85442831c42683c91eede0b956e1dddcfb",
-    "at": "2026-09-22T02:49:54.590Z"
+    "psdSha256": "b4e30a8d94092c980a12c1725ca183429d21187b3309b19afc45559546cd1d6a",
+    "at": "2026-09-22T13:01:27.328Z"
   }
 }

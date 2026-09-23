@@ -194,6 +194,26 @@ export async function listArtComponents(root) {
     return keys;
 }
 
+export async function listArtComponentPsds(root) {
+    const files = [];
+    for (const key of await listArtComponents(root)) {
+        const dir = artComponentDir(root, key);
+        let names = [];
+        try {
+            names = await readdir(dir);
+        } catch (error) {
+            if (error.code === "ENOENT") continue;
+            throw error;
+        }
+        for (const name of names) {
+            if (!/^[A-Za-z][A-Za-z0-9_]*\.psd$/u.test(name)) continue;
+            files.push(join(dir, name));
+        }
+    }
+    files.sort();
+    return files;
+}
+
 export async function inspectArtComponent(root, key) {
     const art = await readComponentArtJson(root, key);
     const source = art?.source;
@@ -209,6 +229,16 @@ export async function inspectArtComponent(root, key) {
         art,
         action: classifyArtPage({ psdSha, uniflexSha: uniflexSha || art?.export?.uniflexSha256, art }),
     };
+}
+
+export function componentPublishAction({
+    destSha, exportedPsd, recordedUniflex, uniflexSha, force = false, pageScoped = false,
+}) {
+    const designerEdited = Boolean(destSha && exportedPsd && destSha !== exportedPsd);
+    if (designerEdited && !force) return "keep-designer";
+    const sourceMoved = Boolean(uniflexSha && recordedUniflex && uniflexSha !== recordedUniflex);
+    if (!destSha || sourceMoved || force || pageScoped) return "replace";
+    return "keep-shared";
 }
 
 export function classifyArtPage({ psdSha, uniflexSha, art }) {

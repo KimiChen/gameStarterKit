@@ -10,8 +10,8 @@
   "applyTarget": "restored",
   "export": {
     "uniflexSha256": "059a6dc641b0baefd261c3bc1148054af74560e27b640bafe510e12bcd0004d8",
-    "psdSha256": "02a59459ca630471f3f88597226f45ca4cbab9935a7863f2b8949b6ba5542457",
-    "at": "2026-09-22T02:50:07.642Z"
+    "psdSha256": "ed9b971277e3128febab617a7252d47370cbf05c2e79eb76ad290f7c8ad92494",
+    "at": "2026-09-22T13:29:02.446Z"
   },
   "import": {
     "psdSha256": "299cd35cefa0c45cb2e58457993a489c9b09f60e90f57b7efc49414d5de0131f",
@@ -21,6 +21,7 @@
   "linkedComponents": [
     "ScreenHeader",
     "Tab",
+    "TabBar",
     "BackButton",
     "ScreenFooter",
     "InputText",

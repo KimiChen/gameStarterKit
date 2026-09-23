@@ -2,7 +2,7 @@
   "screen": "alliance",
   "componentName": "Alliance",
   "restoredName": "AllianceRestored",
-  "source": "apps/client/src/ui-uniflex/pages/Alliance/Alliance.tsx",
+  "source": "apps/client/src/ui-uniflex/modules/alliance/Alliance/Alliance.tsx",
   "canvas": {
     "width": 750,
     "height": 1624
@@ -10,8 +10,8 @@
   "applyTarget": "restored",
   "export": {
     "uniflexSha256": "f25831ceed5da232083c31d232c77e03cb1e77f11762a56022f7c5529146e57c",
-    "psdSha256": "13bfcbfc02921549935b0b07131a925057f00dd56639feafaa7ba47a4176fe87",
-    "at": "2026-09-22T02:49:54.596Z"
+    "psdSha256": "b5c9b836cb44fa1a63fe68b5d3acdab39f7685d76eb38a1c60433e009c5220c2",
+    "at": "2026-09-22T13:29:02.380Z"
   },
   "import": {
     "psdSha256": "682877ad904ec0a8fb722e33c9549bca0be102d8c8e51ec99992a2f7c61efe4f",
@@ -24,6 +24,7 @@
     "AllianceHomePanel",
     "ScreenHeader",
     "Tab",
+    "TabBar",
     "NotificationBadge",
     "MainNav"
   ]

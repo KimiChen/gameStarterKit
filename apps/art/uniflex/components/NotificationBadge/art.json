@@ -3,8 +3,8 @@
   "source": "apps/client/src/ui-uniflex/components/badge/NotificationBadge.tsx",
   "export": {
     "uniflexSha256": "b23b5a94eb1c699ff1c45290f4cd9573c89ac6d0251033de040da46718eaec4a",
-    "psdSha256": "cd3b22c88790ebdd6b896a924c932c9d4a450eca56ccddf790e4d3cbf5ee0b06",
-    "at": "2026-09-22T02:49:54.592Z"
+    "psdSha256": "e12dcb638dd7180a207075f3abb2d2a50368514ea733fc08b8ccb5fd4f41d82f",
+    "at": "2026-09-22T13:01:38.156Z"
   },
   "import": {
     "psdSha256": "5a508dba323802774a7e5cd1646400b74d50eb8b5ce64a0478fe9d2c2ee0dab1",

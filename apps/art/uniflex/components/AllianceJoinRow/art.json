@@ -3,7 +3,7 @@
   "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceJoin/AllianceJoinRow.tsx",
   "export": {
     "uniflexSha256": "f64c795765be018f953e3aae337ea457689072c62528f85be4d41db10c3e25ab",
-    "psdSha256": "b543346cbe31b99e55b6ad925064a27b1bf14997ba796dbebb2a12c4f1fd1b6f",
-    "at": "2026-09-22T02:50:31.445Z"
+    "psdSha256": "eef5b4e728ca86f308578c965c2289651255788c907353519b028900deed2f0c",
+    "at": "2026-09-22T13:03:07.364Z"
   }
 }

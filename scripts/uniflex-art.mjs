@@ -1,21 +1,23 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { startUniflexWebPreview } from "./lib/uniflex-web-preview.mjs";
 import {
     applyName, artComponentDir, artComponentJsonPath, artComponentPsdPath,
-    artFontDir, artJsonPath, artPageDir, artPsdPath, fileSha256,
+    artFontDir, artJsonPath, artPageDir, artPsdPath, componentPublishAction, fileSha256,
     findArtPage, hashUniflexFile, hashUniflexSources, inspectArtComponent,
     inspectArtPage, listArtComponents, loadArtCatalog, pathExists,
     readArtJson, readComponentArtJson, sharedArtFontDir,
 } from "./lib/uniflex-art.mjs";
 import { runCli } from "./uniflex-ui-cli.mjs";
 import { restoredSourceFromPage } from "./lib/uniflex-page-modules.mjs";
+import { auditArtLinks, bindArtLinkIdentities, psdHasPageScopedIdentity } from "./lib/uniflex-link-identity.mjs";
 
 const root = resolve(fileURLToPath(import.meta.url), "..", "..");
 const help = `Usage:
   npm run ui:art-export -- --screen backpack
   npm run ui:art-export -- --all [--force]
+  npm run ui:art-export -- --rebuild
   npm run ui:art-import -- --screen backpack
   npm run ui:art-import -- --component BackpackItemCard
   npm run ui:art-import -- --changed
@@ -24,7 +26,9 @@ const help = `Usage:
 
 Exports UniFlex originals to apps/art/uniflex/<Page>/<Page>.psd and restorable
 defineComponent instances to apps/art/uniflex/components/<Key>/<Key>.psd.
-Page PSDs link those files as smart objects. Imports overlay to applyTarget
+Page PSDs link those files as smart objects. --rebuild re-exports every catalog
+page and refreshes component PSDs whose UniFlex source changed, once, from the
+first page that contains them. Designer-edited component PSDs stay. Imports overlay to applyTarget
 (catalog default: restored) via ui-uniflex/restored/ shared copies. Never writes
 originals unless applyTarget is original. Chrome, uv, and build:uniflex-ui are required.
 `;
@@ -46,13 +50,13 @@ function nowIso() {
 async function writeArtJson(rootDir, page, catalog, patch) {
     const previous = await readArtJson(rootDir, page) || {};
     const next = {
+        ...previous,
         screen: page.screen,
         componentName: page.componentName,
         restoredName: page.restoredName,
         source: page.source,
         canvas: page.canvas,
         applyTarget: page.applyTarget || catalog.applyTarget,
-        ...previous,
         ...patch,
     };
     await mkdir(artPageDir(rootDir, page), { recursive: true });
@@ -63,9 +67,9 @@ async function writeArtJson(rootDir, page, catalog, patch) {
 async function writeComponentArtJson(rootDir, item, patch) {
     const previous = await readComponentArtJson(rootDir, item.key) || {};
     const next = {
+        ...previous,
         key: item.key,
         source: item.source || previous.source,
-        ...previous,
         ...patch,
     };
     await mkdir(artComponentDir(rootDir, item.key), { recursive: true });
@@ -103,22 +107,57 @@ async function publishLinkedComponents(cache, page, { force = false } = {}) {
         const destSha = await fileSha256(dest);
         const exportedPsd = previous?.export?.psdSha256;
         const uniflexSha = item.source ? await hashUniflexFile(root, item.source) : null;
-        const designerEdited = destSha && exportedPsd && destSha !== exportedPsd;
-        if (designerEdited && !force) {
+        const pageScoped = destSha ? psdHasPageScopedIdentity(await readFile(dest)) : false;
+        const cacheDir = dirname(src);
+        let propNames = [];
+        try {
+            propNames = (await readdir(cacheDir)).filter((name) => name.endsWith(".psd")
+                && name !== `${item.key}.psd`
+                && /^[A-Za-z][A-Za-z0-9_]*\.psd$/u.test(name));
+        } catch (error) {
+            if (error?.code !== "ENOENT") throw error;
+        }
+        const missingProps = [];
+        for (const name of propNames) {
+            if (!await pathExists(join(artComponentDir(root, item.key), name))) missingProps.push(name);
+        }
+        let action = componentPublishAction({
+            destSha,
+            exportedPsd,
+            recordedUniflex: previous?.export?.uniflexSha256,
+            uniflexSha,
+            force,
+            pageScoped,
+        });
+        // The first export that splits a component also writes its prop PSDs.
+        // Later pages still keep the shared file.
+        if (action === "keep-shared" && missingProps.length) {
+            console.log(`replace ${item.key}: overridable properties now have their own PSDs; re-export every page that links it`);
+            action = "replace";
+        }
+        if (action === "keep-shared") {
+            const cacheSha = await fileSha256(src);
+            if (cacheSha && destSha && cacheSha !== destSha) {
+                console.log(`replace ${item.key}: shared structure changed`);
+                action = "replace";
+            }
+        }
+        if (action === "keep-designer") {
             console.log(`keep ${item.key}: designer-edited component PSD`);
             keys.push(item.key);
             continue;
         }
-        // Keep an existing shared PSD even if UniFlex source hash moved. A later
-        // page (settings PopupBackground, alliance PanelTab) must not replace
-        // the canonical file with a different kind or size.
-        if (destSha && !designerEdited) {
+        // A later page must not replace the canonical file. Source changes
+        // replace it once; the updated hash makes the following pages keep it.
+        if (action === "keep-shared") {
             console.log(`keep ${item.key}: shared component already exported`);
             keys.push(item.key);
             continue;
         }
         await mkdir(artComponentDir(root, item.key), { recursive: true });
         await cp(src, dest);
+        for (const name of propNames)
+            await cp(join(cacheDir, name), join(artComponentDir(root, item.key), name));
         const psdSha = await fileSha256(dest);
         await writeComponentArtJson(root, item, {
             export: { uniflexSha256: uniflexSha, psdSha256: psdSha, at: nowIso() },
@@ -175,19 +214,24 @@ async function withPreview(env, fn) {
     }
 }
 
-async function exportPage(page, catalog, { env, force = false }) {
+async function exportPage(page, catalog, { env, force = false, rebuild = false }) {
     const state = await inspectArtPage(root, page);
     if (state.action === "conflict" && !force)
         throw new Error(`${page.componentName}: UniFlex and PSD both changed; pass --force to overwrite the PSD.`);
     if (state.action === "import" && !force)
         throw new Error(`${page.componentName}: PSD has designer edits; pass --force to overwrite, or import first.`);
-    if (state.action === "ok" && !force) {
+    if (state.action === "ok" && !force && !rebuild) {
         console.log(`skip export ${page.componentName}: already fresh`);
         return state;
     }
     const cache = resolve(root, ".cache/psd/art-export", page.componentName);
     await rm(cache, { recursive: true, force: true });
-    await runCli(["export-psd", "--screen", page.screen, "--out", cache], { root, env });
+    const exportEnv = {
+        ...env,
+        UNIFLEX_ART_COMPONENTS: join(root, "apps/art/uniflex/components"),
+        ...(force ? { UNIFLEX_ART_COMPONENT_BASE: "canonical" } : {}),
+    };
+    await runCli(["export-psd", "--screen", page.screen, "--out", cache], { root, env: exportEnv });
     const report = JSON.parse(await readFile(join(cache, "validation.json"), "utf8"));
     if (!report?.psd) throw new Error(`Export did not report a PSD for ${page.componentName}.`);
     const dest = artPageDir(root, page);
@@ -200,6 +244,7 @@ async function exportPage(page, catalog, { env, force = false }) {
         await rm(artFontDir(root, page), { recursive: true, force: true });
     }
     const linkedComponents = await publishLinkedComponents(cache, page, { force });
+    if (!rebuild) await bindArtLinkIdentities(root);
     const psdSha = await fileSha256(artPsdPath(root, page));
     const uniflexSha = await hashUniflexSources(root, page.source);
     await writeArtJson(root, page, catalog, {
@@ -292,6 +337,7 @@ async function checkPages(catalog) {
         else if (state.action === "conflict")
             problems.push(`component ${key}: UniFlex and PSD both changed`);
     }
+    problems.push(...await auditArtLinks(root));
     if (problems.length) {
         const error = new Error(`ui:art-check failed:\n- ${problems.join("\n- ")}`);
         error.status = 1;
@@ -330,27 +376,46 @@ export async function runArtCli(argv, { env = process.env } = {}) {
     }
     const catalog = await loadArtCatalog(root);
     let args = rest;
-    let screen, component, all, changed, force;
+    let screen, component, all, changed, force, rebuild;
     ({ args, value: screen } = takeFlag(args, "screen"));
     ({ args, value: component } = takeFlag(args, "component"));
     ({ args, value: all } = takeFlag(args, "all", { boolean: true }));
     ({ args, value: changed } = takeFlag(args, "changed", { boolean: true }));
     ({ args, value: force } = takeFlag(args, "force", { boolean: true }));
+    ({ args, value: rebuild } = takeFlag(args, "rebuild", { boolean: true }));
     if (args.length) throw new Error(`Unexpected arguments: ${args.join(" ")}`);
-    if (component && (screen || all))
-        throw new Error("Use either --component or --screen/--all.");
+    if (component && (screen || all || rebuild))
+        throw new Error("Use either --component or --screen/--all/--rebuild.");
+    if (rebuild && (screen || changed || force))
+        throw new Error("--rebuild exports the whole catalog and cannot combine with --screen, --changed, or --force.");
 
     if (command === "check") {
         await checkPages(catalog);
         return;
     }
     if (command === "export") {
-        const pages = await selectPages(catalog, {
-            screen, all: all || !screen && !changed, changed, mode: "export",
+        const pages = rebuild
+            ? [...catalog.pages].sort((left, right) =>
+                Number(left.screen === "component-gallery") - Number(right.screen === "component-gallery"))
+            : await selectPages(catalog, {
+            screen, all: all || !screen && !changed && !rebuild, changed, mode: "export",
         }, root);
+        const failures = [];
         await withPreview(env, async (previewEnv) => {
-            for (const page of pages) await exportPage(page, catalog, { env: previewEnv, force });
+            for (const page of pages) {
+                try {
+                    await exportPage(page, catalog, { env: previewEnv, force, rebuild });
+                } catch (error) {
+                    if (!rebuild) throw error;
+                    const message = error instanceof Error ? error.message : String(error);
+                    failures.push(`${page.componentName}: ${message}`);
+                    console.error(`FAIL ${page.componentName}: ${message}`);
+                }
+            }
         });
+        if (rebuild) await bindArtLinkIdentities(root);
+        if (failures.length)
+            throw new Error(`ui:art-export --rebuild failed:\n- ${failures.join("\n- ")}`);
         return;
     }
     if (command === "import") {

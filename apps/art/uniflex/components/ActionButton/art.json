@@ -3,8 +3,8 @@
   "source": "apps/client/src/ui-uniflex/components/button/ActionButton.tsx",
   "export": {
     "uniflexSha256": "41593bb45fcbde6566fcc3e1db7656c03e260f88caabe6d3475ae45b19a3dc25",
-    "psdSha256": "51f1df8d36c924e52878f0d7eecb2ec401aa2b61657af84156a61fd470ce2e58",
-    "at": "2026-09-22T02:50:00.268Z"
+    "psdSha256": "76e7c0bdd89f48b9055c28a29318a0d2f1db1ee5e68b760a8446c3c80148a24c",
+    "at": "2026-09-22T13:00:57.704Z"
   },
   "import": {
     "psdSha256": "414e5adfbc3445a723a8184b2c44ed022a86d33ef3e5f3192c78cf18706c5f5b",

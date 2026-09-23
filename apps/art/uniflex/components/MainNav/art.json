@@ -3,8 +3,8 @@
   "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx",
   "export": {
     "uniflexSha256": "f7f12e9c2ce03c2e20070d0593b0ec25b88c4532cbb01989b66caedd439e76e1",
-    "psdSha256": "e97fe01b34b2439673fc4284c4eb6473e8294adfdcff140b743f0892b8b621da",
-    "at": "2026-09-22T02:49:54.593Z"
+    "psdSha256": "1c70d030ab6c36dad3e93ca37a9662371fb2f8e96d26db0588c3015c639bdc0d",
+    "at": "2026-09-22T13:02:12.577Z"
   },
   "import": {
     "psdSha256": "5e119346e734a6c3c9b2561b007d9bbd9211833d99b4cad5f02387813bc7111c",

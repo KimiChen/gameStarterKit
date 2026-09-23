@@ -135,6 +135,19 @@ apps/Cocos/
   全部只写 `*Restored` 并记入 IMPORT.md 的
   removed / blocked / swapped / conflict / added / skipped 条目。
   设计师可编辑 PSD 的落点是 `apps/art/uniflex/<Page>/<Page>.psd`（建议 Git LFS；本机未装则按二进制入库）。
+  组件 PSD 只放会继承的结构。可以覆盖的文字和图片各自是同目录下的一份 PSD
+  （例如 `ScreenHeaderText.psd`、`ScreenHeaderImage.psd`）。引用和默认值相同的，
+  这一层链到那份默认 PSD；已经不同的，写成普通 `#override` 图层。改默认 PSD 后，
+  在 Photoshop 里执行「更新链接」只会刷新仍链着它的引用，不会改写已经覆盖的图层。
+  不另加刷新脚本。例如背包覆盖了 `ScreenHeader` 的标题和底图，再改标题默认值不会改背包标题；
+  没覆盖底图的页面会跟着默认底图变。直接改某一页上的普通文字图层，只影响那一页。
+  每个组件 PSD 和属性 PSD 都带稳定的 `xmpMM:DocumentID`，页面链接的 `childDocumentID` 必须等于它，
+  并且链接记录的文件大小等于目标文件。编号为空时，Photoshop 会在首次保存时自行编号，
+  一次重链会把共用该链接的全部实例改指向另一个文件（背包页签被绑到 `ResourceCounter.psd`
+  就是这种）。`ui:art-check` 会拒绝图层身份和链接文件不一致。
+  导入时，普通 `#override` 图层写回该实例的属性；仍指向默认 PSD 且内容没变的链接不写。
+  能写回的是字面量、`expr ?? 'fallback'` 和组件已声明的文字、图片、位置、排版属性。
+  事件、循环数据和没有兜底的纯绑定不在 PSD 里，也不会被还原。
   `ui:art-export` 从原稿功能页导出；`ui:art-import` / `ui:art-sync` 按身份 overlay 回去。
   当前 catalog `applyTarget` 为 `restored`，只写 `*Restored`，不覆盖原稿；`ui:art-check` 是只读新鲜度闸。
   PreviewHome 与还原预览首页不进 art catalog。中间产物仍在 `.cache/psd/`。

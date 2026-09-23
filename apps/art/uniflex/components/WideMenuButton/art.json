@@ -3,12 +3,12 @@
   "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx",
   "export": {
     "uniflexSha256": "ba955a873144b4b99bc9581e3a82562382b1fe0a94f2cc7e3841238ea32bd056",
-    "psdSha256": "78ef5635fb6b43ccfd543a160bd4d87a195bd556a24151d53be1b1a8f1d103b4",
-    "at": "2026-09-22T02:49:54.584Z"
+    "psdSha256": "46d1d2fc4e5b23146ecd7e8f19889ce4c3069d0c34a4c1d96ad38f0e4a8328a4",
+    "at": "2026-09-22T13:01:47.990Z"
   },
   "import": {
-    "psdSha256": "78ef5635fb6b43ccfd543a160bd4d87a195bd556a24151d53be1b1a8f1d103b4",
-    "at": "2026-09-22T06:12:15.023Z",
+    "psdSha256": "164bca7790865429e12965cc92d9e3a49e47a0840cb4df779bc35f013ebd736d",
+    "at": "2026-09-22T10:13:25.337Z",
     "target": "restored"
   }
 }

@@ -9,9 +9,9 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "295972f47db06b6a48ea071d22242c51a2dd09b1877e4010d591ce04ec51b93e",
-    "psdSha256": "5fecb5e721a3037fc40b1fec544f3b066b5e4f1ddc593728ea1aed07625fd3c8",
-    "at": "2026-09-22T02:50:35.719Z"
+    "uniflexSha256": "5939e0c4459fd283f7a7bf17da76206fb98f7f5b15aa4a70595f0092ac264f82",
+    "psdSha256": "e781a16f6e8fe557fa0a882e7391b4ded00e35e5ce04487c72e1e8a1460e4cf7",
+    "at": "2026-09-22T13:29:02.427Z"
   },
   "import": {
     "psdSha256": "acc68e517a4b7719d1045ed03c7f465934388f2075face34d0bedbd59952881e",
@@ -20,7 +20,9 @@
   },
   "linkedComponents": [
     "CloseButton",
+    "TechIcon",
     "ProgressBar",
+    "RewardItem",
     "ActionButton",
     "ConfirmButton",
     "CancelButton",

@@ -9,9 +9,9 @@
   },
   "applyTarget": "restored",
   "export": {
-    "uniflexSha256": "2bcc050c0448ac61f3271ca723e28c6aa7ca2951965f8dc171f977533329b7c7",
-    "psdSha256": "2013921422a57d6506c384167ba9c17542614078160dede3ef014465d97d20b4",
-    "at": "2026-09-22T02:51:25.560Z"
+    "uniflexSha256": "6bb4665fbb8d71158b8bbd5ac52ce094bcfb519f462e416bbde86c37247c71a3",
+    "psdSha256": "68d86bd18d4f9fae4e59ad1a1bb43151080176fed75974435d622b606ca077a9",
+    "at": "2026-09-22T13:29:02.358Z"
   },
   "import": {
     "psdSha256": "286421093d237b9f79884dd03c60708101449e033b16dd68a2b73b766f5d8e2c",
@@ -26,6 +26,7 @@
     "HeroListPanel",
     "ProgressBar",
     "Tab",
+    "TabBar",
     "NotificationBadge",
     "MainNav"
   ]

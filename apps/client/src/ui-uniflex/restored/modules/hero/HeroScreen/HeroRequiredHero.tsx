@@ -16,10 +16,12 @@ function slotQuality(quality: HeroCardQuality): ItemQuality {
     return quality === 'yellow' ? 'orange' : quality;
 }
 
-export const HeroRequiredHero = defineComponent<HeroRequiredHeroProps>((p) => (
+export const HeroRequiredHero = defineComponent<HeroRequiredHeroProps>((p) => {
+    const quality = slotQuality(p.quality);
+    return (
     <view name="HeroRequiredHero" interaction="press" onClick={p.onClick}
         style={{ position: 'relative', width: 158, height: 196 }}>
-        <ItemSlot left={4} top={4} quality={slotQuality(p.quality)} />
+        <ItemSlot left={4} top={4} quality={quality} />
         <image source={imageRef('ui/hero/bond-portrait')}
             style={{ position: 'absolute', left: 12, top: 13, width: 138, height: 138 }} />
         <image source={imageRef('ui/hero/bond-class')}
@@ -35,4 +37,5 @@ export const HeroRequiredHero = defineComponent<HeroRequiredHeroProps>((p) => (
                 font: fontRef('fonts/regular', 700), fontSize: 26, color: p.nameColor, bold: true,
                 horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
     </view>
-));
+    );
+});

@@ -3,7 +3,7 @@
   "source": "apps/client/src/ui-uniflex/components/chrome/ScreenHeader.tsx",
   "export": {
     "uniflexSha256": "a376da2add71616e047ba410856c062f5eaf2843067e046a16256969c8d4d794",
-    "psdSha256": "8c8b0720445af491ca2bc485b8694ae8e99a600965c3708567bef19d11322f20",
-    "at": "2026-09-22T02:49:54.589Z"
+    "psdSha256": "583cce9d8246852bd156df8759e0ea7a14b3e664ff8a54bc2472710a241e0398",
+    "at": "2026-09-22T13:01:27.321Z"
   }
 }

@@ -3,8 +3,8 @@
   "source": "apps/client/src/ui-uniflex/components/button/CancelButton.tsx",
   "export": {
     "uniflexSha256": "93945f130df3bccdd14f0e903210538872dd26abdd79433043665086acb94845",
-    "psdSha256": "234c7472049ecdfd88d69a05ae7a3a0b702cb15687572a39e9d12b79acf4dbf6",
-    "at": "2026-09-22T02:50:35.715Z"
+    "psdSha256": "a23ba04f6309eaf83b408745fcbc4de72559d248cbef2f1ab125357bbf26e3e2",
+    "at": "2026-09-22T13:25:00.568Z"
   },
   "import": {
     "psdSha256": "780918951a6862b4c458c39b9c183f3dd102cce2676e77822eca74d50fd95c6e",

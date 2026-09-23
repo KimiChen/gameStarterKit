@@ -1,0 +1,41 @@
+{
+  "screen": "component-gallery",
+  "componentName": "ComponentGallery",
+  "restoredName": "ComponentGalleryRestored",
+  "source": "apps/client/src/ui-uniflex/modules/preview/ComponentGallery/ComponentGallery.tsx",
+  "canvas": {
+    "width": 750,
+    "height": 1424
+  },
+  "applyTarget": "restored",
+  "export": {
+    "uniflexSha256": "35763afa227349f1fc81c2f8953489b7ef5ecd78a5c0cdecafaa7f40e80f1f73",
+    "psdSha256": "6f077411dd18fb9da8758242d353b1920414b727c8e250a798afacda5ef8ad15",
+    "at": "2026-09-22T13:29:02.314Z"
+  },
+  "linkedComponents": [
+    "BackButton",
+    "ActionButton",
+    "ConfirmButton",
+    "CancelButton",
+    "IconCaptionButton",
+    "WideMenuButton",
+    "NotificationBadge",
+    "CheckBox",
+    "InputText",
+    "ProgressBar",
+    "EmptyState",
+    "Tab",
+    "TabBar",
+    "QuantityControl",
+    "ItemSlot",
+    "ResourceCounter",
+    "StarRow",
+    "TechIcon",
+    "RewardItem",
+    "ScreenHeader",
+    "ScreenFooter",
+    "MainNav",
+    "CloseButton"
+  ]
+}

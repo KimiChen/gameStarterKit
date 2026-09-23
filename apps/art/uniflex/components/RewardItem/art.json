@@ -1,0 +1,9 @@
+{
+  "key": "RewardItem",
+  "source": "apps/client/src/ui-uniflex/gamecomponents/item/RewardItem.tsx",
+  "export": {
+    "uniflexSha256": "ba8d8518926ad8f162dc48367abc7b260d232af13ff35cd779466b41fc7e17ed",
+    "psdSha256": "48d9dcc33b04497195faa414fcae9cee1580f5897cffa9a14c87cd2eb1ab9666",
+    "at": "2026-09-22T13:04:49.001Z"
+  }
+}

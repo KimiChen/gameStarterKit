@@ -2,8 +2,8 @@
   "key": "AllianceTechPanel",
   "source": "apps/client/src/ui-uniflex/modules/alliance/AllianceTech/AllianceTechPanel.tsx",
   "export": {
-    "uniflexSha256": "6fc5dcb070827f5312aa0f88e67bbce6e3ddb5f0a30f953cd462bf87d4e454bd",
-    "psdSha256": "97d0b60d2d02255169fe161958bb19c400203ec6f929f71afc84ca604650ae7d",
-    "at": "2026-09-22T02:50:47.476Z"
+    "uniflexSha256": "b7f21a0f520f3b61e050f686dc58a9200fe5c55e2beac38e463cc3223505b933",
+    "psdSha256": "d7f40ddb3d14e983149bbc7f097a15a874973bdbe53422191a963bd4f218a29e",
+    "at": "2026-09-22T13:28:28.825Z"
   }
 }

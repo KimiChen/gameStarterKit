@@ -1,0 +1,9 @@
+{
+  "key": "TechIcon",
+  "source": "apps/client/src/ui-uniflex/gamecomponents/tech/TechIcon.tsx",
+  "export": {
+    "uniflexSha256": "76122b8febc69669236e083c006847ff07023bd0c86410f81e1cb8ae474d8095",
+    "psdSha256": "e492099d89514c910337e058a65830767c3d56ed1a7ceb3a3fdd6f6074b34f28",
+    "at": "2026-09-22T13:04:48.998Z"
+  }
+}

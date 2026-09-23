@@ -3,7 +3,7 @@
   "source": "apps/client/src/ui-uniflex/components/button/BackButton.tsx",
   "export": {
     "uniflexSha256": "bbe364cf3756b36884ea1598656bd01f0d275ea32a2e0230899e7fe1f02c3656",
-    "psdSha256": "8d19a8c0733cd37cf4a25dbf237d744c5834ec967ef3a35c43539994693204cf",
-    "at": "2026-09-22T02:50:07.624Z"
+    "psdSha256": "a5602ae22f6f8457fc3c7997447a92f49109af614aeba277c5c3aa192e258fba",
+    "at": "2026-09-22T13:01:27.342Z"
   }
 }

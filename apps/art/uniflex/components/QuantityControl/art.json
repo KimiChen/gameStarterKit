@@ -3,8 +3,8 @@
   "source": "apps/client/src/ui-uniflex/components/quantity/QuantityControl.tsx",
   "export": {
     "uniflexSha256": "4238968d3239ea2c0c5c6bdc7f925c29371570fc1b07a880758a3b70cdbcf413",
-    "psdSha256": "e22f9ad032277df3b965a3175425d27351f99339a17885f93c306021d50b6d62",
-    "at": "2026-09-22T02:51:04.503Z"
+    "psdSha256": "b1fce0f1692b9f5cf4f0a0f6f867ab36b276b28b237609185adc7ae5cdd8ce45",
+    "at": "2026-09-22T13:01:27.339Z"
   },
   "import": {
     "psdSha256": "00f784e4604a89f56d2936ea14076e7cd86d1733b9665acd789c8d75eec125d6",

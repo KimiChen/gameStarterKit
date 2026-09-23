@@ -2,8 +2,8 @@
   "key": "HeroDetailAttributes",
   "source": "apps/client/src/ui-uniflex/modules/hero/HeroDetail/HeroDetailAttributes.tsx",
   "export": {
-    "uniflexSha256": "4de9a6f497ce8f54ad34c1221b0c32e3e7ca198c73ff8a4d3ba344be615f52e1",
-    "psdSha256": "3230d542dc9c7d1129a24f737ca015475bc3ce8afe1793880de43294748bff9b",
-    "at": "2026-09-22T02:51:20.321Z"
+    "uniflexSha256": "b7eaee0b059526e7e6436881df5efaf6a19c8af9cc316637adae711b64460019",
+    "psdSha256": "80dd8194d2290d184aad8e92cabbc72f4c482f7990ae6adb0ebf299b293455cd",
+    "at": "2026-09-23T02:13:24.517Z"
   }
 }

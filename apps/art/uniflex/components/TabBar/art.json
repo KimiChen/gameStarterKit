@@ -1,0 +1,9 @@
+{
+  "key": "TabBar",
+  "source": "apps/client/src/ui-uniflex/components/tab/TabBar.tsx",
+  "export": {
+    "uniflexSha256": "4c1685a613bbf34a62bf5544f7e2035673d84425e3b71f43c99efaa41b055c74",
+    "psdSha256": "a8378acd35659fed0c5fb2bf1955e0afdf74b463f78c145dde25ae82c078e6cf",
+    "at": "2026-09-22T13:25:26.235Z"
+  }
+}

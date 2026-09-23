@@ -1,0 +1,9 @@
+{
+  "key": "ShopPanel",
+  "source": "apps/client/src/ui-uniflex/modules/shop/Shop/ShopPanel.tsx",
+  "export": {
+    "uniflexSha256": "243fba2ce2a35d38a19bfa93a6be72b8cead7e3b0d02832d3e2829a36b5a34d5",
+    "psdSha256": "d69e639fc37300b3cdb9bdd1a0b7dcefe458b509fd3590a5ff4e80b4a714d3c3",
+    "at": "2026-09-22T13:04:37.754Z"
+  }
+}

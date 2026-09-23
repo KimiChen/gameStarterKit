@@ -1,0 +1,9 @@
+{
+  "key": "ShopCard",
+  "source": "apps/client/src/ui-uniflex/modules/shop/Shop/ShopCard.tsx",
+  "export": {
+    "uniflexSha256": "c74804534d71da22eb267f1b4d4b120d45cae1206f8a21fe78f3abb1ec9fcf04",
+    "psdSha256": "dd89d1bb45c8e8e20a41c2591dc136e5332eabd94cdce36de53c983b1dd307e3",
+    "at": "2026-09-22T13:04:37.737Z"
+  }
+}

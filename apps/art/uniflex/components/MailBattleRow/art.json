@@ -2,8 +2,8 @@
   "key": "MailBattleRow",
   "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleReport/MailBattleRow.tsx",
   "export": {
-    "uniflexSha256": "dea7d790d3b47a90a4d740106c65463c26d162fc311fc47098a20c71976f3d5f",
-    "psdSha256": "f41bab15b0cf9687db7062487170a267122517dedcdd224d66a9821c3f933652",
-    "at": "2026-09-22T02:51:36.986Z"
+    "uniflexSha256": "c9c690e6649a8b14305812dd99d23820b257a194b8b3110240e5d87fe7662a1d",
+    "psdSha256": "76046d10420b6303bff42c15c24358897e625586278627a91366de3156cb42bd",
+    "at": "2026-09-22T13:01:38.163Z"
   }
 }

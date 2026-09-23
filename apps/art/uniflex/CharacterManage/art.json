@@ -10,8 +10,8 @@
   "applyTarget": "restored",
   "export": {
     "uniflexSha256": "d13ec533edd63f30b80373b062b05f226903f716ad639ec9cd8a89cb2fc4d92a",
-    "psdSha256": "31c978c68ce87e811b1d8081ee9f5d9dc56ef665b27a651e7ecbb153511dfdb0",
-    "at": "2026-09-22T02:51:09.942Z"
+    "psdSha256": "5579abe058b5c6cb603b06685b2afb8f896cd5c1751ff7ce9c168bcc7bb8d3bd",
+    "at": "2026-09-22T13:29:02.345Z"
   },
   "import": {
     "psdSha256": "4a5b716d60d0e8d897bf8819896c044e20c3602f1bb2f9ea32643d2a8ea019f1",
@@ -21,6 +21,7 @@
   "linkedComponents": [
     "CloseButton",
     "Tab",
+    "TabBar",
     "CheckBox",
     "CharacterPlayerRow"
   ]

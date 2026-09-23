@@ -10,8 +10,8 @@
   "applyTarget": "restored",
   "export": {
     "uniflexSha256": "228411b5cf68e08caf706d63a7d1f6fada822915392bb193ce5df5297c4c2371",
-    "psdSha256": "3f812b1359d44b8afc8443f9690e0c90fb4b18a3bdcc487b5192f04a565dac14",
-    "at": "2026-09-22T02:50:17.118Z"
+    "psdSha256": "c29429c5077caec693721839d60f14214e9480b71e0eb5862e3f4c0627abce39",
+    "at": "2026-09-22T13:29:02.437Z"
   },
   "import": {
     "psdSha256": "69f33af24f36ac37436b98cd00d4ad887a1b428f93997d10814bda521dbe4b02",
@@ -22,6 +22,7 @@
     "EmptyState",
     "ScreenHeader",
     "Tab",
+    "TabBar",
     "BackButton",
     "ScreenFooter",
     "ActionButton",
