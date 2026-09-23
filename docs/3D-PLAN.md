@@ -272,11 +272,13 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
-- [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
+- [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-23 SC2-B4 完成：`logic/scene3d/pickMath.ts` 提供水平面 `rayPlane`、闭合实体盒 `rayAabb` 与 `unprojectDesignPx`；支持未归一化方向，返回前向 `{ t, point }`，平行共面无唯一交点返回空，盒内 / 表面起点命中 `t=0`，平行轴、擦边与零厚度盒显式覆盖。反投影注入舞台 `screenToRay`，沿用 `viewport.ts` 的左下原点、绝对设计像素、留黑边与局部视口换算，不重复缩放或翻转，保留越界拖拽及当前相机 / 视口更新。新增 20 项回归，连同视口和纯度门共 32 项定向测试通过；临时副本分别删除平面 `t < 0`、AABB `exit < 0` 剔除，2 / 1 项回归转红，正式源码保留完整检查。Creator 3.8.8 实际导入生成 meta，预览 source map 与最终源码逐字一致；独立两套客户端类型探针与 1155 项客户端测试通过。同步上游后刷新过期的 UniFlex AOT 缓存及 Cocos 镜像，无额外入库改动；最终 `verify:all` 全过（Node 26.5.0；客户端 1155 / UniFlex 契约 77 / 服务端 1382，加其余门禁合计 2830 项）。机制细化回写 3d.md §4；既有 SLG 回归原文未改，本批不新增 cc API。SC2 尚未退出，阶段 WebGL1 证据仍在退出时验收，下一批 SC2-B5。
 
 - 2026-09-23 SC2-B3 完成：`logic/scene3d/chunkStreamer.ts` 抽取流式差分、中心向外的方形环队列、保留带、最多 2×2 的完整矩形批请求及 `take / takeBatch / accept / reject / defer / current / reset` 代次门控；消费方注入 chunk 边长、地图宽高、数值 key / 逆解码和世界格单位的加载 / 保留外扩。`MapStreamer` 改为 SLG 薄包装，公开 API、16 格边长、4 / 20 格外扩、同加载矩形 no-op、reject 不自动重排及 defer 回队首语义不变。新增 16 项回归，41 项定向测试通过；既有 `slg-input` / `slg-map` / `slg-map-lod` 测试原文未改。与抽取前实现做 36 组场景、54036 次调用和 54072 次状态比对，返回值、异常与调度状态精确一致。临时副本删除 `current()` 的代次比对后，同 key 新请求的迟到完成及 reset 旧完成两项转红，正式源码保持完整门控。Creator 3.8.8 已导入生成脚本 meta，预览编译的两份 source map 与最终源码逐字一致；镜像同步，两套客户端类型探针及 `verify:all` 全过（Node 26.5.0；客户端 1135 / UniFlex 契约 77 / 服务端 1382，加其余门禁合计 2810 项）。同步上游按钮重构后发现的两个缺失 meta 和四条过时导入 / 导出断言另作独立基线修复，本批不改按钮业务源码。机制细化回写 3d.md §4；本批不新增 cc API，SC2 尚未退出，阶段 WebGL1 证据仍在退出时验收，下一批 SC2-B4。
 
