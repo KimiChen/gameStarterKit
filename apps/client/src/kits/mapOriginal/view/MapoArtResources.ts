@@ -8,7 +8,7 @@ import { BufferAsset, Texture2D, resources } from "cc";
 import {
     MAPO_DECOR_ATLAS_ASSET, MAPO_GROUND_BASE_ASSET, MAPO_MINIMAP_ASSET, MAPO_REGIONS_ASSET,
     MAPO_REGION_ATLAS_ASSET, MAPO_RIVERS_ASSET, MAPO_RIVER_FILL_ASSET, MAPO_RIVER_GEO_ASSET,
-    MAPO_CITIES_ASSET, MAPO_CITY_ATLAS_ASSET,
+    MAPO_CHOOSE_ASSET, MAPO_CITIES_ASSET, MAPO_CITY_ATLAS_ASSET,
     MAPO_ROADS_ASSET, MAPO_ROAD_ATLAS_ASSET, MAPO_TERRAIN_ASSET,
     mapoBlockBaseAsset, mapoBlockGeoAsset, mapoBlockTableAsset,
     mapoPlateAsset, mapoTopAtlasAsset, mapoTopsAsset,
@@ -50,6 +50,8 @@ export interface MapoArtResources {
     readonly regions: BufferAsset | null;
     /** 河流水面的填充色图（6×2，三张原版 2×2 平色）。 */
     readonly riverFill: Texture2D | null;
+    /** 选中高亮（原版 choose2 罩格地块面，240×112）。⚠ 缺席只退回细线菱形，⛔ 不致命。 */
+    readonly choose: Texture2D | null;
     /** 河流几何库 `river-geo.bin`。 */
     readonly riverGeo: BufferAsset | null;
     /** 河流摆放表 `rivers.bin`。⚠ 三者缺一则河流层整层不建。 */
@@ -80,7 +82,7 @@ function loadBuffer(path: string): Promise<BufferAsset | null> {
 
 export async function loadMapoArt(): Promise<MapoArtResources> {
     const [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill, groundBase, roadAtlas,
-           terrain, regions, riverGeo, rivers, roads, cityAtlas, cities] =
+           terrain, regions, riverGeo, rivers, roads, cityAtlas, cities, choose] =
         await Promise.all([
             loadTexture(mapoPlateAsset(4)),
             loadTexture(mapoPlateAsset(5)),
@@ -97,6 +99,7 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             loadBuffer(MAPO_ROADS_ASSET),
             loadTexture(MAPO_CITY_ATLAS_ASSET),
             loadBuffer(MAPO_CITIES_ASSET),
+            loadTexture(MAPO_CHOOSE_ASSET),
         ]);
     const blocks = await Promise.all(MAPO_BLOCK_KINDS.map(async (kind) => ({
         kind,
@@ -114,7 +117,7 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
     let released = false;
     return {
         plate4, plate5, minimap, terrain, decorAtlas, regionAtlas, regions,
-        riverFill, riverGeo, rivers, groundBase, roadAtlas, roads, cityAtlas, cities,
+        riverFill, riverGeo, rivers, groundBase, roadAtlas, roads, cityAtlas, cities, choose,
         blockBase: (kind) => blockBy.get(kind)?.base ?? null,
         blockGeo: (kind) => blockBy.get(kind)?.geo ?? null,
         blockTable: (kind) => blockBy.get(kind)?.table ?? null,
@@ -124,7 +127,7 @@ export async function loadMapoArt(): Promise<MapoArtResources> {
             if (released) return;
             released = true;
             for (const a of [plate4, plate5, minimap, decorAtlas, regionAtlas, riverFill,
-                             groundBase, roadAtlas, cityAtlas]) a?.decRef();
+                             groundBase, roadAtlas, cityAtlas, choose]) a?.decRef();
             terrain?.decRef();
             regions?.decRef();
             riverGeo?.decRef();

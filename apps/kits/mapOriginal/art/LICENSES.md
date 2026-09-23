@@ -65,11 +65,12 @@
 | 43 | `city-atlas.png` | （合成，见说明） | `3027dc6712a63497fdf4956e997c58bbeecbc233b8c54fa9da6f5d50995166a5` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/city-atlas.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 44 | `cities.bin` | （合成，见说明） | `0dd70f4dffabf086c80c436bd7e44922cbca21ffcd6d51fe10690663eb27540e` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/cities.bin` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 | 45 | `cities.info.json` | （合成，见说明） | `e2f7c4e257fd28f4236ef35bdd117083038a267ffb29f362616924694affa0f9` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/cities.info.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
-| 46 | `labels.json` | （合成，见说明） | `c801263fa8c7c6e8a4398557fc8569309459163ebec3f6963c2e98b8b6df5bad` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/labels.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 46 | `choose.png` | （合成，见说明） | `2445b1099d486ffdf25e0709818481388ebeb9567f28ddd0d799e446527085d4` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/choose.png` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
+| 47 | `labels.json` | （合成，见说明） | `c801263fa8c7c6e8a4398557fc8569309459163ebec3f6963c2e98b8b6df5bad` | 见抬头 | 见抬头 | `apps/kits/mapOriginal/data/maps/s1/labels.json` | 由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl） | `本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)` | 已引入，待验收 |
 
 ## B. 源素材清单（仓外只读，⛔ 不入库）
 
-### B.1 直接解码的原始条目（94）
+### B.1 直接解码的原始条目（95）
 
 | Catalog 逻辑名 | ELP 容器/下标 | namehash | 源格式 | 尺寸 | 源 SHA-256 |
 |---|---|---|---|---|---|
@@ -167,6 +168,7 @@
 | `scene/ground/zhaoze/png/tt_01.ktx` | `ccbf9e04dbfb`/021 | `32d8e0feac2bee5a` | ETC2 RGBA | 512x512 | `eaf83868cdd685e9df1509368737a36189fa322d73c3e2d5c6437e168ac195d6` |
 | `scene/ground/zhaoze/png/tt_02.ktx` | `ccbf9e04dbfb`/041 | `572aeee9f8d23caa` | ETC2 RGBA | 512x512 | `4f3b66de1328f5de735f688fa2b4909b11f67a23f8e7e8a6d3034f172752b6ba` |
 | `scene/ground/zhaoze/png/tt_04.ktx` | `ccbf9e04dbfb`/026 | `4dc30723d6504e6f` | ETC2 RGBA | 512x512 | `f117b75b2fe007469804b5f50d2600db51f5c703160ded605173ab4574d00893` |
+| `scene/_output_atlas_scene/atlas_tex/grid-1.ktx#choose2` | `a5becdb1d63a`/054 | `4de95185de972579` | ETC2 RGBA | 2044x1652 | `c6e24acfb17387ef3f26f7d0eed970dacd8ebf93223505e0b84f9d47e5c251db` |
 
 ### B.2 图集切片（7117 张，来自上表的图集页）
 

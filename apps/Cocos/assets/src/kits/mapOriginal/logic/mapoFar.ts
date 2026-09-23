@@ -56,6 +56,9 @@ export function mapoTopsAsset(kind: string): string {
     return `kits/mapOriginal/maps/s1/${kind}-tops`;
 }
 export const MAPO_MINIMAP_ASSET = "kits/mapOriginal/maps/s1/minimap";
+
+/** 选中高亮贴图（原版 choose2 罩格地块面，240×112，build_choose.py 从 grid-1 图集切出）。 */
+export const MAPO_CHOOSE_ASSET = "kits/mapOriginal/maps/s1/choose";
 /*
  * ⚠ 这里**故意没有**近档地表图集（M2-B1 删除）：那是「8 粗类 × 4 变体的逐格菱形贴片」，
  *   是本仓**自创**的做法，与原版直接矛盾 —— 原版的地表底是「一块 10×10 格 + 一张底纹

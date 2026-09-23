@@ -61,6 +61,8 @@ FILES = {
     # ★ 城址件：15 个原版件的图集 + 件库/摆位（§5）。⚠ 两件缺一则城址层整层不建。
     "city-atlas.png": "city-atlas.png", "cities.bin": "cities.bin",
     "cities.info.json": "cities.info.json",
+    # ★ 选中高亮：原版 choose2 罩格地块面（240×112，§「选中高亮」；`choose_00_group.prefab` 的主件）
+    "choose.png": "choose.png",
     "labels.json": "labels.json",
 }
 KIT_ONLY = {"terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",

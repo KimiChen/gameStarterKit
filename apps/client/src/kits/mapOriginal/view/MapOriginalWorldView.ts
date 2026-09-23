@@ -13,7 +13,7 @@
  *   相机坐标：原点**地图区左上**、y 向**下**，尺寸 (layerWidth, mapTop−mapBottom)。
  * ⛔ 直接拿 UI 坐标当居中坐标用 —— sgzzmap 为此「点哪都选到屏幕外的格」。
  */
-import { Color, EventMouse, EventTouch, Label, Node, Sprite, UITransform, Vec3 } from "cc";
+import { Color, EventMouse, EventTouch, Label, Node, Sprite, SpriteFrame, UITransform, Vec3 } from "cc";
 import { CocosView } from "../../../view/CocosView";
 import { createSolidPlate } from "../../../view/uiPlate";
 import { MAPO_LOD_MAX, MAPO_MAP_COLS, MAPO_MAP_ROWS, mapoGrid2Pos } from "../../../shared/kits/mapOriginal/api/hexmap/index";
@@ -25,7 +25,7 @@ import { mapoInMapBand, mapoRootLocalToCamera } from "../logic/mapoCamera";
 import {
     MAPO_LAYER_ORDER, mapoIsNearField, mapoLayerVisible, type MapoLayerId,
 } from "../logic/mapoLayers";
-import { mapoSelectionEdges } from "../logic/mapoMesh";
+import { mapoSelectionEdges, MAPO_CHOOSE_WORLD } from "../logic/mapoMesh";
 import { mapoRuntimeOrNull } from "../logic/mapoRuntime";
 import { mapoSetDisplayTerrain } from "../logic/mapoTerrain";
 import { mapoSetRegions } from "../logic/mapoRegions";
@@ -75,6 +75,16 @@ export class MapOriginalWorldView extends CocosView {
     private logic: MapOriginalWorldLogic | null = null;
     private world: Node | null = null;
     private selection: Node | null = null;
+    /**
+     * 选中高亮的罩格地块面（原版 `choose_00_group.prefab` 的主件 `choose2`，240×112、pivot 中心）。
+     * ⚠ 贴图没到就只留细线菱形（与 minimap 的兜底同款纪律）；帧自建的，销毁走 `chooseFrame`。
+     */
+    private chooseSprite: Sprite | null = null;
+    private chooseFrame: SpriteFrame | null = null;
+    /** 高亮呼吸动画的相位（秒）。原版 `choose_*_s_animation` 就是循环动画，⛔ 别做成静的。 */
+    private chooseTime = 0;
+    /** 呼吸动画的复用色（⛔ 不逐帧 new）。 */
+    private readonly chooseColor = new Color(255, 255, 255, 255);
     private renderer: MapoGroundRenderer | null = null;
     /** 上一次建出来的地表块数。 */
     private groundCount = 0;
@@ -244,6 +254,7 @@ export class MapOriginalWorldView extends CocosView {
             this.regionRenderer = new MapoRegionRenderer(this.layer("region"), art);
             this.decorRenderer = new MapoDecorRenderer(this.layer("decor"), art);
             this.farRenderer = new MapoFarRenderer(this.layer("plate"), art);
+            this.setupChoose(art);
             this.minimap = new MapoMinimap(this.root, 180, w / 2 - 110, this.mapBottom + 110, art,
                 (row, col) => { this.logic?.centerOn(row, col); this.refresh(true); });
             this.refresh(true);
@@ -279,6 +290,8 @@ export class MapOriginalWorldView extends CocosView {
         this.labelRenderer?.dispose(); this.labelRenderer = null;
         this.farRenderer?.dispose(); this.farRenderer = null;
         this.minimap?.dispose(); this.minimap = null;
+        this.chooseFrame?.destroy(); this.chooseFrame = null;
+        if (this.chooseSprite) { this.chooseSprite.spriteFrame = null; this.chooseSprite.enabled = false; }
         this.art?.release(); this.art = null;
         for (const node of this.layerNodes.values()) node.destroy();
         this.layerNodes = new Map();
@@ -323,18 +336,48 @@ export class MapOriginalWorldView extends CocosView {
         this.detail = this.label(footer, "mapo-detail", "点选地块查看详情", 22, TEXT, 0, footerH / 2 - 40, w);
     }
 
-    /** 选中框：四条贴边的短条，⛔ 不铺整格（整格会盖住地表）。 */
+    /** 选中框：罩格地块面（原版件，art 到位才补）+ 四条贴边的短条，⛔ 不铺整格（整格会盖住地表）。 */
     private buildSelection(): void {
         const sel = new Node("mapo-selection");
         sel.layer = this.root.layer;
         sel.addComponent(UITransform);
         sel.active = false;
         this.root.addChild(sel);
+        // ★ 罩格地块面：240×112 原版件（choose2.png），pivot 中心对格心，垫在短条下面。
+        //   世界尺寸 = 原图像素 × 32/150（与全 kit 同一换算），⛔ 别按图集/贴图尺寸算。
+        const chooseNode = new Node("mapo-choose");
+        chooseNode.layer = sel.layer;
+        const ct = chooseNode.addComponent(UITransform);
+        ct.width = MAPO_CHOOSE_WORLD[0];
+        ct.height = MAPO_CHOOSE_WORLD[1];
+        const sprite = chooseNode.addComponent(Sprite);
+        sprite.sizeMode = Sprite.SizeMode.CUSTOM;
+        sprite.enabled = false;
+        sel.addChild(chooseNode);
+        this.chooseSprite = sprite;
+        this.setupChoose(this.art);
         for (const [i, e] of mapoSelectionEdges(2, 1).entries()) {
             // ⚠ 2D 旋转用 `angle`（度），⛔ 别用 setRotationFromEuler：UI 管线下只有 z 有意义
             createSolidPlate(sel, e.length, e.thickness, MARK, e.x, e.y, `mapo-sel-${i}`).angle = e.angle;
         }
         this.selection = sel;
+    }
+
+    /** art 到位/换掉时补地块面贴图。⚠ 自建帧关动态图集（见 view/uiPlate.ts 的告诫）。 */
+    private setupChoose(art: MapoArtResources | null): void {
+        if (!this.chooseSprite) return;
+        this.chooseFrame?.destroy();
+        this.chooseFrame = null;
+        if (!art?.choose) {
+            this.chooseSprite.enabled = false;
+            return;
+        }
+        const frame = new SpriteFrame();
+        frame.texture = art.choose;
+        frame.packable = false;
+        this.chooseFrame = frame;
+        this.chooseSprite.spriteFrame = frame;
+        this.chooseSprite.enabled = true;
     }
 
     /**
@@ -455,6 +498,13 @@ export class MapOriginalWorldView extends CocosView {
     private onTick(dt: number): void {
         const l = this.logic; if (!l) return;
         l.camera.step(dt);
+        // ★ 罩格地块面的呼吸动画（原版 choose_*_s_animation 是循环动画）：1.4s 一个周期，
+        //   透明度 170..255 脉动。⛔ 别动短条（那是另一层语义）。
+        if (this.chooseSprite?.enabled) {
+            this.chooseTime += dt;
+            this.chooseColor.a = 170 + 85 * (0.5 - 0.5 * Math.cos((this.chooseTime * Math.PI * 2) / 1.4));
+            this.chooseSprite.color = this.chooseColor;
+        }
         this.refresh(false);
     }
 

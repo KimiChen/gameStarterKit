@@ -176,6 +176,18 @@ export function mapoBorderStripPoly(row: number, col: number, resDir: number, ha
 }
 
 /**
+ * 选中高亮的地块面在世界里的尺寸（**世界像素**）。
+ *
+ * ★ 原版 `choose_00_group.prefab` 的主件 `choose2`：240×112 px（= 0.80×0.75 格）、
+ *   pivot 中心对格心 —— 与摆件同一条换算（原图像素 × 32/150），⛔ 不是图集格、不是贴图原尺寸。
+ *   实物 = `scene/grid/png/choose2.png`（在 `scene/_output_atlas_scene/atlas_tex/grid-1.ktx`
+ *   的 (1260,1526) 帧，`tools/maporiginal-assets/build_choose.py` 切出）。
+ */
+export const MAPO_CHOOSE_WORLD: readonly [number, number] = Object.freeze([
+    240 * MAPO_TILE_HALF_W / 150, 112 * MAPO_TILE_HALF_W / 150,
+] as [number, number]);
+
+/**
  * 选中框的四条边（菱形轮廓）。返回**设计单位**下的条形描述，由 View 摆成四块旋转底板。
  *
  * ⚠ 菱形是 2:1，⛔ 不是正方形转 45° —— 边的倾角是 `atan2(TH, TW)` ≈ 26.565°，不是 45°。
