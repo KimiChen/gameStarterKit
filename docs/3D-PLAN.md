@@ -274,9 +274,11 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
 - [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [x] SC2-B5
 - [x] SC3-B1 [x] SC3-B2 [x] SC3-B3 [x] SC3-B4 [x] SC3-B5 [x] SC3-B6
-- [x] SC4-B1（本批提交） [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
+- [x] SC4-B1（04bb5e60） [x] SC4-B2（本批提交） [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [x] slg 资源 / 全局设置（SC3）
+
+- 2026-09-24 SC4-B2 完成：正式 `Vfx` 复用 EntityPool 的 Prefab 池与分帧预算，叠加同键 capacity / 全池 maxEffects、世界坐标 at / follow、从实际激活起算的单调毫秒寿命、目标失效与失败回收。LOD2 及内容隐藏门结束旧播放，返回近档不重播；降档释放超额，舞台租约取消清空加载 / 节点 / 帧订阅。Cocos 先 stop / clear 再停用节点，复用时重新播放，默认粒子材质在节点退休后的 AFTER_DRAW 回收，源资源不被修改。独立开发场景新增「50 特效（压测）」开关与 `stage3d --perf --vfx`，生产 8 / 24 / 48 上限不变，50 为显式 high 压测覆写；原生粒子序列化尺寸使用 `startSize`，探针断言实际作者参数与四份编译 source map，拒绝旧缓存。WebGL2 / 实际 WebGL1 均验证 **100 两骨蒙皮 + 50 个粒子系统**、实际提交、跟随 / 复用 / 定时 / LOD / 48 上限及 20 次联合回收；关闭后场景节点回到10、活动句柄 / 粒子 Prefab 引用为0、GFX增量0。60帧预热后240帧原始间隔 p95 为 **19.5 / 30.6 ms**，平均 **57.12 / 56.67 fps**，各55 draw calls；首载最大间隔41.9 / 50.5 ms。15项新增客户端回归、2项探针拒绝测试、删 LOD 门的隔离变异、真实 cc.d.ts 编译、独立 typecheck / 1335项 test:client 与 `verify:all` 3020项（客户端1335 / UniFlex80 / 服务端1389，含其他门禁）均通过。证据见 [B2 验收摘要](perf/stage3d/2026-09-24-sc4-b2.json)。旧缓存 / 视口 / 作者参数候选报告原样保留，未替换成成功证据；最终窗口不证明持续60fps，也不外推复杂骨架、手机、low档或真实微信缓存。SC4仍未退出，下一批B3，阶段性能门保留。
 
 - 2026-09-24 SC4-B1 完成：正式 `SkinnedUnits` 以 EntityPool 为底，共用逐帧预算 / LOD / 取消 / 租约回收；全池 maxUnits 与显式实时子上限生效。Cocos 适配器以真实 mesh / 源材质 / jointTexture / 完整实例布局隔离全部材质 pass，跨图集 `play` 同帧重分组；实时路径先换非 instancing 材质，并按 clip 首次重建求值器。`socket` 跨 clip / 模式保持节点，支持 onEnable 重入关闭；图集登记按 hash 幂等、拒绝冲突及非对齐行宽。Creator 3.8.8 的 WebGL2 / 实际 WebGL1 / 显式浮点缺失 RGBA8 三路径均验 100 两骨单位、两主 clip 同播加跨图集样本、实际队列与上传实例、实时矩阵与 socket 推进和 20 次回收。稳态各 240 帧原始毫秒 p95 为 **34.1 / 17.6 / 17.8 ms**，各 5 draw calls / 100 instances / 9,794 triangles；首次激活最大间隔 44.3 / 42.6 / 43.6 ms，节点与 GFX 回预热基线。WebGL2 保留较慢窗口，不据此宣布 60fps 或 SC4 阶段退出。新增 15 项客户端回归与 3 项探针拒绝测试；删 jointTexture、删布局、实时仍启 instancing 的三次隔离变异均打红；同步后最终 `verify:all` 3003 项全过（客户端 1320 / UniFlex 契约 80 / 服务端 1387，含两套客户端类型检查；同步前隔离验收 2993 项亦全过）；真实引擎声明结果、15 份浏览器模块 / source map / 真源一致性及截图复核见 [B1 验收摘要](perf/stage3d/2026-09-24-sc4-b1.json)。初次视口 / 边缘裁剪 / 队列重复计数失败报告保留。SC4-B2 特效与 B3 low / 真机缓存门仍待交付，下一批 SC4-B2。
 

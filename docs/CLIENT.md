@@ -246,6 +246,16 @@ despawn 或 LOD 更换预制后须重新取得，调用方在 despawn 前摘除�
 内容须由作者保证能放入图集。布局不能替代运行时实际纹理分组，也不能迁移已烘焙的纹理句柄。
 额外 `clips` 为已加载的兼容 clip，模板通过统一 retainer 持有到节点退休后。素材与源材质均不被改写。
 
+SC4-B2 的 `createCocosVfx(catalog, lease.root, { quality, signal: lease.signal })` 管理 ParticleSystem
+Prefab 池。`play(poolId, { at: { x, y, z } }, durationMs)` 或 `play(poolId, { follow: () => position }, durationMs)`
+返回只读 `state / node / error` 与 `stop()` 句柄；坐标为世界坐标，跟随返回 undefined 即结束。
+寿命从实际激活开始，以单调毫秒计时，长帧或暂停后恢复不延长寿命；自动帧订阅在 AFTER_UPDATE 更新。
+同键容量来自 pool.json，全池 pending + active 额外受 `quality.maxEffects` 限制；超额返回 undefined。
+LOD2 一律拒播，内容 `hideAtLod` 与 details 门同样生效；禁用或降档回收旧效果，回近档不自动重播。
+停止与超时先清粒子再归池；`evict()` 销毁空闲节点，租约释放 / `close()` 回收全部节点、订阅与资源。
+调用方只借用当前活动节点，不自行改粒子容量或材质。Creator 3.8.8 默认粒子材质在节点退休后的 AFTER_DRAW
+由适配器补充回收，源 Prefab / 源材质保持不变。无头适配器用 `step(frameId, nowMs)` 注入单调帧号和时间。
+
 实时蒙皮须 `allowRealtime:true` 并显式选择 `mode:"realtime"`；同池实时单位另受
 `maxUnitsWithoutInstancing` 上限约束，换模型前先安装关闭 instancing 的副本。首次进入实时的每个 clip
 重建一次求值状态，后续切换复用；不因缺少浮点纹理直接放弃可用的 RGBA8 预烘焙。

@@ -10,7 +10,8 @@
         }
       ],
       "pools": [
-        "bipeds"
+        "bipeds",
+        "sparks"
       ],
       "textures": [
         {

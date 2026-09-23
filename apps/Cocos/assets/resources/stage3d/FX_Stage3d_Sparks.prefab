@@ -1,0 +1,88 @@
+[
+  {
+    "__type__": "cc.Prefab",
+    "_name": "FX_Stage3d_Sparks",
+    "data": {
+      "__id__": 1
+    },
+    "optimizationPolicy": 0,
+    "persistent": false
+  },
+  {
+    "__type__": "cc.Node",
+    "_name": "FX_Stage3d_Sparks",
+    "_parent": null,
+    "_children": [],
+    "_active": true,
+    "_components": [
+      {
+        "__id__": 2
+      }
+    ],
+    "_prefab": {
+      "__id__": 3
+    },
+    "_lpos": {
+      "__type__": "cc.Vec3",
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "_lrot": {
+      "__type__": "cc.Quat",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 1
+    },
+    "_lscale": {
+      "__type__": "cc.Vec3",
+      "x": 1,
+      "y": 1,
+      "z": 1
+    },
+    "_layer": 1
+  },
+  {
+    "__type__": "cc.ParticleSystem",
+    "_name": "",
+    "node": {
+      "__id__": 1
+    },
+    "_enabled": true,
+    "_capacity": 50,
+    "duration": 1,
+    "loop": true,
+    "playOnAwake": false,
+    "startLifetime": {
+      "__type__": "cc.CurveRange",
+      "constant": 1,
+      "mode": 0
+    },
+    "startSpeed": {
+      "__type__": "cc.CurveRange",
+      "constant": 2,
+      "mode": 0
+    },
+    "rateOverTime": {
+      "__type__": "cc.CurveRange",
+      "constant": 30,
+      "mode": 0
+    },
+    "startSize": {
+      "__type__": "cc.CurveRange",
+      "constant": 0.25,
+      "mode": 0
+    }
+  },
+  {
+    "__type__": "cc.PrefabInfo",
+    "root": {
+      "__id__": 1
+    },
+    "asset": {
+      "__id__": 0
+    },
+    "fileId": "stage3d-greybox-sparks"
+  }
+]

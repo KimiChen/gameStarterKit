@@ -33,6 +33,10 @@ PNG 使用固定字节的无压缩 DEFLATE，GLB 使用固定顺序与小端 buf
 | `greybox-plane.glb` | Y=0、X/Z 各 64 m，UV2 位于 0.01–0.99，供静态光烘焙 |
 | `greybox-biped.glb` | Root / Upper 两骨、192 顶点 / 96 三角、脚底枢轴；鼻子指向 -Z；两个 1 s 动画 |
 | `greybox-biped-atlas-b.glb` | 同样 rig / mesh，另一组命名及角度不同的 1 s 动画；用于请求独立 Joint Texture Layout 的受控候选 |
+| `FX_Stage3d_Sparks.prefab` | SC4-B2 原创粒子灰盒：Cocos 内置 ParticleSystem / 默认材质，无外部图片；容量50、发射30/s、寿命1s、速度2、尺寸0.25；手写作者态，不由 greybox.py 覆盖 |
+
+粒子尺寸在 Creator 3.8.8 的序列化兼容键为 `startSize`，运行时属性为 `startSizeX`；
+`--perf --vfx` 读取并断言实际尺寸 / 速度 / 发射率 / 寿命，防止导入时默默回落默认值。
 
 各 GLB 的 scene 名等于文件 stem（不带 `.glb`）；两个 biped 的内部模型根节点均固定为
 `GreyboxBiped`，使导入后的 `GreyboxBiped/Root/Upper` 等骨架与动画相对路径一致，允许夹具

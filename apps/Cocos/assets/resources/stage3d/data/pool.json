@@ -29,6 +29,18 @@
         "medium": 100,
         "high": 100
       }
+    },
+    {
+      "id": "sparks",
+      "prefab": {
+        "bundle": "resources",
+        "path": "stage3d/FX_Stage3d_Sparks"
+      },
+      "capacity": {
+        "low": 8,
+        "medium": 24,
+        "high": 50
+      }
     }
   ]
 }

@@ -1,0 +1,518 @@
+{
+  "schemaVersion": 1,
+  "batch": "SC4-B2",
+  "date": "2026-09-24",
+  "status": "complete",
+  "stageExit": false,
+  "baseCommit": "04bb5e60",
+  "reviewedHeadBeforeCommit": "425cb03d1241de685606c8ade7d6ebe422af7066",
+  "implementation": [
+    "Vfx uses EntityPool bounded per-key prefab pools and activation budgets; maxEffects spans pending/active keys",
+    "World-space at/follow, monotonic activation-relative lifetime, explicit stop, target loss and failure cleanup",
+    "Far LOD and catalog detail/hide gates end old effects without automatic replay; downgrade enforces caps",
+    "Stage3D lease abort closes all queues/nodes/frame subscriptions; late loads returned",
+    "Cocos stops/clears particles before disabling, reuses nodes, retires owned default material after draw and preserves source assets",
+    "50-effect developer switch and --perf --vfx combined-load runner; author parameters and compiled source maps asserted"
+  ],
+  "validation": [
+    {
+      "command": "npm run typecheck",
+      "passed": true,
+      "testGroups": [],
+      "totalTests": 0,
+      "log": {
+        "path": ".cache/sc4-b2/typecheck-final.log",
+        "sha256": "815400662382d23981044f33a45891d33e84802c2f4fe6c5feab1ad29a3ea430"
+      }
+    },
+    {
+      "command": "npm run test:client",
+      "passed": true,
+      "testGroups": [
+        1335
+      ],
+      "totalTests": 1335,
+      "log": {
+        "path": ".cache/sc4-b2/test-client.log",
+        "sha256": "e27100e7aa8847b70afcc39c0ff535078bf42ed0248ee5f9732563f1da214859"
+      }
+    },
+    {
+      "command": "17 targeted client/preview tests",
+      "passed": true,
+      "testGroups": [
+        17
+      ],
+      "totalTests": 17,
+      "log": {
+        "path": ".cache/sc4-b2/targeted-final.log",
+        "sha256": "5d2c53515c997a1d8871a62f1c4318e558f1be67237eed425eb29b62d561ad1c"
+      }
+    },
+    {
+      "command": "npm run verify:all",
+      "passed": true,
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1335,
+        80,
+        1389
+      ],
+      "totalTests": 3020,
+      "log": {
+        "path": ".cache/sc4-b2/verify-all.log",
+        "sha256": "ea876310fc1acb26ef9a6da1065694deabd83ba92a2b9ee4704426cead7dfd2e"
+      }
+    },
+    {
+      "command": "Creator 3.8.8 real cc.d.ts compile",
+      "diagnostics": 0,
+      "report": {
+        "path": ".cache/sc4-b2/real-engine-types.json",
+        "sha256": "8b46f085282a3fccadfae88bc55b0ca6454271d00ad9169455664e315a1a935c"
+      }
+    },
+    {
+      "command": "npm run verify:inventory after documentation update",
+      "passed": true,
+      "log": {
+        "path": ".cache/sc4-b2/final-inventory.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      }
+    }
+  ],
+  "mutation": {
+    "change": "remove this.lod < 2 && from Vfx.visible in isolated esbuild copy",
+    "exitCode": 1,
+    "failedTest": "Vfx: far LOD refuses new loads, stops active and pending effects, never replays old effects",
+    "log": {
+      "path": ".cache/sc4-b2/mutation-lod.log",
+      "sha256": "1ce25263c71574577067b0b230770ebccde493cdd70e338d25ac4f1aa2b73019"
+    },
+    "productionSourceModified": false
+  },
+  "engineReference": {
+    "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/bin/.declarations/cc.d.ts",
+    "version": "3.8.8",
+    "declarationLines": {
+      "ParticleSystem": 46592,
+      "processor": 46839,
+      "play": 46860,
+      "stop": 46875,
+      "clear": 46880,
+      "worldPosition": 25068,
+      "getDefaultMaterial": 70518
+    },
+    "diagnostics": 0
+  },
+  "runs": [
+    {
+      "context": "WebGL2",
+      "raw": {
+        "path": ".cache/sc4-b2/accepted2-webgl2/report.json",
+        "sha256": "5af342b750251387712643084bbf5a7e4c0a7a52998d639948d426d28e8764b3"
+      },
+      "summary": {
+        "path": "docs/perf/stage3d/2026-09-24-sc4-b2-webgl2.json",
+        "sha256": "610f7ff31a8408cfa5fd4d78ed005f50804045645d8bbf1811270f381ba6727a"
+      },
+      "screenshot": {
+        "path": ".cache/sc4-b2/accepted2-webgl2/combined.png",
+        "sha256": "e5759431b408230afe071b5febecd2a0076d4e8ab37a1c7a9b69f27af87b0b1f",
+        "reviewed": true
+      },
+      "environment": {
+        "webgl": 2,
+        "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGL2Device",
+        "pipeline": "WebPipeline",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "previewDevice": "WebpageFullScreen",
+        "viewport": {
+          "cssWidth": 375,
+          "cssHeight": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624,
+          "dpr": 2
+        }
+      },
+      "compiledSources": [
+        {
+          "source": "apps/client/src/view/scene3d/Vfx.ts",
+          "sha256": "50e358c11ab72eb94a7fc9686805d918bd152e6f1be1d405209bfabfc676a76f",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/d5/d5b92cd8a9aa31dfeae3248e5499bca6d603c593.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/cocosVfx.ts",
+          "sha256": "a3b48296c064aa4ee7681321cc697b7a7bb1c194f9b3dc753e195ba529e7ac1a",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/20/20ab668d9bd4688b98753b06858deadc13033571.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/VfxFixture.ts",
+          "sha256": "c5f9604ff03e8a8d3afb9f07ee4f045eb458256496c2b355b771625efc7a0575",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/42/42293dc91d702af372162a308e4d58755937f5ab.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+          "sha256": "73f9f5310914d2b41d351087efa1e6bbcc1d1bc25ebb9b24d2c3e07022dec3dd",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js.map"
+        }
+      ],
+      "load": {
+        "skinnedUnits": 100,
+        "particleSystems": 50,
+        "capacityPerSystem": 50,
+        "ratePerSecond": 30,
+        "lifetimeSeconds": 1,
+        "size": 0.25,
+        "productionMaxEffects": 48,
+        "stressMaxEffects": 50
+      },
+      "steadyFrameIntervalMs": {
+        "count": 240,
+        "p50Ms": 16.699999999254942,
+        "p95Ms": 19.5,
+        "maxMs": 36.19999999925494,
+        "meanMs": 17.507500000003105
+      },
+      "observedAverageFps": 57.11837783805927,
+      "activationMaxIntervalMs": 41.899999998509884,
+      "drawCalls": {
+        "p50": 55,
+        "p95": 55,
+        "max": 55,
+        "last": 55
+      },
+      "memory": {
+        "prewarmedClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42500,
+          "textureBytes": 8409220
+        },
+        "finalClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42500,
+          "textureBytes": 8409220
+        },
+        "cycles": 20,
+        "stable": true
+      },
+      "closedSceneNodes": 10,
+      "closedPrefabRefs": 0,
+      "checks": [
+        "50 live particle systems in actual stage color queues",
+        "100 simultaneous units with actual mesh/material/joint-texture submitted groups",
+        "author settings match imported values",
+        "world-space follow",
+        "overflow refusal",
+        "clear before pooling",
+        "reuse and stale-handle isolation",
+        "300ms expiry",
+        "far LOD stops and rejects",
+        "near LOD does not replay",
+        "production high clamps to 48",
+        "every steady sampled frame keeps 100 + 50",
+        "20 post-prewarm cycles return nodes, GFX and references to baseline"
+      ],
+      "consoleEntries": 0,
+      "unexpectedErrors": 0
+    },
+    {
+      "context": "WebGL1",
+      "raw": {
+        "path": ".cache/sc4-b2/accepted2-webgl1/report.json",
+        "sha256": "75c8eb2447cc90072eb37364b1bab4721f95a7553f49cc771afddddebd95596f"
+      },
+      "summary": {
+        "path": "docs/perf/stage3d/2026-09-24-sc4-b2-webgl1.json",
+        "sha256": "afe896018e47b1896ec7a4cc5bffeb8219f54ec03c96ee85d385722a84a73160"
+      },
+      "screenshot": {
+        "path": ".cache/sc4-b2/accepted2-webgl1/combined.png",
+        "sha256": "c45eabf39bf4bbdcf0cfe07552110fb25b26fae16c9beb3a958f3c6404237027",
+        "reviewed": true
+      },
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "previewDevice": "WebpageFullScreen",
+        "viewport": {
+          "cssWidth": 375,
+          "cssHeight": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624,
+          "dpr": 2
+        }
+      },
+      "compiledSources": [
+        {
+          "source": "apps/client/src/view/scene3d/Vfx.ts",
+          "sha256": "50e358c11ab72eb94a7fc9686805d918bd152e6f1be1d405209bfabfc676a76f",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/d5/d5b92cd8a9aa31dfeae3248e5499bca6d603c593.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/cocosVfx.ts",
+          "sha256": "a3b48296c064aa4ee7681321cc697b7a7bb1c194f9b3dc753e195ba529e7ac1a",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/20/20ab668d9bd4688b98753b06858deadc13033571.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/VfxFixture.ts",
+          "sha256": "c5f9604ff03e8a8d3afb9f07ee4f045eb458256496c2b355b771625efc7a0575",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/42/42293dc91d702af372162a308e4d58755937f5ab.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+          "sha256": "73f9f5310914d2b41d351087efa1e6bbcc1d1bc25ebb9b24d2c3e07022dec3dd",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js.map"
+        }
+      ],
+      "load": {
+        "skinnedUnits": 100,
+        "particleSystems": 50,
+        "capacityPerSystem": 50,
+        "ratePerSecond": 30,
+        "lifetimeSeconds": 1,
+        "size": 0.25,
+        "productionMaxEffects": 48,
+        "stressMaxEffects": 50
+      },
+      "steadyFrameIntervalMs": {
+        "count": 240,
+        "p50Ms": 16.700000002980232,
+        "p95Ms": 30.600000001490116,
+        "maxMs": 33.5,
+        "meanMs": 17.647083333336436
+      },
+      "observedAverageFps": 56.66658796306231,
+      "activationMaxIntervalMs": 50.5,
+      "drawCalls": {
+        "p50": 55,
+        "p95": 55,
+        "max": 55,
+        "last": 55
+      },
+      "memory": {
+        "prewarmedClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42500,
+          "textureBytes": 8409220
+        },
+        "finalClosed": {
+          "drawCalls": 3,
+          "triangles": 194,
+          "instances": 0,
+          "bufferBytes": 42500,
+          "textureBytes": 8409220
+        },
+        "cycles": 20,
+        "stable": true
+      },
+      "closedSceneNodes": 10,
+      "closedPrefabRefs": 0,
+      "checks": [
+        "50 live particle systems in actual stage color queues",
+        "100 simultaneous units with actual mesh/material/joint-texture submitted groups",
+        "author settings match imported values",
+        "world-space follow",
+        "overflow refusal",
+        "clear before pooling",
+        "reuse and stale-handle isolation",
+        "300ms expiry",
+        "far LOD stops and rejects",
+        "near LOD does not replay",
+        "production high clamps to 48",
+        "every steady sampled frame keeps 100 + 50",
+        "20 post-prewarm cycles return nodes, GFX and references to baseline"
+      ],
+      "consoleEntries": 0,
+      "unexpectedErrors": 0
+    }
+  ],
+  "sources": [
+    {
+      "path": "apps/Cocos/assets/resources/stage3d/data/detail-layers.json",
+      "sha256": "8839f5355eac96a962bc13905871e6953345129e654460165aeba15ab0d359b5"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/stage3d/data/pool.json",
+      "sha256": "97c1802c44ddbe0905986eeb6695b1a091963f20a1983e087333176d8755c88d"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/Stage3dDevScene.ts",
+      "sha256": "73f9f5310914d2b41d351087efa1e6bbcc1d1bc25ebb9b24d2c3e07022dec3dd"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+      "sha256": "73f9f5310914d2b41d351087efa1e6bbcc1d1bc25ebb9b24d2c3e07022dec3dd"
+    },
+    {
+      "path": "tools/creator-preview/run.mjs",
+      "sha256": "9825f376ff908550ade404d570d17e1c0bf73ab510fa4019cb14b082fd9f2fab"
+    },
+    {
+      "path": "tools/creator-preview/skinned-perf.mjs",
+      "sha256": "d6ab402825a8d69b884a17bb3817ef5041ad615a151433c80a55e46ec4a90654"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/stage3d/FX_Stage3d_Sparks.prefab",
+      "sha256": "8182e2569aef9c27a92523d7120e57c0609dba2c81b01fd0b5cb952b9cd55147"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/stage3d/FX_Stage3d_Sparks.prefab.meta",
+      "sha256": "d4817d7a15bb2b1792ff6925373fe52961ffda197df1c9d99cd9e649c29efb92"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/Vfx.ts",
+      "sha256": "50e358c11ab72eb94a7fc9686805d918bd152e6f1be1d405209bfabfc676a76f"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/Vfx.ts.meta",
+      "sha256": "9d69810129d4b65f21b2b30cc1b7c9679e0bb62f9a7d7ebad3df2449825f7686"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/VfxFixture.ts",
+      "sha256": "c5f9604ff03e8a8d3afb9f07ee4f045eb458256496c2b355b771625efc7a0575"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/VfxFixture.ts.meta",
+      "sha256": "15f9d2124dfbc5d5b5256c9811f9d3927aef4f96986acca886262fe671931faa"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/cocosVfx.ts",
+      "sha256": "a3b48296c064aa4ee7681321cc697b7a7bb1c194f9b3dc753e195ba529e7ac1a"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/cocosVfx.ts.meta",
+      "sha256": "9c7fb8305c766589ab4e09e2cdaf121ada4387373cf6dcfc0b643e8b89b82cea"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/Vfx.ts",
+      "sha256": "50e358c11ab72eb94a7fc9686805d918bd152e6f1be1d405209bfabfc676a76f"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/VfxFixture.ts",
+      "sha256": "c5f9604ff03e8a8d3afb9f07ee4f045eb458256496c2b355b771625efc7a0575"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/cocosVfx.ts",
+      "sha256": "a3b48296c064aa4ee7681321cc697b7a7bb1c194f9b3dc753e195ba529e7ac1a"
+    },
+    {
+      "path": "apps/client/test/cocosVfx.test.ts",
+      "sha256": "903e39add98db3a33bfefc50f4cf774428f4f515cddbc9c2258d50deb180d2dd"
+    },
+    {
+      "path": "apps/client/test/vfx.test.ts",
+      "sha256": "37cd91bf8bbe025db3cd3462cc07acf2d217ef70e2c20839b15227385564e47f"
+    },
+    {
+      "path": "apps/server/test/vfx-preview.test.ts",
+      "sha256": "6edf139bfed0dba233a1f4d7c3dd43ba7d0fab3aa0afeb6e891a2965cca6fc31"
+    },
+    {
+      "path": "tools/creator-preview/vfx-perf.mjs",
+      "sha256": "162f1b3fd823bc15bf65390d5f1c2937600ba861ba1f45152812f8512ab9de2f"
+    }
+  ],
+  "earlierAttempts": [
+    {
+      "raw": {
+        "path": ".cache/sc4-b2/accepted-webgl2/report.json",
+        "sha256": "5365bbf7cbda8458d07921d73b91eea93edebbf5f982b791d3d1eed788f2eab1"
+      },
+      "ok": false,
+      "error": "Imported particle settings differ from the author prefab",
+      "note": "Superseded candidate: initial stale compiler cache / viewport, then size=1 from ignored startSizeX author key. Accepted runs use Creator-compatible startSize=0.25, refreshed final adapter and compiled-source equality checks. Original reports retained unchanged."
+    },
+    {
+      "raw": {
+        "path": ".cache/sc4-b2/final-webgl1/report.json",
+        "sha256": "95295f104978106962e32de8e9779165deccb2a9a3de1298cc2774f45ae34c39"
+      },
+      "ok": true,
+      "error": null,
+      "note": "Superseded candidate: initial stale compiler cache / viewport, then size=1 from ignored startSizeX author key. Accepted runs use Creator-compatible startSize=0.25, refreshed final adapter and compiled-source equality checks. Original reports retained unchanged."
+    },
+    {
+      "raw": {
+        "path": ".cache/sc4-b2/final-webgl2/report.json",
+        "sha256": "07ead71cd6c7062027d2ee358466d0923574e7cbab2fbe58859e6185fd68740d"
+      },
+      "ok": true,
+      "error": null,
+      "note": "Superseded candidate: initial stale compiler cache / viewport, then size=1 from ignored startSizeX author key. Accepted runs use Creator-compatible startSize=0.25, refreshed final adapter and compiled-source equality checks. Original reports retained unchanged."
+    },
+    {
+      "raw": {
+        "path": ".cache/sc4-b2/webgl2-attempt1/report.json",
+        "sha256": "d079ba2c206c24ccf9604d7f345082ec10eda7b4f7be1a0c484630e3141d6c23"
+      },
+      "ok": false,
+      "error": "Vfx scene timeout: undefined",
+      "note": "Superseded candidate: initial stale compiler cache / viewport, then size=1 from ignored startSizeX author key. Accepted runs use Creator-compatible startSize=0.25, refreshed final adapter and compiled-source equality checks. Original reports retained unchanged."
+    },
+    {
+      "raw": {
+        "path": ".cache/sc4-b2/webgl2-attempt2/report.json",
+        "sha256": "62c231b01351ba5f3e43b0f69be74330b4c9bf5679d93c178aca9c3603ac7da4"
+      },
+      "ok": false,
+      "error": "Select WebpageFullScreen / Rotate off in native Creator preview",
+      "note": "Superseded candidate: initial stale compiler cache / viewport, then size=1 from ignored startSizeX author key. Accepted runs use Creator-compatible startSize=0.25, refreshed final adapter and compiled-source equality checks. Original reports retained unchanged."
+    },
+    {
+      "raw": {
+        "path": ".cache/sc4-b2/webgl2-attempt3/report.json",
+        "sha256": "c8d8d4113df2fccbf227985ff5be37790baf4d403e2baa0a4b1135aa4b224d2e"
+      },
+      "ok": false,
+      "error": "Select WebpageFullScreen / Rotate off in native Creator preview",
+      "note": "Superseded candidate: initial stale compiler cache / viewport, then size=1 from ignored startSizeX author key. Accepted runs use Creator-compatible startSize=0.25, refreshed final adapter and compiled-source equality checks. Original reports retained unchanged."
+    },
+    {
+      "raw": {
+        "path": ".cache/sc4-b2/webgl2-attempt4/report.json",
+        "sha256": "1a8134b2b093c3872f11ed3fd45e9f484233b005a2b3b5ee2735a5999272b6b3"
+      },
+      "ok": true,
+      "error": null,
+      "note": "Superseded candidate: initial stale compiler cache / viewport, then size=1 from ignored startSizeX author key. Accepted runs use Creator-compatible startSize=0.25, refreshed final adapter and compiled-source equality checks. Original reports retained unchanged."
+    }
+  ],
+  "limitations": [
+    "SC4 remains open. These desktop windows do not establish sustained 60fps for the stage exit; frame intervals and observed throughput are reported without waiver.",
+    "High developer override / shadows off, two-bone greyboxes and default CPU ParticleSystem; no complex skeleton, mobile, low-tier or real WeChat cache claim.",
+    "50 effects is an explicit stress override; production 8/24/48 budgets remain unchanged.",
+    "WebGL1 is a fresh page refusing WebGL2 context and verifies actual WebGLDevice; no float capability masking in B2.",
+    "Raw reports, screenshots and logs remain in ignored .cache paths; committed summaries pin hashes. SC4-B3/B4 remain pending."
+  ],
+  "synchronization": {
+    "command": "git pull --rebase",
+    "result": "Current branch new is up to date.",
+    "headBefore": "425cb03d1241de685606c8ade7d6ebe422af7066",
+    "headAfter": "425cb03d1241de685606c8ade7d6ebe422af7066",
+    "restoredFileCount": 31,
+    "restoredHashesMatch": true,
+    "log": {
+      "path": ".cache/sc4-b2/pull-rebase.log",
+      "sha256": "3ab601543fdd784cc036b163f856128e6139308bd0bb5196dff17c3fa6bd5fd9"
+    }
+  }
+}

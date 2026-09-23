@@ -82,6 +82,7 @@ function readScene(readQueues) {
       bufferBytes: device.memoryStatus.bufferSize, textureBytes: device.memoryStatus.textureSize } };
 }
 const sceneSource = `(${readScene.toString()})(${readScheduledStageQueues.toString()})`;
+export const skinnedSceneSource = sceneSource;
 const component = 'cc.director.getScene().getComponentsInChildren("Stage3dDevScene")[0]';
 const enable = (enabled) => `${component}.setSkinnedEnabled(${enabled})`;
 

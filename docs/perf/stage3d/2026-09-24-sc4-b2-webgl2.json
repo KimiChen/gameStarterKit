@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "kind": "sc4-b2-vfx",
+  "environment": {
+    "webgl": 2,
+    "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+    "device": "WebGL2Device",
+    "pipeline": "WebPipeline",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "previewDevice": "WebpageFullScreen",
+    "viewport": {
+      "cssWidth": 375,
+      "cssHeight": 812,
+      "backingWidth": 750,
+      "backingHeight": 1624,
+      "dpr": 2
+    }
+  },
+  "performance": {
+    "unit": {
+      "frame": "ms",
+      "gfxMemory": "bytes",
+      "drawCalls": "calls/frame",
+      "triangles": "triangles/frame",
+      "instances": "instances/frame"
+    },
+    "clock": "performance.now",
+    "frameEvent": "Director.EVENT_AFTER_DRAW",
+    "sampleIndex": "independent seq; not root.frameCount",
+    "activation": {
+      "intervals": {
+        "count": 120,
+        "p50Ms": 16.600000001490116,
+        "p95Ms": 18.199999999254942,
+        "maxMs": 41.899999998509884,
+        "meanMs": 17.0875
+      },
+      "peak": {
+        "drawCalls": 55,
+        "triangles": 12890,
+        "instances": 1648,
+        "bufferBytes": 254476,
+        "textureBytes": 8409220,
+        "totalBytes": 8663696
+      },
+      "firstActiveSeq": 3,
+      "peakActive": 150
+    },
+    "steady": {
+      "intervals": {
+        "count": 240,
+        "p50Ms": 16.699999999254942,
+        "p95Ms": 19.5,
+        "maxMs": 36.19999999925494,
+        "meanMs": 17.507500000003105
+      },
+      "drawCalls": {
+        "p50": 55,
+        "p95": 55,
+        "max": 55,
+        "last": 55
+      },
+      "triangles": {
+        "p50": 12826,
+        "p95": 12862,
+        "max": 12958,
+        "last": 12794
+      },
+      "instances": {
+        "p50": 1616,
+        "p95": 1634,
+        "max": 1682,
+        "last": 1600
+      },
+      "finalMemory": {
+        "bufferBytes": 254476,
+        "textureBytes": 8409220
+      }
+    },
+    "memory": {
+      "prewarmedClosed": {
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "bufferBytes": 42500,
+        "textureBytes": 8409220
+      },
+      "finalClosed": {
+        "drawCalls": 3,
+        "triangles": 194,
+        "instances": 0,
+        "bufferBytes": 42500,
+        "textureBytes": 8409220
+      },
+      "cycles": 20,
+      "stable": true
+    }
+  },
+  "load": {
+    "skinnedUnits": 100,
+    "particleSystems": 50,
+    "productionMaxEffects": 48,
+    "stressOverride": 50
+  },
+  "raw": {
+    "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc4-b2/accepted2-webgl2/report.json",
+    "sha256": "5af342b750251387712643084bbf5a7e4c0a7a52998d639948d426d28e8764b3"
+  },
+  "limitations": "Desktop two-bone greybox + 50 particle systems; explicit stress override, not a production budget increase or WeChat evidence. Screenshots require review."
+}

@@ -9,6 +9,7 @@ import { readStage3DQuality } from "./quality";
 import { createCocosEntityPool } from "./cocosEntityPool";
 import type { EntityPool, PooledEntity } from "./EntityPool";
 import { SkinnedUnitsFixture } from "./SkinnedUnitsFixture";
+import { VfxFixture } from "./VfxFixture";
 
 /** Independent developer scene; no Main/AppRuntime, no author-scene nodes or lightmap array. */
 @_decorator.ccclass("Stage3dDevScene")
@@ -18,6 +19,11 @@ export class Stage3dDevScene extends Component {
     entitiesEnabled = false;
     @_decorator.property({})
     skinnedEnabled = false;
+    /** Explicit 50-effect developer stress load; does not change the production quality table. */
+    @_decorator.property({ displayName: "50 特效（压测）" })
+    vfxEnabled = false;
+    vfx: VfxFixture | undefined;
+    private appliedVfx = false;
     skinned: SkinnedUnitsFixture | undefined;
     private appliedSkinned = false;
     entityPool: EntityPool<Node> | undefined;
@@ -57,11 +63,13 @@ export class Stage3dDevScene extends Component {
             this.entityPool = createCocosEntityPool({ quality: qualityTable, pool, layers }, lease.root,
                 { quality: stage.quality, signal: lease.signal, onError: (error) => { this.error = String(error); } });
             this.skinned = new SkinnedUnitsFixture({ quality: qualityTable, pool, layers }, lease.root, stage.quality, lease.signal);
+            this.vfx = new VfxFixture({ quality: qualityTable, pool, layers }, lease.root, stage.quality, lease.signal);
             this.frameEntities = (enabled) => lease.camera.setPose(enabled ? { x: 0, y: 110, z: 145 } : { x: 8, y: 7, z: 10 },
                 { x: 0, y: 0, z: 0 });
             this.frameSkinning = () => lease.camera.setPose({ x: 0, y: 48, z: 66 }, { x: 0, y: 0, z: 0 });
             this.setEntitiesEnabled(this.entitiesEnabled);
             this.setSkinnedEnabled(this.skinnedEnabled);
+            this.setVfxEnabled(this.vfxEnabled);
             this.status = "ready";
         } catch (error) {
             if (this.owner.signal.aborted) return;
@@ -77,6 +85,15 @@ export class Stage3dDevScene extends Component {
     update(): void {
         if (this.entityPool && this.entitiesEnabled !== this.appliedEntities) this.setEntitiesEnabled(this.entitiesEnabled);
         if (this.skinned && this.skinnedEnabled !== this.appliedSkinned) this.setSkinnedEnabled(this.skinnedEnabled);
+        if (this.vfx && this.vfxEnabled !== this.appliedVfx) this.setVfxEnabled(this.vfxEnabled);
+    }
+
+    setVfxEnabled(enabled: boolean): void {
+        this.vfxEnabled = enabled;
+        if (!this.vfx || this.appliedVfx === enabled) return;
+        this.appliedVfx = enabled;
+        if (enabled) this.frameSkinning?.();
+        this.vfx.setEnabled(enabled);
     }
 
     setSkinnedEnabled(enabled: boolean): void {
@@ -111,6 +128,7 @@ export class Stage3dDevScene extends Component {
     }
 
     private close(): void {
+        this.vfx?.close(); this.vfx = undefined;
         this.skinned?.close(); this.skinned = undefined; this.frameSkinning = undefined;
         this.entityPool?.close(); this.entityPool = undefined;
         this.entities.length = 0; this.frameEntities = undefined;

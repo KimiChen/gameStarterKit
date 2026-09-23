@@ -287,3 +287,27 @@ node tools/creator-preview/run.mjs stage3d --perf --skinned --expect-webgl 1 --f
 `--rgba8` 只在自有新页面启动前注入浮点能力缺失，复用 SC0 的精确扩展掩码并核对真实 RGBA8 选择，
 明确区别于自然低端硬件或微信。WebGL1 冷启动仅接受原有精确、时间有界的 WebGL2 初始化失败诊断。
 这些桌面证据不替代 SC4-B2 的 50 特效或 SC4-B3 的 low / 真机与缓存验收，也不提高 SC0 冻结容量。
+
+## SC4-B2 正式特效池与联合负载
+
+```bash
+node tools/creator-preview/run.mjs stage3d --perf --vfx --expect-webgl 2 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --vfx --expect-webgl 1 --force-webgl1 --new-window
+```
+
+`Stage3dDevScene` 的「50 特效（压测）」开关使用正式 `Vfx` / `ParticleSystem` Prefab 池。
+`--vfx` 同时打开 100 个正式蒙皮单位和 50 个容量 50、每秒发射 30 粒子的灰盒系统；high / shadows=0。
+这是显式开发压测：夹具的 `maxEffects=50`，生产 quality.json 的 8 / 24 / 48 上限保持不变，
+并单独切回生产 high 检查只剩 48 个系统。报告同时记录两个上限，拒绝将 48 计为 50。
+
+探针验证每个粒子系统实际播放、有粒子且进入舞台颜色提交队列，同时复用 B1 的实际蒙皮批次判据。
+随后检查世界坐标跟随、同键溢出拒绝、停止后粒子清零、节点复用与旧句柄隔离、300ms 超时、
+LOD2 拒播 / 回收以及返回近档不重播。稳态窗口的每一帧须同时有 100 单位 + 50 特效；
+保留首载 120 帧、60 帧预热 + 240 帧稳态原始间隔和 20 次联合开关的节点 / GFX 基线。
+`combined.png` 须人工复核，性能数字如实记录，超预算不能据此宣布 SC4 阶段退出。
+
+接入时 `createCocosVfx(catalog, lease.root, { quality, signal: lease.signal })` 使用既有 kit `pool.json`
+配置同键容量；`play(key, { at: { x, y, z } }, durationMs)` 或 `play(key, { follow: () => worldPosition }, durationMs)`
+返回可 `stop()` 的独立句柄。坐标为世界坐标，寿命从实际激活开始，跟随回调返回 `undefined` 即结束。
+远档、内容 `hideAtLod`、降档超额都会结束旧播放；回到近档需内容重新发起。停止清粒子并入空闲池，
+`evict()` 销毁空闲节点，舞台释放关闭全部池。Cocos 默认粒子材质随节点销毁后在 AFTER_DRAW 回收。
