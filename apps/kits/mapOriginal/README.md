@@ -4,6 +4,10 @@
 逆向可读源码在仓外 `sourceVersion/sgzz-2084.1768/`，原始素材在 `apkdecode/sgzz-1768.2084/elp-unpacked/`
 （**仓外只读**，⛔ 永不入库）。
 
+素材、配置与加载的后续改进见 [MAPORIGINAL-2D-OPTIMIZATION.md](../../../docs/MAPORIGINAL-2D-OPTIMIZATION.md)
+（2026-09-24 建单）：图集去重与保留锚点的裁边、分组加载/释放、GPU 压缩、大配置外置。
+现有实现与装箱候选分别标注，实施状态只在该文 §9 更新。
+
 ## 一、身份与边界
 
 - **宿主自有 kit**（`kit.json` 无 `version`）：与 `apps/kits/{slg,sgzzmap}` 同形，只活在主树里，
