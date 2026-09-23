@@ -228,7 +228,7 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 
 业务判定、排序、时间规则、错误分支和网络编排不进入 View。
 
-### 3D 舞台、资源与画质（SC1）
+### 3D 舞台、资源与画质（SC1 / SC3-B1）
 
 3D 页面仍用 `kind:"cocos"`，其 UI 根只承载页面；3D 内容挂在框架舞台的 `lease.root` 下。
 kit / 插件从 `PluginInstallContext.ports.stage3d` 注入端口，在本次打开的 setup / `onOpen` 中调用
@@ -244,9 +244,20 @@ gameplay 则从 `GameplayServicesContext.stage3d` 取得同一端口，在 prese
 `setGlobals` 替换整份 patch，省略字段即撤回该覆盖，不直接写 `director.getScene().globals`。
 
 SC1 已开放 `toneMapping`、fog 的 `enabled/type/density/start/end`、`ambient.skyIllum` 和
-shadows 的 `enabled/kind`。资源型 skybox 等全局字段、完整异步 `AssetLease`（批量加载、deadline、取消）
-留 SC3；当前 `AssetLease.ts` 只实现框架内部已加载资产的同步 retainer。
-`Stage3dFixtureView` 的临时 loader 仅服务固定灰盒验收，不是 kit 加载 API。释放遵循先取消输入、撤下节点
+shadows 的 `enabled/kind`。资源型 skybox 等全局字段及引用接线留 SC3-B4。
+SC3-B1 的通用加载入口是 `view/scene3d/cocosAssetLoader.ts` 的 `assetLease`：
+`await assetLease.acquire([{ bundle, path, type }], { signal, deadlineMs })` 返回 `{ assets, release }`，
+`assets` 按请求顺序保留具体资产类型与身份；重复地址仍逐请求持有一份引用。`resources` 也是 bundle 名，
+其余包先经 `assetManager.loadBundle` 再 `bundle.load`，不推导 URL，不移除共享 bundle 缓存。
+默认 deadline 为 15,000 ms，覆盖 bundle 与资产两个加载阶段；可覆盖为 0–2,147,483,647 的整数毫秒。
+`AssetLoadError.code` 为 `ASSET_MISSING / ASSET_TIMEOUT / ASSET_CANCELLED`，前两者可重试，
+错误携带具体地址、原因与清理异常。失败或取消立即整包回收，迟到成功仍经同一 retainer 成对持有 / 归还；
+成功租约须显式 `release()`，**signal 只取消在途加载，不会提前释放仍被节点使用的成功资产**。
+无头测试通过 `new AssetLease(loader, { scheduler, onError })` 注入 transport、时钟与迟到清理错误观察者；
+同步 retainer 仍是框架内部引用边界，不是 kit 的额外 retain API。
+
+`Stage3dFixtureView` 的临时 loader 仅服务固定灰盒验收，随 SC3-B4 与 SLG 一起迁移。
+释放遵循先取消输入、撤下节点
 及其渲染引用，再归还材质和资产的顺序；迟到加载也必须成对归还。kit 不复制 loader 或裸调资源引用计数。
 
 世界页声明 `inputMode:"passive"`，可点击 FGUI HUD 声明 `inputMode:"overlay"`，弹窗用 `modal`；

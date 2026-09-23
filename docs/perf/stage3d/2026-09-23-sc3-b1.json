@@ -1,0 +1,319 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-23",
+  "batch": "SC3-B1",
+  "status": "complete",
+  "phaseExited": false,
+  "verificationBase": "e8c65c40d3b6984d898bf683db79946f70052f86",
+  "delivered": [
+    "AssetLease batches preserve typed input order and duplicate addresses; each request independently owns a retainer reference.",
+    "A single default 15000ms deadline covers bundle and asset loading; in-flight AbortSignal cancellation, failure and timeout promptly drain acquired references.",
+    "Late successes acquire/release their own reference, preserving successful concurrent requests and retries. Successful batches require explicit release after render references retire.",
+    "Cocos adapter uses getBundle/loadBundle and typed Bundle.load for both resources and package bundle names, without removing shared bundle caches.",
+    "Idempotent and reentrant-safe release drains all holds even if one decRef fails; primary failures preserve cleanup errors, and late cleanup failures use an injected observer."
+  ],
+  "referenceApi": {
+    "engine": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/bin/.declarations/cc.d.ts",
+    "ccDeclarationLines": [
+      28821,
+      28832,
+      30086,
+      30271,
+      31134
+    ],
+    "report": {
+      "path": ".cache/sc3-b1/real-engine-types.json",
+      "sha256": "5d5001868fd78cac2636d6ce219b45dc283f44a89ca8410edb3d61a2654907e4"
+    },
+    "diagnostics": 0,
+    "constructorCorrection": "The real declaration rejected the provisional never[] constructor accepted by local stubs. AssetType now matches Creator Constructor<T> (...args: any[]); final real-engine and both repository typechecks pass.",
+    "initialFailure": {
+      "path": ".cache/sc3-b1/real-engine-types-before-constructor-fix.json",
+      "sha256": "799dfa24e21a20d1444e7e9d4282d7a1bc3097e6f008ae33855e04649aecc8b0"
+    }
+  },
+  "sources": [
+    {
+      "source": "apps/client/src/view/scene3d/AssetLease.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/AssetLease.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/AssetLease.ts",
+      "sha256": "deb0ab2416eb57edbea355b066f5c13a6a7d0ee82cf7dd49d6e830a6bfc9c852",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/46/465f7deeee0d3cc2a46d8c47aa0393676aedab55.js.map"
+    },
+    {
+      "source": "apps/client/src/view/scene3d/cocosAssetLoader.ts",
+      "mirror": "apps/Cocos/assets/src/view/scene3d/cocosAssetLoader.ts",
+      "specifier": "file:///Volumes/KimData/unlockTheWorld/kitVersion/apps/Cocos/assets/src/view/scene3d/cocosAssetLoader.ts",
+      "sha256": "4f8f3690cba2614323f569301f8d5a9b93593db411eff41030aa7aca644fc427",
+      "compiledSourceMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/39/39f5f9daf0a779bbd8d91f321d34bf46eff37ac2.js.map"
+    }
+  ],
+  "verification": {
+    "node": "v26.5.0",
+    "targeted": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 41,
+      "testGroups": [
+        41
+      ],
+      "log": {
+        "path": ".cache/sc3-b1/targeted.log",
+        "sha256": "2757fe9fbb84b1d4ab9259566db4736cb0181969b37ac41644614eb640fe0308"
+      }
+    },
+    "independentTypecheck": {
+      "passed": true,
+      "exitCode": 0,
+      "log": {
+        "path": ".cache/sc3-b1/typecheck.log",
+        "sha256": "815400662382d23981044f33a45891d33e84802c2f4fe6c5feab1ad29a3ea430"
+      }
+    },
+    "independentClientTests": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 1187,
+      "testGroups": [
+        1187
+      ],
+      "log": {
+        "path": ".cache/sc3-b1/test-client.log",
+        "sha256": "340fe653b7f6c9c91dd20a78bf11a98b17b53df79bd2c88047f1eb897797fd1b"
+      }
+    },
+    "verifyAll": {
+      "passed": true,
+      "exitCode": 0,
+      "testCount": 2862,
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1187,
+        77,
+        1382
+      ],
+      "log": {
+        "path": ".cache/sc3-b1/verify-all.log",
+        "sha256": "dcf0d5334e13c9ede57487da101f25b7c6af17436681852089f7976eb8c1a866"
+      }
+    },
+    "mutations": {
+      "record": {
+        "path": ".cache/sc3-b1/mutations.json",
+        "sha256": "1d3ed22e87b9c43e4c340221d1d9920ba49b158923e0822befd02a7104b3821a"
+      },
+      "cases": [
+        {
+          "name": "failed-batch-release",
+          "change": "error.cleanupErrors.push(...releaseAll(holds)); -> // Mutation: abandon acquired references.",
+          "exitCode": 1,
+          "failures": [
+            "AssetLease: partial failure settles immediately, drains holds and returns late successes",
+            "AssetLease: default deadline is one 15000ms window for the whole batch",
+            "AssetLease: cancellation returns acquired and late refs and preserves the abort reason",
+            "AssetLease: missing, destroyed and wrong-type callback assets fail closed",
+            "AssetLease: synchronous success, synchronous throws and callback-then-throw settle once",
+            "AssetLease: failed-batch cleanup errors preserve primary failure and late errors reach the observer",
+            "AssetLease: 20 open/cancel/retry/close cycles restore refs, timers and abort listeners",
+            "wrong type"
+          ],
+          "log": ".cache/sc3-b1/mutation-failed-batch-release.log",
+          "failedTests": 8
+        },
+        {
+          "name": "late-success-release",
+          "change": "const failures = releaseAll([hold]); -> const failures: unknown[] = [];",
+          "exitCode": 1,
+          "failures": [
+            "AssetLease: partial failure settles immediately, drains holds and returns late successes",
+            "AssetLease: default deadline is one 15000ms window for the whole batch",
+            "AssetLease: cancellation returns acquired and late refs and preserves the abort reason",
+            "AssetLease: cancelled attempt and successful retry sharing an asset cannot release each other",
+            "AssetLease: abort during addRef returns the hold that arrives after cancellation",
+            "AssetLease: failed-batch cleanup errors preserve primary failure and late errors reach the observer",
+            "AssetLease: zero deadlines and synchronous timeout schedulers leave no dangling work",
+            "AssetLease: 20 open/cancel/retry/close cycles restore refs, timers and abort listeners"
+          ],
+          "log": ".cache/sc3-b1/mutation-late-success-release.log",
+          "failedTests": 8
+        }
+      ],
+      "sourceUntouched": "Mutations ran in temporary copies; final runtime source stayed unchanged."
+    },
+    "boundaryAudit": {
+      "path": ".cache/sc3-b1/boundary-audit.json",
+      "sha256": "96a3e13150beae484dd7385b85b6991ddd39facaa3d495e6fe77214e0e51f6f1"
+    },
+    "postDocumentationChecks": [
+      {
+        "passed": true,
+        "path": ".cache/sc3-b1/final-inventory.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      },
+      {
+        "passed": true,
+        "path": ".cache/sc3-b1/final-sync-check.log",
+        "sha256": "abf1d37d7b1526af56400c2db843569eb34876902bd7fec82559f5ada8addc7c"
+      }
+    ]
+  },
+  "creator": {
+    "version": "3.8.8",
+    "method": {
+      "path": ".cache/sc3-b1/probe-assets.mjs",
+      "sha256": "89064a35a970586e62d6e1b5372435e4b6d5035605ceeff2381fa70910ea9e18"
+    },
+    "contexts": [
+      {
+        "webgl": 2,
+        "passed": true,
+        "checks": 10,
+        "environment": {
+          "version": "3.8.8",
+          "device": "WebGL2Device",
+          "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+        },
+        "contextSelection": "Fresh page; actual WebGL2Device required.",
+        "diagnosticCount": 0,
+        "checkNames": [
+          "actual-creator-and-webgl-context",
+          "real-prefab-json-texture-types-and-values",
+          "ordered-batch-retains-and-idempotent-release",
+          "duplicate-paths-each-retain-once",
+          "successful-lease-outlives-abort-until-explicit-release",
+          "abort-partial-batch-and-return-delayed-real-callback",
+          "real-deadline-releases-partial-and-late-assets",
+          "real-missing-resource-and-retry",
+          "twenty-open-close-cycles-return-real-refcounts",
+          "final-anchor-release-returns-only-owned-refs"
+        ],
+        "timeout": {
+          "code": "ASSET_TIMEOUT",
+          "bundle": "resources",
+          "path": "stage3d/data/quality",
+          "deadlineMs": 500,
+          "elapsedMs": 500.60000002384186,
+          "fault": "real engine completions held at adapter callback boundary"
+        },
+        "cycles": {
+          "cycles": 20,
+          "before": [
+            1,
+            1,
+            1
+          ],
+          "after": [
+            1,
+            1,
+            1
+          ]
+        },
+        "release": {
+          "before": [
+            1,
+            1,
+            1
+          ],
+          "after": [
+            0,
+            0,
+            0
+          ]
+        },
+        "report": {
+          "path": "docs/evidence/creator-2026-09-23/sc3-b1-webgl2/report.json",
+          "sha256": "7f6fb304bc884d6e465b6d7f7c506765690780b5ef136364ee01af6be00fd5d8"
+        }
+      },
+      {
+        "webgl": 1,
+        "passed": true,
+        "checks": 10,
+        "environment": {
+          "version": "3.8.8",
+          "device": "WebGLDevice",
+          "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+          "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+        },
+        "contextSelection": "Fresh page rejects WebGL2 context before boot; actual WebGLDevice required. No capability masking.",
+        "diagnosticCount": 0,
+        "checkNames": [
+          "actual-creator-and-webgl-context",
+          "real-prefab-json-texture-types-and-values",
+          "ordered-batch-retains-and-idempotent-release",
+          "duplicate-paths-each-retain-once",
+          "successful-lease-outlives-abort-until-explicit-release",
+          "abort-partial-batch-and-return-delayed-real-callback",
+          "real-deadline-releases-partial-and-late-assets",
+          "real-missing-resource-and-retry",
+          "twenty-open-close-cycles-return-real-refcounts",
+          "final-anchor-release-returns-only-owned-refs"
+        ],
+        "timeout": {
+          "code": "ASSET_TIMEOUT",
+          "bundle": "resources",
+          "path": "stage3d/data/quality",
+          "deadlineMs": 500,
+          "elapsedMs": 501.39999997615814,
+          "fault": "real engine completions held at adapter callback boundary"
+        },
+        "cycles": {
+          "cycles": 20,
+          "before": [
+            1,
+            1,
+            1
+          ],
+          "after": [
+            1,
+            1,
+            1
+          ]
+        },
+        "release": {
+          "before": [
+            1,
+            1,
+            1
+          ],
+          "after": [
+            0,
+            0,
+            0
+          ]
+        },
+        "report": {
+          "path": "docs/evidence/creator-2026-09-23/sc3-b1-webgl1/report.json",
+          "sha256": "137e011daf33b644a6d42ddf3b04a41e4eb25354c056790b8f5242b8b2eaa1e1"
+        }
+      }
+    ]
+  },
+  "batchBoundary": [
+    "3d.md section 3.2 now matches 3D-PLAN: B1 delivers asynchronous loading; B4 adds resource-valued globals and migrates SLG/temporary fixture loader. Ownership requirements remain unchanged.",
+    "No existing SLG/Stage3D behavior, protected paths, shared protocol, package manifests or locks changed."
+  ],
+  "limitations": [
+    "Real Creator loads use resources greybox Prefab, quality JsonAsset and checker Texture2D. Cold named package-bundle dispatch is exercised by the production adapter with a fake cc transport; SC1-B7 retains its separate real package-install evidence.",
+    "Timeout and cancellation faults hold real engine completions at an injected adapter boundary; the 500ms timeout uses the real browser timer. These are lifecycle checks, not network/server/WeChat cache failure evidence.",
+    "WebGL1 is selected in a fresh owned page by refusing WebGL2 context before boot; actual WebGLDevice is checked and extensions are not masked.",
+    "20 cycles measure owned reference counts, not 500-entity rendering capacity, GFX memory or performance. Those remain later SC3/SC4 work."
+  ],
+  "nextBatch": "SC3-B2",
+  "synchronization": {
+    "method": "Scoped stash including untracked batch files, git pull --rebase, restore and hash-check all 13 batch files; no incoming commits.",
+    "upstream": "e8c65c40d3b6984d898bf683db79946f70052f86",
+    "record": {
+      "path": ".cache/sc3-b1/final-sync.json",
+      "sha256": "857f4d157cd6010265ba36d0f3982d0dc0c0d055f533c5db5dc1e31c3434ec07"
+    },
+    "sameVerificationBase": true
+  }
+}

@@ -73,8 +73,10 @@ GRoot 适配器归框架所有，页面不自行安装。完整规则见[客户�
 `lease.root`，关闭归还租约；相机、灯、视口和全局参数只经租约修改。gameplay 从 `services.stage3d`
 取得同一实例，owner 随玩法世代。`stage3d.quality` 提供只读档位与能力，细节内容依这些字段选择。
 
-夹具的 `FixturePrefabLoader` / 同步 retainer 是 SC1 内部验收实现；kit 不复制它，完整异步 AssetLease
-与细节层 / 激活队列留 SC3。GLB 资源取已登记的 Prefab 子路径；释放先撤节点与渲染引用，再释放资产。
+资源加载使用 SC3-B1 的 `scene3d/cocosAssetLoader.ts` 中 `assetLease.acquire([{ bundle, path, type }], options)`；
+默认 15 秒整包 deadline，失败 / 取消立即归还引用、迟到成功仍回收，成功后按返回的 `release()` 显式释放。
+signal 只取消在途加载，不能代替节点退休后的释放。夹具临时 `FixturePrefabLoader` 与 SLG 的迁移留 SC3-B4，
+细节层 / 激活队列留 B2 / B3。GLB 资源取已登记的 Prefab 子路径；释放先撤节点与渲染引用，再释放资产。
 独立 `stage3d-dev.scene` 供资产 / 画质预览，不进构建。租约、画质、资源目录与检查步骤见
 [CLIENT.md §3](../../../../docs/CLIENT.md#3-view-与-logic-分层)。
 
