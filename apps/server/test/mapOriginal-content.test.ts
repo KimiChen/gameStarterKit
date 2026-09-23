@@ -20,6 +20,7 @@ import {
 import {
     MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_CELL_H,
     MAPO_DECOR_CELL_W, MAPO_DECOR_CITY_BASE, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
+    type IMapoDecorTransform,
 } from "@game/shared/kits/mapOriginal/content/decor.data";
 import {
     MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_CELL_H,
@@ -160,19 +161,19 @@ test("mapOriginal 内容：shared 值调色板 = terrain.info.json 的调色板"
 test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，一一对应）", () => {
     const meta = JSON.parse(kit("decor-atlas.info.json").toString("utf8")) as {
         cell: [number, number]; gridCols: number; size: [number, number];
-        anchor: string; cityBase: number;
+        schemaVersion: number; anchor: string; cityBase: number;
         substitutions: Record<string, (number | string)[]>;
         variants: { resIds: Record<string, { base: number; snow: number; desert: number }> };
         cells: { id: number; kind: string; variant: string; cell: [number, number, number, number];
                  art: [number, number, number, number]; native: [number, number];
                  resType?: string; level?: number; source: string;
-                 prefab?: string; prefabScale?: number }[];
+                 prefab?: string; transform?: IMapoDecorTransform }[];
     };
     assert.deepEqual(meta.cell, [MAPO_DECOR_CELL_W, MAPO_DECOR_CELL_H]);
     assert.deepEqual(meta.size, [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H]);
     assert.equal(meta.cityBase, MAPO_DECOR_CITY_BASE);
-    // ⚠ 锚点是底边中点：地物立在菱形中心上，⛔ 不是几何中心
-    assert.equal(meta.anchor, "bottom-center");
+    assert.equal(meta.schemaVersion, 4);
+    assert.equal(meta.anchor, "prefab-pivot");
     // ★ N1：图集是三套件一张（143 格 = 基础 53 + 雪 45 + 沙 45），shared 按 variant 分三表
     assert.equal(meta.cells.length,
         MAPO_DECOR_CELLS.length + MAPO_DECOR_SNOW_CELLS.length + MAPO_DECOR_DESERT_CELLS.length);
@@ -185,8 +186,15 @@ test("mapOriginal 内容：摆件图集按**原版值**建格（值 → 图，�
         assert.ok(shared, `摆件格 ${c.variant}:${c.id} 必须进 shared`);
         assert.deepEqual([...shared.cell], c.cell, `摆件格 ${c.variant}:${c.id} 画布`);
         assert.deepEqual([...shared.art], c.art, `摆件格 ${c.variant}:${c.id} 图内矩形`);
-        // ★ 件多大由**原图像素**定（原版一格 300 px），⛔ 不按格宽拉伸 —— 等级差就在这上面
+        // native 管贴图采样；世界尺寸和相对格心的位置由资源件 transform 决定。
         assert.deepEqual([...shared.native], c.native, `摆件格 ${c.variant}:${c.id} 原图像素`);
+        if (shared.kind === "res") {
+            assert.ok(c.transform, `资源格 ${c.variant}:${c.id} 缺 prefab transform`);
+            assert.deepEqual(shared.transform, c.transform, `资源格 ${c.variant}:${c.id} transform 未进入 shared`);
+            assert.deepEqual([...c.transform.pivot], [0.5, 0.5], "当前主片必须是中心锚点");
+            assert.ok([...c.transform.size, ...c.transform.scale].every((n) => Number.isFinite(n) && n > 0));
+            assert.ok([...c.transform.offset, c.transform.angle].every(Number.isFinite));
+        }
         assert.ok(c.native[0] > 0 && c.native[1] > 0, `摆件格 ${c.variant}:${c.id} 原图像素非法`);
         // 纵横比必须与图集里的一致（缩略图保比例），⛔ 漂了就是件被压扁/拉长
         assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,

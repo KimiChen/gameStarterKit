@@ -222,6 +222,33 @@ BG(100) < TERRAIN_MASK(200) < TERRAIN(300) < ROAD(900) < RIVER(1600)
 
 ---
 
+### 2.2 资源件与选中框共用格心，主图按 prefab 的中心锚点和偏移摆放
+
+`[干净集]` `scene/mapview/2d/map/grid_state_2d_view.lua:12–24` 的
+`create_state_res` 先按资源 id 创建节点，再用 `coord_util.grid2pos(row,col)` 设置位置；
+同文件 `:80–90` 的格闪烁提示也走相同换算。
+`[disasm]` `scene/unit/unit_res_field.lua` 源行 11–25 的初始化调用 `unit_set_grid`；
+`scene/unit/base_unit.lua` 源行 563–572 中该方法依次调用 `grid2pos`、`unit_set_pos`。
+因此资源单位与格状态节点的根使用同一套格坐标，sprite 内部的局部变换仍由 prefab 保留。
+
+★ `[实测]` 2026-09-23 逐个解析当前三套资源主片（基础 / 雪 / 沙，共 135 项）：
+根节点 position/angle 均为 0、scale 均为 1；主片 pivot **135/135 为 `[0.5,0.5]`**。
+主片的 `position` 是中心相对根的偏移；`size` 是显示矩形，**4 项不等于贴图像素**，
+`scale` 两轴也不恒为 1 或彼此相等。位置与尺寸必须一起保留，不能只提取贴图。
+
+例：`scene/resource/food-new/Food_05_group.prefab` 主片 `5.png` 的
+`size=[196,128]`、`scale=[1,1]`、`position≈[-8.054690,-3.634770]`；
+`scene/grid/choose_00_group.prefab` 的主片 `choose2` 为 `size=[240,112]`、
+`position=[0,0]`、`pivot=[0.5,0.5]`。选中面居格心，资源主片保留美术自身的微调。
+
+本 kit 的换算应为 `w/h = prefab.size × prefab.scale × (32/150)`，
+`中心 = 格心 + prefab.position × (32/150)`；传给底边对齐的 mesh 时仅再减 `h/2`。
+早先统一 `底边 y = 格心 y − 8`，使 5 级粮田中心变成原版像素 `+26.5`，
+比真实 `−3.634770` **高约 30.13 px**，看上去便像选中框整体偏下。
+修复已保留三套主片完整 transform；一格只取主片的既有简化仍在，不代表整组 prefab 已完整复刻。
+
+---
+
 ## 3. ★ 多格地形：锚点 + 覆盖掩码，原版没有「多格地形层」
 
 这是本轮最重要的发现，**推翻了本 kit terrain 管线的核心假设**。

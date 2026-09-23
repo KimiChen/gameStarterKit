@@ -22,11 +22,11 @@
    ⚠ 资源件是 `dummy_prefab`（引擎运行期拼组），本 kit 一层一格一件 ⇒ 取**主片**；
    个别 prefab 没进 name_map（基础季铁矿 5/8/9/10 级）或没有可用 sprite
    （雪地/基础季粮草 1/2 级全是阴影占位）⇒ 用**同套同类的最近一级**顶上并记进 info。
-   ⚠ 件的 prefab `scale` 不落地：摆件层语义是「世界尺寸 = 原图像素」（⛔ 不乘 scale），
-   实测各套件的 scale 几乎全 1（最大例外 1.39），差异记进 info 的 `prefabScale` 备查。
+   ★ 主片的 size/scale/position/pivot/angle 必须落地（MAPORIGINAL-2D §2.2）：
+   原版按中心锚点和局部偏移摆放，不能统一按图片底边对齐格心，否则选中框与地物错位。
    ⚠ 资源件的 sprite `size` 是**显示矩形**，不恒等于贴图像素（同一 prefab 里同一张
    `3.png` 能摆成 50×58 与 49×49 两份）⇒ ⛔ 别抄山族件「size == 原图像素」那条硬等，
-   `native` 仍取贴图像素；尺寸差出 2 倍才说明贴图挑错（入库闸）。
+   `native` 只记贴图像素，世界尺寸用 prefab 的 size × scale；尺寸差出 2 倍才说明贴图挑错。
 
 素材来源：`scene/resource{,_snow,_desert}/{wood,stone,food,iron,gold}-new/png/<级>.png`
 （切自 `scene/_output_atlas_scene/atlas_tex/resource*.xml`，雪/沙切片**同在这三份图集**里）。
@@ -117,8 +117,17 @@ def resolve_art(rid: int, tree: str, sliced: dict) -> tuple:
     if not (0.5 <= rw <= 2 and 0.5 <= rh <= 2):
         raise SystemExit("⛔ %s 的 prefab size %s 与切片 %s 差出 2 倍 —— 贴图对应搞错了"
                          % (src, s["size"], [w, h]))
+    if (s["pivot"] != [0.5, 0.5] or s["angle"][:2] != [0, 0]
+            or any(x <= 0 for x in s["size"] + s["scale"][:2])):
+        raise ValueError("%s 主片不是中心锚点的正尺寸 2D sprite，须扩展变换换算" % src)
+    transform = {
+        "size": [round(float(x), 6) for x in s["size"]],
+        "scale": [round(float(x), 6) for x in s["scale"][:2]],
+        "offset": [round(float(x), 6) for x in s["pos"][:2]],
+        "pivot": s["pivot"], "angle": round(float(s["angle"][2]), 6),
+    }
     return {"type": m.group(1), "level": int(m.group(2)), "path": p, "source": logical,
-            "prefab": src, "prefabScale": round(float(s["scale"][0]), 6)}
+            "prefab": src, "transform": transform}
 
 
 def main() -> int:
@@ -170,7 +179,7 @@ def main() -> int:
 
     def place(slot: int, path: str, meta: dict) -> None:
         im = Image.open(path).convert("RGBA")
-        native = [im.width, im.height]          # ★ 原图像素 = 原版尺寸的唯一依据
+        native = [im.width, im.height]          # 贴图采样尺寸，显示尺寸另由 prefab transform 决定
         im.thumbnail((CELL_W, CELL_H), Image.LANCZOS)
         gx, gy = (slot % GRID_COLS) * CELL_W, (slot // GRID_COLS) * CELL_H
         ox, oy = (CELL_W - im.width) // 2, (CELL_H - im.height)      # ⚠ 底对齐：地物立在格上
@@ -184,7 +193,7 @@ def main() -> int:
         art = arts[("base", v)]
         place(v - 2, art["path"], {"id": v, "kind": "res", "variant": "base", "resType": t,
                                    "level": lv, "source": art["source"],
-                                   "prefab": art["prefab"], "prefabScale": art["prefabScale"]})
+                                   "prefab": art["prefab"], "transform": art["transform"]})
     for i, (_area, path, lg) in enumerate(cities[:8]):
         place(45 + i, path, {"id": CITY_BASE + i, "kind": "city", "variant": "base",
                              "source": lg})
@@ -195,14 +204,14 @@ def main() -> int:
             place(53 + (k - 0) * 45 + (v - 2), art["path"],
                   {"id": v, "kind": "res", "variant": var, "resType": t, "level": lv,
                    "source": art["source"], "prefab": art["prefab"],
-                   "prefabScale": art["prefabScale"]})
+                   "transform": art["transform"]})
 
     d = os.path.join(OUT, "pack", a.map)
     os.makedirs(d, exist_ok=True)
     atlas.save(os.path.join(d, "decor-atlas.png"))
-    info = {"schemaVersion": 3, "mapId": a.map, "cell": [CELL_W, CELL_H],
+    info = {"schemaVersion": 4, "mapId": a.map, "cell": [CELL_W, CELL_H],
             "gridCols": GRID_COLS, "gridRows": GRID_ROWS, "size": [ATLAS_W, ATLAS_H],
-            "anchor": "bottom-center", "cityBase": CITY_BASE,
+            "anchor": "prefab-pivot", "cityBase": CITY_BASE,
             "indexing": "格 id = 原版 res 值（2..46）；城址件从 cityBase 起；"
                         "变体格同 id 空间、按 variant 分表（N1）",
             "variants": {"来源": "base.cw land 表 client_res_id/snow_client_res_id/"
@@ -227,25 +236,37 @@ def main() -> int:
  * ★ 类型/等级与贴图都**从 `land` 表读出**（套件列 → client_res → prefab 主片），⛔ 不按
  *   文件名/次序猜 —— 早先的 `wood/iron/stone/food` 次序假设被 land 表证伪（真值
  *   wood/stone/food/iron），旧映射把 12..41 的铁/石/粮轮转错位，N1 已随变体改正。
- * ★ `native` 是**原图像素尺寸**：原版 2D 一格 300×150 px（config_2d 的 TILE_WIDTH/HEIGHT 是半值），
- *   所以件的世界宽 = native[0] × (MAPO_TILE_HALF_W / 150)。⛔ 别再按固定格宽拉伸
- *   （那会把等级差抹平）。
- * ⚠ 锚点是**底边中点**（地物立在菱形中心上），⛔ 不是几何中心。
+ * ★ `native` 是贴图像素；资源件显示尺寸 = `transform.size × transform.scale × (halfW / 150)`。
+ *   `transform.offset` 是中心相对格心的原版像素偏移（+y 向上），pivot 经提取期验证恒为中心。
+ *   传给底边对齐的 mesh 时再减 h/2，⛔ 不可把图底直接放到格心（MAPORIGINAL-2D §2.2）。
  * ⚠ 原版个别级的 prefab 缺/无可用 sprite，用同套同类最近一级顶上（`MAPO_DECOR_SUBSTITUTIONS`）。
  */
 
-export interface IMapoDecorCell {
+export interface IMapoDecorTransform {
+  readonly size: readonly [number, number];
+  readonly scale: readonly [number, number];
+  readonly offset: readonly [number, number];
+  readonly pivot: readonly [number, number];
+  readonly angle: number;
+}
+
+interface IMapoDecorArt {
   readonly id: number;
-  readonly kind: string;
   /** 基础季 / 雪 / 沙（N1）。 */
   readonly variant: string;
   readonly cell: readonly [number, number, number, number];
   readonly art: readonly [number, number, number, number];
-  /** ★ **原图像素尺寸**（切片时的原始大小）。件在世界里多大由它定，⛔ 不是按格拉伸。 */
+  /** 贴图原始像素尺寸；资源件显示矩形由 transform 决定。 */
   readonly native: readonly [number, number];
   readonly resType?: string;
   readonly level?: number;
 }
+
+/** 城址旧切片只留作存档；实际城址由 mapoCities 渲染。资源件必须携带原版 transform。 */
+export type IMapoDecorCell = IMapoDecorArt & (
+  { readonly kind: "res"; readonly transform: IMapoDecorTransform }
+  | { readonly kind: "city" }
+);
 
 export const MAPO_DECOR_ATLAS_W = %d;
 export const MAPO_DECOR_ATLAS_H = %d;
@@ -264,11 +285,11 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = %s;
 ''' % (a.map, ATLAS_W, ATLAS_H, CELL_W, CELL_H, CITY_BASE,
        "Readonly<Record<string, readonly (number | string)[]>>",
        json.dumps(substitutions, ensure_ascii=False),
-       json.dumps([{k: v for k, v in c.items() if k not in ("source", "prefab", "prefabScale")}
+       json.dumps([{k: v for k, v in c.items() if k not in ("source", "prefab")}
                    for c in cells if c["variant"] == "base"], ensure_ascii=False, indent=2),
-       json.dumps([{k: v for k, v in c.items() if k not in ("source", "prefab", "prefabScale")}
+       json.dumps([{k: v for k, v in c.items() if k not in ("source", "prefab")}
                    for c in cells if c["variant"] == "snow"], ensure_ascii=False, indent=2),
-       json.dumps([{k: v for k, v in c.items() if k not in ("source", "prefab", "prefabScale")}
+       json.dumps([{k: v for k, v in c.items() if k not in ("source", "prefab")}
                    for c in cells if c["variant"] == "desert"], ensure_ascii=False, indent=2))
     open(os.path.join(d, "decor.data.ts"), "w", encoding="utf-8").write(shared)
     print("摆件 %d 格（基础 %d + 雪 %d + 沙 %d，含城址 %d）"

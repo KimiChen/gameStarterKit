@@ -23,7 +23,7 @@
  *   ⛔ 没法从地形值推出来。
  */
 import {
-    MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_CITY_BASE,
+    MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS,
     MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
     type IMapoDecorCell,
 } from "../../../shared/kits/mapOriginal/content/decor.data";
@@ -53,11 +53,12 @@ export interface IMapoDecorPlacement {
     readonly row: number;
     readonly col: number;
     readonly cell: IMapoDecorCell;
-    /** 世界坐标（菱形中心）。摆件**底边中点**对齐到这里。 */
+    /** 应用 prefab 的中心偏移后，换成 mesh 要求的底边中点世界坐标。 */
     readonly x: number;
     readonly y: number;
-    /** 额外放大系数。⚠ 常态是 1：件的大小由原图像素定（见 `mapoDecorSize`）。 */
-    readonly scale: number;
+    readonly w: number;
+    readonly h: number;
+    readonly angleDeg: number;
 }
 
 /**
@@ -83,8 +84,13 @@ export function mapoDecorAt(row: number, col: number, value: number,
     const table = band === MAPO_BAND_SNOW ? SNOW_BY_ID
         : band === MAPO_BAND_DESERT ? DESERT_BY_ID : BY_ID;
     const cell = table.get(value) ?? BY_ID.get(value);
-    if (!cell || cell.id >= MAPO_DECOR_CITY_BASE) return null;
-    return { row, col, cell, x: pos.x, y: pos.y, scale: 1 };
+    if (!cell || cell.kind !== "res") return null;
+    const { w, h } = mapoDecorSize(cell);
+    // 原版中心 = 格心 + prefab.position；底边 mesh 的 y 还须减去半高。
+    // 旧版统一 y = 格心 - 半格高/2，把 5 级粮田抬高了约 30 个原版像素。
+    const x = pos.x + mapoOriginalPxToWorld(cell.transform.offset[0]);
+    const y = pos.y + mapoOriginalPxToWorld(cell.transform.offset[1]) - h / 2;
+    return { row, col, cell, x, y, w, h, angleDeg: cell.transform.angle };
 }
 
 /** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */
@@ -96,16 +102,10 @@ export function mapoDecorUv(cell: IMapoDecorCell): readonly [number, number, num
 }
 
 /**
- * 摆件在世界里的尺寸 —— **按原图像素换算**，⛔ 不按格宽拉伸。
- *
- * ★ 原版 2D 一格 300 px 宽（`config_2d` 的 TILE_WIDTH=150 是半宽），所以一张 232 px 的
- *   3 级木材图在原版里就占 0.77 格。照这个比例还原，**件的大小也成了原版参数**：
- *   等级差本来就体现在件的大小上（N1 起取 prefab 主片，基础季实测 0.17~1.10 格）。
- * ⚠ 早先按固定 1.0 格宽拉伸，把等级差抹平了，⛔ 别改回去。
- * ⚠ 高度按原图纵横比算，⛔ 不要单独拉高（会让塔楼变矮胖）。
+ * 摆件显示尺寸 = prefab.size × prefab.scale × 原版像素换算。
+ * size 不一定等于贴图 native，scale 也可能非等比；两轴必须分别保留（§2.2）。
  */
-export function mapoDecorSize(cell: IMapoDecorCell, scale: number): { w: number; h: number } {
-    const [nw, nh] = cell.native;
-    const w = mapoOriginalPxToWorld(nw) * scale;
-    return { w, h: w * (nh / Math.max(nw, 1)) };
+export function mapoDecorSize(cell: Extract<IMapoDecorCell, { kind: "res" }>): { w: number; h: number } {
+    const { size, scale } = cell.transform;
+    return { w: mapoOriginalPxToWorld(size[0] * scale[0]), h: mapoOriginalPxToWorld(size[1] * scale[1]) };
 }

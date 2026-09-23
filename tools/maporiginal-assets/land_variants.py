@@ -110,7 +110,7 @@ def resolve_prefab(src_name: str) -> str:
 
 
 def prefab_sprites(src_name: str) -> list:
-    """prefab → sprite_2d 列表 [{tex, size, scale, pos, angle, low_z}]。⚠ 解析有残留直接退出。"""
+    """prefab → sprite_2d 列表（含完整局部 transform）。⚠ 解析有残留直接退出。"""
     import prefab_bin
     blob = open(resolve_prefab(src_name), "rb").read()
     d = prefab_bin.parse(blob)
@@ -122,7 +122,13 @@ def prefab_sprites(src_name: str) -> list:
         if k.get("class") != "sprite_2d":
             continue                    # ⚠ 资源件里有裸 node_2d / 动画占位，⛔ 不是件
         out.append({"tex": k.get("texture"), "size": k.get("size"), "scale": k.get("scale"),
-                    "pos": k.get("position"), "angle": k.get("angle"), "low_z": k.get("low_z")})
+                    "pos": k.get("position"), "angle": k.get("angle"),
+                    "pivot": k.get("pivot"), "low_z": k.get("low_z")})
+    # 有主片可消费时，非单位根不能被静默丢掉或当作缺级替代。
+    # 原有解析不到任何 sprite 的件仍返回空，由 pack_decor 记录邻级替代。
+    if out and (d.get("position") != [0, 0, 0] or d.get("angle") != [0, 0, 0]
+                or d.get("scale") != [1, 1, 1]):
+        raise ValueError("%s 的根 transform 非单位阵，须先合成父子变换" % src_name)
     return out
 
 

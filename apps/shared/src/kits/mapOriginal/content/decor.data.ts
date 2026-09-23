@@ -11,25 +11,37 @@
  * ★ 类型/等级与贴图都**从 `land` 表读出**（套件列 → client_res → prefab 主片），⛔ 不按
  *   文件名/次序猜 —— 早先的 `wood/iron/stone/food` 次序假设被 land 表证伪（真值
  *   wood/stone/food/iron），旧映射把 12..41 的铁/石/粮轮转错位，N1 已随变体改正。
- * ★ `native` 是**原图像素尺寸**：原版 2D 一格 300×150 px（config_2d 的 TILE_WIDTH/HEIGHT 是半值），
- *   所以件的世界宽 = native[0] × (MAPO_TILE_HALF_W / 150)。⛔ 别再按固定格宽拉伸
- *   （那会把等级差抹平）。
- * ⚠ 锚点是**底边中点**（地物立在菱形中心上），⛔ 不是几何中心。
+ * ★ `native` 是贴图像素；资源件显示尺寸 = `transform.size × transform.scale × (halfW / 150)`。
+ *   `transform.offset` 是中心相对格心的原版像素偏移（+y 向上），pivot 经提取期验证恒为中心。
+ *   传给底边对齐的 mesh 时再减 h/2，⛔ 不可把图底直接放到格心（MAPORIGINAL-2D §2.2）。
  * ⚠ 原版个别级的 prefab 缺/无可用 sprite，用同套同类最近一级顶上（`MAPO_DECOR_SUBSTITUTIONS`）。
  */
 
-export interface IMapoDecorCell {
+export interface IMapoDecorTransform {
+  readonly size: readonly [number, number];
+  readonly scale: readonly [number, number];
+  readonly offset: readonly [number, number];
+  readonly pivot: readonly [number, number];
+  readonly angle: number;
+}
+
+interface IMapoDecorArt {
   readonly id: number;
-  readonly kind: string;
   /** 基础季 / 雪 / 沙（N1）。 */
   readonly variant: string;
   readonly cell: readonly [number, number, number, number];
   readonly art: readonly [number, number, number, number];
-  /** ★ **原图像素尺寸**（切片时的原始大小）。件在世界里多大由它定，⛔ 不是按格拉伸。 */
+  /** 贴图原始像素尺寸；资源件显示矩形由 transform 决定。 */
   readonly native: readonly [number, number];
   readonly resType?: string;
   readonly level?: number;
 }
+
+/** 城址旧切片只留作存档；实际城址由 mapoCities 渲染。资源件必须携带原版 transform。 */
+export type IMapoDecorCell = IMapoDecorArt & (
+  { readonly kind: "res"; readonly transform: IMapoDecorTransform }
+  | { readonly kind: "city" }
+);
 
 export const MAPO_DECOR_ATLAS_W = 4096;
 export const MAPO_DECOR_ATLAS_H = 2048;
@@ -62,7 +74,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        50.0,
+        58.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        2.7998,
+        -27.084
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -85,7 +116,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        115.0,
+        110.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.68457,
+        9.75391
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -108,7 +158,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        232.0,
+        119.0
+      ],
+      "scale": [
+        0.922414,
+        0.915966
+      ],
+      "offset": [
+        -7.29297,
+        3.62402
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -131,7 +200,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        227.0,
+        133.0
+      ],
+      "scale": [
+        1.02745,
+        1.05839
+      ],
+      "offset": [
+        3.63086,
+        8.05078
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -154,7 +242,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        251.0,
+        150.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.60742,
+        3.77734
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -177,7 +284,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        235.0,
+        137.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -2.0,
+        17.0
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -200,7 +326,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        275.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -7.51563,
+        1.36719
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -223,7 +368,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        274.0,
+        158.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -8.59766,
+        -1.87891
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -246,7 +410,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        282.0,
+        162.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.1875,
+        0.285156
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -269,7 +452,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "wood",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        329.0,
+        174.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.1875,
+        -2.41992
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -292,7 +494,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        224.0,
+        95.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -15.751,
+        -0.233398
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -315,7 +536,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        230.0,
+        84.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        3.07422,
+        2.81934
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -338,7 +578,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        176.0,
+        87.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -18.294901,
+        8.9248
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -361,7 +620,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        175.0,
+        112.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -13.0469,
+        6.81738
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -384,7 +662,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        229.0,
+        107.0
+      ],
+      "scale": [
+        0.9869,
+        1.00935
+      ],
+      "offset": [
+        -2.1084,
+        7.34961
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -407,7 +704,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        229.0,
+        109.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.530273,
+        6.38086
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -430,7 +746,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        252.0,
+        121.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        3.07422,
+        7.39844
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -453,7 +788,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        252.0,
+        127.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        2.56543,
+        -2.26855
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -476,7 +830,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        248.0,
+        135.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -2.01367,
+        3.83691
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -499,7 +872,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "stone",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        286.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.50488,
+        8.9248
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -522,7 +914,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        122.0,
+        76.0
+      ],
+      "scale": [
+        1.17213,
+        1.21053
+      ],
+      "offset": [
+        30.058599,
+        13.457
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -545,7 +956,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        122.0,
+        76.0
+      ],
+      "scale": [
+        1.17213,
+        1.21053
+      ],
+      "offset": [
+        30.058599,
+        13.457
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -568,7 +998,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        122.0,
+        76.0
+      ],
+      "scale": [
+        1.17213,
+        1.21053
+      ],
+      "offset": [
+        30.058599,
+        13.457
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -591,7 +1040,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        159.0,
+        81.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        17.882799,
+        10.1445
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -614,7 +1082,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        196.0,
+        128.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -8.05469,
+        -3.63477
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -637,7 +1124,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        250.0,
+        132.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        5.41016,
+        -0.450195
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -660,7 +1166,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        251.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -0.899414,
+        0.451172
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -683,7 +1208,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        277.0,
+        146.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.80078,
+        5.85938
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -706,7 +1250,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        287.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -6.30762,
+        6.76074
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -729,7 +1292,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "food",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        312.0,
+        155.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -8.11035,
+        -1.35156
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -752,7 +1334,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        179.0,
+        84.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        21.0273,
+        -2.58008
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -775,7 +1376,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        184.0,
+        87.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        8.17969,
+        -7.83594
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -798,7 +1418,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        189.0,
+        98.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        4.0918,
+        10.2676
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -821,7 +1460,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        245.0,
+        92.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.54785,
+        -1.12695
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -844,7 +1502,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        245.0,
+        92.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.54785,
+        -1.12695
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -867,7 +1544,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        241.0,
+        115.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -2.33203,
+        0.339844
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -890,7 +1586,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        229.0,
+        129.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.08398,
+        4.42773
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -913,7 +1628,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        229.0,
+        129.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.08398,
+        4.42773
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -936,7 +1670,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        229.0,
+        129.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.08398,
+        4.42773
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -959,7 +1712,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "iron",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        229.0,
+        129.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.08398,
+        4.42773
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -982,7 +1754,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "gold",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        200.0,
+        110.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.233398,
+        2.4873
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1005,7 +1796,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "gold",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        229.0,
+        121.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -5.5127,
+        7.58496
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1028,7 +1838,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "gold",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        262.0,
+        135.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        3.2207,
+        2.82129
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1051,7 +1880,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "gold",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        278.0,
+        139.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.54297,
+        3.61523
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1074,7 +1922,26 @@ export const MAPO_DECOR_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "base",
     "resType": "gold",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        276.0,
+        134.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        1.63281,
+        5.20313
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1268,7 +2135,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        126.0,
+        74.0
+      ],
+      "scale": [
+        1.38489,
+        1.38489
+      ],
+      "offset": [
+        2.56348,
+        -0.324219
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1291,7 +2177,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        242.0,
+        109.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -12.9297,
+        5.12207
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1314,7 +2219,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        221.0,
+        124.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -7.86328,
+        -7.60059
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1337,7 +2261,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        240.0,
+        122.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        4.15039,
+        -0.131836
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1360,7 +2303,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        258.0,
+        142.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.21484,
+        1.875
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1383,7 +2345,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        221.0,
+        114.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.77734,
+        6.07227
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1406,7 +2387,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        290.0,
+        141.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -9.71094,
+        4.16406
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1429,7 +2429,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        258.0,
+        149.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -6.85156,
+        -2.15918
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1452,7 +2471,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        268.0,
+        155.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -10.3096,
+        4.75391
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1475,7 +2513,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "wood",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        299.0,
+        161.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -10.5547,
+        -1.44727
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1498,7 +2555,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        197.0,
+        88.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -11.0557,
+        4.92871
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1521,7 +2597,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        178.0,
+        84.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        20.563499,
+        3.42578
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1544,7 +2639,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        194.0,
+        106.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -10.5781,
+        -0.908203
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1567,7 +2681,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        217.0,
+        139.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.99707,
+        -5.13965
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1590,7 +2723,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        235.0,
+        120.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.02832,
+        10.6885
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1613,7 +2765,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        230.0,
+        114.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.504883,
+        6.91504
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1636,7 +2807,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        248.0,
+        121.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.603516,
+        7.00586
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1659,7 +2849,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        243.0,
+        128.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -0.242188,
+        -2.51367
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1682,7 +2891,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        248.0,
+        136.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.16309,
+        5.15625
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1705,7 +2933,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "stone",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        275.0,
+        138.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        4.05176,
+        9.19043
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1728,7 +2975,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        122.0,
+        82.0
+      ],
+      "scale": [
+        1.11784,
+        1.11784
+      ],
+      "offset": [
+        29.500999,
+        17.0313
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1751,7 +3017,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        122.0,
+        82.0
+      ],
+      "scale": [
+        1.11784,
+        1.11784
+      ],
+      "offset": [
+        29.500999,
+        17.0313
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1774,7 +3059,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        122.0,
+        82.0
+      ],
+      "scale": [
+        1.11784,
+        1.11784
+      ],
+      "offset": [
+        29.500999,
+        17.0313
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1797,7 +3101,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        176.0,
+        75.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        10.2012,
+        6.31641
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1820,7 +3143,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        201.0,
+        131.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -6.80859,
+        -4.23047
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1843,7 +3185,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        251.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        4.63672,
+        3.78125
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1866,7 +3227,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        251.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -2.80273,
+        0.347656
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1889,7 +3269,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        277.0,
+        145.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.6582,
+        6.07031
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1912,7 +3311,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        286.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -6.23633,
+        7.21484
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1935,7 +3353,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "food",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        312.0,
+        155.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -8.41992,
+        0.263672
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1958,7 +3395,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        154.0,
+        80.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        36.6133,
+        -1.90625
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -1981,7 +3437,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        206.0,
+        98.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -0.78418,
+        -7.74121
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2004,7 +3479,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        159.0,
+        91.0
+      ],
+      "scale": [
+        1.10703,
+        1.10703
+      ],
+      "offset": [
+        4.24512,
+        5.59961
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2027,7 +3521,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        245.0,
+        96.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.30762,
+        -2.01855
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2050,7 +3563,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        241.0,
+        110.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        3.33691,
+        -0.732422
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2073,7 +3605,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        231.0,
+        114.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.0166,
+        1.7627
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2096,7 +3647,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        234.0,
+        131.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.77441,
+        4.41699
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2119,7 +3689,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        268.0,
+        133.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        11.7051,
+        5.95703
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2142,7 +3731,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        241.0,
+        125.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -4.24219,
+        10.0488
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2165,7 +3773,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "iron",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        264.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        1.6084,
+        3.94434
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2188,7 +3815,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "gold",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        208.0,
+        112.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        4.37109,
+        1.30859
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2211,7 +3857,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "gold",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        237.0,
+        130.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.39844,
+        2.17188
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2234,7 +3899,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "gold",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        263.0,
+        138.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        5.24316,
+        1.01465
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2257,7 +3941,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "gold",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        276.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.316406,
+        3.11328
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2280,7 +3983,26 @@ export const MAPO_DECOR_SNOW_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "snow",
     "resType": "gold",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        276.0,
+        134.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.579102,
+        3.16504
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   }
 ];
 /** 沙漠件（id = 原版 res 值）。 */
@@ -2306,7 +4028,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        50.0,
+        58.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        2.7998,
+        -27.084
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2329,7 +4070,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        113.0,
+        109.0
+      ],
+      "scale": [
+        1.0177,
+        1.00917
+      ],
+      "offset": [
+        -1.68457,
+        9.75391
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2352,7 +4112,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        232.0,
+        120.0
+      ],
+      "scale": [
+        0.922414,
+        0.915966
+      ],
+      "offset": [
+        -7.29297,
+        3.62402
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2375,7 +4154,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        227.0,
+        123.0
+      ],
+      "scale": [
+        1.02745,
+        1.05839
+      ],
+      "offset": [
+        -2.375,
+        2.04492
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2398,7 +4196,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        260.0,
+        150.0
+      ],
+      "scale": [
+        0.965385,
+        1.0
+      ],
+      "offset": [
+        1.79785,
+        1.97559
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2421,7 +4238,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        221.0,
+        123.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -6.29102,
+        8.7207
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2444,7 +4280,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        272.0,
+        129.0
+      ],
+      "scale": [
+        1.01103,
+        1.08527
+      ],
+      "offset": [
+        -13.5215,
+        13.9795
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2467,7 +4322,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        274.0,
+        158.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -8.59766,
+        -1.87891
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2490,7 +4364,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        282.0,
+        162.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -3.1875,
+        0.285156
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2513,7 +4406,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "wood",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        319.0,
+        176.0
+      ],
+      "scale": [
+        1.03135,
+        0.988636
+      ],
+      "offset": [
+        -17.601601,
+        6.58887
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2536,7 +4448,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        224.0,
+        100.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        1.66406,
+        4.45996
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2559,7 +4490,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        200.0,
+        95.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -8.00391,
+        2.04297
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2582,7 +4532,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        215.0,
+        112.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        4.88672,
+        0.431641
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2605,7 +4574,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        185.0,
+        112.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -23.311501,
+        2.04297
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2628,7 +4616,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        220.0,
+        99.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        1.66406,
+        11.7109
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2651,7 +4658,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        230.0,
+        116.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.052734,
+        6.07129
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2674,7 +4700,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        250.0,
+        121.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        5.69238,
+        7.68262
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2697,7 +4742,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        242.0,
+        128.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        1.66406,
+        -2.79102
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2720,7 +4784,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        247.0,
+        135.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -5.58691,
+        9.29395
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2743,7 +4826,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "stone",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        283.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -2.62988,
+        10.7725
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2766,7 +4868,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        149.0,
+        73.0
+      ],
+      "scale": [
+        0.525194,
+        0.525194
+      ],
+      "offset": [
+        -5.2002,
+        16.029301
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2789,7 +4910,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        149.0,
+        73.0
+      ],
+      "scale": [
+        1.34183,
+        1.18085
+      ],
+      "offset": [
+        -14.9844,
+        -0.358398
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2812,7 +4952,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        195.0,
+        89.0
+      ],
+      "scale": [
+        1.11784,
+        1.11784
+      ],
+      "offset": [
+        5.3291,
+        9.26172
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2835,7 +4994,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        239.0,
+        115.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        8.6875,
+        2.17188
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2858,7 +5036,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        228.0,
+        130.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        2.64453,
+        0.445313
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2881,7 +5078,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        249.0,
+        132.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        5.23438,
+        0.445313
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2904,7 +5120,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        258.0,
+        139.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        5.23438,
+        3.03516
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2927,7 +5162,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        277.0,
+        145.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.6582,
+        6.07031
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2950,7 +5204,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        286.0,
+        140.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -6.23633,
+        7.21484
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2973,7 +5246,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "food",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        312.0,
+        155.0
+      ],
+      "scale": [
+        0.940468,
+        0.940468
+      ],
+      "offset": [
+        -8.41992,
+        -0.599609
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -2996,7 +5288,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        232.0,
+        100.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -7.71484,
+        11.668
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3019,7 +5330,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        226.0,
+        108.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -10.3047,
+        0.445313
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3042,7 +5372,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        217.0,
+        111.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -5.98828,
+        4.76172
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3065,7 +5414,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        244.0,
+        97.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -9.44141,
+        -1.28125
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3088,7 +5456,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        241.0,
+        115.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        4.83594,
+        -1.9707
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3111,7 +5498,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 6
+    "level": 6,
+    "transform": {
+      "size": [
+        241.0,
+        115.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        2.43945,
+        -1.9707
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3134,7 +5540,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 7
+    "level": 7,
+    "transform": {
+      "size": [
+        232.0,
+        129.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -0.755859,
+        5.21875
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3157,7 +5582,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 8
+    "level": 8,
+    "transform": {
+      "size": [
+        277.0,
+        134.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        12.0254,
+        6.01758
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3180,7 +5624,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 9
+    "level": 9,
+    "transform": {
+      "size": [
+        242.0,
+        130.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -5.54883,
+        9.21289
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3203,7 +5666,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "iron",
-    "level": 10
+    "level": 10,
+    "transform": {
+      "size": [
+        279.0,
+        145.0
+      ],
+      "scale": [
+        1.0,
+        0.993103
+      ],
+      "offset": [
+        -5.25195,
+        2.67578
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3226,7 +5708,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "gold",
-    "level": 1
+    "level": 1,
+    "transform": {
+      "size": [
+        200.0,
+        110.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.233398,
+        2.4873
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3249,7 +5750,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "gold",
-    "level": 2
+    "level": 2,
+    "transform": {
+      "size": [
+        229.0,
+        121.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -5.5127,
+        7.58496
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3272,7 +5792,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "gold",
-    "level": 3
+    "level": 3,
+    "transform": {
+      "size": [
+        262.0,
+        135.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        3.2207,
+        2.82129
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3295,7 +5834,26 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "gold",
-    "level": 4
+    "level": 4,
+    "transform": {
+      "size": [
+        278.0,
+        139.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        -1.54297,
+        3.61523
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   },
   {
     "cell": [
@@ -3318,6 +5876,25 @@ export const MAPO_DECOR_DESERT_CELLS: readonly IMapoDecorCell[] = [
     "kind": "res",
     "variant": "desert",
     "resType": "gold",
-    "level": 5
+    "level": 5,
+    "transform": {
+      "size": [
+        276.0,
+        134.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        1.63281,
+        5.20313
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "angle": 0.0
+    }
   }
 ];

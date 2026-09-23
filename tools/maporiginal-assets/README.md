@@ -459,12 +459,15 @@ group 预制体。
 修正后切片从 3,510 涨到 **4,881 张**；`select.json` 的 atlas `only` 也补收了 `remain_tex`。
 ⛔ 别再改回 `find()`。
 
-### 4.7 件的尺寸 = 原图像素 × (本 kit 半格宽 / 150)
+### 4.7 件的尺寸与位置保留 prefab transform
 
 原版 2D 一格 300×150 px（`config_2d` 的 TILE_WIDTH/HEIGHT 是半值）⇒
-「图多少像素宽」= 「它在原版里占几格」。实测：资源件 0.53–1.10 格、山体 0.94–2.25 格、
-树簇 0.12–0.45 格、草丛 0.82–2.03 格。所以图集里逐格记 `native`（原图像素），
-客户端按它定世界尺寸。⛔ 别按格宽或连通区跨度拉伸（两版都踩过，见 `apps/kits/mapOriginal/README.md` 的「件的大小也是原版参数，⛔ 不按格拉伸」一节）。
+图集逐格记 `native`（贴图像素），显示尺寸还须消费 prefab：资源主片使用 `size × scale`，
+山体的 `size == native` 经提取期验证后用 `native × scale`，最后统一乘 `32/150`。
+资源三套 135 个主片均为中心 pivot，中心 = 格心 + `position × 32/150`；交给底边对齐的
+mesh 时再减 `h/2`。`pack_decor.py` 把这些参数写入 `transform`，schemaVersion=4，
+`land_variants.py` 校验根是单位变换，打包时再校验主片 pivot，避免遗漏父变换或锚点。
+详见 `docs/MAPORIGINAL-2D.md` §2.2；⛔ 不再使用统一的“图底对格心”偏移。
 
 ### 4.8 ★ 本 kit 只收原版 **2D 沙盘**素材（2026-09-22 拍板）
 
