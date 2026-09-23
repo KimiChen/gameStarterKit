@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { MAPO_CHOOSE_ASSET } from "../src/kits/mapOriginal/logic/mapoFar";
 import { MAPO_CHOOSE_WORLD } from "../src/kits/mapOriginal/logic/mapoMesh";
 
@@ -23,8 +24,8 @@ test("mapOriginal 选中地块面：尺寸 = 原图像素 × 32/150（与全 kit
 
 test("mapOriginal 选中地块面：原版件已入 kit 且两边镜像齐全", () => {
     assert.equal(MAPO_CHOOSE_ASSET, "kits/mapOriginal/maps/s1/choose");
-    const kit = "apps/kits/mapOriginal/data/maps/s1/choose.png";
-    const coc = "apps/Cocos/assets/resources/kits/mapOriginal/maps/s1/choose.png";
+    const kit = fileURLToPath(new URL("../../kits/mapOriginal/data/maps/s1/choose.png", import.meta.url));
+    const coc = fileURLToPath(new URL("../../Cocos/assets/resources/kits/mapOriginal/maps/s1/choose.png", import.meta.url));
     assert.ok(existsSync(kit), `缺 ${kit}（先跑 build_choose.py + install_to_kit.py）`);
     assert.ok(existsSync(coc), `缺 ${coc}（install_to_kit.py 的镜像没到）`);
     assert.deepEqual([...pngSize(kit)], [240, 112], "choose.png 必须是原版 240×112 帧");
