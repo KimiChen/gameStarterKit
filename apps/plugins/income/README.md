@@ -19,6 +19,9 @@
 
 - **收益账户就是 `User` Bean**：等级读 `User.lv`，铜币写 `User.copper`，时间轴是
   `User.lastCopperIncomeTime`。⛔ 不要另起一套 Redis 账户或第二份账本。
+- **income Action 不处理缺失的 `User`**：原生 Lobby 在认证成功前会先完成玩家建档，业务
+  Action 直接使用 `this.user`。加载不到档案属于认证/建档链异常，必须让执行失败并暴露问题，
+  ⛔ 不要用零收益、零余额或静默返回伪装成成功响应。
 - **离线收益不由登录自动发放**：`ActionEnter`（旧通道）/ income 模块的 `onAuthenticated`
   （原生 Lobby）只把离线那段**算好暂存**在 `User.offlineCopperPending`，必须客户端显式
   调 `income.claimOffline` 才进 `copper`。⛔ 别在服务端加回「登录即到账」。
