@@ -37,6 +37,7 @@ export const VERIFY_CORE_COMMANDS = [
   "npm run verify:ecs",
   "npm run verify:vendor",
   "npm run verify:fgui",
+  "npm run verify:assets3d",
   "npm run verify:protected-paths",
   "npm run test:fgui",
   "npm run verify:inventory",
@@ -55,7 +56,7 @@ export const VERIFY_ALL_COMMANDS = [
   "npm --workspace @game/server run test",
 ];
 export const CLIENT_TEST_COMMAND =
-  "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs ../../scripts/uniflex-output.test.mjs ../../scripts/uniflex-resources.test.mjs ../../scripts/uniflex-ui-cli.test.mjs";
+  "cd apps/server && node --import tsx --test ../client/test/*.test.ts ../../scripts/vendor-lock.test.mjs ../../scripts/uniflex-output.test.mjs ../../scripts/uniflex-resources.test.mjs ../../scripts/uniflex-ui-cli.test.mjs ../../scripts/verify-assets3d.test.mjs";
 export const FGUI_TEST_COMMAND =
   "cd apps/server && node --import tsx --test ../../scripts/fgui-manifest.test.mjs ../../scripts/fgui-roundtrip.test.mjs ../../tools/fgui-codegen/fgui-codegen.test.ts ../client/test/fguiContract.test.ts ../client/test/viewRegistry.test.ts";
 export const INVENTORY_TEST_COMMAND = "node --test scripts/verify-inventory.test.mjs";

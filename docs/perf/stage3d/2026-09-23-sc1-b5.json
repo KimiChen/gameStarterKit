@@ -1,0 +1,424 @@
+{
+  "schemaVersion": 1,
+  "batch": "SC1-B5",
+  "date": "2026-09-23",
+  "status": "complete",
+  "sc1Exit": false,
+  "baseCommit": "bbdd889f5bffb508e318cc9a579e31e20ca20fba",
+  "scope": "Read-only authoring asset gate, exact ownership/reference closure, frozen policy budgets and provenance coverage. SC1 stage exit remains B6.",
+  "implementation": [
+    "verify:assets3d scans framework stage3d, package 3d data and exact owned bundles; package author inputs are included in provenance and size accounting. Source, metadata and symlink/layout rules fail closed.",
+    "PNG CRC/decompression/size policy, Radiance HDR scanlines and GLB binary/accessor/mesh/skin/image-URI structure are validated. Model and image subMeta/import options use Creator 3.8.8 fields/defaults.",
+    "Texture usage, color-space declarations, sampling and compression presets are checked, including explicit mipmaps and PNG fallback. Known material slots and glTF textures must match their color-space role.",
+    "B7 UUID/reference core is reused directly. Actual HDR image@cube@face subMeta nesting is supported with immediate-parent UUID validation; same-owner split bundles work, unresolved/cross-owner/host references and fake builtins fail.",
+    "Six SC0 exceptions migrate to exact path/UUID/source hashes; the LightFX sampling exception also pins metadata hash and texture UUID. Existing Creator builtin allowlist is unchanged.",
+    "Frozen triangle, bone and byte budgets are enforced per model/package. Retained source BIN allocation is reported separately from measured CPU memory. License coverage and acyclic source/derivative mappings are mandatory.",
+    "Command, verify:core aggregation, client test entry, independent toolchain pins, AGENTS/CLAUDE/README and capability inventory are registered together."
+  ],
+  "sourceHashes": [
+    {
+      "path": "scripts/verify-assets3d.mjs",
+      "sha256": "41b355eaf61336c64212ae540cbe4244e5bab620448d091a6d73cfcef916cde0"
+    },
+    {
+      "path": "scripts/assets3d/formats.mjs",
+      "sha256": "3674c90168d1ead179d4141c512b5d9b7505ea87ef88dac09d23117da7f5f7ca"
+    },
+    {
+      "path": "scripts/assets3d.config.json",
+      "sha256": "40c33e814c22631626f9bcbdf7f226420ffc9f1e73a0b0c25907a4098cca65a6"
+    },
+    {
+      "path": "scripts/verify-assets3d.test.mjs",
+      "sha256": "f25031790d2074232b1a8fb2c8409f6f7740bb8edbe30bb2a16c0d52b5acc6e0"
+    },
+    {
+      "path": "apps/server/tools/plugin/assetReferences.ts",
+      "sha256": "7b96e14fe9ac109d211d9d3d1aada6ffdb3295b6ae07944d25b35762ac4035a5"
+    },
+    {
+      "path": "apps/server/tools/plugin/creator-builtins-3.8.8.json",
+      "sha256": "cab2ab1a770e23360f14e75d0c0e1348bf64dc99a06567cfdfa98e8802d456a2"
+    },
+    {
+      "path": "apps/server/test/plugin-bundles.test.ts",
+      "sha256": "67cf4a7350877a7cebbff4ee1a5545a3c4d7c4bfee79da48d54093c1a52243d2"
+    },
+    {
+      "path": "apps/client/test/toolchainContract.test.ts",
+      "sha256": "646f9346e555e0980f824adee89d7f27110e34fd0ab3ae02dbfa3d61823b460a"
+    },
+    {
+      "path": "tools/art3d/quality-assets.mjs",
+      "sha256": "cea542823e9d66eb651395c0302278da7dd2a9b6a842be434c27dffb451d4fa9"
+    },
+    {
+      "path": "tools/art3d/sc0-asset-exceptions.json",
+      "sha256": "befeccce2baf8d6492e981437f1820b98eaf63263a3a9bbadfeb18a795b994b0"
+    },
+    {
+      "path": "package.json",
+      "sha256": "98c6a2dd319622a12cf9db93b3ece32f7f2b641204ea06a4e5c96d5d2ca0e7c3"
+    },
+    {
+      "path": "scripts/verify-toolchain.mjs",
+      "sha256": "ba9ca27a5daaf978981842596042ace2b2972b2bcd76905bf564b6c6ce53fc18"
+    },
+    {
+      "path": "docs/inventory.json",
+      "sha256": "6ff86fdbcf812a4a34004fd6d2411b03e76192c5a44349e9140b51bfd6212bcb"
+    },
+    {
+      "path": "scripts/uniflex-art.test.mjs",
+      "sha256": "d89a487c4616bfa35c75431edcaaee329654234d446e9afc1d033b061dde277c"
+    },
+    {
+      "path": "scripts/uniflex-import-contract.test.mjs",
+      "sha256": "ff4d098b115ec661f68bd7d1395a8299cb578e17f42aeeb799ad3da0590a8a02"
+    },
+    {
+      "path": "scripts/fixtures/uniflex-inline/ActionButton.psd",
+      "sha256": "51f1df8d36c924e52878f0d7eecb2ec401aa2b61657af84156a61fd470ce2e58"
+    },
+    {
+      "path": "scripts/fixtures/uniflex-inline/BackpackItemCard.psd",
+      "sha256": "ff0df4b410c494ecdf05fee1d32283625ec0799a1e132864f2a47e2403f7ad3e"
+    }
+  ],
+  "assetGate": {
+    "creatorVersion": "3.8.8",
+    "assets": 36,
+    "references": 27,
+    "owners": [
+      {
+        "owner": "framework",
+        "totalBytes": 89208,
+        "texturesBytes": 35283,
+        "lightmapsBytes": 18767,
+        "metaBytes": 17214,
+        "retainedSourceBinBytes": 32488,
+        "models": [
+          {
+            "path": "apps/Cocos/assets/resources/stage3d/greybox-biped-atlas-b.glb",
+            "triangles": 96,
+            "skinned": true,
+            "sourceBinBytes": 16244
+          },
+          {
+            "path": "apps/Cocos/assets/resources/stage3d/greybox-biped.glb",
+            "triangles": 96,
+            "skinned": true,
+            "sourceBinBytes": 16244
+          },
+          {
+            "path": "apps/Cocos/assets/resources/stage3d/greybox-cube.glb",
+            "triangles": 12,
+            "skinned": false,
+            "sourceBinBytes": 1416
+          },
+          {
+            "path": "apps/Cocos/assets/resources/stage3d/greybox-plane.glb",
+            "triangles": 2,
+            "skinned": false,
+            "sourceBinBytes": 236
+          }
+        ],
+        "textures": [
+          {
+            "path": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png",
+            "width": 1024,
+            "height": 1024,
+            "srgb": false
+          },
+          {
+            "path": "apps/Cocos/assets/resources/stage3d/T_Greybox_Checker_BC.png",
+            "width": 64,
+            "height": 64,
+            "srgb": false
+          }
+        ]
+      }
+    ],
+    "exceptions": [
+      {
+        "owner": "framework",
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-cube.glb",
+        "rules": [
+          "naming"
+        ]
+      },
+      {
+        "owner": "framework",
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-plane.glb",
+        "rules": [
+          "naming"
+        ]
+      },
+      {
+        "owner": "framework",
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-biped.glb",
+        "rules": [
+          "naming"
+        ]
+      },
+      {
+        "owner": "framework",
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-biped-atlas-b.glb",
+        "rules": [
+          "naming"
+        ]
+      },
+      {
+        "owner": "framework",
+        "path": "apps/Cocos/assets/resources/stage3d/T_Greybox_Checker_BC.png",
+        "rules": [
+          "dimensions"
+        ]
+      },
+      {
+        "owner": "framework",
+        "path": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png",
+        "rules": [
+          "naming",
+          "sampler"
+        ]
+      }
+    ]
+  },
+  "creatorSchemaEvidence": {
+    "creatorVersion": "3.8.8",
+    "builtins": [
+      {
+        "path": "effects/builtin-unlit.effect",
+        "uuid": "a3cd009f-0ab0-420d-9278-b9fdab939bbc",
+        "sha256": "c71f5ed4e878e0fe3bd670a456bc814912674800ad32c0942b442525ec3345dd",
+        "metaSha256": "9c157e8d780dcaf2756846c082301ec9127d24e1bc932fcbb11de5abc6060c18"
+      },
+      {
+        "path": "effects/builtin-standard.effect",
+        "uuid": "c8f66d17-351a-48da-a12c-0212d28575c4",
+        "sha256": "36877f415fee4712f54127651f9566b9c0136e98beb699b1aa5f1307d3cf2efa",
+        "metaSha256": "44eb95c68b263908fe90a3ce904ebcbdb1d6ea4174405ac423feca30e0313efd"
+      }
+    ],
+    "actualHdrMeta": {
+      "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/editor/assets/default_skybox/default_skybox.hdr.meta",
+      "sha256": "74547d4a453a5120160d94a0c2ff9e2cd29f9b5bfaef53aa9fd86cde40c44056",
+      "closure": {
+        "assets": 8,
+        "references": 1
+      },
+      "uuids": [
+        "d032ac98-05e1-4090-88bb-eb640dcb5fc1",
+        "d032ac98-05e1-4090-88bb-eb640dcb5fc1@b47c0",
+        "d032ac98-05e1-4090-88bb-eb640dcb5fc1@b47c0@74afd",
+        "d032ac98-05e1-4090-88bb-eb640dcb5fc1@b47c0@8fd34",
+        "d032ac98-05e1-4090-88bb-eb640dcb5fc1@b47c0@bb97f",
+        "d032ac98-05e1-4090-88bb-eb640dcb5fc1@b47c0@7d38f",
+        "d032ac98-05e1-4090-88bb-eb640dcb5fc1@b47c0@e9a6d",
+        "d032ac98-05e1-4090-88bb-eb640dcb5fc1@b47c0@40c10"
+      ]
+    },
+    "inspectorSources": [
+      {
+        "path": "editor/inspector/assets/fbx/model.js",
+        "sha256": "ea5f692f0fbc4e38e3aa5a4fe5ca3e79abda78f806b6ea80a0b6c58b1a7de2e9"
+      },
+      {
+        "path": "editor/inspector/assets/fbx/animation.js",
+        "sha256": "b0a449795fe4657c33ea6956cf727f9816d500e49356bbade86bc6eb4c3ef885"
+      },
+      {
+        "path": "editor/inspector/assets/texture/texture.js",
+        "sha256": "57c0f3df2afa61c1baeb44e5d27d43ca324690a1180068e588de91290c89a2ba"
+      }
+    ],
+    "scope": "Installed Creator schema and builtin identity verification only; no new preview/performance claim"
+  },
+  "validation": {
+    "node": "v26.5.0",
+    "verifyAll": {
+      "command": "TMPDIR=/Volumes/KimData/.codex-stage3d-tests npm run verify:all",
+      "exitCode": 0,
+      "suites": {
+        "test:fgui": {
+          "tests": 66,
+          "pass": 66,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test:inventory": {
+          "tests": 116,
+          "pass": 116,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test:launcher-matrix": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test:npm-reference-matrix": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test:aggregate-chain-matrix": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test:sync-mirror-matrix": {
+          "tests": 21,
+          "pass": 21,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test:toolchain-runtime-matrix": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test:client": {
+          "tests": 1104,
+          "pass": 1104,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test:uniflex-ui-contract": {
+          "tests": 71,
+          "pass": 71,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "test": {
+          "tests": 1375,
+          "pass": 1375,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0
+        }
+      }
+    },
+    "targeted": [
+      {
+        "scope": "Independent assets gate positive/negative fixtures and CLI",
+        "command": "node --test scripts/verify-assets3d.test.mjs",
+        "tests": 95,
+        "passed": 95
+      },
+      {
+        "scope": "Existing B7 package bundle lifecycle/reference and B8 quality assets regression",
+        "files": [
+          "apps/server/test/plugin-bundles.test.ts",
+          "apps/client/test/qualityAssets.test.ts"
+        ],
+        "tests": 26,
+        "passed": 26
+      },
+      {
+        "scope": "Independent toolchain load-bearing pins",
+        "file": "apps/client/test/toolchainContract.test.ts",
+        "tests": 14,
+        "passed": 14
+      }
+    ],
+    "mutations": [
+      {
+        "name": "mip-rule",
+        "detected": true,
+        "exitCode": 1,
+        "source": "scripts/verify-assets3d.mjs",
+        "originalSha256": "41b355eaf61336c64212ae540cbe4244e5bab620448d091a6d73cfcef916cde0",
+        "logSha256": "aae92e116d9698843933a22c1c78a6cf8868215c95b16355d0905c08c29cd25f"
+      },
+      {
+        "name": "owner-boundary",
+        "detected": true,
+        "exitCode": 1,
+        "source": "apps/server/tools/plugin/assetReferences.ts",
+        "originalSha256": "7b96e14fe9ac109d211d9d3d1aada6ffdb3295b6ae07944d25b35762ac4035a5",
+        "logSha256": "19fda0cc5e81375dbd05c9dead3afa761aca94e79f8173b2e481eb8349c3db2e"
+      }
+    ],
+    "resolvedPrerequisites": [
+      "Rebuilt ignored UniFlex AOT outputs after upstream UI changes; the current base includes the Creator-generated StarLevel mirror meta in bbdd889f.",
+      "Initial full client run caught two missing independent command/test-chain pins; both were added and the 14-test toolchain suite passed.",
+      "Upstream e2368ad1 split current PSD text and nested component documents. Three conversion tests still expected the old inline structure. They now use two byte-identical repository-owned pre-split fixtures, with every functional assertion retained and no product art changed. All 71 UniFlex contract tests pass."
+    ],
+    "prerequisiteCommit": "3a5c2f01271e1eec701f71fa576017c041f47c22"
+  },
+  "evidence": [
+    {
+      "path": ".cache/stage3d/sc1-b5/verify-all-final.log",
+      "sha256": "0243558df1a9300ff6fc7c2c05586bfa5970e163791be25708a2130bbff3b525"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/asset-tests-final.log",
+      "sha256": "cb5e6474f8df9ed6612122cc4b809ca2236c59afb0251ef19dad83c292e53510"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/integration-tests.log",
+      "sha256": "376524c5f3ff24f2f5940fe89c4ce8067022ffddc1fc05621f10edbd7d438425"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/toolchain-tests.log",
+      "sha256": "061968c341e0d00e03644e38dbba03a2ccad5a6f5933777872d6c3296f5e7391"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/uniflex-contract-final.log",
+      "sha256": "d5517a59787976333619815a0a5f9e8c09564242640226eeb11d362887fb5ff3"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/server-tests.log",
+      "sha256": "52aa48804778ee5c2b21b5846c1982f46d28d0ebdfad1f27237c88d6ea9d9ef0"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/assets-report.json",
+      "sha256": "de41ceb02036c7d17df000be8276b356a0124f07195505c49338c6ad5f5b5fb9"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/creator-schema.json",
+      "sha256": "cf2970c949b1ce1346dcc3758e8b19cac17a058221017042e35cb6cb65c72e99"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/mutations.json",
+      "sha256": "e43428a6d410761fb6a5f3af078051327891f5e9acf3c147c8572ee7daa47632"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/mip-rule-mutation.log",
+      "sha256": "aae92e116d9698843933a22c1c78a6cf8868215c95b16355d0905c08c29cd25f"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/owner-boundary-mutation.log",
+      "sha256": "19fda0cc5e81375dbd05c9dead3afa761aca94e79f8173b2e481eb8349c3db2e"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/verify-all-isolated.log",
+      "sha256": "76811932b9b6fc1df16e65f95563c1bb5be005fa39af7bdff86b7b19eb81e187"
+    },
+    {
+      "path": ".cache/stage3d/sc1-b5/verify-all-before-psd-fixtures.log",
+      "sha256": "4066b888c04b24b944cab379c9b86ddf12ace811e3d78017553a81eb0f1b2fd3"
+    }
+  ],
+  "limits": [
+    "Creator evidence is installed schema/builtin identity inspection only. Existing B4/B7 runtime evidence remains separate; no new preview, frame-time, GPU or device-cache acceptance is claimed.",
+    "FBX exceptions validate pinned file identity, header and Creator import metadata; a full FBX scene decoder is not included.",
+    "License text and usage rights, custom effect color behavior and visual quality still require human review.",
+    "retainedSourceBinBytes is source BIN allocation, not measured total CPU memory."
+  ]
+}

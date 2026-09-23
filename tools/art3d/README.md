@@ -44,9 +44,9 @@ TEXCOORD_0 / TEXCOORD_1；蒙皮再带 JOINTS_0 / WEIGHTS_0，骨骼矩阵按 gl
 
 manifest 的 `generatedAssets` 记录生成来源、SHA256、尺寸／面数／动画结构；
 `namingAndTextureExceptions` 保留生成器对四个固定文件名及 64² PNG 的需求说明。
-实际 SC0 例外统一登记在 [sc0-asset-exceptions.json](sc0-asset-exceptions.json)，按精确路径、
-UUID 与文件 SHA 匹配；这份临时清单不是资产检查器。正式 `scripts/assets3d.config.json` 与
-SC1-B5 检查器尚未实现，后续按清单迁移，不能据此放宽业务资产规范。
+原 SC0 例外与证据保存在 [sc0-asset-exceptions.json](sc0-asset-exceptions.json)。
+SC1-B5 已迁移至正式 `scripts/assets3d.config.json`，由 `npm run verify:assets3d` 按精确路径、
+UUID、文件 SHA 及采样元数据身份执行；配置、授权映射与检查边界见 [assets3d.md](assets3d.md)。
 
 其中唯一采样例外是 `lightmaps/LightFX/output/LFX_Mesh_0000.png`：保留本次 Creator 3.8.8
 官方烘焙流程及默认导入得到的 `mipfilter:none`、`wrapModeS/T:repeat`。这不是 LightFX 对所有
@@ -106,4 +106,4 @@ inverse bind、骨骼权重和动画。测试含反向三角、丢 bind 平移�
 
 包工具已接入 bundle 精确所有权及 Creator 序列化 UUID / 子资产闭合检查。
 [bundle-probe/README.md](bundle-probe/README.md) 提供合成 kit → pack → 干净安装 → Creator 重导入 / 浏览器加载 →
-卸载邻包的可重复步骤。`bundle-fixture.ts` 只准备隔离验证数据，不改生产包；完整 `verify:assets3d` 留 SC1-B5。
+卸载邻包的可重复步骤。`bundle-fixture.ts` 只准备隔离验证数据，不改生产包；完整格式 / 导入 / 预算 / 授权检查已由 [SC1-B5 资产闸](assets3d.md) 接入。

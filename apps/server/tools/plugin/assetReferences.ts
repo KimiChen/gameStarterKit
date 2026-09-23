@@ -52,7 +52,8 @@ function json(bytes: Buffer, label: string): unknown {
 /** Engine decode-uuid.ts: preserve the leading two hex digits, decode ten base64 pairs, keep @id. */
 export function normalizeAssetUuid(raw: string): string {
   const parts = raw.split("@");
-  if (parts.length > 2 || (parts.length === 2 && !/^[A-Za-z0-9_-]+$/u.test(parts[1]))) fail(`非法子资产 UUID：${raw}`);
+  // HDR cube faces have two suffixes: image@cube@face (actual 3.8.8 subMetas).
+  if (parts.slice(1).some((part) => !/^[A-Za-z0-9_-]+$/u.test(part))) fail(`非法子资产 UUID：${raw}`);
   let base = parts[0];
   if (/^[0-9a-f]{2}[A-Za-z0-9+/]{20}$/u.test(base)) {
     let hex = base.slice(0, 2);
@@ -63,7 +64,7 @@ export function normalizeAssetUuid(raw: string): string {
     base = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
   if (!UUID.test(base)) fail(`非法资产 UUID：${raw}`);
-  return parts.length === 2 ? `${base}@${parts[1]}` : base;
+  return [base, ...parts.slice(1)].join("@");
 }
 
 /** Index actual top-level and subMeta UUIDs, not inferred possible subasset ids. */
@@ -75,10 +76,10 @@ export function createAssetIndex(files: ReadonlyMap<string, Buffer>, options: { 
     const parsed = json(bytes, metaPath);
     if (!object(parsed) || typeof parsed.uuid !== "string" || !UUID.test(parsed.uuid)) fail(`${metaPath} 缺少合法顶层 UUID`);
     const rootUuid = parsed.uuid;
-    const visit = (meta: Record<string, unknown>, label: string, subId?: string): void => {
+    const visit = (meta: Record<string, unknown>, label: string, subId?: string, parentUuid = rootUuid): void => {
       if (typeof meta.uuid !== "string" || typeof meta.importer !== "string") fail(`${label} 缺少 uuid/importer`);
       const uuid = normalizeAssetUuid(meta.uuid);
-      if (subId !== undefined && (uuid !== `${rootUuid}@${subId}` || meta.id !== subId)) fail(`${label} 子资产 id/UUID 与父资产不一致`);
+      if (subId !== undefined && (uuid !== `${parentUuid}@${subId}` || meta.id !== subId)) fail(`${label} 子资产 id/UUID 与父资产不一致`);
       if (index.has(uuid)) fail(`UUID 撞车：${uuid}（${index.get(uuid)?.metaPath} 与 ${label}）`);
       if (builtinUuids.has(uuid)) fail(`${label} 冒用引擎内置 UUID ${uuid}`);
       if (options.requireSources !== false && !files.has(source) && meta.importer !== "directory") fail(`${metaPath} 缺少实际资产文件 ${source}`);
@@ -87,7 +88,7 @@ export function createAssetIndex(files: ReadonlyMap<string, Buffer>, options: { 
       if (!object(meta.subMetas)) fail(`${label}.subMetas 非对象`);
       for (const [id, sub] of Object.entries(meta.subMetas)) {
         if (!object(sub)) fail(`${label}.subMetas.${id} 非对象`);
-        visit(sub, `${label}.subMetas.${id}`, id);
+        visit(sub, `${label}.subMetas.${id}`, id, uuid);
       }
     };
     visit(parsed, metaPath);

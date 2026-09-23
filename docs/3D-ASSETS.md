@@ -80,7 +80,7 @@
 | 坐标 | 米制、Y 上、右手系；静态物件枢轴在底部中心，角色枢轴在脚底；正面朝 `-Z`（Cocos `Node.forward`）；导入不缩放（`scale = 1`） |
 | 网格 | 三角化；单网格 ≤ 65k 顶点（16 位索引）；静态世界网格带 **UV2**（烘焙用，Cyberpunk 359 个材质 `HAS_SECOND_UV`），UV2 在 DCC 做（`generateLightmapUVNode:false`）；法线 / 切线随文件带（法线贴图需要切线） |
 | LOD 变体 | 主文件 = lod_0；`lod_1.glb`（≈ 1/4 面）/ `lod_2.glb`（≈ 1/10 面）由 `tools/art3d`（meshopt simplify）离线生成或美术手做；同目录、同材质槽；工具必须报告各档面数、包围盒和材质槽并验证贴图引用。蒙皮变体还须保留骨架 / joints / weights / 动画轨并校验骨骼数与动画时长；不能保真的输入显式失败，改走登记的手工作品，⛔ 静默丢弃动画。SC5-B1 必须产出并导入两份 LOD，运行时由 `EntityPool` 按档选择（3d.md §4） |
-| 导入选项（`.meta` `userData`，机检项） | `mountAllAnimationsOnPrefab: true`；`lods.enable: false`（LOD 由变体 + 档位管，⛔ 不用 Creator 内置 LOD）；静态网格 `allowMeshDataAccess: false`（工具场景需 CPU 读取时才开）；蒙皮网格保留 `true`：Creator 3.8.8 首次预烘焙播放须读取 JOINTS / WEIGHTS / POSITION 计算骨骼包围盒，关闭后会在 `Mesh.getBoneSpaceBounds` 抛错（SC0 实测；`mesh.ts` 的 setter 也明确只适用于静态网格）；蒙皮 CPU 数据计入资源预算；FBX：`legacyFbxImporter: false`、`smartMaterialEnabled: true`；`meshOptimizer / meshSimplify` 关（离线做）；`addVertexColor: false`（顶点色仅 slg 2D 地表那类显式需要时开） |
+| 导入选项（`.meta` `userData`，机检项） | `mountAllAnimationsOnPrefab: true`；`lods.enable: false`（LOD 由变体 + 档位管，⛔ 不用 Creator 内置 LOD）；静态网格 `allowMeshDataAccess: false`（工具场景需 CPU 读取时才开）；蒙皮网格保留 `true`：Creator 3.8.8 首次预烘焙播放须读取 JOINTS / WEIGHTS / POSITION 计算骨骼包围盒，关闭后会在 `Mesh.getBoneSpaceBounds` 抛错（SC0 实测；`mesh.ts` 的 setter 也明确只适用于静态网格）；蒙皮 CPU 数据计入资源预算；FBX：`legacyFbxImporter: false`、`smartMaterialEnabled: true`；`meshOptimize.enable / meshSimplify.enable` 关（Creator 3.8.8 实际字段名；旧文 `meshOptimizer` 已校正）（离线做）；`addVertexColor: false`（顶点色仅 slg 2D 地表那类显式需要时开） |
 | 面数预算（§15 冻结的作者态上限） | 世界地图实体近档 ≤ 3k 三角、远档 ≤ 300；建筑 / 地标 ≤ 10k；主角 ≤ 20k；同屏总量 ≤ 500k（移动 medium 档） |
 | 碰撞 | 渲染网格 ⛔ 不当碰撞体；需要物理时用盒 / 胶囊（Cyberpunk 0 个网格碰撞体），见 §10 |
 
@@ -106,7 +106,8 @@
 | 体积 | 单张 ≤ 4 MB png；kit `3d/textures/` 总量进 `art3d.config.json`（冻结上限 32 MB） |
 | 图集 | 特效小图集在 DCC / `tools/art3d` 拼成 1024²；⛔ 依赖 Creator 动态图集处理 3D 贴图 |
 
-SC0-B5 的唯一采样例外登记在 [sc0-asset-exceptions.json](../tools/art3d/sc0-asset-exceptions.json)：
+SC0-B5 的唯一采样例外由 [正式配置](../scripts/assets3d.config.json) 执行，
+[sc0-asset-exceptions.json](../tools/art3d/sc0-asset-exceptions.json) 保留原始证据：
 只允许该清单精确路径、ImageAsset / Texture2D UUID、PNG 与 `.meta` SHA 同时匹配的
 `LFX_Mesh_0000.png` 保留 `mipfilter:none`、`wrapModeS/T:repeat`，用于复现本次 Creator 3.8.8
 官方 LightFX 烘焙及默认导入的结果；这不是所有 lightmap 的通用规则。POT、min / mag、预算与
@@ -220,10 +221,11 @@ SC1-B8 的数据契约与示例见 [tools/art3d/quality.md](../tools/art3d/quali
 | 预算 | 读取包 `art3d.config.json`（框架用 `scripts/assets3d.config.json`）：单 GLB / PNG、全部贴图、lightmap 与包总量均须在配置限额内；外提图片和细分 bundle 必须计入同一包总量，重复引用只按实体文件计一次；运行时性能预算另由 `--perf` 提供证据。数字按 §15 冻结的政策上限；实际性能覆盖按 §15.2 与后续阶段证据判断 |
 | 授权覆盖 | kit / 插件必须存在 `art3d.config.json` 与 `art/3d/LICENSES.md`；授权台账覆盖每份源素材、转换产物、外提贴图与 LOD 的来源映射，引用不能悬空；只查存在 / 覆盖，许可是否允许用途仍归人工（§14） |
 
-SC0 的四个灰盒命名、64² 棋盘 PNG 尺寸与上述 LightFX 采样例外统一暂存于
-[sc0-asset-exceptions.json](../tools/art3d/sc0-asset-exceptions.json)。确定性灰盒 manifest 仍记录
-生成需求，不手改为实测通过；临时清单尚未接入自动资产闸。SC1-B5 须将其逐项迁移到正式配置并
-实现匹配和拒绝用例，⛔ 因清单存在就声称 `verify:assets3d` 已实现。
+SC0 的四个灰盒命名、64² 棋盘 PNG 尺寸与上述 LightFX 采样例外已迁移到
+[正式配置](../scripts/assets3d.config.json)，`verify:assets3d` 按精确身份执行并有拒绝用例。
+[原始记录](../tools/art3d/sc0-asset-exceptions.json) 保留证据与适用范围；确定性灰盒 manifest 仍记录
+生成需求，不手改为实测通过。配置形状、Creator 默认值、CPU 数据口径与授权映射见
+[资产闸说明](../tools/art3d/assets3d.md)；批次验收只在 3D-PLAN §8 回写。
 
 正例：合法 `.mtl / .hdr / .animgraph / .animask` 应通过白名单。反例必须逐项转红：PNG 改名 `.jpg`、删除 `.meta`、删掉必需 texture 子 `.meta`、`mipfilter: none` 未登记、压缩预设引用不存在、模型 `lods.enable:true` 未登记、GLB 内嵌 PNG / JPEG、图片 URI 指向另一包或远程地址、GLB 外部 buffer、授权漏一张外提贴图、下调预算到实际体积以下均失败。蒙皮须按实际 skin 与 JOINTS / WEIGHTS 属性识别，不能只看文件前缀；关闭蒙皮 `allowMeshDataAccess` 必须失败，静态网格开启而无精确工具用途例外也必须失败。混合静态 / 蒙皮 GLB 如受同一文件级开关影响，登记该文件的保留理由与 CPU 数据预算；导入报告中的 native buffer 字节数仅为数据量下界，不代表总 CPU 内存。另验证相邻包 `foo` / `foobar` 不互认所有权，细分 bundle 的命名冲突必须拒绝；这些反例分别由 SC1-B5 / B7 验收，实现覆盖与证据以 3D-PLAN §8 为准；本节规范不单独表示完整资产闸已交付。
 

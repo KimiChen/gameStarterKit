@@ -447,6 +447,27 @@
         "docs/SERVER.md",
         "docs/MMO.md"
       ]
+    },
+    {
+      "id": "assets3d-authoring-gate",
+      "category": "core",
+      "defaultEntry": "scripts/verify-assets3d.mjs",
+      "sourceOfTruth": "scripts/assets3d.config.json",
+      "wireBoundary": "apps/server/tools/plugin/assetReferences.ts",
+      "verification": [
+        {
+          "kind": "root",
+          "script": "verify:assets3d"
+        },
+        {
+          "kind": "root",
+          "script": "test:client"
+        }
+      ],
+      "docs": [
+        "docs/3D-ASSETS.md",
+        "tools/art3d/assets3d.md"
+      ]
     }
   ],
   "defaultModules": [

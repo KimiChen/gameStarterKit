@@ -110,6 +110,7 @@ npm run perf:client
 npm run verify:ecs
 npm run verify:vendor
 npm run verify:fgui
+npm run verify:assets3d
 npm run verify:protected-paths
 npm run verify:inventory
 npm run test:inventory

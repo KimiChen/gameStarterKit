@@ -120,7 +120,8 @@ for (const cls of ["plugin", "kit"] as const) {
 
 test("UUID normalization uses engine 22-character encoding and preserves subasset suffix", () => {
   assert.equal(normalizeAssetUuid("fcmR3XADNLgJ1ByKhqcC5Z@abcde"), "fc991dd7-0033-4b80-9d41-c8a86a702e59@abcde");
-  for (const invalid of ["missing", "fcmR3XADNLgJ1ByKhqcC5?", uuid("x") + "@", uuid("x") + "@abc@def"]) assert.throws(() => normalizeAssetUuid(invalid), /非法/u);
+  assert.equal(normalizeAssetUuid("fcmR3XADNLgJ1ByKhqcC5Z@b47c0@74afd"), "fc991dd7-0033-4b80-9d41-c8a86a702e59@b47c0@74afd");
+  for (const invalid of ["missing", "fcmR3XADNLgJ1ByKhqcC5?", uuid("x") + "@", uuid("x") + "@abc@@def"]) assert.throws(() => normalizeAssetUuid(invalid), /非法/u);
   assert.equal(CREATOR_BUILTINS.version, "3.8.8");
   for (const asset of CREATOR_BUILTINS.assets) assert.match(asset.sha256, /^[0-9a-f]{64}$/u);
 });

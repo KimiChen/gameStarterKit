@@ -166,6 +166,7 @@ WebPlatform**。要联调真实外部身份服务时，另行启动与当前契�
 | `npm run test:aggregate-chain-matrix` | 比对 verify-toolchain 的聚合链声明与真实 npm 执行序列 |
 | `npm run test:sync-mirror-matrix` | 比对 sync --check 判定与真实同步对镜像树的效果 |
 | `npm run test:toolchain-runtime-matrix` | 比对工具链声明与真实运行时 / 实际安装的依赖版本 |
+| `npm run verify:assets3d` | 校验 3D 资产格式、Creator 子资产与引用、导入设置、预算和授权覆盖 |
 | `npm run verify:perf` | 校验固定输入下的客户端性能基线结构和 checksum |
 | `npm run verify:mmo-fixture-matrix` | MMO 框架侧完成夹具矩阵：一次性检出里物化 kitfix / kitfixContent（只新增文件）跑 pack / install / codegen / sync / check / typecheck 与所有权分类；⛔ 不进 verify:core |
 | `npm run verify:kit-clean-install -- --kit <id>` | kit 干净树全链闭环：仓树 pack → 一次性检出删干净该 kit → 首装 → codegen / sync / 指纹 → 临时库 db:bootstrap 两遍（第二遍零 DDL）→ plugin check / test → 两端 typecheck；⛔ 不进 verify:core |

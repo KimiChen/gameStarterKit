@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "scope": "Exact framework SC0 fixtures only; temporary exception register, not an implemented asset checker.",
+  "scope": "Historical SC0 exact fixture exceptions and evidence; executable identities and rules now live in scripts/assets3d.config.json.",
   "recordedOn": "2026-09-22",
   "pathBase": "repository root",
   "matching": "All identity fields in an entry must match. No globs, directory exemptions, prefix exemptions, or automatic permission for changed bytes.",
   "formalHandoff": {
-    "status": "not-implemented",
+    "status": "migrated",
     "batch": "SC1-B5",
     "configuration": "scripts/assets3d.config.json",
     "checker": "scripts/verify-assets3d.mjs",
-    "requirement": "Migrate exact entries, implement their validation and rejection cases; do not claim an automatic gate before implementation."
+    "requirement": "Formal configuration/checker now enforce path, UUID, SHA and sampler identity; this record preserves the original evidence and viewing scope."
   },
   "exceptions": [
     {

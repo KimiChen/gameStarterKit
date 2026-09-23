@@ -10,7 +10,7 @@ export function resolveTexturePreset(builder, presetId, platform, astc) {
   return astc ? format : 'png';
 }
 export function verifyQualityPresets(builder) {
-  if (builder.textureCompressConfig?.genMipmaps === false) throw new Error('3D compressed textures require mipmaps');
+  if (builder.textureCompressConfig?.genMipmaps !== true) throw new Error('3D compressed textures require explicit mipmaps');
   for (const preset of ['3d-default', '3d-alpha']) for (const platform of texturePlatforms) {
     resolveTexturePreset(builder, preset, platform, true);
     resolveTexturePreset(builder, preset, platform, false);

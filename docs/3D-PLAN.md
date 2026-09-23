@@ -247,7 +247,7 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 | # | 细化 | 回写 |
 | --- | --- | --- |
 | P1 | MF9-B2 前置已满足；SC1-B3 新增保护路径、B9 修改输入接缝，各批按实际 diff 重钉锁（3D-14） | ✅ 3d.md §4 |
-| P2 | 新根命令 `verify:assets3d` 四处同批：脚本 / `package.json` `verify:core` 链 / CLAUDE.md 常用命令表 / `cp` 到 AGENTS.md（3D-15） | 3d.md §5.2 |
+| P2 | 新根命令 `verify:assets3d` 同批登记脚本、`package.json` `verify:core`、聚合链契约、README / CLAUDE / AGENTS 命令表及 inventory（3D-15）；反例随 `test:client` | ✅ 3d.md §5 资产闸行与命令登记说明；SC1-B5 |
 | P3 | `lodBands` 落 `apps/shared/src/logic/`，slg 的 `slgLodForScaleStable` 改薄包装（3D-16） | 3d.md §4 表 |
 | P4 | `Stage3DPort.acquireGlobals(owner, patch)` 与舞台共用 token 覆盖表，乱序删除后重算（3D-17 / 3D-23） | ✅ 3d.md §3.2；实现 SC1-B2 |
 | P5 | 性能计数器仍用 gfx.Device；原始帧间隔改为真实帧回调 `performance.now()` 差值 ms，root.frameTime 仅辅助、frameCount 不作单调序号（3D-45 替代 3D-18 的采样口径） | 3d.md §4 / §7；SC0-B3 / SC3-B5 |
@@ -271,12 +271,14 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
-- [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [ ] SC1-B5 [ ] SC1-B6
+- [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [ ] SC1-B6
 - [ ] SC2-B1 [ ] SC2-B2 [ ] SC2-B3 [ ] SC2-B4 [ ] SC2-B5
 - [ ] SC3-B1 [ ] SC3-B2 [ ] SC3-B3 [ ] SC3-B4 [ ] SC3-B5 [ ] SC3-B6
 - [ ] SC4-B1 [ ] SC4-B2 [ ] SC4-B3 [ ] SC4-B4
 - [ ] SC5-B1 [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [ ] slg 消费（随 SC2 / SC3）
+
+- 2026-09-23 SC1-B5 完成：新增只读 `verify:assets3d`，覆盖框架夹具、包 3D 数据与精确归属的 bundle，校验格式 / GLB 结构 / importer 与 subMeta、贴图与压缩预设、模型导入 / 命名 / 冻结预算和授权来源链；直接复用 B7 引用闭合核心，并按 Creator 3.8.8 实际 HDR 元数据补齐 `image@cube@face` 两级子资产。SC0 六条例外已迁入正式配置，逐项钉文件 / UUID / 哈希，内置白名单未扩大。命令、verify:core、test:client、独立工具链承重钉与能力登记均已接入。95 项资产反例 / 正例、26 项 B7/B8 回归、14 项工具链测试与两项变异均通过；最终 `verify:all` 全过（Node 26.5.0；客户端 1104 / UniFlex 契约 71 / 服务端 1375 项，含两套客户端类型检查）。上游 PSD 拆分后的三项旧结构测试改用独立历史夹具，断言未减，基线修复单独提交。详见[验收摘要](perf/stage3d/2026-09-23-sc1-b5.json)与[配置说明](../tools/art3d/assets3d.md)。本批 Creator 证据限于实际元数据与内置文件身份核对，CPU 源 BIN 分配不等同于总内存实测；下一批 B6，SC1 未退出。
 
 - 2026-09-23 SC1-B7 完成：包工具全链接入 `kit/plugin-<id>[-<map>]` 精确所有权与根 `.meta`，拒绝宿主现有根的大小写别名冲突；pack / install 落盘前及 check 共用顶层 / subMeta UUID、压缩 UUID 和序列化引用闭合核心。同包多 bundle 可互引，悬空、缺子资产、跨包 / 宿主引用均拒绝，`requires.kits` 不授权内部资产；内置例外钉 Creator 3.8.8 实际文件与 meta 哈希。宿主 `package3d` profile 已由 Creator 读取验证（miniGame remote，native/web 本地），AssetAddress 固定 bundle + path。合成 kit 的 23 文件制品在无 Library / node_modules 的干净工程安装，移走作者原路径后首次导入、浏览器实际加载 Prefab → Mesh / Material → Texture 与 AnimationGraph → Clip / Mask 全过；卸载 9 文件相邻包后重新加载通过，18 个实际资产 / 子资产、14 条引用和所有锁定文件哈希保持一致。新增 22 项测试、两项变异（分别打红 2 / 9 项）、两套客户端类型检查及最终 `verify:all` 全过（Node 24.19.0；客户端 990 / UniFlex 契约 63 / 服务端 1372 项）；按用户要求先提交并快进合入 `new`（285ce1d2），随后全量复验通过，最新地图基线上的 43 项相关回归也通过。详见[验收摘要](perf/stage3d/2026-09-23-sc1-b7.json)与[重跑步骤](../tools/art3d/bundle-probe/README.md)。下一批 B5；完整资产格式 / GLB / 压缩 / 预算 / 授权闸、完整平台构建与微信真机缓存不在本批验收范围，SC1 未退出。
 
