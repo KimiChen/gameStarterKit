@@ -249,6 +249,7 @@ export function createHeroDetailPreview(parent: Node) {
     };
     return {
         ready: runtime.start(HeroDetail, {
+            stars: 6,
             onBack: dispose,
             onPrev: () => console.info("[UniFlex HeroDetail] prev"),
             onNext: () => console.info("[UniFlex HeroDetail] next"),
@@ -720,6 +721,7 @@ export function createHeroStarUpgradePreview(parent: Node) {
     };
     return {
         ready: runtime.start(HeroStarUpgrade, {
+            stars: 6,
             onClose: dispose,
             onUpgrade: () => console.info("[UniFlex HeroStarUpgrade] upgrade"),
             onObtainFragments: () => console.info("[UniFlex HeroStarUpgrade] obtain-fragments"),

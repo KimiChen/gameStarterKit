@@ -64,6 +64,16 @@ import {
 
 export type PreviewNavigate = (target: string) => void;
 
+/** 卡牌点进详情时带上的星级。直接打开详情时用 6：满星再加 1 星。 */
+let previewHeroStars = 6;
+
+function previewStarCount(query: URLSearchParams | null): number {
+    const raw = query?.get("stars");
+    if (raw == null || raw === "") return previewHeroStars;
+    const value = Number(raw);
+    return Number.isFinite(value) ? Math.max(0, Math.min(25, Math.floor(value))) : previewHeroStars;
+}
+
 export type PreviewHandle = {
     ready: Promise<void>;
     dispose(): void;
@@ -239,7 +249,10 @@ async function startPreviewScreen(
         case "hero":
             await runtime.start(HeroScreen, {
                 onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
-                onSelectCard: () => navigate("hero-detail"),
+                onSelectCard: (_id, stars) => {
+                    previewHeroStars = stars ?? 0;
+                    navigate("hero-detail");
+                },
                 onSelectBond: (bondId) => console.info("[UniFlex HeroScreen] bond", bondId),
                 onBondDetail: (bondId) => console.info("[UniFlex HeroScreen] bond-detail", bondId),
                 onNav: (slot) => onPreviewMainNav(slot, "[UniFlex HeroScreen] nav", back),
@@ -247,6 +260,7 @@ async function startPreviewScreen(
             return;
         case "hero-detail":
             await runtime.start(HeroDetail, {
+                stars: previewStarCount(query),
                 onBack: back,
                 onPrev: () => console.info("[UniFlex HeroDetail] prev"),
                 onNext: () => console.info("[UniFlex HeroDetail] next"),
@@ -260,6 +274,7 @@ async function startPreviewScreen(
             return;
         case "hero-star-upgrade":
             await runtime.start(HeroStarUpgrade, {
+                stars: previewStarCount(query),
                 onClose: back,
                 onUpgrade: () => console.info("[UniFlex HeroStarUpgrade] upgrade"),
                 onObtainFragments: () => console.info("[UniFlex HeroStarUpgrade] obtain-fragments"),

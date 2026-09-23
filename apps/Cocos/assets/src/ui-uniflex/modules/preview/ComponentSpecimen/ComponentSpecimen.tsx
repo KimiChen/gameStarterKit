@@ -22,6 +22,7 @@ import { RewardItem } from '../../../gamecomponents/item/RewardItem';
 import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
 import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
 import { StarRow } from '../../../gamecomponents/star/StarRow';
+import { StarLevel } from '../../../gamecomponents/star/StarLevel';
 import { TechIcon } from '../../../gamecomponents/tech/TechIcon';
 import { themes } from '../../../themes/active';
 
@@ -30,7 +31,6 @@ const TABS: readonly TabBarItem[] = [
     { id: 'two', label: '状态', notice: true },
     { id: 'three', label: '资源' },
 ];
-const STAR_LEFTS = [0, 48, 96, 144, 192];
 const QUANTITY_LAYOUT = { width: 674, trackWidth: 365, plusLeft: 460, qtyLeft: 553 };
 const GEM_REWARD = { id: 'gem', itemId: 'gem', count: '30000', left: 0, top: 0 };
 const LEAF_REWARD = { id: 'leaf', itemId: 'leaf', count: '30000', left: 211, top: 0 };
@@ -109,6 +109,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showSlot = part === 'cmp-slot';
     const showResource = part === 'cmp-resource';
     const showStars = part === 'cmp-stars';
+    const showStarRow = part === 'cmp-star-row';
     const showTech = part === 'cmp-tech';
     const showReward = part === 'cmp-reward';
     const showHeader = part === 'cmp-header';
@@ -169,7 +170,15 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
             <ResourceCounter theme={theme} icon={gemIcon} left={0} top={0} value="12.8K" />
         </view>
         <view visible={showStars} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
-            <StarRow theme={theme} value={4} lefts={STAR_LEFTS} top={0} width={40} height={40} />
+            <view style={{ position: 'absolute', left: 0, top: 0, width: 68, height: 64 }}><StarLevel value={0} /></view>
+            <view style={{ position: 'absolute', left: 84, top: 0, width: 68, height: 64 }}><StarLevel value={1} /></view>
+            <view style={{ position: 'absolute', left: 168, top: 0, width: 68, height: 64 }}><StarLevel value={2} /></view>
+            <view style={{ position: 'absolute', left: 252, top: 0, width: 68, height: 64 }}><StarLevel value={3} /></view>
+            <view style={{ position: 'absolute', left: 336, top: 0, width: 68, height: 64 }}><StarLevel value={4} /></view>
+            <view style={{ position: 'absolute', left: 420, top: 0, width: 68, height: 64 }}><StarLevel value={5} /></view>
+        </view>
+        <view visible={showStarRow} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <StarRow value={6} />
         </view>
         <view visible={showTech} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <TechIcon left={0} top={0} kind="heart" level="1/3" />

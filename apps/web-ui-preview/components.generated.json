@@ -348,6 +348,11 @@
       "source": "apps/client/src/ui-uniflex/modules/shop/Shop/ShopPanel.tsx"
     },
     {
+      "key": "StarLevel",
+      "rootName": "StarLevel",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/star/StarLevel.tsx"
+    },
+    {
       "key": "StarRow",
       "rootName": "StarRow",
       "source": "apps/client/src/ui-uniflex/gamecomponents/star/StarRow.tsx"

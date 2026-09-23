@@ -28,12 +28,84 @@
       "sha256": "4066a7cb871ef0fecb28aa411b506ca16999b406b8c1e784afc10f5137e58f17"
     },
     {
+      "id": "ui/star-upgrade/star-1",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_1.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "c3ad2a1dfa5f417981065f7d9e4f44b817ddb4548e16cca83ab9858d44a9787f"
+    },
+    {
+      "id": "ui/star-upgrade/star-2",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_2.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "5e91ea41a23d8e48d69def34273f3aa1e517bb58019ba8547839db216151dd05"
+    },
+    {
+      "id": "ui/star-upgrade/star-3",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_3.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "452b33e3e1a70d9fa48d7107087c1dcd9cc9c9ee3e3a673100a9add997f32499"
+    },
+    {
+      "id": "ui/star-upgrade/star-4",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_4.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "ed3c6ff4910b70d6a19f153e9533b00c625bbdecabc85f3a8dc4702036ca4e3b"
+    },
+    {
       "id": "ui/star-upgrade/star-full",
       "kind": "image",
       "file": "assets/star_upgrade_star_full.png",
       "width": 68,
       "height": 64,
       "sha256": "5b8d76667662961842e5a6079fb799818b59e49983bc7e63a4f8c8be0039847c"
+    },
+    {
+      "id": "ui/star-upgrade/star-point-1",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_point_1.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "21468d5640e09b1f07990037f0bbe15061e1e139c54b80a0ec8f59465803f017"
+    },
+    {
+      "id": "ui/star-upgrade/star-point-2",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_point_2.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "be7b0642e87fa21b52eb9228f915236219121581b0e40d377988a51094e83df2"
+    },
+    {
+      "id": "ui/star-upgrade/star-point-3",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_point_3.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "1a41d0c180f904599101fe36df005ba6d6d9b8aacac9c8af5f2102c860a236e2"
+    },
+    {
+      "id": "ui/star-upgrade/star-point-4",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_point_4.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "cd07a03c5b15aa3a85b50f33121f1e554087731513c2f05535df0d0e043487e4"
+    },
+    {
+      "id": "ui/star-upgrade/star-point-5",
+      "kind": "image",
+      "file": "assets/star_upgrade_star_point_5.png",
+      "width": 68,
+      "height": 64,
+      "sha256": "63a30eb249a3005002b727e1442102ed251a938935de6704b286f8fc4d3395f2"
     },
     {
       "id": "ui/star-upgrade/progress-track",

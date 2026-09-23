@@ -8,6 +8,13 @@ import type { ScreenEntry } from "./screens";
 
 const previewParams = new URLSearchParams(location.search);
 
+function previewStars(fallback: number): number {
+    const raw = previewParams.get("stars");
+    if (raw == null || raw === "") return fallback;
+    const value = Number(raw);
+    return Number.isFinite(value) ? Math.max(0, Math.min(25, Math.floor(value))) : fallback;
+}
+
 export type SpecimenSkin = "classic" | "midnight";
 
 export function specimenSkin(value: string | null): SpecimenSkin {
@@ -169,7 +176,9 @@ export async function startPreview(session: PreviewSession, entry: ScreenEntry):
         case "hero":
             await session.runtime.start(HeroScreen, {
                 onRecruit: () => console.info("[UniFlex HeroScreen] recruit"),
-                onSelectCard: () => { location.href = "?ui=hero-detail"; },
+                onSelectCard: (_id, stars) => {
+                    location.href = `?ui=hero-detail&stars=${stars ?? 0}`;
+                },
                 onSelectBond: (id) => console.info("[UniFlex HeroScreen] bond", id),
                 onBondDetail: (id) => console.info("[UniFlex HeroScreen] bond-detail", id),
                 onNav: (slot) => onPreviewMainNav(slot, "[UniFlex HeroScreen] nav", session.back),
@@ -177,6 +186,7 @@ export async function startPreview(session: PreviewSession, entry: ScreenEntry):
             return;
         case "hero-detail":
             await session.runtime.start(HeroDetail, {
+                stars: previewStars(6),
                 onBack: session.back,
                 onPrev: () => console.info("[UniFlex HeroDetail] prev"),
                 onNext: () => console.info("[UniFlex HeroDetail] next"),
@@ -190,6 +200,7 @@ export async function startPreview(session: PreviewSession, entry: ScreenEntry):
             return;
         case "hero-star-upgrade":
             await session.runtime.start(HeroStarUpgrade, {
+                stars: previewStars(6),
                 onClose: session.back,
                 onUpgrade: () => console.info("[UniFlex HeroStarUpgrade] upgrade"),
                 onObtainFragments: () => console.info("[UniFlex HeroStarUpgrade] obtain-fragments"),

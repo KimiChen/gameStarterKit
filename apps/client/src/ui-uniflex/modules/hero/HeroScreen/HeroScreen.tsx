@@ -23,7 +23,7 @@ export interface HeroScreenParams {
     readonly bondMembers?: readonly HeroBondMember[];
     readonly nav?: MainNavSlot;
     readonly onRecruit?: () => void;
-    readonly onSelectCard?: (id: string) => void;
+    readonly onSelectCard?: (id: string, stars?: number) => void;
     readonly onSelectBond?: (id: string) => void;
     readonly onBondDetail?: (id: string) => void;
     readonly onNav?: (slot: MainNavSlot) => void;

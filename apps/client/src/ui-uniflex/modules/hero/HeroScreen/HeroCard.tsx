@@ -1,7 +1,12 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef, type ImageRef } from '../../../../kits/uniflex/api/core/index';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
-import { StarRow } from '../../../gamecomponents/star/StarRow';
+import { STAR_ROW_HEIGHT, STAR_ROW_WIDTH, StarRow } from '../../../gamecomponents/star/StarRow';
+
+/** 卡牌星槽宽 155。整排 411 按中心缩到槽内，视觉落在 left 8、top 205。 */
+const CARD_STAR_SCALE = 0.377;
+const CARD_STAR_LEFT = -120;
+const CARD_STAR_TOP = 185;
 
 export type HeroCardQuality = 'purple' | 'green' | 'red' | 'yellow' | 'blue';
 export type HeroCardClass = 'shield' | 'sword' | 'anchor';
@@ -18,8 +23,6 @@ export interface HeroCardProps {
     readonly team?: string;
     readonly onClick?: () => void;
 }
-
-const STAR_LEFTS = [8, 39, 71, 102, 133] as const;
 
 export const HeroCard = defineComponent<HeroCardProps>((p) => {
     const quality = p.quality;
@@ -40,9 +43,6 @@ export const HeroCard = defineComponent<HeroCardProps>((p) => {
     const classAnchor = imageRef('ui/hero/class-anchor');
     const classIcon = classId === 'sword' ? classSword : classId === 'anchor' ? classAnchor : classShield;
     const stars = p.stars ?? 0;
-    const starFilled = imageRef('ui/hero/star-filled');
-    const starEmpty = imageRef('ui/hero/star-empty');
-    const starLefts = STAR_LEFTS;
     const fillWidth = p.fillWidth ?? 99;
     const fragments = p.fragments ?? '9/10';
     const unowned = !owned;
@@ -71,8 +71,9 @@ export const HeroCard = defineComponent<HeroCardProps>((p) => {
                 outlineColor: '#000000', outlineWidth: 2, horizontalAlign: 'right', verticalAlign: 'center' }} />
         <image visible={owned} source={imageRef('ui/hero/upgrade')}
             style={{ position: 'absolute', left: 126, top: 167, width: 39, height: 38 }} />
-        <StarRow visible={owned} filled={starFilled} empty={starEmpty} value={stars}
-            lefts={starLefts} top={205} width={30} height={28} />
+        <view visible={owned} style={{ position: 'absolute', left: CARD_STAR_LEFT, top: CARD_STAR_TOP, width: STAR_ROW_WIDTH, height: STAR_ROW_HEIGHT, scale: CARD_STAR_SCALE }}>
+            <StarRow value={stars} />
+        </view>
         <view visible={showTeam} style={{ position: 'absolute', left: 127, top: 0, width: 35, height: 44 }}>
             <image source={imageRef('ui/hero/team-short')} style={{ position: 'absolute', width: 35, height: 44 }} />
             <text value={team} style={{ position: 'absolute', width: 35, height: 32,

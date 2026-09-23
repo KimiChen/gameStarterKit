@@ -117,7 +117,7 @@ export const HeroDetail = defineView<HeroDetailParams | void>({ zIndex: 'window'
                             font: fontRef('fonts/regular', 700), fontSize: 26, color: '#3F3254', bold: true }} />
                 </view>
             </view>
-            <HeroStarUpgradePanel visible={popup === 'star'} stars={params.stars ?? 1}
+            <HeroStarUpgradePanel visible={popup === 'star'} stars={params.stars ?? 0}
                 onClose={() => setPopup('none')}
                 onUpgrade={() => params.onConfirmStarUpgrade?.()}
                 onObtainFragments={() => params.onObtainFragments?.()}

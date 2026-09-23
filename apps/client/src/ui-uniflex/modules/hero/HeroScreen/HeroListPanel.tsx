@@ -19,7 +19,7 @@ export interface HeroCardItem {
 export interface HeroListPanelProps {
     readonly visible?: boolean;
     readonly cards: readonly HeroCardItem[];
-    readonly onSelectCard?: (id: string) => void;
+    readonly onSelectCard?: (id: string, stars?: number) => void;
     readonly onFilter?: (id: HeroFilterId) => void;
 }
 
@@ -54,7 +54,7 @@ export const HeroListPanel = defineComponent<HeroListPanelProps>((p) => {
                 style={{ position: 'absolute', left: 25, top: 169, width: 696, height: 923 }}>
                 {(item) => <HeroCard quality={item.quality} classId={item.classId} portrait={item.portrait} owned={item.owned}
                     level={item.level} fragments={item.fragments} fillWidth={item.fillWidth}
-                    stars={item.stars} team={item.team} onClick={() => p.onSelectCard?.(item.id)} />}
+                    stars={item.stars} team={item.team} onClick={() => p.onSelectCard?.(item.id, item.stars ?? 0)} />}
             </VirtualList>
             <HeroFilterBar selected={filter} onSelect={selectFilter} />
         </view>

@@ -22,7 +22,8 @@ import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
 import { RewardItem } from '../../../gamecomponents/item/RewardItem';
 import { MainNav, type MainNavSlot } from '../../../gamecomponents/navigation/MainNav';
 import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounter';
-import { StarRow } from '../../../gamecomponents/star/StarRow';
+import { STAR_ROW_HEIGHT, STAR_ROW_WIDTH, StarRow } from '../../../gamecomponents/star/StarRow';
+import { StarLevel } from '../../../gamecomponents/star/StarLevel';
 import { TECH_ICON_HEIGHT, TECH_ICON_WIDTH, TechIcon } from '../../../gamecomponents/tech/TechIcon';
 import { themes, type ComponentTheme, type ThemeName } from '../../../themes/active';
 
@@ -30,7 +31,7 @@ const PAGE_WIDTH = 750;
 const PAGE_HEIGHT = 1424;
 const HEADER_HEIGHT = 188;
 const SCROLL_HEIGHT = PAGE_HEIGHT - HEADER_HEIGHT;
-const CONTENT_HEIGHT = 2780;
+const CONTENT_HEIGHT = 2888;
 const SECTION_WIDTH = 710;
 const INNER_WIDTH = 674;
 const SECTION_GAP = 24;
@@ -52,7 +53,6 @@ const TABS: readonly TabBarItem[] = [
     { id: 'two', label: '状态', notice: true },
     { id: 'three', label: '资源' },
 ];
-const STAR_LEFTS = [0, 48, 96, 144, 192];
 
 export interface ComponentGalleryParams {
     readonly onBack: () => void;
@@ -251,8 +251,28 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                                 <ResourceCounter theme={theme} icon={gemIcon}
                                     left={0} top={0} value="12.8K" />
                             </view>
-                            <view style={{ width: 240, height: 40 }}>
-                                <StarRow theme={theme} value={4} lefts={STAR_LEFTS} top={0} width={40} height={40} />
+                            <view style={{ position: 'relative', width: 488, height: 64 }}>
+                                <view style={{ position: 'absolute', left: 0, top: 0, width: 68, height: 64 }}>
+                                    <StarLevel value={0} />
+                                </view>
+                                <view style={{ position: 'absolute', left: 84, top: 0, width: 68, height: 64 }}>
+                                    <StarLevel value={1} />
+                                </view>
+                                <view style={{ position: 'absolute', left: 168, top: 0, width: 68, height: 64 }}>
+                                    <StarLevel value={2} />
+                                </view>
+                                <view style={{ position: 'absolute', left: 252, top: 0, width: 68, height: 64 }}>
+                                    <StarLevel value={3} />
+                                </view>
+                                <view style={{ position: 'absolute', left: 336, top: 0, width: 68, height: 64 }}>
+                                    <StarLevel value={4} />
+                                </view>
+                                <view style={{ position: 'absolute', left: 420, top: 0, width: 68, height: 64 }}>
+                                    <StarLevel value={5} />
+                                </view>
+                            </view>
+                            <view style={{ position: 'relative', width: STAR_ROW_WIDTH, height: STAR_ROW_HEIGHT }}>
+                                <StarRow value={6} />
                             </view>
                         </view>
                         <view style={{ width: INNER_WIDTH, flexDirection: 'row', flexWrap: 'wrap', gap: ITEM_GAP, alignItems: 'center' }}>

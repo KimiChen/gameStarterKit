@@ -3,7 +3,7 @@ import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ConfirmButton } from '../../../components/button/ConfirmButton';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
-import { StarRow } from '../../../gamecomponents/star/StarRow';
+import { STAR_ROW_HEIGHT, STAR_ROW_WIDTH, StarRow } from '../../../gamecomponents/star/StarRow';
 import { HeroStarAttributeRow, type HeroStarAttributeRowProps } from './HeroStarAttributeRow';
 
 export interface HeroStarAttribute extends Omit<HeroStarAttributeRowProps, 'striped'> {
@@ -13,6 +13,7 @@ export interface HeroStarAttribute extends Omit<HeroStarAttributeRowProps, 'stri
 export interface HeroStarUpgradePanelProps {
     readonly visible?: boolean;
     readonly title?: string;
+    /** Total star level, 0–25. StarRow splits it across the five stars. */
     readonly stars?: number;
     readonly combatPower?: string;
     readonly powerGain?: string;
@@ -28,11 +29,19 @@ export interface HeroStarUpgradePanelProps {
 
 const EMPTY_ATTRIBUTE: HeroStarAttribute = { name: '', current: '', next: '' };
 
-const starSlots = [148, 234, 320, 405, 491] as const;
+const DEFAULT_ATTRIBUTES: readonly HeroStarAttribute[] = [
+    { name: '攻击力', current: '44444', next: '44444' },
+    { name: '攻击力', current: '44444', next: '44444' },
+    { name: '攻击力', current: '44444', next: '44444' },
+    { name: '攻击力', current: '44444', next: '44444' },
+];
+
+const STAR_SLOT_LEFT = 148;
+const STAR_SLOT_TOP = 123;
 
 export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((p) => {
-    const stars = Math.max(0, Math.min(5, p.stars ?? 1));
-    const attributes = p.attributes ?? [];
+    const stars = p.stars ?? 0;
+    const attributes = p.attributes ?? DEFAULT_ATTRIBUTES;
     const attribute0 = attributes[0] ?? EMPTY_ATTRIBUTE;
     const attribute1 = attributes[1] ?? EMPTY_ATTRIBUTE;
     const attribute2 = attributes[2] ?? EMPTY_ATTRIBUTE;
@@ -43,17 +52,15 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
     const progressTrack = imageRef('ui/star-upgrade/progress-track');
     const progressFill = imageRef('ui/star-upgrade/progress-fill');
     const rows = [334, 389, 444, 499] as const;
-    const starEmpty = imageRef('ui/star-upgrade/star-empty');
-    const starFull = imageRef('ui/star-upgrade/star-full');
-    const starLefts = starSlots;
     return (
         <view name="HeroStarUpgrade" visible={p.visible !== false}
             style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1334 }}>
             <PopupFrame title={p.title ?? '升星'} left={21} top={232} width={708} height={870}
                 onClose={p.onClose} />
             <view style={{ position: 'absolute', left: 21, top: 232, width: 708, height: 870 }}>
-                <StarRow filled={starFull} empty={starEmpty} value={stars}
-                    lefts={starLefts} top={123} width={68} height={64} />
+                <view style={{ position: 'absolute', left: STAR_SLOT_LEFT, top: STAR_SLOT_TOP, width: STAR_ROW_WIDTH, height: STAR_ROW_HEIGHT }}>
+                    <StarRow value={stars} />
+                </view>
                 <image source={imageRef('ui/star-upgrade/power')}
                     style={{ position: 'absolute', left: 120, top: 219, width: 469, height: 55, sizeMode: 'sliced' }} />
                 <view style={{ position: 'absolute', left: 261, top: 219, width: 255, height: 55 }}>
