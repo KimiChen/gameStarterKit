@@ -12,6 +12,7 @@
 3. **Action**：在 `src/modules/<模块>/action/Action<域><动作>.ts` 里继承 `ActionUser`，只做业务规则。
    协议真源是 schema，⛔ 不要再往 `src/modules/*/*C2S.ts` 手写协议声明 —— 生成器已不发现它们
    （只保留 `src/runtime/protocol/C2S/` 这组框架级兼容锚点，由 `proto.json5` 与兼容基线钉住）。
+   需要进入 Task Worker 或改变默认玩家串行组时，按下文“Action 进程与串行声明”显式实现两个方法。
 4. **Bean**：在 `User`（或对应模块 Bean）上加字段。默认 `SaveType.All` 即同时落 Redis 与上网；
    只服务服务端时序的内部字段用 `@OnlyRedis`（`SaveType.ForRedis`），它们**不会**出现在同步载荷里。
 
@@ -46,6 +47,36 @@ Redis，或自己拼一份增量数据。
 - `IActionLogic<Req, Res>` 可以为独立 Action 显式声明请求和响应；不要用 `any` 传播业务数据类型。
 - `AsyncReturn` 是可判别联合：先判断 `isSucc`，成功分支读取 `res`，失败分支读取 `errMsg` 或错误对象。
 - `MessageHelper.syncDoFunc` 接受同步或异步函数，并在完整 Action 上下文内等待其结束；脱离上下文的业务写入必须通过此类入口安排。
+
+### Action 进程与串行声明
+
+`getTaskGroupId` 与 `getBindId` 在 `ServerTask`、`actionBefore` 和 Bean 加载之前依次执行。前者只选择
+执行进程，后者只选择该进程内的串行队列：
+
+| 业务所有权 | `getTaskGroupId` | `getBindId` |
+| --- | --- | --- |
+| 玩家 Bean | 不实现，或返回 `undefined` / `null` / `-1` | 不实现，默认使用可信 `uid` |
+| 公会、房间等非玩家资源 | 返回稳定资源分片 ID | 返回稳定资源 ID |
+| 同一 Task Worker 上的多个独立资源 | 返回相同分片 ID | 各自返回资源 ID |
+
+- `taskGroupId` 为非负整数时，目标槽位是 `workerNum + taskGroupId % taskWorkerNum`；`0` 是有效值。
+- `bindId` 的 `0` 也是有效串行组；空值回退有效 `uid`，没有有效 `uid` 时不分组。
+- 同一份可写资源的所有入口必须返回相同的 `taskGroupId` 和 `bindId`，否则无法保证跨请求串行。
+- 两个方法只能读取可信身份、已校验请求或只读索引；不要加载或修改业务 Bean，也不要执行每日重置等业务逻辑。
+- Task Worker 不得提交玩家 Bean。一个基类同时承载玩家写入和公共资源写入时，由具体 Action 声明调度，避免在基类统一转去 Task Worker。
+- 跨进程请求会透传首次解析结果；目标进程及其同步嵌套调用不得重新计算。
+
+```ts
+export class ActionGuildResetGift extends ActionGuild {
+    async getTaskGroupId(call: ApiCall<ReqGuildResetGift>): Promise<number> {
+        return call.req.guildId
+    }
+
+    async getBindId(call: ApiCall<ReqGuildResetGift>): Promise<number> {
+        return call.req.guildId
+    }
+}
+```
 
 ## 事件
 

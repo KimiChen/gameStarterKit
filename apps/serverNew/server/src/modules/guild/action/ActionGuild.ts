@@ -1,4 +1,4 @@
-import { ApiCall, IActionLogic, UserOnlineMgr, UtilTime, getServerIdByUid, timestamp } from '@arthropoda/game-engine'
+import { IActionLogic, UserOnlineMgr, UtilTime, getServerIdByUid, timestamp } from '@arthropoda/game-engine'
 import { UserTextValidation } from '../../../modules/user/rules/UserTextValidation'
 import { LocalAction } from '../../../runtime/action/LocalAction'
 import { GameRandom } from '../../../runtime/random/GameRandom'
@@ -9,7 +9,6 @@ import { ActionUserQuitGuild } from '../../user/action/ActionUserQuitGuild'
 import { ActionUser } from '../../user/action/ActionUser'
 import { UserProfileFormatter } from '../../user/action/UserProfileFormatter'
 import { User } from '../../user/bean/User'
-import { UserBaseRef } from '../../user/ref/UserBaseRef'
 import { GuildErrors } from '../GuildErrors'
 import { Guild } from '../bean/Guild'
 import { GuildMemberBean } from '../bean/GuildMemberBean'
@@ -33,19 +32,6 @@ interface GuildProfilePatch {
 export class ActionGuild extends ActionUser implements IActionLogic {
     setUser(user: User) {
         this._user = user
-    }
-
-    async getTaskGroupId(call: ApiCall): Promise<number | undefined> {
-        if (!call.uId) {
-            return undefined
-        }
-        const user = await UserBaseRef.load(call.uId)
-        return user?.guild ? user.guild : undefined
-    }
-
-    async getBindId(call: ApiCall): Promise<number | undefined> {
-        // 复用入口先解析的公会 ID，避免两次读取时归属变化造成路由和串行组不一致。
-        return call.taskGroupId ?? (call.uId > 0 ? call.uId : undefined)
     }
 
     static GUILD_GIFT = 'guildGift'
