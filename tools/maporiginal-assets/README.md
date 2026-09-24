@@ -91,7 +91,7 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 无关导入选项，但会按 `texture-policy.json` 统一压缩预设、`mipfilter:none` 与透明 RGB 保留。
 手动改某张 `.meta` 不是持久配置；新增/调整地图图片时先修改策略，再安装和运行 `--check`。
 `builder.json` 的 `maporiginal-color` 预设必须与策略相符，PNG quality=100；3D 预设与全局 mip 开关独立。
-压缩候选不能仅凭整图误差转正；现行限值与未覆盖设备见优化文档 §9。
+压缩候选不能仅凭整图误差转正；现行限值与发布验证记录见优化文档 §9。
 
 ```bash
 python3 tools/maporiginal-assets/measure_compression.py --encoder /path/to/Creator/tools/astc-encoder/astcenc --out .cache/mapo-compression/trials
@@ -110,9 +110,9 @@ node tools/creator-preview/probe-maporiginal-compression.mjs http://127.0.0.1:74
 每次打开都走 `AppRuntime.launch → PluginHost.install → NavigationService.open`，确保地图 ticker
 和卸载流程真实接线；不能只用 `ViewMgr.open` 代替入口安装。它记录真实 GPU 格式与字节、
 L1 烘焙/L3 释放、点选和十次重开；PNG 路径通过启动前隐藏 ASTC
-扩展触发，报告明确标注为故障注入，不是自然不支持压缩的手机实测。
+扩展触发，报告明确标注为故障注入。
 测试页启用 CDP focus emulation，避免切到其它窗口使引擎停止推进；报告登记该条件，
-此探针不能用来宣称真实前台帧时或手机性能。
+此探针不能用来宣称真实前台帧时。
 
 ## 三、当前反查结果
 
@@ -571,7 +571,7 @@ python3 tools/maporiginal-assets/compare_images.py --before .cache/before.png --
 ```
 
 限值为 RGBA 每通道平均误差 ≤ 1（8-bit），任一通道差值 > 8 的像素占比 ≤ 0.1%；整图和每个 ROI 均须通过。
-本工具不自动对齐相机/帧、不接受用大面积背景稀释局部错位，也不替代原包逐像素核验与真机压缩验收。
+本工具不自动对齐相机/帧、不接受用大面积背景稀释局部错位，也不替代原包逐像素核验与发布格式验证。
 
 ## 五、待办
 
