@@ -10,50 +10,52 @@ import {
     type IMapoWorldBounds, mapoWorldBounds,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
+import { mapoAssetPath } from "./mapoManifest";
+
 /** 同源地貌概览；L2 缓存未就绪时也用它承底，L3 只绘制这一张。 */
-export const MAPO_OVERVIEW_ASSET = "kits/mapOriginal/maps/s1/overview";
+export const MAPO_OVERVIEW_ASSET = mapoAssetPath("overview.png");
 /** ⚠ 显示层地形走 BufferAsset：它塞不进 shared（熵太高），见 logic/mapoTerrain.ts。 */
-export const MAPO_TERRAIN_ASSET = "kits/mapOriginal/maps/s1/terrain";
+export const MAPO_TERRAIN_ASSET = mapoAssetPath("terrain.bytes");
 /** 摆件图集；实际尺寸由 decor.data 布局表给出。 */
-export const MAPO_DECOR_ATLAS_ASSET = "kits/mapOriginal/maps/s1/decor-atlas";
+export const MAPO_DECOR_ATLAS_ASSET = mapoAssetPath("decor-atlas.png");
 /** 多格地形的区域件图集与摆放表。 */
-export const MAPO_REGION_ATLAS_ASSET = "kits/mapOriginal/maps/s1/region-atlas";
-export const MAPO_REGIONS_ASSET = "kits/mapOriginal/maps/s1/regions";
+export const MAPO_REGION_ATLAS_ASSET = mapoAssetPath("region-atlas.png");
+export const MAPO_REGIONS_ASSET = mapoAssetPath("regions.bin");
 /** 河流层：水面填充色图（三张原版 2×2 平色拼的 6×2）。 */
-export const MAPO_RIVER_FILL_ASSET = "kits/mapOriginal/maps/s1/river-fill";
+export const MAPO_RIVER_FILL_ASSET = mapoAssetPath("river-fill.png");
 /** 河流层：几何库（102 条原版多边形）。 */
-export const MAPO_RIVER_GEO_ASSET = "kits/mapOriginal/maps/s1/river-geo";
+export const MAPO_RIVER_GEO_ASSET = mapoAssetPath("river-geo.bin");
 /** 河流层：摆放表。 */
-export const MAPO_RIVERS_ASSET = "kits/mapOriginal/maps/s1/rivers";
+export const MAPO_RIVERS_ASSET = mapoAssetPath("rivers.bin");
 /** 地表底纹（256² POT，wrap = REPEAT）。⛔ 不进图集：图集里没法 GL_REPEAT。 */
-export const MAPO_GROUND_BASE_ASSET = "kits/mapOriginal/maps/s1/ground-base";
+export const MAPO_GROUND_BASE_ASSET = mapoAssetPath("ground-base.png");
 /** snow / desert 块层：底纹 / 几何库 / 摆放表。 */
 export function mapoBlockBaseAsset(kind: string): string {
-    return `kits/mapOriginal/maps/s1/${kind}-base`;
+    return mapoAssetPath(`${kind}-base.png`);
 }
 export function mapoBlockGeoAsset(kind: string): string {
-    return `kits/mapOriginal/maps/s1/${kind}-geo`;
+    return mapoAssetPath(`${kind}-geo.bin`);
 }
 export function mapoBlockTableAsset(kind: string): string {
-    return `kits/mapOriginal/maps/s1/${kind}`;
+    return mapoAssetPath(`${kind}.bin`);
 }
 /** 道路层：路片图集 + 摆放表。 */
-export const MAPO_ROAD_ATLAS_ASSET = "kits/mapOriginal/maps/s1/road-atlas";
-export const MAPO_ROADS_ASSET = "kits/mapOriginal/maps/s1/roads";
+export const MAPO_ROAD_ATLAS_ASSET = mapoAssetPath("road-atlas.png");
+export const MAPO_ROADS_ASSET = mapoAssetPath("roads.bin");
 /** 城址件图集与摆放表。⚠ 两件缺一则城址层整层不建。 */
-export const MAPO_CITY_ATLAS_ASSET = "kits/mapOriginal/maps/s1/city-atlas";
-export const MAPO_CITIES_ASSET = "kits/mapOriginal/maps/s1/cities";
+export const MAPO_CITY_ATLAS_ASSET = mapoAssetPath("city-atlas.png");
+export const MAPO_CITIES_ASSET = mapoAssetPath("cities.bin");
 /** `_top_group` 手摆细节：每族一张图集 + 一份摆放库。 */
 export function mapoTopAtlasAsset(kind: string): string {
-    return `kits/mapOriginal/maps/s1/${kind}-top-atlas`;
+    return mapoAssetPath(`${kind}-top-atlas.png`);
 }
 export function mapoTopsAsset(kind: string): string {
-    return `kits/mapOriginal/maps/s1/${kind}-tops`;
+    return mapoAssetPath(`${kind}-tops.bin`);
 }
-export const MAPO_MINIMAP_ASSET = "kits/mapOriginal/maps/s1/minimap";
+export const MAPO_MINIMAP_ASSET = mapoAssetPath("minimap.png");
 
 /** 选中高亮贴图（原版 choose2 罩格地块面，240×112，build_choose.py 从 grid-1 图集切出）。 */
-export const MAPO_CHOOSE_ASSET = "kits/mapOriginal/maps/s1/choose";
+export const MAPO_CHOOSE_ASSET = mapoAssetPath("choose.png");
 /*
  * ⚠ 这里**故意没有**近档地表图集（M2-B1 删除）：那是「8 粗类 × 4 变体的逐格菱形贴片」，
  *   是本仓**自创**的做法，与原版直接矛盾 —— 原版的地表底是「一块 10×10 格 + 一张底纹

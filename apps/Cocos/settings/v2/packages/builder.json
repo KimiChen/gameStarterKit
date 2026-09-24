@@ -103,6 +103,29 @@
             }
           }
         }
+      },
+      "package2d": {
+        "displayName": "Package 2D",
+        "configs": {
+          "native": {
+            "preferredOptions": {
+              "compressionType": "merge_dep",
+              "isRemote": false
+            }
+          },
+          "web": {
+            "preferredOptions": {
+              "compressionType": "merge_dep",
+              "isRemote": false
+            }
+          },
+          "miniGame": {
+            "preferredOptions": {
+              "compressionType": "merge_dep",
+              "isRemote": true
+            }
+          }
+        }
       }
     }
   }

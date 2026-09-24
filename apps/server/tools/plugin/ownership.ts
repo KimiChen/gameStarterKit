@@ -277,7 +277,7 @@ export function deriveOwnership(identity: PluginIdentity): readonly OwnershipRul
       ? { kind: "dir", path: kitDir(id), reason: "kit 目录（kit.json / README.md / gameplays/<modeId>/ 单源 / sql/ 迁移）" }
       : { kind: "dir", path: pluginDir(id), reason: "插件目录（plugin.json / README.md / gameplay 单源）" },
     ...testPrefixRules(id, what),
-    { kind: "bundle", path: BUNDLES, prefix: `${identity.class}-${id}`, reason: "包 3D bundle（精确包名或合法地图后缀，根 .meta 随归属）" },
+    { kind: "bundle", path: BUNDLES, prefix: `${identity.class}-${id}`, reason: "包 2D/3D bundle（精确包名或合法地图后缀，根 .meta 随归属）" },
   ];
   for (const mode of modesOf(identity)) {
     rules.push(...gameplayRules(mode.id, mode.constantName));

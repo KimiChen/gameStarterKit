@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "mapId": "s1",
+  "bundle": "kit-mapOriginal-s1",
+  "assets": {
+    "mapo-sprite.effect": {
+      "path": "2d/overview/mapo-sprite-f938c0fd08b9ab4e",
+      "type": "effect",
+      "sourceBytes": 1603,
+      "sourceSha256": "f938c0fd08b9ab4e0d4ae95eb38bd25d07060d399564658444258e9560d12f17"
+    },
+    "overview.png": {
+      "path": "2d/overview/overview-0df4e975eec0becf",
+      "type": "texture",
+      "sourceBytes": 2808678,
+      "sourceSha256": "0df4e975eec0becf8893921abdda8330478feaca4daf348d9d31886a19ac95e6",
+      "size": [
+        2048,
+        1024
+      ]
+    },
+    "minimap.png": {
+      "path": "2d/overview/minimap-7d017231c4c2de08",
+      "type": "texture",
+      "sourceBytes": 184576,
+      "sourceSha256": "7d017231c4c2de081e4b9174e8c977821bc6af381c36a2be6a082f2842d66eb4",
+      "size": [
+        512,
+        256
+      ]
+    },
+    "ground-base.png": {
+      "path": "2d/geography/ground-base-3f5f85df9e5ce417",
+      "type": "texture",
+      "sourceBytes": 87529,
+      "sourceSha256": "3f5f85df9e5ce417017f6b9ca9dcc3a09880fae2b70e61902dfb4d7f3a74a2da",
+      "size": [
+        256,
+        256
+      ]
+    },
+    "region-atlas.png": {
+      "path": "2d/geography/region-atlas-ea8b371965e7ef78",
+      "type": "texture",
+      "sourceBytes": 3444325,
+      "sourceSha256": "ea8b371965e7ef7807ac5fa07ae8e23c8defb2e0af9ba3fc8fb651995dc8719f",
+      "size": [
+        2048,
+        2048
+      ]
+    },
+    "road-atlas.png": {
+      "path": "2d/geography/road-atlas-5af9f505d547464f",
+      "type": "texture",
+      "sourceBytes": 180376,
+      "sourceSha256": "5af9f505d547464f2464fa93b85754d10128803b4d69a8edaa0a4c04454d1912",
+      "size": [
+        512,
+        512
+      ]
+    },
+    "river-fill.png": {
+      "path": "2d/geography/river-fill-1b56b30492f222ce",
+      "type": "texture",
+      "sourceBytes": 89,
+      "sourceSha256": "1b56b30492f222ceebcef19888977ad862afd03ccb8e571e192336f53177084f",
+      "size": [
+        6,
+        2
+      ]
+    },
+    "regions.bin": {
+      "path": "2d/geography/regions-ca44fbe70217bf7d",
+      "type": "buffer",
+      "sourceBytes": 472556,
+      "sourceSha256": "ca44fbe70217bf7db1e7b7e3650686ff4a969fbf3f23110dff50e89788f28ce8",
+      "crc32": 2372727373
+    },
+    "roads.bin": {
+      "path": "2d/geography/roads-294ee96269ab3139",
+      "type": "buffer",
+      "sourceBytes": 252112,
+      "sourceSha256": "294ee96269ab3139356d6fb8beafc9fc19d221631d3c1c0efc7c05d04cdbdf14",
+      "crc32": 1294185061
+    },
+    "river-geo.bin": {
+      "path": "2d/geography/river-geo-834447c193f63306",
+      "type": "buffer",
+      "sourceBytes": 60564,
+      "sourceSha256": "834447c193f63306119dfe0b2fbde4a43382df8bf04f4d0d9dfe3729bf9cd579",
+      "crc32": 634820429
+    },
+    "rivers.bin": {
+      "path": "2d/geography/rivers-8e9301179adadb24",
+      "type": "buffer",
+      "sourceBytes": 186844,
+      "sourceSha256": "8e9301179adadb242da0046164c908722c1cc29e0cb6c4b40c44ab84205c485a",
+      "crc32": 3285908261
+    },
+    "desert-base.png": {
+      "path": "2d/geography/desert-base-4d61842eef65bdfd",
+      "type": "texture",
+      "sourceBytes": 60950,
+      "sourceSha256": "4d61842eef65bdfd6f962d0617a2045e2f60e061d789e792b31459af1b4d285a",
+      "size": [
+        256,
+        256
+      ]
+    },
+    "desert-geo.bin": {
+      "path": "2d/geography/desert-geo-a8f5f30bdfb76b28",
+      "type": "buffer",
+      "sourceBytes": 5693,
+      "sourceSha256": "a8f5f30bdfb76b289891d266c4ef5a1f48ee90eaeaabd1da84647f61972c08de",
+      "crc32": 467744795
+    },
+    "desert.bin": {
+      "path": "2d/geography/desert-d1eab68848e64b95",
+      "type": "buffer",
+      "sourceBytes": 28576,
+      "sourceSha256": "d1eab68848e64b95ce96bac104ea71de6b53d856d52eef9d4775b77fb97a7b57",
+      "crc32": 462892425
+    },
+    "snow-base.png": {
+      "path": "2d/geography/snow-base-2180f6f6dc9aa9d9",
+      "type": "texture",
+      "sourceBytes": 49132,
+      "sourceSha256": "2180f6f6dc9aa9d9f97e8ca2f01cfcf662521fdcf55e8a2d33add8b495e7916b",
+      "size": [
+        256,
+        256
+      ]
+    },
+    "snow-geo.bin": {
+      "path": "2d/geography/snow-geo-20725d7a6e3ede79",
+      "type": "buffer",
+      "sourceBytes": 5532,
+      "sourceSha256": "20725d7a6e3ede79a8eb1fdbde8ef48f8e536c61bf36345eefa884e893ebb866",
+      "crc32": 3676591502
+    },
+    "snow.bin": {
+      "path": "2d/geography/snow-123f661f67c0b1c2",
+      "type": "buffer",
+      "sourceBytes": 25120,
+      "sourceSha256": "123f661f67c0b1c29ebef2dfb647e5a97f6b3677600514777cc65b64adc6ab2a",
+      "crc32": 555951784
+    },
+    "river-top-atlas.png": {
+      "path": "2d/geography/river-top-atlas-0e4a840d14f6aca0",
+      "type": "texture",
+      "sourceBytes": 1014845,
+      "sourceSha256": "0e4a840d14f6aca0b083e26f08928d5add262d632a5cb13870284526e6c88582",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    "river-tops.bin": {
+      "path": "2d/geography/river-tops-d5f70d5111c00b42",
+      "type": "buffer",
+      "sourceBytes": 36026,
+      "sourceSha256": "d5f70d5111c00b4226a7cd74d30e105b78126c6a95df6fee44abc415977bb169",
+      "crc32": 2772062665
+    },
+    "desert-top-atlas.png": {
+      "path": "2d/geography/desert-top-atlas-d80d9361315beb30",
+      "type": "texture",
+      "sourceBytes": 309863,
+      "sourceSha256": "d80d9361315beb30a9a85ece1187b37979845a6964d84a288870f64cfeb121da",
+      "size": [
+        512,
+        512
+      ]
+    },
+    "desert-tops.bin": {
+      "path": "2d/geography/desert-tops-cba59e01a1a42204",
+      "type": "buffer",
+      "sourceBytes": 28964,
+      "sourceSha256": "cba59e01a1a42204eab8aad530cbfb778fde17719bae3dd2c7fa8a10a8304788",
+      "crc32": 231354989
+    },
+    "snow-top-atlas.png": {
+      "path": "2d/geography/snow-top-atlas-3aab34e875d95cd7",
+      "type": "texture",
+      "sourceBytes": 356117,
+      "sourceSha256": "3aab34e875d95cd748e813c06bfe4eac6c1a8e15db039313bafc56bfb5534ef4",
+      "size": [
+        1024,
+        256
+      ]
+    },
+    "snow-tops.bin": {
+      "path": "2d/geography/snow-tops-3a0e83d6a164cba4",
+      "type": "buffer",
+      "sourceBytes": 49366,
+      "sourceSha256": "3a0e83d6a164cba46c4076d04fe7a6fd36cac1a5ece1e5895bbece2615b9aa32",
+      "crc32": 4078413259
+    },
+    "terrain.bytes": {
+      "path": "2d/selection/terrain-bbdec7fd14aa6098",
+      "type": "buffer",
+      "sourceBytes": 2250008,
+      "sourceSha256": "bbdec7fd14aa609852dbff765a476868edb846c3a0458b4d6185fd84760b3eaa",
+      "crc32": 607429739
+    },
+    "decor-atlas.png": {
+      "path": "2d/resources/decor-atlas-25285ecee46db46f",
+      "type": "texture",
+      "sourceBytes": 5774578,
+      "sourceSha256": "25285ecee46db46f23c10d7383a0217d3e0ce15d4584e74fa603e45651540327",
+      "size": [
+        2048,
+        4096
+      ]
+    },
+    "city-atlas.png": {
+      "path": "2d/cities/city-atlas-36f919c726df47d8",
+      "type": "texture",
+      "sourceBytes": 700352,
+      "sourceSha256": "36f919c726df47d8ffc1355b3b12c2ab204e20d41d7565941707144fc00f2f20",
+      "size": [
+        512,
+        1024
+      ]
+    },
+    "cities.bin": {
+      "path": "2d/cities/cities-0ac7fd1c19d2ec86",
+      "type": "buffer",
+      "sourceBytes": 93480,
+      "sourceSha256": "0ac7fd1c19d2ec86442903ebc1930bbae49f89608d34d4a39b7d95459609c689",
+      "crc32": 2977100343
+    },
+    "mapo-river.effect": {
+      "path": "2d/water/mapo-river-73e7417999d98f87",
+      "type": "effect",
+      "sourceBytes": 2775,
+      "sourceSha256": "73e7417999d98f874cd0251028f4cbde066bda7b965955a7ebd8ed32ee66656a"
+    },
+    "river-mask.png": {
+      "path": "2d/water/river-mask-47eabacda02e96b8",
+      "type": "texture",
+      "sourceBytes": 958448,
+      "sourceSha256": "47eabacda02e96b8dbdfe71c6c7ac5686f32f9efd32cfc6914bdbda761091caa",
+      "size": [
+        2048,
+        2048
+      ]
+    },
+    "river-normal.png": {
+      "path": "2d/water/river-normal-70ff42046936b172",
+      "type": "texture",
+      "sourceBytes": 62169,
+      "sourceSha256": "70ff42046936b1728f7fd0f63660edbdc97c49a3d6a2a9990a8aafec52441fe1",
+      "size": [
+        256,
+        256
+      ]
+    },
+    "grid-line.png": {
+      "path": "2d/grid/grid-line-06eb72a6a58a1d56",
+      "type": "texture",
+      "sourceBytes": 91,
+      "sourceSha256": "06eb72a6a58a1d564c9811b76c520aa6c1d46a750e1a387b9d61e57e01877aac",
+      "size": [
+        8,
+        8
+      ]
+    },
+    "choose.png": {
+      "path": "2d/choose/choose-08602f33ff0be2b3",
+      "type": "texture",
+      "sourceBytes": 2523,
+      "sourceSha256": "08602f33ff0be2b3126869236ab0bc691b8ff4add9c0fd36fde7c56c2491c202",
+      "size": [
+        512,
+        64
+      ]
+    }
+  },
+  "groups": {
+    "overview": {
+      "dependencies": [],
+      "assets": [
+        "mapo-sprite.effect",
+        "overview.png",
+        "minimap.png"
+      ],
+      "sourceBytes": 2994857
+    },
+    "geography": {
+      "dependencies": [
+        "overview"
+      ],
+      "assets": [
+        "ground-base.png",
+        "region-atlas.png",
+        "road-atlas.png",
+        "river-fill.png",
+        "regions.bin",
+        "roads.bin",
+        "river-geo.bin",
+        "rivers.bin",
+        "desert-base.png",
+        "desert-geo.bin",
+        "desert.bin",
+        "snow-base.png",
+        "snow-geo.bin",
+        "snow.bin",
+        "river-top-atlas.png",
+        "river-tops.bin",
+        "desert-top-atlas.png",
+        "desert-tops.bin",
+        "snow-top-atlas.png",
+        "snow-tops.bin"
+      ],
+      "sourceBytes": 6654579
+    },
+    "selection": {
+      "dependencies": [
+        "overview"
+      ],
+      "assets": [
+        "terrain.bytes"
+      ],
+      "sourceBytes": 2250008
+    },
+    "resources": {
+      "dependencies": [
+        "overview",
+        "selection",
+        "geography"
+      ],
+      "assets": [
+        "decor-atlas.png"
+      ],
+      "sourceBytes": 5774578
+    },
+    "cities": {
+      "dependencies": [
+        "overview"
+      ],
+      "assets": [
+        "city-atlas.png",
+        "cities.bin"
+      ],
+      "sourceBytes": 793832
+    },
+    "water": {
+      "dependencies": [
+        "overview"
+      ],
+      "assets": [
+        "mapo-river.effect",
+        "river-mask.png",
+        "river-normal.png"
+      ],
+      "sourceBytes": 1023392
+    },
+    "grid": {
+      "dependencies": [
+        "overview"
+      ],
+      "assets": [
+        "grid-line.png"
+      ],
+      "sourceBytes": 91
+    },
+    "choose": {
+      "dependencies": [
+        "overview"
+      ],
+      "assets": [
+        "choose.png"
+      ],
+      "sourceBytes": 2523
+    }
+  },
+  "bindings": {
+    "atlas-layout.types.ts": "8ff52971f81b121b84b85adf1da7b2f87e6387f100595ba7c82b9795977c5d95",
+    "bands.data.ts": "c454ceeef85f6d42147afdcd4af19e021036344bce3f772207b2fb588f2c8392",
+    "blocks.data.ts": "52ffb0b29c97d673a32711bf6f994c2cfa9f9541295af076b3b91c4b69873c53",
+    "choose.data.ts": "b803566b5226dfd396c823369037b8c6442bc8e3b3494a92871a6ead1b07f431",
+    "cities.data.ts": "52a1f5e06903e1bded6af01fedf79ac1f4ce8dcc2659445650d0e652ff905bb7",
+    "decor.data.ts": "f5b06e8c724557b750596f49fa8f430ca38d7471cd4d43f8d3044e5b5141ecfe",
+    "display.data.ts": "d94e30d771ec1b01d17b9ae4d79653eca63d9ff1c96896748d9cc62a3dd5c16b",
+    "ground.data.ts": "6e1ea409adfbc731493cd0f497be65ee81b4189acb7ee7ac9a4e82288fd805a3",
+    "labels.data.ts": "98e7e06e1ebb5e7ec1f1fada97f65e67ba36ba15452857f793a0073baac769f0",
+    "lodref.data.ts": "b44f2d4ea7c118e9c20bc4a0f07d4f81cb2a46e41f49722417d871b734a8c378",
+    "map-manifest.types.ts": "f99f30b4d1052cd8cf0d1cf1c3eea44622d1c6570592724725bd8c05423b7bdd",
+    "prefabs.types.ts": "7c1e2319a6f2c27f96e1de7bdde7da213d9ae79bf920ea2bb3e7dc4b15b68139",
+    "region.data.ts": "b6a34ffcc68dbd44b73c37cd3ed37995efaa99491b65a28f81a4d17ff21a270c",
+    "river.data.ts": "40456dabaa6fb08dc19af8a64c5ac45fe2e17ee705b93c99451d9a39906ed4d7",
+    "roads.data.ts": "3dc9ff4468a7ba46b3ba0a40cd324f1903126440f29a9be0408ca476751b1b22",
+    "terrain.data.ts": "87e53de9b08cd44b9b06dcf0dc41fa3379f166cba376ab0062eb0f75e55a1389",
+    "top-scenes.data.ts": "a26779bc97c2d48f7e21f23f07a79fd429af8477bc43b9fc0f7b2186ec369a69",
+    "tops.data.ts": "29f67bdb5e9c862a1fefdf35c399c098d75a6f16603bcc3cc099db92a1379429"
+  },
+  "atlasLayoutVersion": "trim-v1-adbcd74f24eb0597f7ed27a2c366df1d0f06d9c0c6d3b63f526c6d6259f2b7e2",
+  "contentVersion": "sha256-ac75eb4df526840dc3e224de5addba422127afb960190ad8f497382d6e5f6c4c"
+}

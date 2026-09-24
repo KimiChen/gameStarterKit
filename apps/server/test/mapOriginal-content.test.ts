@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import type { IMapoTextureLayout, MapoTextureLayouts } from "@game/shared/kits/mapOriginal/content/atlas-layout.types";
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { test } from "node:test";
 import {
     decodeMapoTerrainRle, mapoTerrainToBytes,
@@ -55,12 +55,18 @@ import {
     MAPO_ROAD_SIDE, MAPO_ROAD_S_BIAS,
 } from "@game/shared/kits/mapOriginal/content/roads.data";
 
+import { MAPO_S1_MANIFEST } from "@game/shared/kits/mapOriginal/content/manifest.data";
+
 const MAP = MAPO_TERRAIN_MAP_ID;
 const kitDir = new URL(`../../kits/mapOriginal/data/maps/${MAP}/`, import.meta.url);
-const cocosDir = new URL(`../../Cocos/assets/resources/kits/mapOriginal/maps/${MAP}/`, import.meta.url);
+const cocosDir = new URL(`../../Cocos/assets/bundles/kit-mapOriginal-${MAP}/`, import.meta.url);
 
 function kit(name: string): Buffer { return readFileSync(new URL(name, kitDir)); }
-function cocos(name: string): Buffer { return readFileSync(new URL(name, cocosDir)); }
+function cocos(name: string): Buffer {
+    const logical = name === "terrain.bin" ? "terrain.bytes" : name;
+    const record = name === "terrain.bytes" ? undefined : MAPO_S1_MANIFEST.assets[logical];
+    return readFileSync(new URL(record ? record.path + name.slice(name.lastIndexOf(".")) : `2d/${name}`, cocosDir));
+}
 function sha256(b: Buffer | Uint8Array): string {
     return createHash("sha256").update(b).digest("hex");
 }
@@ -290,10 +296,9 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
         ["river-top-atlas.png", "river-top-atlas.png"], ["river-tops.bin", "river-tops.bin"],
         ["desert-top-atlas.png", "desert-top-atlas.png"], ["desert-tops.bin", "desert-tops.bin"],
         ["snow-top-atlas.png", "snow-top-atlas.png"], ["snow-tops.bin", "snow-tops.bin"],
-        ["overview.png", "overview.png"], ["minimap.png", "minimap.png"], ["minimap-mask.png", "minimap-mask.png"],
-        ["decor-atlas.png", "decor-atlas.png"], ["decor-atlas.info.json", "decor-atlas.info.json"],
+        ["overview.png", "overview.png"], ["minimap.png", "minimap.png"],
+        ["decor-atlas.png", "decor-atlas.png"],
         ["region-atlas.png", "region-atlas.png"],
-        ["region-atlas.info.json", "region-atlas.info.json"],
         ["regions.bin", "regions.bin"],
     ];
     for (const [src, dst] of mirrored) {
@@ -301,7 +306,7 @@ test("mapOriginal 内容：kit 数据目录与 Cocos 运行时镜像逐字节一
     }
     // ⚠ 通行层与 info 只留 kit 数据目录：⛔ 不多存一份到运行时
     for (const name of ["terrain.pass.bytes", "terrain.info.json", "terrain.bytes", "labels.json",
-                        "regions.info.json", "bands.bytes", "bands.info.json"]) {
+                        "regions.info.json", "bands.bytes", "bands.info.json", "minimap-mask.png", "decor-atlas.info.json", "region-atlas.info.json"]) {
         assert.throws(() => cocos(name), /ENOENT/, `${name} ⛔ 不该进 Cocos`);
     }
 });
@@ -1067,8 +1072,8 @@ test("mapOriginal 内容：图片 .meta 只有 Creator 那一个 texture 子资�
     //   动态加载 URL 相同（`kits/mapOriginal/maps/s1/<图名>/texture`）——
     //   Creator 每次导入都刷一条 warn，运行时按 URL 取图还可能拿错那一个。
     //   ⛔ 别再引入第二套 sub id：Creator 3.8 给图片 texture 用的就是固定的 `6c48a`。
-    const dir = new URL(`../../Cocos/assets/resources/kits/mapOriginal/maps/${MAP}/`, import.meta.url);
-    const metas = readdirSync(dir).filter((f) => f.endsWith(".png.meta"));
+    const dir = new URL(`../../Cocos/assets/bundles/kit-mapOriginal-${MAP}/`, import.meta.url);
+    const metas = Object.values(MAPO_S1_MANIFEST.assets).filter(a => a.type === "texture").map(a => `${a.path}.png.meta`);
     assert.ok(metas.length > 0, "运行时镜像里应当有图片");
     for (const file of metas) {
         const meta = JSON.parse(readFileSync(new URL(file, dir)).toString("utf8")) as {
@@ -1247,5 +1252,38 @@ test("mapOriginal O1/O2：物理图片唯一、裁边与留边合法，逻辑条
         const snow = MAPO_ROAD_CELLS[base.snowId];
         assert.equal(snow.textureId, base.textureId);
         assert.notEqual(snow.clientResId, base.clientResId);
+    }
+});
+
+
+test("mapOriginal Bundle：manifest 绑定配置/素材，resources 无重复副本，PNG 可独立发布", () => {
+    const disk = JSON.parse(kit("manifest.json").toString());
+    assert.deepEqual(disk, MAPO_S1_MANIFEST);
+    assert.deepEqual(readFileSync(new URL("2d/manifest.json", cocosDir)), kit("manifest.json"));
+    assert.equal(existsSync(new URL(`../../Cocos/assets/resources/kits/mapOriginal/maps/${MAP}/`, import.meta.url)), false);
+    const seen = new Set<string>();
+    for (const group of Object.values(MAPO_S1_MANIFEST.groups)) {
+        let bytes = 0;
+        for (const name of group.assets) {
+            assert.equal(seen.has(name), false, name); seen.add(name);
+            const row = MAPO_S1_MANIFEST.assets[name], data = kit(name);
+            assert.equal(sha256(data), row.sourceSha256, name);
+            assert.ok(row.path.endsWith(row.sourceSha256.slice(0, 16)), name);
+            assert.equal(data.byteLength, row.sourceBytes, name); bytes += data.byteLength;
+            const file = name === "terrain.bytes" ? "terrain.bin" : name;
+            assert.deepEqual(cocos(file), data, name);
+            if (row.type === "texture") {
+                assert.deepEqual(row.size, [data.readUInt32BE(16), data.readUInt32BE(20)]);
+                const meta = JSON.parse(readFileSync(new URL(row.path + ".png.meta", cocosDir), "utf8"));
+                assert.notEqual(meta.userData.compressSettings?.useCompressTexture, true, "O3 保留原 PNG，压缩到 O4");
+            }
+        }
+        assert.equal(group.sourceBytes, bytes);
+        for (const dep of group.dependencies) assert.ok(MAPO_S1_MANIFEST.groups[dep]);
+    }
+    assert.deepEqual([...seen].sort(), Object.keys(MAPO_S1_MANIFEST.assets).sort());
+    for (const [name, hash] of Object.entries(MAPO_S1_MANIFEST.bindings)) {
+        const source = readFileSync(new URL(`../../shared/src/kits/mapOriginal/content/${name}`, import.meta.url));
+        assert.equal(sha256(source), hash, `配置没有重新绑定 ${name}`);
     }
 });

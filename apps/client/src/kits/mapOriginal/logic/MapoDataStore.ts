@@ -8,15 +8,18 @@ import { createMapoBlocksData } from "./mapoBlocks";
 import { createMapoRiversData } from "./mapoRivers";
 import { createMapoTopsData } from "./mapoTops";
 
+import { MAPO_S1_MANIFEST } from "./mapoManifest";
+
 export interface MapoContentIdentity {
     readonly mapId: string;
     readonly contentVersion: string;
     readonly atlasLayoutVersion: string;
 }
 
-// O3-B1 仍使用现有 resources 地址。O3-B2 将由地图 manifest 提供并校验这三个字段。
+// 安装器从素材与配置生成；runtime manifest 校验前所有图层依赖均阻塞。
 export const MAPO_S1_CONTENT: MapoContentIdentity = Object.freeze({
-    mapId: "s1", contentVersion: "20260924-o2", atlasLayoutVersion: "trim-v1",
+    mapId: MAPO_S1_MANIFEST.mapId, contentVersion: MAPO_S1_MANIFEST.contentVersion,
+    atlasLayoutVersion: MAPO_S1_MANIFEST.atlasLayoutVersion,
 });
 
 export function mapoContentKey(identity: MapoContentIdentity): string {

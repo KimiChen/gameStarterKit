@@ -82,7 +82,7 @@ def main() -> int:
         for i, row in enumerate(pack.get("files", []), 1):
             L.append("| %d | `%s` | %s | `%s` | 见抬头 | 见抬头 | `%s` | %s | `%s` | 已引入，待验收 |" % (
                 i, row["logical"], row.get("src_abs", "（合成，见说明）"), row["sha256"],
-                row["target"], row["convert"], row.get("meta", "本仓确定性铸造")))
+                row["target"] + ("`<br>`" + row["mirror"] if row.get("mirror") else ""), row["convert"], row.get("meta", "本仓确定性铸造")))
         L.append("")
 
     L.append("## B. 源素材清单（仓外只读，⛔ 不入库）\n")

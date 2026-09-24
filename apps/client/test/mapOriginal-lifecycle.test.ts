@@ -9,6 +9,8 @@ import { mapoStaticScene } from "../src/kits/mapOriginal/logic/mapoStaticScene";
 import { mapoTerrainDataUsage } from "../src/kits/mapOriginal/logic/mapoTerrain";
 import { mapoBandsDataUsage } from "../src/kits/mapOriginal/logic/mapoBands";
 
+import { MAPO_S1_MANIFEST, mapoValidateManifest, mapoValidateBuffer, mapoValidateTexture } from "../src/kits/mapOriginal/logic/mapoManifest";
+
 const bytes = (name: string) => readFileSync(new URL(`../../kits/mapOriginal/data/maps/s1/${name}`, import.meta.url));
 const retained = (data: MapoDataStore) => Object.values(data.usage()).reduce((n, u) => n + u.arrayBufferBytes, 0);
 function populate(data: MapoDataStore): void {
@@ -132,4 +134,61 @@ test("mapOriginal O3：缺片、超时、解析失败保留地址，重试不接
     assert.match(String(h.errors[2]), /MAPO_DATA_INVALID resources:geography/);
     assert.ok(h.cleared.includes("geography"));
     h.groups.close(); h.retired.splice(0).forEach((release) => release());
+});
+
+test("mapOriginal O3-B2：同长二进制混版、布局错版及缺字段均在安装前拒绝", () => {
+    mapoValidateManifest(JSON.parse(JSON.stringify(MAPO_S1_MANIFEST)));
+    for (const field of ["mapId", "schemaVersion", "contentVersion", "atlasLayoutVersion"] as const) {
+        assert.throws(() => mapoValidateManifest({ ...MAPO_S1_MANIFEST, [field]: "wrong" }), /MAPO_VERSION_MISMATCH/);
+    }
+    const wrong = JSON.parse(JSON.stringify(MAPO_S1_MANIFEST));
+    delete wrong.groups.geography;
+    assert.throws(() => mapoValidateManifest(wrong), /groups/);
+    const staleLayout = JSON.parse(JSON.stringify(MAPO_S1_MANIFEST));
+    staleLayout.assets["decor-atlas.png"].size[0] /= 2;
+    assert.throws(() => mapoValidateManifest(staleLayout), /assets/);
+    for (const [logical, asset] of Object.entries(MAPO_S1_MANIFEST.assets)) {
+        if (asset.type === "buffer") {
+            const data = bytes(logical);
+            mapoValidateBuffer(logical, data);
+            const corrupt = Buffer.from(data); corrupt[corrupt.length - 1]! ^= 1;
+            assert.throws(() => mapoValidateBuffer(logical, corrupt), /MAPO_VERSION_MISMATCH/);
+            assert.throws(() => mapoValidateBuffer(logical, data.subarray(1)), /MAPO_VERSION_MISMATCH/);
+        } else if (asset.type === "texture") {
+            mapoValidateTexture(logical, asset.size![0], asset.size![1]);
+            assert.throws(() => mapoValidateTexture(logical, asset.size![0] / 2, asset.size![1]), /MAPO_VERSION_MISMATCH/);
+        }
+    }
+});
+
+test("mapOriginal O3-B2：旧 manifest 不启动图层；缺片重试仍走同一版本地址", async () => {
+    class Manifest extends FakeAsset { json: unknown = { ...MAPO_S1_MANIFEST, contentVersion: "old" }; }
+    const pending: { bundle: string; path: string; callback: AssetLoadCallback<Asset> }[] = [];
+    const lease = new AssetLease({ addRef: a => a.addRef(), decRef: a => a.decRef(),
+        load: (bundle, path, _type, callback) => pending.push({ bundle, path, callback: callback as AssetLoadCallback<Asset> }) });
+    const errors: unknown[] = [], installed: string[] = [];
+    const path = MAPO_S1_MANIFEST.assets["overview.png"]!.path;
+    const groups = new MapoAssetGroups({
+        manifest: { requests: [{ bundle: MAPO_S1_MANIFEST.bundle, path: "2d/manifest", type: Manifest }],
+            install: assets => mapoValidateManifest((assets[0] as Manifest).json), clear: () => {} },
+        overview: { dependencies: ["manifest"], requests: [{ bundle: MAPO_S1_MANIFEST.bundle, path, type: FakeAsset }],
+            install: () => { installed.push("overview"); }, clear: () => {} },
+    }, lease, (_group, release) => release(), () => {}, (_group, error) => errors.push(error));
+    groups.update(["overview"], 0);
+    assert.deepEqual(pending.map(p => p.path), ["2d/manifest"]);
+    const old = new Manifest(); pending.shift()!.callback(null, old); await flush();
+    assert.equal(old.refCount, 0); assert.equal(pending.length, 0); assert.equal(groups.ready("overview"), false);
+    assert.match(String(errors[0]), /MAPO_VERSION_MISMATCH/);
+    groups.update(["overview"], 1000);
+    const current = new Manifest(); current.json = MAPO_S1_MANIFEST;
+    pending.shift()!.callback(null, current); await flush();
+    const request = pending.shift()!;
+    assert.equal(request.bundle, "kit-mapOriginal-s1"); assert.equal(request.path, path);
+    request.callback(new Error("missing chunk")); await flush();
+    assert.equal(installed.length, 0); assert.match(String(errors[1]), /ASSET_MISSING kit-mapOriginal-s1:2d\/overview/);
+    groups.update(["overview"], 2000);
+    assert.equal(pending[0]!.path, path);
+    const image = new FakeAsset(); pending.shift()!.callback(null, image); await flush();
+    assert.deepEqual(installed, ["overview"]);
+    groups.close(); assert.equal(current.refCount, 0); assert.equal(image.refCount, 0);
 });

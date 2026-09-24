@@ -179,7 +179,29 @@ export function assertBundleLayout(files: ReadonlyMap<string, Buffer>, existingR
     const name = path.posix.basename(root);
     if (!object(meta) || meta.importer !== "directory" || data.isBundle !== true) fail(`${root}.meta 必须为 directory / isBundle:true`);
     if (data.bundleName !== undefined && data.bundleName !== "" && data.bundleName !== name) fail(`${root}.meta bundleName 必须等于目录名 ${name}`);
-    if (data.bundleConfigID !== "package3d") fail(`${root}.meta 必须使用宿主 bundleConfigID:package3d`);
+    if (data.bundleConfigID !== "package3d" && data.bundleConfigID !== "package2d") fail(`${root}.meta 必须使用宿主 bundleConfigID:package3d/package2d`);
+    if (data.bundleConfigID === "package2d") {
+      const importers: Record<string, string> = { ".png": "image", ".bin": "buffer", ".json": "json", ".effect": "effect" };
+      for (const [file, content] of files) {
+        if (!file.startsWith(`${root}/`)) continue;
+        if (file !== `${root}/2d.meta` && !file.startsWith(`${root}/2d/`)) fail(`${file}：package2d 素材必须位于 2d/`);
+        if (file.endsWith(".meta")) {
+          const value = json(content, file);
+          if (!object(value)) fail(`${file}：非法 2D meta`);
+          const source = file.slice(0, -5);
+          const expected = importers[path.posix.extname(source)] ?? "directory";
+          if (value.importer !== expected) fail(`${file}：2D importer 必须为 ${expected}`);
+          const checkSubs = (subs: unknown): void => {
+            if (!object(subs)) return;
+            for (const sub of Object.values(subs)) {
+              if (!object(sub) || sub.importer !== "texture") fail(`${file}：2D 子资产只允许 texture`);
+              checkSubs(sub.subMetas);
+            }
+          };
+          checkSubs(value.subMetas);
+        } else if (!importers[path.posix.extname(file)]) fail(`${file}：package2d 不支持的素材格式`);
+      }
+    }
     if (data.isRemote === true) fail(`${root}.meta 开发期必须本地，发布远程由宿主 builder.json 覆写`);
     if (names.has(name.toLowerCase())) fail(`bundle 名称大小写冲突：${name}`);
     names.add(name.toLowerCase());

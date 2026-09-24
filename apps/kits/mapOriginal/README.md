@@ -165,6 +165,16 @@ BufferAsset、reader ArrayBuffer 及展开对象归零。选中地块时，L3 �
 这些 ArrayBuffer 与 BufferAsset 负载有重合，不能相加；也不能用此数量代表整个 JS 堆。
 复测命令与口径见 [素材工具 O0](../../../tools/maporiginal-assets/README.md#o0可复测素材与预览基线)，
 实施状态只见 [优化方案 §9](../../../docs/MAPORIGINAL-2D-OPTIMIZATION.md#9-实施状态唯一登记处)。
+运行时素材位于 `apps/Cocos/assets/bundles/kit-mapOriginal-s1/2d/`，由 `manifest.json` 管理
+32 个逻辑素材的组、地址、源字节数和版本；文件按组目录存储，地址带源 SHA-256 的前 16 位。
+先加载并严格核对 manifest，再加载概览及其它需求组；布局 / 内容 / 配置不匹配时不安装任何图层。
+二进制额外校验长度与 CRC32，保留原 reader 的格式和边界验证。纹理校验尺寸，源 PNG hash 只在
+管线检查；ASTC / ETC 等平台变体由 Creator 构建清单和缓存版本处理。
+`minimap-mask.png`、`decor-atlas.info.json`、`region-atlas.info.json` 只留 kit 作者数据目录。
+`resources` 不保留第二套地图素材。小游戏远程 / Web、native 本地由宿主 `package2d` 配置决定，
+客户端继续通过框架 AssetLease 加载，沿用 Creator 缓存；不保证冷启动断网也能打开地图。
+同事修改素材或配置后重跑安装器，烘概览后再安装、`sync:shared`，不要手改带哈希文件名或 manifest。
+
 缓存未到位时显示同源概览，所需分组全部 ready 才补块；进入 L3 释放分块缓存。
 每个地图实例用 `MapoDataStore` 持有解码数据，经 View 注入 Logic 和 renderer；运行时不从兼容用全局 reader 读取可变地图数据。
 源素材使用框架 AssetLease，出档保留 5 秒、在途请求离开需求即取消；关页立即取消，并在节点、材质和烘焙任务退休后的帧末归还成功租约。
@@ -501,7 +511,7 @@ npm --workspace @game/server run codegen:plugins && npm run sync:shared
 ```
 
 ⚠ **别在 `/tmp` 下跑脚本**：本机 `/tmp/token.py` 会遮蔽标准库 `token`，numpy 导入即炸。
-⚠ **首次用 Creator 打开本仓**：`resources/kits/mapOriginal/**` 的 `.meta` 是脚本确定性铸的、
+⚠ **首次用 Creator 打开本仓**：`bundles/kit-mapOriginal-s1/**` 的 `.meta` 是脚本确定性铸的、
 不是 Creator 导入出来的。Creator 会正式导入并可能改写 uuid —— 把它改完的 `.meta` 一并提交。
 
 ## 八·五、真机重放抓出来的两条（2026-09-22）

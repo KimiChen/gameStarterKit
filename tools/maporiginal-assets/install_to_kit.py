@@ -17,6 +17,10 @@ import argparse
 import hashlib
 import json
 import os
+import re
+import struct
+import zlib
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -70,7 +74,8 @@ FILES = {
 KIT_ONLY = {"overview.info.json", "surface.info.json", "choose.info.json","terrain.pass.bytes", "terrain.info.json", "labels.json", "regions.info.json",
             "rivers.info.json", "river-geo.index.json", "ground.info.json",
             "blocks.info.json", "bands.bytes", "bands.info.json", "top-atlas.info.json",
-            "roads.info.json", "minimap.info.json", "cities.info.json"}
+            "roads.info.json", "minimap.info.json", "cities.info.json",
+            "minimap-mask.png", "decor-atlas.info.json", "region-atlas.info.json"}
 # ⚠ 运行时镜像里改用 Cocos 的规范缓冲扩展名 `.bin`：
 #   早先镜像叫 terrain.bytes 而 .meta 的 files 写成 [".bin"]，Creator 据此导入出
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。
@@ -139,120 +144,171 @@ def meta_for(rel: str, name: str, data: bytes = b"") -> dict:
             "files": [ext, ".json"], "subMetas": {}, "userData": {}}
 
 
+# 一处定义安装布局、运行时请求与组依赖。逻辑文件名不随重排改变。
+GROUPS = {
+    "overview": ([], ["mapo-sprite.effect", "overview.png", "minimap.png"]),
+    "geography": (["overview"], ["ground-base.png", "region-atlas.png", "road-atlas.png", "river-fill.png",
+        "regions.bin", "roads.bin", "river-geo.bin", "rivers.bin"]
+        + [f"{kind}{suffix}" for kind in ("desert", "snow") for suffix in ("-base.png", "-geo.bin", ".bin")]
+        + [f"{kind}{suffix}" for kind in ("river", "desert", "snow") for suffix in ("-top-atlas.png", "-tops.bin")]),
+    "selection": (["overview"], ["terrain.bytes"]),
+    "resources": (["overview", "selection", "geography"], ["decor-atlas.png"]),
+    "cities": (["overview"], ["city-atlas.png", "cities.bin"]),
+    "water": (["overview"], ["mapo-river.effect", "river-mask.png", "river-normal.png"]),
+    "grid": (["overview"], ["grid-line.png"]),
+    "choose": (["overview"], ["choose.png"]),
+}
+GENERATED_LAYOUTS = ("atlas-layout.types.ts", "decor.data.ts", "region.data.ts", "tops.data.ts", "cities.data.ts",
+                     "roads.data.ts", "river.data.ts", "choose.data.ts", "top-scenes.data.ts")
+
+
+def json_bytes(value):
+    return (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode()
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def make_manifest(map_id, payloads, bindings):
+    """内容寻址防止旧 Creator 缓存命中新布局；不拿 PNG hash 检查 ASTC/ETC。"""
+    manifest = {"schemaVersion": 1, "mapId": map_id, "bundle": f"kit-mapOriginal-{map_id}",
+                "assets": {}, "groups": {}, "bindings": bindings}
+    for group, (dependencies, names) in GROUPS.items():
+        for name in names:
+            data = payloads[name]
+            sha = hashlib.sha256(data).hexdigest()
+            ship = Path(MIRROR_RENAME.get(name, name))
+            row = {"path": f"2d/{group}/{ship.stem}-{sha[:16]}",
+                   "type": "texture" if ship.suffix == ".png" else "effect" if ship.suffix == ".effect" else "buffer",
+                   "sourceBytes": len(data), "sourceSha256": sha}
+            if row["type"] == "texture":
+                row["size"] = list(struct.unpack_from(">II", data, 16))
+            if row["type"] == "buffer":
+                row["crc32"] = zlib.crc32(data)
+            manifest["assets"][name] = row
+        manifest["groups"][group] = {"dependencies": dependencies, "assets": names,
+                                    "sourceBytes": sum(len(payloads[name]) for name in names)}
+    if set(manifest["assets"]) != set(FILES) - KIT_ONLY:
+        raise ValueError("每个运行时素材必须恰好有一个组")
+    manifest["atlasLayoutVersion"] = "trim-v1-" + digest({k: bindings[k] for k in GENERATED_LAYOUTS})
+    manifest["contentVersion"] = "sha256-" + digest(manifest)
+    return manifest
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--map", default="s1")
+    ap.add_argument("--map", default="s1", choices=["s1"])
     ap.add_argument("--check", action="store_true", help="只比对，不落盘")
-    ap.add_argument("--remint", action="store_true",
-                    help="重铸已存在的 .meta。⚠ 只在 Creator 没导入过时用 —— "
-                         "覆写 Creator 导入出来的 .meta 会造成同图两个 texture 子资源（动态加载 URL 相同）")
+    ap.add_argument("--remint", action="store_true", help="显式重铸 .meta；普通安装保留 Creator 导入选项")
     a = ap.parse_args()
-
-    src = os.path.join(OUT, "pack", a.map)
-    kit = os.path.join(REPO, "apps/kits/mapOriginal/data/maps", a.map)
-    coc = os.path.join(REPO, "apps/Cocos/assets/resources/kits/mapOriginal/maps", a.map)
-    assets = os.path.join(REPO, "apps/Cocos/assets")
-    if not a.check:
-        os.makedirs(kit, exist_ok=True)
-        os.makedirs(coc, exist_ok=True)
-
-    existing = {}
-    for root, _dirs, files in os.walk(assets):
-        for f in files:
-            if not f.endswith(".meta"):
-                continue
-            p = os.path.join(root, f)
-            try:
-                u = json.load(open(p, encoding="utf-8")).get("uuid")
-            except Exception:  # noqa: BLE001
-                continue
-            if u:
-                existing.setdefault(u, p)
-
-    bad = 0
-    manifest = []
-    # 旧 res 调色板底图已退役；避免安装后留下一套看似仍在使用的 L4/L5 资源。
+    src = Path(OUT) / "pack" / a.map
+    kit = Path(REPO) / "apps/kits/mapOriginal/data/maps" / a.map
+    assets = Path(REPO) / "apps/Cocos/assets"
+    bundle = assets / "bundles" / f"kit-mapOriginal-{a.map}"
+    legacy = assets / "resources/kits/mapOriginal/maps" / a.map
+    content = Path(REPO) / "apps/shared/src/kits/mapOriginal/content"
+    # 先确认所有输入，不能因缺一个源文件先删掉半套已安装素材。
+    payloads = {name: ((Path(HERE) / "shaders" if name.endswith(".effect") else src) / name).read_bytes() for name in FILES}
+    layouts = {name: (src / name).read_bytes() for name in GENERATED_LAYOUTS}
+    bindings = {p.name: hashlib.sha256(layouts.get(p.name, p.read_bytes())).hexdigest()
+                for p in sorted(content.glob("*.ts")) if p.name != "manifest.data.ts"}
+    bindings.update({name: hashlib.sha256(data).hexdigest() for name, data in layouts.items()})
+    runtime = make_manifest(a.map, payloads, bindings)
+    expected = {}
+    ledger = []
+    for name, data in payloads.items():
+        target = kit / FILES[name]
+        expected[target] = data
+        mirror = None
+        if name not in KIT_ONLY:
+            record = runtime["assets"][name]
+            mirror = bundle / (record["path"] + Path(MIRROR_RENAME.get(name, name)).suffix)
+            expected[mirror] = data
+        ledger.append({"logical": name, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
+            "target": str(target.relative_to(REPO)), "mirror": str(mirror.relative_to(REPO)) if mirror else None,
+            "convert": "由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl）",
+            "meta": "本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)"})
+    manifest_data = json_bytes(runtime)
+    expected[bundle / "2d/manifest.json"] = manifest_data
+    expected[kit / "manifest.json"] = manifest_data
+    expected.update({content / name: data for name, data in layouts.items()})
+    expected[content / "manifest.data.ts"] = ("// GENERATED by tools/maporiginal-assets/install_to_kit.py; do not edit.\n"
+        'import type { MapoManifest } from "./map-manifest.types";\n'
+        + "export const MAPO_S1_MANIFEST: MapoManifest = " + manifest_data.decode().rstrip() + ";\n").encode()
+    ledger.append({"logical": "manifest.json", "sha256": hashlib.sha256(manifest_data).hexdigest(), "bytes": len(manifest_data),
+        "target": str((kit / "manifest.json").relative_to(REPO)), "mirror": str((bundle / "2d/manifest.json").relative_to(REPO)),
+        "convert": "安装器绑定逻辑组、源文件 SHA-256、CRC32 与 shared 配置哈希；平台派生纹理由 Creator 构建缓存绑定",
+        "meta": "本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)"})
+    # 只清除本管线的已知旧文件，拒绝静默删除同事新增的未知文件。
+    obsolete = []
+    for root in (legacy, bundle):
+        if not root.exists(): continue
+        for p in root.rglob("*"):
+            if not p.is_file() or p in expected or p.suffix == ".meta": continue
+            if root == legacy:
+                known = p.name in set(FILES) | set(MIRROR_RENAME.values()) or re.fullmatch(r"plate-lod[45]\.(png|info.json)", p.name)
+            else:
+                known = bool(re.fullmatch(r"[^/]+-[0-9a-f]{16}\.(png|bin|effect)", p.name))
+            if not known: raise ValueError(f"未登记的运行时文件，保留并拒绝安装：{p}")
+            obsolete += [p, Path(str(p) + ".meta")]
     for lod in (4, 5):
         for suffix in ("png", "info.json"):
-            for folder in (kit, coc):
-                for extra in ("", ".meta"):
-                    obsolete = os.path.join(folder, "plate-lod%d.%s%s" % (lod, suffix, extra))
-                    if not os.path.exists(obsolete):
-                        continue
-                    if a.check:
-                        print("  ❌ 遗留旧底图 %s" % os.path.relpath(obsolete, REPO))
-                        bad += 1
-                    else:
-                        os.remove(obsolete)
-    for out_name, ship in FILES.items():
-        s = os.path.join(HERE, "shaders", out_name) if out_name.endswith(".effect") else os.path.join(src, out_name)
-        if not os.path.isfile(s):
-            print("  ❌ 缺产物 %s" % s)
-            bad += 1
-            continue
-        data = open(s, "rb").read()
-        mirror_name = MIRROR_RENAME.get(ship, ship)
-        targets = [os.path.join(kit, ship)] if ship in KIT_ONLY else \
-                  [os.path.join(kit, ship), os.path.join(coc, mirror_name)]
-        for dest in targets:
-            if a.check:
-                if not os.path.isfile(dest) or open(dest, "rb").read() != data:
-                    print("  ❌ 不一致/缺失 %s" % os.path.relpath(dest, REPO))
-                    bad += 1
-            else:
-                open(dest, "wb").write(data)
-        manifest.append({
-            "logical": ship, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data),
-            "target": os.path.relpath(os.path.join(kit, ship), REPO),
-            "mirror": None if ship in KIT_ONLY else os.path.relpath(os.path.join(coc, mirror_name), REPO),
-            "convert": "由 tools/maporiginal-assets 管线从原版数据层/贴图派生（见 out/sources.jsonl）",
-            "meta": "本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)",
-        })
-        if a.check or ship in KIT_ONLY:
-            continue
-        rel = os.path.relpath(os.path.join(coc, mirror_name), assets)
-        meta = meta_for(rel, mirror_name, data)
-        owner = existing.get(meta["uuid"])
-        mp = os.path.join(coc, mirror_name + ".meta")
-        if owner and os.path.abspath(owner) != os.path.abspath(mp):
-            print("  ❌ uuid 撞车 %s 已属 %s" % (meta["uuid"], owner))
-            bad += 1
-            continue
-        # ★ 已经有 .meta 就**不动它**（除非 --remint）。
-        # ⚠ 这里踩过一次：脚本无条件覆写，把 Creator 导入出来的 .meta 换成我们铸的，
-        #   而两边的 subMeta id 不同（我们 sha1 出 `dddbd`、Creator 出 `6c48a`），
-        #   于是同一张 PNG 出现两个 texture 子资源、**动态加载 URL 相同**
-        #   （`kits/mapOriginal/maps/s1/atlas-lod0/texture`），Creator 七张图各报一条 warn。
-        #   确定性 uuid 只在**第一次落地**时需要；之后 Creator 才是 .meta 的权威。
-        if os.path.isfile(mp) and not a.remint:
-            continue
-        open(mp, "w", encoding="utf-8").write(json.dumps(meta, ensure_ascii=False, indent=2) + "\n")
-
-    for name in ("atlas-layout.types.ts", "decor.data.ts", "region.data.ts", "tops.data.ts", "cities.data.ts", "roads.data.ts", "river.data.ts", "choose.data.ts", "top-scenes.data.ts"):
-        data = open(os.path.join(src, name), "rb").read()
-        dest = os.path.join(REPO, "apps/shared/src/kits/mapOriginal/content", name)
-        if a.check:
-            if not os.path.isfile(dest) or open(dest, "rb").read() != data:
-                print("  ❌ 元数据不同: " + name); bad += 1
-        else: open(dest, "wb").write(data)
-
+            obsolete += [kit / f"plate-lod{lod}.{suffix}", kit / f"plate-lod{lod}.{suffix}.meta"]
+    # 全树 UUID 碰撞检查；只创建缺失的 meta，不覆写已有压缩或采样设置。
+    owners = {}
+    for p in assets.rglob("*.meta"):
+        u = json.loads(p.read_text()).get("uuid")
+        if u: owners.setdefault(u, p)
+    metas = {}
+    for p, data in list(expected.items()):
+        if assets not in p.parents: continue
+        mp = Path(str(p) + ".meta")
+        value = meta_for(str(p.relative_to(assets)), p.name, data)
+        if value["uuid"] in owners and owners[value["uuid"]] != mp:
+            raise ValueError(f"UUID 撞车：{mp} / {owners[value['uuid']]}")
+        if not mp.exists() or a.remint: metas[mp] = json_bytes(value)
+        parent = p.parent
+        while parent != assets:
+            dm = Path(str(parent) + ".meta")
+            if not dm.exists():
+                meta = dir_meta_for(str(parent.relative_to(assets)))
+                if parent == bundle:
+                    meta["userData"] = {"isBundle": True, "bundleName": bundle.name, "bundleConfigID": "package2d"}
+                if meta["uuid"] in owners and owners[meta["uuid"]] != dm: raise ValueError(f"目录 UUID 撞车：{dm}")
+                metas[dm] = json_bytes(meta)
+            parent = parent.parent
+    expected.update(metas)
+    root_meta = Path(str(bundle) + ".meta")
+    root_value = json.loads(expected.get(root_meta, root_meta.read_bytes() if root_meta.exists() else b"{}"))
+    if root_value.get("userData", {}) != {"isBundle": True, "bundleName": bundle.name, "bundleConfigID": "package2d"}:
+        raise ValueError(f"地图 bundle 根配置不符：{root_meta}")
+    bad = []
+    for p, data in expected.items():
+        if p.exists() and p.read_bytes() == data: continue
+        if a.check: bad.append(f"不一致/缺失 {p.relative_to(REPO)}")
+        else:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(data)
+    for p in obsolete:
+        if not p.exists(): continue
+        if a.check: bad.append(f"遗留运行时副本 {p.relative_to(REPO)}")
+        else: p.unlink()
     if not a.check:
-        node = coc
-        while os.path.abspath(node) != os.path.abspath(assets):
-            rel = os.path.relpath(node, assets)
-            dm = os.path.join(os.path.dirname(node), os.path.basename(node) + ".meta")
-            if not os.path.isfile(dm):
-                open(dm, "w", encoding="utf-8").write(
-                    json.dumps(dir_meta_for(rel), ensure_ascii=False, indent=2) + "\n")
-                print("  铸目录 .meta %s" % os.path.relpath(dm, REPO))
-            node = os.path.dirname(node)
-        json.dump({"schemaVersion": 1, "mapId": a.map, "files": manifest},
-                  open(os.path.join(OUT, "pack_manifest.json"), "w", encoding="utf-8"),
-                  ensure_ascii=False, indent=1)
-        tot = sum(m["bytes"] for m in manifest)
-        print("  装入 %d 个文件 + .meta，源合计 %.1f MiB" % (len(manifest), tot / 1024 / 1024))
-        print("  → %s" % os.path.relpath(kit, REPO))
-        print("  → %s" % os.path.relpath(coc, REPO))
+        # 只移除空目录及伴随 meta，保留共享祖先和其它地图。
+        for root, stop in ((legacy, assets / "resources/kits"), (bundle / "2d", bundle)):
+            if root.exists():
+                for p in sorted([x for x in root.rglob("*") if x.is_dir()] + [root], key=lambda p: len(p.parts), reverse=True):
+                    if not any(p.iterdir()):
+                        p.rmdir(); Path(str(p) + ".meta").unlink(missing_ok=True)
+            p = root.parent
+            while p != stop and p.exists() and not any(p.iterdir()):
+                p.rmdir(); Path(str(p) + ".meta").unlink(missing_ok=True); p = p.parent
+        Path(OUT, "pack_manifest.json").write_bytes(json_bytes({"schemaVersion": 2, "mapId": a.map,
+            "bundle": runtime["bundle"], "contentVersion": runtime["contentVersion"], "files": ledger}))
+    for message in bad: print("  ❌ " + message)
+    print(f"  {runtime['bundle']}: {len(runtime['assets'])} 个素材 + manifest，{sum(x['sourceBytes'] for x in runtime['assets'].values()):,} 源字节")
+    print(f"  {runtime['contentVersion']}")
     return 1 if bad else 0
 
 

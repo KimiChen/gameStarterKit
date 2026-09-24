@@ -687,7 +687,7 @@ export function nextStepsFor(pkg: ValidatedPackage, root: string, context: NextS
     steps.push("提交前打开一次 Cocos Creator 为 sync:shared 新建的镜像文件（apps/Cocos/assets/src/shared/**）生成 .meta，再 git add apps/Cocos/assets/src");
   }
   if ([...pkg.files.keys()].some((relative) => relative.startsWith(`${BUNDLES}/`)) && !fs.existsSync(path.join(root, `${BUNDLES}.meta`))) {
-    steps.push("首个 3D bundle：打开一次 Cocos Creator 生成共享祖先 assets/bundles.meta；它由宿主持有，不随包分发。根 bundle 使用宿主 builder.json 的 package3d 配置");
+    steps.push("首个 bundle：打开一次 Cocos Creator 生成共享祖先 assets/bundles.meta；它由宿主持有，不随包分发。根 bundle 使用宿主 builder.json 的 package2d/package3d 配置");
   }
   steps.push("打开一次 Cocos Creator 确认随包 .meta 的 uuid 稳定（Creator 只会重写键序/版本，uuid 不变）");
   return steps;

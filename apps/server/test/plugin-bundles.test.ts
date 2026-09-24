@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import { BUNDLES, classifyPath, deriveOwnership, type PackageClass, type PluginIdentity } from "../tools/plugin/ownership";
-import { assertAssetReferences, collectAssetReferences, createAssetIndex, CREATOR_BUILTINS, normalizeAssetUuid, readAssetFiles } from "../tools/plugin/assetReferences";
+import { assertAssetReferences, assertBundleLayout, collectAssetReferences, createAssetIndex, CREATOR_BUILTINS, normalizeAssetUuid, readAssetFiles } from "../tools/plugin/assetReferences";
 import { packPlugin } from "../tools/plugin/pack";
 import { readPackage, validatePackage } from "../tools/plugin/package";
 import { installPlugin, reinstallFromTree, isSharedNamespace, ownershipConflicts } from "../tools/plugin/install";
@@ -198,6 +198,7 @@ test("check catches reference drift even after a dishonest lock rewrite; from-tr
 test("host builder policy selects remote miniGame and local web/native without package settings writes", () => {
   const builder = JSON.parse(fs.readFileSync(path.join(repository, "apps/Cocos/settings/v2/packages/builder.json"), "utf8"));
   const configs = builder.bundleConfig.custom.package3d.configs;
+  assert.deepEqual(builder.bundleConfig.custom.package2d.configs, configs);
   for (const platform of ["miniGame", "web", "native"]) assert.deepEqual(configs[platform].preferredOptions, { compressionType: "merge_dep", isRemote: platform === "miniGame" });
 });
 
@@ -244,4 +245,31 @@ test("bundle root names cannot alias another owner by case, including orphan met
   assert.throws(() => installPlugin({ root: target, source: path.join(out, "foobar.zip"), git: false, postinstall: false }), /大小写冲突/u);
   assert.deepEqual(fs.readFileSync(path.join(target, existing)), original);
   assert.equal(fs.existsSync(path.join(target, "apps/plugins/foobar/plugin.json")), false);
+}));
+
+
+test("2D map bundle pack/install/check/uninstall owns its assets without 3D settings", () => withRoots((author, target, out) => {
+  const files = fixture("kit");
+  for (const name of [...files.keys()]) if (name.startsWith(BUNDLES + "/") || name.includes("/resources/kits/")) files.delete(name);
+  const root = `${BUNDLES}/kit-foo-s1`;
+  const meta = (file: string, importer: string, userData = {}): void => {
+    files.set(file + ".meta", bytes({ uuid: uuid(file), importer, userData, subMetas: {} }));
+  };
+  meta(root, "directory", { isBundle: true, bundleConfigID: "package2d" });
+  meta(root + "/2d", "directory");
+  files.set(root + "/2d/manifest.json", bytes({ schemaVersion: 1 })); meta(root + "/2d/manifest.json", "json");
+  files.set(root + "/2d/terrain.bin", Buffer.from([0, 1, 2])); meta(root + "/2d/terrain.bin", "buffer");
+  assert.doesNotThrow(() => assertBundleLayout(files));
+  save(author, files);
+  packPlugin({ root: author, id: "foo", outFile: path.join(out, "map.zip") });
+  installPlugin({ root: target, source: path.join(out, "map.zip"), git: false, postinstall: false });
+  assert.equal(fs.existsSync(path.join(target, root, "2d/terrain.bin")), true);
+  assert.equal(checkInstalledPlugins(target).plugins[0].problems.length, 0);
+  uninstallPlugin({ root: target, id: "foo", git: false, postinstall: false });
+  assert.equal(fs.existsSync(path.join(target, root, "2d/terrain.bin")), false);
+  files.set(root + "/2d/hidden.glb", Buffer.from("model"));
+  assert.throws(() => assertBundleLayout(files), /不支持的素材格式/);
+  files.delete(root + "/2d/hidden.glb");
+  meta(root + "/2d/terrain.bin", "gltf");
+  assert.throws(() => assertBundleLayout(files), /2D importer/);
 }));

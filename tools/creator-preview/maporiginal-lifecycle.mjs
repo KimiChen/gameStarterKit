@@ -56,7 +56,7 @@ export async function replayMapOriginalLifecycle(runner) {
             || map.groups.cities.state !== "idle" || map.groups.water.state !== "idle" || map.groups.grid.state !== "idle"
             || map.groups.choose.state !== "idle" || state.rtBytesWithDepth !== 0) throw new Error("L3 still retains near sources");
         const source = state.textures.filter(t => t.valid);
-        if (source.length !== 2 || source.some(t => !/\/(overview|minimap)\/texture$/.test(t.path))) throw new Error("L3 still retains near textures");
+        if (source.length !== 2 || source.some(t => !/\/(overview|minimap)-[0-9a-f]{16}\/texture$/.test(t.path))) throw new Error("L3 still retains near textures");
         if (state.cpu.legacyArrayBufferBytes !== 0) throw new Error("Runtime populated legacy singleton reader");
         for (const [name, usage] of Object.entries(map.data)) if (name !== "terrain") {
             if (Object.values(usage).some(v => v !== 0)) throw new Error(`L3 retains ${name} data`);
@@ -88,7 +88,7 @@ export async function replayMapOriginalLifecycle(runner) {
         await runner.tapText("流畅", { pathIncludes: "MapOriginalWorldView/" }); await sleep(5600);
         const state = await snapshot(runner), map = state.cpu.maps.find(m => !m.closed);
         if (!map || map.groups.resources.state !== "idle" || map.groups.water.state !== "idle") throw new Error("Smooth quality retained resources/water group");
-        if (state.textures.some(t => t.valid && /\/(decor-atlas|river-mask|river-normal)\/texture$/.test(t.path))) throw new Error("Smooth quality retained unused textures");
+        if (state.textures.some(t => t.valid && /\/(decor-atlas|river-mask|river-normal)-[0-9a-f]{16}\/texture$/.test(t.path))) throw new Error("Smooth quality retained unused textures");
         await runner.tapText("普通", { pathIncludes: "MapOriginalWorldView/" }); await ready(runner);
         await runner.waitFor("恢复完整近景", w => readMapOriginalEvidence(w)?.decor);
         return compact(state);
@@ -106,16 +106,16 @@ export async function replayMapOriginalLifecycle(runner) {
         await closed(runner);
         // 故障注入延迟真实引擎交付；不伪造资源、不替换 AssetLease。
         await runner.client.evaluate(`(() => {
-            const original = cc.resources.load, queue = [];
+            const prototype = Object.getPrototypeOf(cc.resources), original = prototype.load, queue = [];
             const wrapped = function(...args) {
                 const index = args.length - 1, callback = args[index];
-                if (typeof args[0] === "string" && args[0].startsWith("kits/mapOriginal/") && typeof callback === "function") {
+                if (typeof args[0] === "string" && this.name === "kit-mapOriginal-s1" && args[0] !== "2d/manifest" && typeof callback === "function") {
                     args[index] = function(...result) { queue.push(() => callback.apply(this, result)); };
                 }
                 return original.apply(this, args);
             };
-            cc.resources.load = wrapped;
-            globalThis.__mapoDelayedLoads = { queue, restore() { if (cc.resources.load === wrapped) cc.resources.load = original; } };
+            prototype.load = wrapped;
+            globalThis.__mapoDelayedLoads = { queue, restore() { if (prototype.load === wrapped) prototype.load = original; } };
         })()`);
         try {
             await runner.tapSettingsEntry("originalWorld");

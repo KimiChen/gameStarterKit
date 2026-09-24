@@ -1,5 +1,5 @@
-/** O3-B1：概览先交付，独立分组经框架 AssetLease 加载和归还。 */
-import { Asset, BufferAsset, EffectAsset, Texture2D } from "cc";
+/** O3：版本验证 → 概览 → 按需图层，全部经框架 AssetLease 加载和归还。 */
+import { Asset, BufferAsset, EffectAsset, JsonAsset, Texture2D } from "cc";
 import { assetLease } from "../../../view/scene3d/cocosAssetLoader";
 import type { AssetRequest } from "../../../view/scene3d/AssetLease";
 import { MapoDataStore, mapoContentKey } from "../logic/MapoDataStore";
@@ -12,21 +12,21 @@ import {
     mapoBlockBaseAsset, mapoBlockGeoAsset, mapoBlockTableAsset,
     MAPO_OVERVIEW_ASSET, mapoTopAtlasAsset, mapoTopsAsset,
 } from "../logic/mapoFar";
+import { MAPO_BUNDLE, MAPO_MANIFEST_ASSET, MAPO_S1_MANIFEST, mapoAssetPath, mapoValidateBuffer, mapoValidateTexture, mapoValidateManifest } from "../logic/mapoManifest";
 import { MAPO_BLOCK_KINDS } from "../logic/mapoBlocks";
 import { MAPO_TOP_KINDS } from "../logic/mapoTops";
 
 
 interface Entry { readonly name: string; readonly request: AssetRequest; }
-const base = "kits/mapOriginal/maps/s1/";
-const texture = (name: string, path: string): Entry => ({ name, request: { bundle: "resources", path: `${path}/texture`, type: Texture2D } });
-const buffer = (name: string, path: string): Entry => ({ name, request: { bundle: "resources", path, type: BufferAsset } });
-const effect = (name: string, file: string): Entry => ({ name, request: { bundle: "resources", path: base + file, type: EffectAsset } });
+const texture = (name: string, path: string): Entry => ({ name, request: { bundle: MAPO_BUNDLE, path: `${path}/texture`, type: Texture2D } });
+const buffer = (name: string, path: string): Entry => ({ name, request: { bundle: MAPO_BUNDLE, path, type: BufferAsset } });
+const effect = (name: string, file: string): Entry => ({ name, request: { bundle: MAPO_BUNDLE, path: mapoAssetPath(`${file}.effect`), type: EffectAsset } });
 
 /** 保留解析失败的准确地址；不会把未注入完整数据的组标记为 ready。 */
 export class MapoDataError extends Error {
     readonly code = "MAPO_DATA_INVALID";
     constructor(readonly path: string, readonly cause: unknown) {
-        super(`[mapOriginal] MAPO_DATA_INVALID resources:${path}: ${String(cause)}`);
+        super(`[mapOriginal] MAPO_DATA_INVALID ${MAPO_BUNDLE}:${path}: ${String(cause)}`);
         this.name = "MapoDataError";
     }
 }
@@ -50,9 +50,20 @@ export class MapoArtResources {
 
     constructor(retire: (group: string, release: () => void) => void) {
         const definitions: Record<string, MapoAssetGroup> = {};
-        const group = (name: string, entries: Entry[], install: () => void = () => {}, clear: () => void = () => {}, dependencies = ["overview"]) => {
+        const group = (name: string, entries: Entry[], install: () => void = () => {}, clear: () => void = () => {}) => {
+            const spec = MAPO_S1_MANIFEST.groups[name]!;
+            const dependencies = name === "overview" ? ["manifest"] : spec.dependencies;
             definitions[name] = { dependencies, requests: entries.map((e) => e.request),
                 install: (assets) => {
+                    // 完成整组验证后才注入任何 reader 或对 renderer 暴露 Asset。
+                    for (const logical of spec.assets) {
+                        const record = MAPO_S1_MANIFEST.assets[logical]!;
+                        const index = entries.findIndex(e => e.request.path === record.path + (record.type === "texture" ? "/texture" : ""));
+                        if (index < 0) throw new MapoDataError(record.path, "missing group entry");
+                        const asset = assets[index]!;
+                        if (record.type === "buffer") mapoValidateBuffer(logical, (asset as BufferAsset).buffer());
+                        if (record.type === "texture") mapoValidateTexture(logical, (asset as Texture2D).width, (asset as Texture2D).height);
+                    }
                     entries.forEach((e, i) => this.assets.set(e.name, assets[i]!));
                     install();
                 },
@@ -63,8 +74,12 @@ export class MapoArtResources {
             try { read(this.get<BufferAsset>(name)!.buffer()); }
             catch (cause) { throw new MapoDataError(name, cause); }
         };
+        definitions.manifest = {
+            requests: [{ bundle: MAPO_BUNDLE, path: MAPO_MANIFEST_ASSET, type: JsonAsset }],
+            install: assets => mapoValidateManifest((assets[0] as JsonAsset).json), clear: () => {},
+        };
         group("overview", [effect("spriteEffect", "mapo-sprite"), texture("overview", MAPO_OVERVIEW_ASSET),
-            texture("minimap", MAPO_MINIMAP_ASSET)], undefined, undefined, []);
+            texture("minimap", MAPO_MINIMAP_ASSET)]);
         group("geography", [texture("ground-base", MAPO_GROUND_BASE_ASSET), texture("region-atlas", MAPO_REGION_ATLAS_ASSET),
             texture("road-atlas", MAPO_ROAD_ATLAS_ASSET), texture("river-fill", MAPO_RIVER_FILL_ASSET),
             buffer(MAPO_REGIONS_ASSET, MAPO_REGIONS_ASSET), buffer(MAPO_ROADS_ASSET, MAPO_ROADS_ASSET),
@@ -86,11 +101,11 @@ export class MapoArtResources {
         // 点选只需 terrain 数据，不因此钉住 32 MiB 的资源图集。
         group("selection", [buffer(MAPO_TERRAIN_ASSET, MAPO_TERRAIN_ASSET)],
             () => inject(MAPO_TERRAIN_ASSET, this.data.terrain.mapoSetDisplayTerrain), () => this.data.terrain.dispose());
-        group("resources", [texture("decor-atlas", MAPO_DECOR_ATLAS_ASSET)], undefined, undefined, ["overview", "selection", "geography"]);
+        group("resources", [texture("decor-atlas", MAPO_DECOR_ATLAS_ASSET)]);
         group("cities", [texture("cityAtlas", MAPO_CITY_ATLAS_ASSET), buffer(MAPO_CITIES_ASSET, MAPO_CITIES_ASSET)],
             () => inject(MAPO_CITIES_ASSET, this.data.cities.mapoSetCities), () => this.data.cities.dispose());
-        group("water", [effect("riverEffect", "mapo-river"), texture("riverMask", base + "river-mask"), texture("riverNormal", base + "river-normal")]);
-        group("grid", [texture("gridLine", base + "grid-line")]);
+        group("water", [effect("riverEffect", "mapo-river"), texture("riverMask", mapoAssetPath("river-mask.png")), texture("riverNormal", mapoAssetPath("river-normal.png"))]);
+        group("grid", [texture("gridLine", mapoAssetPath("grid-line.png"))]);
         group("choose", [texture("choose", MAPO_CHOOSE_ASSET)]);
         this.groups = new MapoAssetGroups(definitions, assetLease, retire, () => {
             this.revision++;

@@ -55,7 +55,9 @@ test("mapOriginal metrics: serialized probe preserves callbacks and restores hoo
         { closed: false, groups: {}, data: { terrain: { arrayBufferBytes: 120 } } },
     ] }]];
     const scene = { name: "Scene", children: [], getComponent: () => null };
-    const cc = { resources: { load }, Director: { EVENT_BEFORE_UPDATE: "before", EVENT_AFTER_DRAW: "after" },
+    const bundlePrototype = { load };
+    const mapBundle = Object.assign(Object.create(bundlePrototype) as { load: typeof load }, { name: "kit-mapOriginal-s1" });
+    const cc = { resources: Object.assign(Object.create(bundlePrototype), { name: "resources" }), Director: { EVENT_BEFORE_UPDATE: "before", EVENT_AFTER_DRAW: "after" },
         director: { root: { device: { numDrawCalls: 3, memoryStatus: {} } }, getScene: () => scene,
             on: (event: string, f: () => void) => events.set(event, f),
             off: (event: string, f: () => void) => { if (events.get(event) === f) events.delete(event); } },
@@ -65,7 +67,7 @@ test("mapOriginal metrics: serialized probe preserves callbacks and restores hoo
         document: { hidden: false, addEventListener: () => {}, removeEventListener: () => {}, getElementById: () => ({ width: 400, height: 800, getContext: () => gl,
             getBoundingClientRect: () => ({ width: 200, height: 400 }) }) } });
     vm.runInContext(`(${installMapOriginalMetrics.toString()})()`, context);
-    cc.resources.load("kits/mapOriginal/maps/s1/decor-atlas/texture", null, () => callbacks++);
+    mapBundle.load("2d/resources/decor-atlas-abcdef1234567890/texture", null, () => callbacks++);
     assert.equal(nativeLoads, 1); assert.equal(callbacks, 1);
     events.get("before")!();
     vm.runInContext("document.getElementById().getContext().bufferSubData(0, 0, new Float32Array(8), 2, 3)", context);
@@ -80,7 +82,7 @@ test("mapOriginal metrics: serialized probe preserves callbacks and restores hoo
     assert.equal(state.environment.cssCanvas.width, 200);
     assert.equal(state.environment.backingCanvas.width, 400);
     vm.runInContext("__mapOriginalMetrics.stop()", context);
-    assert.equal(cc.resources.load, load);
+    assert.equal(bundlePrototype.load, load);
     assert.equal(gl.bufferData, bufferData); assert.equal(gl.bufferSubData, bufferSubData);
     assert.equal(events.size, 0);
     assert.equal(vm.runInContext("typeof __mapOriginalMetrics", context), "undefined");

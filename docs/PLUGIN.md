@@ -155,13 +155,14 @@
 `pack` 遇到推导集与他锁重叠即拒绝采集（⛔ 不静默把别人的文件打进自己的包），`install` 对包内文件与他锁的交集单独点名
 （「属于插件 X」），`check` 断言各锁清单两两不交。保留 id 是 `host` / `registry` / `ui` / `config`（后两个是宿主在 `resources/` 下的既有目录，见 §5.5.3）。
 
-**3D bundle 与序列化依赖（SC1-B7）**：包 id 不含连字符，bundle 名按 `plugin-<id>[-<map>]`
+**2D / 3D bundle 与序列化依赖（SC1-B7、mapOriginal O3）**：包 id 不含连字符，bundle 名按 `plugin-<id>[-<map>]`
 唯一归属；kit 对称使用 `kit-<id>[-<map>]`。根 `.meta` 必须 `importer:directory`、
-`userData.isBundle:true`，`bundleName` 缺省或等于目录名，`bundleConfigID:"package3d"`。
+`userData.isBundle:true`，`bundleName` 缺省或等于目录名。`3d/` 使用 `bundleConfigID:"package3d"`；
+`2d/` 使用 `bundleConfigID:"package2d"`，允许 PNG、bin、JSON、effect 及 texture 子资产，不能借此携带 3D 模型。
 共享 `assets/bundles.meta` 由宿主持有，首次安装后由 Creator 生成。禁止嵌套 bundle、
 在 `resources/` 内开启 bundle、冒用别包名字及大小写冲突。
 
-宿主 `apps/Cocos/settings/v2/packages/builder.json` 的 `bundleConfig.custom.package3d` 管发布政策：
+宿主 `apps/Cocos/settings/v2/packages/builder.json` 的 `bundleConfig.custom.package3d/package2d` 管发布政策：
 `miniGame` 远程、`native/web` 本地，均 `merge_dep`；开发预览从本地加载。包不能携带 settings 覆写。
 运行时地址为 `{ bundle, path }`，路径省扩展名；完整异步 AssetLease 仍在 SC3 交付。
 

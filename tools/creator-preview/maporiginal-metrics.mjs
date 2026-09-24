@@ -33,20 +33,21 @@ export function installMapOriginalMetrics() {
     let frameStart = start, previousEnd = null, uploadedBytes = 0, uploads = 0, allocations = 0;
     let beforeUploads = 0, beforeBytes = 0, firstOverviewMs = null, firstNearMs = null;
     const relative = () => performance.now() - start;
-    const originalLoad = cc.resources.load;
+    const bundlePrototype = Object.getPrototypeOf(cc.resources);
+    const originalLoad = bundlePrototype.load;
     const load = function (...args) {
         const resource = args[0], index = args.length - 1, callback = args[index];
-        if (typeof resource !== "string" || !resource.startsWith("kits/mapOriginal/") || typeof callback !== "function") {
+        if (typeof resource !== "string" || this.name !== "kit-mapOriginal-s1" || typeof callback !== "function") {
             return originalLoad.apply(this, args);
         }
-        const record = { path: resource, startMs: relative(), finishMs: null, error: null };
+        const record = { bundle: this.name, path: resource, startMs: relative(), finishMs: null, error: null };
         loads.push(record);
         args[index] = function (error, asset) {
             record.finishMs = relative();
             record.error = error ? String(error.message ?? error) : asset ? null : "missing asset";
             if (asset) {
                 const texture = typeof asset.getGFXTexture === "function";
-                Object.assign(record, { uuid: asset._uuid, kind: texture ? "texture" : typeof asset.buffer === "function" ? "buffer" : "effect",
+                Object.assign(record, { uuid: asset._uuid, kind: texture ? "texture" : typeof asset.buffer === "function" ? "buffer" : asset.json ? "manifest" : "effect",
                     width: texture ? asset.width : null, height: texture ? asset.height : null,
                     bufferBytes: typeof asset.buffer === "function" ? asset.buffer().byteLength : null });
                 assets.set(asset._uuid || resource, { ref: new WeakRef(asset), record });
@@ -55,8 +56,8 @@ export function installMapOriginalMetrics() {
         };
         return originalLoad.apply(this, args);
     };
-    cc.resources.load = load;
-    restorers.push(() => { if (cc.resources.load === load) cc.resources.load = originalLoad; });
+    bundlePrototype.load = load;
+    restorers.push(() => { if (bundlePrototype.load === load) bundlePrototype.load = originalLoad; });
     // Count actual WebGL buffer calls. Numeric bufferData allocates storage, not uploaded bytes.
     for (const name of ["bufferData", "bufferSubData"]) {
         const original = gl[name];
@@ -159,7 +160,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 function inputIdentity() {
     const hashes = {};
     for (const root of ["apps/client/src/kits/mapOriginal", "apps/shared/src/kits/mapOriginal",
-        "apps/kits/mapOriginal/data/maps/s1", "tools/creator-preview/maporiginal.mjs", "tools/creator-preview/maporiginal-metrics.mjs", "tools/creator-preview/maporiginal-lifecycle.mjs"]) {
+        "apps/kits/mapOriginal/data/maps/s1", "apps/Cocos/assets/bundles/kit-mapOriginal-s1", "tools/creator-preview/maporiginal.mjs", "tools/creator-preview/maporiginal-metrics.mjs", "tools/creator-preview/maporiginal-lifecycle.mjs"]) {
         const visit = file => {
             if (fs.statSync(file).isDirectory()) fs.readdirSync(file).sort().forEach(name => visit(path.join(file, name)));
             else if (!file.endsWith(".meta")) hashes[path.relative(ROOT, file)] = createHash("sha256").update(fs.readFileSync(file)).digest("hex");
@@ -179,7 +180,7 @@ function inputIdentity() {
     };
     const compiledReaders = ["Terrain", "Bands", "Regions", "Roads", "Cities", "Tops", "Rivers", "Blocks"]
         .map(name => checkCompiled(`kits/mapOriginal/logic/mapo${name}.ts`));
-    const compiledRendering = ["logic/mapoMesh", "logic/mapoScene", "logic/mapoStaticScene", "logic/mapoFar", "view/MapoMinimap", "logic/MapoDataStore", "view/MapoAssetGroups", "view/MapoArtResources", "view/MapOriginalWorldView", "view/MapoFarRenderer", "view/MapoChunkBaker"]
+    const compiledRendering = ["logic/mapoMesh", "logic/mapoScene", "logic/mapoStaticScene", "logic/mapoFar", "view/MapoMinimap", "logic/MapoDataStore", "logic/mapoManifest", "view/MapoAssetGroups", "view/MapoArtResources", "view/MapOriginalWorldView", "view/MapoFarRenderer", "view/MapoChunkBaker"]
         .map(name => checkCompiled(`kits/mapOriginal/${name}.ts`));
     return { head: execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim(), compiledReaders, compiledRendering,
         inputHash: createHash("sha256").update(JSON.stringify(hashes)).digest("hex"), files: hashes };

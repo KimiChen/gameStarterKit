@@ -314,3 +314,18 @@ test('CLI fails closed and succeeds on the same independent fixture', () => with
   const good = run(); assert.equal(good.status, 0, good.stderr); assert.ok(JSON.parse(good.stdout).assets > 0);
   fs.unlinkSync(path.join(f.root, f.model + '.meta')); const bad = run(); assert.equal(bad.status, 1); assert.match(bad.stderr, /悬空|JSON/u);
 }));
+
+test('2D bundle keeps ownership/UUID checks without inheriting 3D art configuration', () => withFixture(f => {
+  const base = 'apps/Cocos/assets/bundles/kit-maptest-s1';
+  write(f.root, 'apps/kits/maptest/kit.json', json({ id: 'maptest' }));
+  directory(f.root, base, { isBundle: true, bundleConfigID: 'package2d' });
+  directory(f.root, base + '/2d');
+  const file = base + '/2d/overview.png';
+  write(f.root, file, png()); textureMeta(f.root, file);
+  assert.equal(verifyAssets3d(f.root).owners.length, 1, '2D bundle needs no art/3d/config');
+  write(f.root, base + '/2d/hidden.glb', Buffer.from('hidden'));
+  assert.throws(() => verifyAssets3d(f.root), /不支持的素材格式/);
+  fs.unlinkSync(path.join(f.root, base, '2d/hidden.glb'));
+  edit(f.root, file + '.meta', m => { m.uuid = uuid(f.texture); });
+  assert.throws(() => verifyAssets3d(f.root), /UUID|uuid/);
+}));

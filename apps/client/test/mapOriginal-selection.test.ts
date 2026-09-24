@@ -43,9 +43,9 @@ test("mapOriginal 普通点选：2080 的八片 UI 围绕格心，不混入行�
 });
 
 test("mapOriginal 选中地块面：原版件已入 kit 且两边镜像齐全", () => {
-    assert.equal(MAPO_CHOOSE_ASSET, "kits/mapOriginal/maps/s1/choose");
+    assert.match(MAPO_CHOOSE_ASSET, /^2d\/choose\/choose-[0-9a-f]{16}$/);
     const kit = fileURLToPath(new URL("../../kits/mapOriginal/data/maps/s1/choose.png", import.meta.url));
-    const coc = fileURLToPath(new URL("../../Cocos/assets/resources/kits/mapOriginal/maps/s1/choose.png", import.meta.url));
+    const coc = fileURLToPath(new URL(`../../Cocos/assets/bundles/kit-mapOriginal-s1/${MAPO_CHOOSE_ASSET}.png`, import.meta.url));
     assert.ok(existsSync(kit), `缺 ${kit}（先跑 build_choose.py + install_to_kit.py）`);
     assert.ok(existsSync(coc), `缺 ${coc}（install_to_kit.py 的镜像没到）`);
     assert.deepEqual([...pngSize(kit)], [512, 64], "choose.png 必须包含普通点选的三种原始切片");

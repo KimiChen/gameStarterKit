@@ -569,7 +569,7 @@ O4 发布格式验证仍由各批交付。Creator 重放需要本地服务和可
 | O1 去重重排 | 已完成 | 山体 26→19、道路 36→18 物理图片；四张图集共减少 22 MiB。原包/基线像素、固定时间渲染、横竖预览及隔离快照 verify:all 全过；详见下方记录 |
 | O2 定位安全的裁边 | 已完成 | 资源件/河岸/雪 top/道路及小地图已裁边，Creator 实测源纹理再减 46.5 MiB；原包/固定时间画面、单/双页实绘、横竖版与小地图边界回归均通过，预览恢复竖版；详见下方记录 |
 | O3-B1 分组租约与数据生命周期 | 已完成（2026-09-24） | 概览先交付；分组 AssetLease、实例数据持有者、5 秒出档宽限及帧末归还；竖版 40 步与十次重开通过，L3 源纹理 8.50 MiB、关闭后 reader / BufferAsset / 源纹理 / RT 均为 0；全量闸的既有文档不一致单独记录于下文 |
-| O3-B2 Bundle 与版本绑定 | 未开始 | — |
+| O3-B2 Bundle 与版本绑定 | 已完成（2026-09-24） | 独立 `kit-mapOriginal-s1/2d` Bundle、manifest 内容/布局/配置绑定、3 个作者态文件退出运行时；竖版 40 步、5 项故障/缓存检查与 Web 构建通过，全量 `verify:all` 通过 |
 | O4 GPU 压缩 | 未开始 | — |
 | O5 大配置外置 | 未开始 | — |
 | O6 动画更新优化 | 未开始 | 后续批次，不阻塞前五项 |
@@ -888,4 +888,83 @@ L3 只剩 overview/minimap 两张纹理；流畅档的 decor-atlas、river-mask�
 也不把该次执行记为全量通过；后续独立执行客户端测试的日志是 `test-client.log`。
 前两次预览未进入地图验收，分别因 Creator 编译尚未刷新、刷新后引擎尚未初始化，记录在 `portrait/` 与 `portrait-run2/`。
 
-O3-B2 的 Bundle 迁移、manifest 版本绑定与无消费者文件移出尚未实施；O4–O6 状态不变。
+以上是 O3-B1 完成时的验收记录；后续 Bundle 与版本绑定见下节。O4–O6 状态不变。
+
+
+### O3-B2 实施与验收（2026-09-24）
+
+**已完成。** 运行时根冻结为 `apps/Cocos/assets/bundles/kit-mapOriginal-s1/2d/`，
+Bundle 名为 `kit-mapOriginal-s1`。仍沿用 O3-B1 的概览优先、按需分组、5 秒宽限和帧末归还。
+本批不改地图几何、图层顺序、原版 transform、LOD 阈值或 PNG 像素。
+
+落地契约：
+
+- 安装器统一生成 8 个素材组的目录、依赖、地址、源字节统计、`manifest.json` 与
+  `shared/content/manifest.data.ts`。32 个运行时素材以稳定逻辑名查询，物理文件名带源 SHA-256 前 16 位。
+  `resources/kits/mapOriginal/maps/s1/` 的旧文件和空目录已移除，不能发布第二份地图资源。
+- `minimap-mask.png`、`decor-atlas.info.json`、`region-atlas.info.json` 改为 kit-only；
+  授权台账同时记录权威数据路径与实际 Bundle 路径。制作流程、原始件 ID 和审计信息保留。
+- manifest 是独立的前置租约。地图先严格比对 schema、地图、内容、布局、配置哈希、组依赖及素材记录，
+  再启动概览和后续图层；错版不会进入 ready，也不会发出图层请求。
+  二进制在任何 reader 注入前检查长度与 CRC32，原有记录数、范围和边界校验继续保留。
+  CRC32 用于发现损坏或混版，不代替源制品的 SHA-256 身份。
+- 图集布局版本绑定全部生成布局源码；内容版本另绑定所有 shared 内容配置与源素材哈希。
+  纹理使用内容寻址加载地址并核对尺寸，平台文件哈希由 Creator 构建版本负责。
+  本批维持 PNG，未把源 PNG hash 用于 ASTC / ETC 校验，也未新增浏览器私有缓存。
+- 包机制新增宿主 `package2d` profile：Web/native 本地、miniGame 远程，均为 `merge_dep`。
+  2D 仍检查精确包归属、目录、UUID 和引用闭合；允许 PNG/bin/JSON/effect，拒绝隐藏模型和错误 importer，
+  不要求 `art/3d` 配置或套用 3D 贴图预算。pack/install/check/uninstall 已用隔离夹具覆盖。
+  修改 profile 后已重启 Creator，正式构建和重启后预览均未再出现 profile 缺失回退警告。
+
+当前内容身份为
+`sha256-ac75eb4df526840dc3e224de5addba422127afb960190ad8f497382d6e5f6c4c`，
+布局身份为 `trim-v1-adbcd74f24eb0597f7ed27a2c366df1d0f06d9c0c6d3b63f526c6d6259f2b7e2`。
+安装器按输入自动更新身份，不手填日期版本。原有定长二进制布局本批未改写；大配置外置仍归 O5。
+
+体积证据（`.cache/creator-preview/maporiginal-optimization/o3-b2/source-sizes.json`）：
+
+| 口径 | 修改前 | 修改后 |
+|---|---:|---:|
+| resources 内的地图素材源文件（不含 .meta） | 35 个 / 19,727,356 B | 0 |
+| 独立地图 Bundle 源文件（不含 .meta） | 0 | 33 个 / 19,506,220 B |
+| 运行时源文件净减少 | — | 221,136 B（移出 233,496 B 作者态文件，新增 12,360 B manifest） |
+| shared 内容 TS | 保留原配置 | 1,555,855 B，含版本绑定；仍属于脚本载荷 |
+
+另外执行 Creator 3.8.8 的 `web-mobile / debug=false / md5Cache=true` 构建。
+输出为 `.cache/creator-preview/maporiginal-optimization/o3-b2/build/web-mobile/`，
+`build-audit.json` 由 `audit_bundle_build.py` 复核：
+
+| Web 构建磁盘产物 | 文件数 | 字节 |
+|---|---:|---:|
+| `assets/kit-mapOriginal-s1` 地图包 | 66 | 19,531,890 B（18.63 MiB） |
+| `assets/main` | 20 | 6,195,330 B |
+| `assets/resources`（其它玩法、界面等） | 1,450 | 116,939,223 B |
+| 整个应用除地图包（含引擎、其它包和启动文件） | 1,496 | 127,385,417 B |
+
+地图包 33 个加载地址均存在，Bundle 依赖为空；17 张 PNG 与 13 份二进制 native 文件
+全部与安装源 SHA-256 一致，34 条 import / 30 条 native 记录带 Creator MD5 版本。
+其它包没有地图地址或旧 resources 路径。**这些是未压缩磁盘文件，不是下载流量、微信主包大小或冷启动成本。**
+本批没有执行小游戏发布、CDN 上传或 Content-Encoding 验证。
+构建日志保留了既有 vendor/Rollup 告警及大 TS 的 Babel 提示；没有将“构建产物有效”写成“构建日志零告警”。
+
+真实引擎证据：
+
+- `portrait/report.json`：40 步全部通过，console 与错误浮层均为 0；
+  `portrait/maporiginal-metrics.json`：14 个有效窗口，CSS 393×772.8984、DPR 2、backing 786×1546。
+  普通 L0 源纹理上限仍为 82.6253 MiB；L3 宽限后 8.50 MiB / RT 0，流畅 L0 为 34.3753 MiB。
+- 原有远近往返、跨雪沙平移、小地图跳转和选择框回归通过。
+  连续十次关页后 reader、BufferAsset、源纹理、RT、组租约与节点均归零；
+  三个延迟概览回调在关页后到达，仍全部归还，未复活地图。
+- `faults/report.json`：五项全部通过。旧 contentVersion / atlasLayoutVersion 只请求 manifest 后拒绝；
+  图集缺片返回带 Bundle/path 的 `ASSET_MISSING`；已加载概览可通过框架租约在断网时复用 Creator Asset 缓存；
+  关闭释放且禁用 HTTP 缓存后，断网加载失败并保持图层未安装。恢复网络后全部组可重新 ready。
+  故障期的预期 console / 网络错误保留；恢复阶段没有额外错误。
+- 编辑器重启后已恢复用户原有竖版预览，普通输入选中 `(750,749)`，5 级粮田值 26，
+  截图与页面记录见 `selection-750-749.png/.json`。
+
+验证：客户端 **1,358 项**通过；包规则与 3D 校验夹具 **119 项**通过；manifest 生成测试 **3 项**通过；
+客户端 strict / legacy 与服务端类型检查、安装器 `--check`、资源审计及构建审计通过。
+本批完整 `npm run verify:all` 通过（服务端 **1,399 项**通过），完整日志保留在上述证据目录。
+B1 记录中的根文档同步问题在当前基线上已不再触发；本批未修改 AGENTS/CLAUDE。
+
+下一批为 O4：独立验证地图纹理压缩、PNG 回退、画质阈值和平台实际 GPU 格式；O5/O6 未实施。

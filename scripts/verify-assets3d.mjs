@@ -232,7 +232,7 @@ export function verifyAssets3d(root = ROOT) {
   verifyQualityPresets(jsonFile(root, 'apps/Cocos/settings/v2/packages/builder.json'));
   validateConfig(policy.framework, CONFIG, policy.limits);
   if (!fs.existsSync(path.join(root, FRAMEWORK))) check(Object.keys(policy.framework.textures).length === 0 && Object.keys(policy.framework.models).length === 0 && policy.framework.exceptions.length === 0, FRAMEWORK, 'configured framework assets are missing');
-  const owners = new Map(), files = new Map(), directories = new Set(), bundleOwners = new Map();
+  const owners = new Map(), files = new Map(), directories = new Set(), bundleOwners = new Map(), bundles2d = new Set();
   const addOwner = (cls, id) => {
     const key = `${cls}:${id}`;
     if (owners.has(key)) return key;
@@ -255,7 +255,15 @@ export function verifyAssets3d(root = ROOT) {
     for (const name of new Set(fs.readdirSync(path.join(root, BUNDLES)).map(name => name.replace(/\.meta$/u, '')))) {
       const parsed = parsePackageBundleName(name);
       check(parsed, `${BUNDLES}/${name}`, 'unowned or invalid bundle');
-      const key = addOwner(parsed.class, parsed.id); bundleOwners.set(name, key);
+      const rootMeta = jsonFile(root, `${BUNDLES}/${name}.meta`);
+      let key;
+      if (rootMeta.userData?.bundleConfigID === 'package2d') {
+        // 2D 仍检查包归属、目录、UUID 和引用闭合，不要求 3D 作者配置或 3D 贴图预算。
+        const manifest = jsonFile(root, `apps/${parsed.class === 'kit' ? 'kits' : 'plugins'}/${parsed.id}/${parsed.class}.json`);
+        check(manifest.id === parsed.id, name, 'manifest/bundle owner mismatch');
+        key = `${parsed.class}:${parsed.id}`; bundles2d.add(`${BUNDLES}/${name}`);
+      } else key = addOwner(parsed.class, parsed.id);
+      bundleOwners.set(name, key);
       addRoot(`${BUNDLES}/${name}`);
     }
   }
@@ -308,7 +316,8 @@ export function verifyAssets3d(root = ROOT) {
   for (const owner of owners.values()) {
     const config = owner.config;
     validateConfig(config, owner.configPath, policy.limits);
-    const ownFiles = new Map([...files].filter(([file]) => ownerOf(file) === owner.key));
+    const ownFiles = new Map([...files].filter(([file]) => ownerOf(file) === owner.key
+      && ![...bundles2d].some(bundle => file === bundle + '.meta' || inside(file, bundle))));
     const exceptions = prepareExceptions(config, files, ownerOf, owner.key);
     report.exceptions.push(...[...exceptions.values()].map(entry => ({ owner: owner.key, path: entry.path, rules: Object.keys(entry.rules) })));
     for (const field of ['textures', 'models']) for (const file of Object.keys(config[field])) check(ownFiles.has(file), file, `stale/foreign ${field} registration`);

@@ -73,7 +73,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `emit_display_palette.py` | ★ 61 值调色板 + `MAPO_VALUE_KIND_ID` 粗类下标表 → shared TS |
 | `build_labels.py` / `emit_labels.py` | 地名（9 大区 / 55 郡）+ 城址真坐标 + ★ **城占格表**（`city.bytes` → 249 座 / 2,689 格）→ shared TS |
 | `emit_shared_terrain.py` | 通行层 → shared TS（varint-RLE + base64，完整文件 374,652 B / 365.9 KiB） |
-| `install_to_kit.py` | 装 kit 数据目录 + Cocos 运行时镜像 + 确定性铸 `.meta`（uuid = `sha1("mapOriginal::<相对路径>")`） |
+| `install_to_kit.py` | 装 kit 数据目录 + 独立 2D Bundle、生成 manifest/编译期版本绑定 + 确定性铸 `.meta`（uuid = `sha1("mapOriginal::<相对路径>")`） |
 
 ```bash
 python3 tools/maporiginal-assets/namehash.py --selftest
@@ -671,3 +671,39 @@ O1 原画布基线可加 `--decor-baseline .cache/mapo-trim/before/data`；完�
 确认不变，再核对基线几何哈希、原图哈希与修改前截图记录一致。透明 PNG 的解除预乘会放大低 alpha
 的 RGB 舍入噪声，保留其原始对照结果，不把它写成通过；实际地图及不透明背景陈列图仍使用相同
 RGBA 阈值（MAE≤1、差值>8 的比例≤0.1%），不能靠扩大 ROI 消解误差。
+
+
+## O3：独立地图 Bundle 与版本绑定
+
+真源仍是本目录管线与 `apps/kits/mapOriginal/data/maps/s1/`。安装器在
+`apps/Cocos/assets/bundles/kit-mapOriginal-s1/2d/` 生成按组归档的运行时素材；每个文件的物理名
+带 SHA-256 前 16 位，调用方按稳定逻辑名查询 `manifest.data.ts`，不手写物理文件名。
+`manifest.json` 与生成 TS 同时绑定全部 shared 内容配置哈希、图集布局、组依赖、源文件字节数和哈希。
+修改任一配置或源素材后必须重跑安装器。它先核对输入，再更新产物，清除已知旧副本；遇到未知文件拒绝删除。
+现有 `.meta` 保留 Creator 的导入设置，新地址按确定性 UUID 铸造。根使用宿主 `package2d` 配置。
+
+运行时先经 AssetLease 加载 manifest 并严格核对版本和内容，然后才启动其它组。二进制在解析前检查
+长度和 CRC32（损坏/混版检测，非安全摘要）；纹理检查尺寸。完整 SHA-256 是源制品的身份，
+不用于校验 ASTC/ETC 平台输出；Creator 的内容寻址地址和构建版本负责平台缓存。
+32 个运行时素材以外，`minimap-mask.png`、`decor-atlas.info.json`、`region-atlas.info.json` 等
+制作信息只留在 kit，`resources/kits/mapOriginal/maps/s1/` 不再发布地图副本。
+源文件大小不等于构建输出或网络流量，审计报告分别列 Bundle 源字节、主包地图素材字节及脚本配置字节。
+
+```bash
+python3 tools/maporiginal-assets/install_to_kit.py
+npm run sync:shared
+node --import tsx tools/maporiginal-assets/bake_overview.ts
+python3 tools/maporiginal-assets/install_to_kit.py
+npm run sync:shared
+python3 tools/maporiginal-assets/emit_ledger.py --out apps/kits/mapOriginal/art/LICENSES.md
+python3 tools/maporiginal-assets/install_to_kit.py --check
+python3 tools/maporiginal-assets/audit_assets.py --out .cache/mapo-bundle/assets.json
+node tools/creator-preview/run.mjs mapOriginal --reuse --out .cache/mapo-bundle/portrait
+node tools/creator-preview/probe-maporiginal-bundle.mjs <已有预览标签ID> .cache/mapo-bundle/faults
+python3 tools/maporiginal-assets/audit_bundle_build.py --build-dir <web-mobile构建目录> --out .cache/mapo-bundle/build.json
+```
+
+最后一个探针在指定的 localhost:7456 预览内注入旧内容版本、旧布局版本与真实 Bundle 地址缺片，
+确认图层不误安装且恢复加载；再测试已加载 Asset 的断网复用，以及释放后禁 HTTP 缓存的断网失败路径。
+不会新建缓存或改 CDN；finally 撤掉钩子、恢复网络和地图页。故障期控制台错误保留在报告中。
+修改宿主 builder profile 后需重启 Creator 使其重新读取设置；默认配置回退警告不能当成 profile 已生效。

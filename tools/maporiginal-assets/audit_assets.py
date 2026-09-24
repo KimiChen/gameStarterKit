@@ -235,7 +235,11 @@ def sampling(name):
 
 def build_report(map_id):
     data = ROOT / "apps/kits/mapOriginal/data/maps" / map_id
-    runtime = ROOT / "apps/Cocos/assets/resources/kits/mapOriginal/maps" / map_id
+    runtime = ROOT / "apps/Cocos/assets/bundles" / f"kit-mapOriginal-{map_id}"
+    manifest = json.loads((runtime / "2d/manifest.json").read_text())
+    legacy = ROOT / "apps/Cocos/assets/resources/kits/mapOriginal/maps" / map_id
+    legacy_files = [p for p in legacy.rglob("*") if p.is_file() and p.suffix != ".meta"] if legacy.exists() else []
+    if legacy_files: raise ValueError("resources 中仍有重复发布的地图素材")
     groups, entries = audit_atlases(data)
     files = []
     for path in sorted(data.glob("*.png")):
@@ -243,10 +247,16 @@ def build_report(map_id):
             a = np.asarray(im.convert("RGBA"))
             row = {"name": path.name, "bytes": path.stat().st_size, "sha256": sha(path.read_bytes()),
                    "size": list(im.size), "rgbaBytes": im.width*im.height*4, "sampling": sampling(path.name)}
-        row["mirrorMatches"] = (runtime / path.name).is_file() and sha((runtime / path.name).read_bytes()) == row["sha256"]
+        if path.name not in manifest["assets"]:
+            row.update(runtime=False, mirrorMatches=None, imageImport=None, textureImport=[])
+            files.append(row)
+            continue
+        row["runtime"] = True
+        mirror = runtime / (manifest["assets"][path.name]["path"] + ".png")
+        row["mirrorMatches"] = mirror.is_file() and sha(mirror.read_bytes()) == row["sha256"]
         if not row["mirrorMatches"]:
             raise ValueError(f"runtime mirror differs: {path.name}")
-        meta = json.loads((runtime / (path.name+".meta")).read_text())
+        meta = json.loads(Path(str(mirror) + ".meta").read_text())
         row["imageImport"] = meta.get("userData", {})
         row["textureImport"] = [s.get("userData", {}) for s in meta["subMetas"].values() if s["importer"] == "texture"]
         if path.name == "river-mask.png":
@@ -259,9 +269,9 @@ def build_report(map_id):
     inputs = sorted({p for root in roots for p in root.rglob("*") if p.is_file()
                      and "out" not in p.relative_to(root).parts and "__pycache__" not in p.parts
                      and p.suffix in (".png", ".json", ".ts", ".py", ".bytes", ".bin", ".effect")})
-    inputs.extend(sorted(runtime.glob("*.meta")))
+    inputs.extend(sorted(runtime.rglob("*.meta")))
     hashes = {p.relative_to(ROOT).as_posix(): sha(p.read_bytes()) for p in inputs}
-    runtime_files = [p for p in runtime.iterdir() if p.is_file() and p.suffix != ".meta"]
+    runtime_files = [p for p in runtime.rglob("*") if p.is_file() and p.suffix != ".meta"]
     def inventory(paths):
         return {"count": len(paths), "bytes": sum(p.stat().st_size for p in paths),
                 "files": [{"path": p.relative_to(ROOT).as_posix(), "bytes": p.stat().st_size,
@@ -271,6 +281,7 @@ def build_report(map_id):
             "packingPolicy": {"sourceGuardPixels": 2, "exteriorPaddingPerSide": 2, "rotation": False, "mipmaps": False,
                               "claim": "Trial dimensions only, not proven runtime savings or globally optimal packing."},
             "files": files, "runtimeFiles": inventory(runtime_files),
+            "runtimeBundle": manifest["bundle"], "mainPackageMapAssetBytes": sum(p.stat().st_size for p in legacy_files),
             "contentTs": inventory(list(CONTENT.glob("*.ts"))),
             "runtimeBinary": inventory([p for p in runtime_files if p.suffix in (".bin", ".bytes")]),
             "totals": {"pngFiles": len(files), "pngBytes": sum(f["bytes"] for f in files),

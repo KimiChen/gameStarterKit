@@ -39,6 +39,7 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 | 给插件用的 API | `apps/{shared,server,client}/src/kits/<id>/api/<surface>/index.ts` | §4 |
 | FGUI 包、资源、配表 | `apps/art/fairygui/assets/<Pkg>/`、`resources/kits/<id>/`、配表 `<id>_*` | 与插件同一形态：插件是 `resources/plugins/<id>/`（2026-09-06 起；此前是与宿主目录平级的 `resources/<modeId>/`，见 PLUGIN.md §5.5.3）。⚠ kit 的 mode 资源也归 `resources/kits/<kitId>/`，⛔ 不另给 `resources/<modeId>/` |
 | 3D 重资产（SC1-B7） | `apps/Cocos/assets/bundles/kit-<id>[-<map>]/3d/**` 与各级 `.meta` | 精确包名或合法地图后缀，不能用裸前缀认领；`resources/kits/<id>/3d/data/` 留小数据。根 `isBundle:true`、`bundleName` 缺省或等于目录名、`bundleConfigID:"package3d"`；小游戏远程 / Web、native 本地由宿主 builder.json 决定 |
+| 2D 地图素材（mapOriginal O3） | `apps/Cocos/assets/bundles/kit-<id>[-<map>]/2d/**` 与各级 `.meta` | 与 3D 相同包归属和 UUID 引用闭合，根使用宿主 `bundleConfigID:"package2d"`；允许 PNG / bin / JSON / effect，不要求 3D 作者配置，禁止把模型藏入 2D 包 |
 | 3D 作者输入与配置（SC5） | `apps/kits/<id>/art/3d/` | 自有 / 已授权源素材、转换作业、`art3d.config.json` 与 `LICENSES.md`；主 GLB、各 LOD、独立 PNG 的来源逐份登记。工作缓存和工具依赖不装入运行时，转换与导入步骤见 [CLIENT §6](CLIENT.md#6-设计分辨率与资源导出) |
 
 bundle 随 pack / install / 锁 / check / changed / uninstall 全链归属；子资产 UUID 与 Prefab、材质、
