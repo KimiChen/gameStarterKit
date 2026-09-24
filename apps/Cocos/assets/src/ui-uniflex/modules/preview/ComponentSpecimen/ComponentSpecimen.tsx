@@ -59,7 +59,7 @@ const TICKET_REWARD = { id: 'ticket', itemId: 'ticket', count: '30000', left: 41
 
 export interface ComponentSpecimenParams {
     readonly part: string;
-    readonly skin: 'classic' | 'midnight';
+    readonly skin: 'classic';
     readonly width: number;
     readonly height: number;
 }
@@ -67,10 +67,9 @@ export interface ComponentSpecimenParams {
 /** One shared component on its own canvas, for the web catalog cards. */
 export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIndex: 'screen' }, (context) => {
     const part = context.params.part;
-    const skin = context.params.skin;
     const width = context.params.width;
     const height = context.params.height;
-    const theme = skin === 'midnight' ? themes.midnight : themes.classic;
+    const theme = themes.classic;
     const pageSurfaceAlt = theme.preview.surfaceAlt;
     const pageText = theme.preview.text;
     const pageAccent = theme.preview.accent;

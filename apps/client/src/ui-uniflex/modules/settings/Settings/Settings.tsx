@@ -34,10 +34,8 @@ const defaultItems: readonly SettingsMenuItem[] = [
 export const Settings = defineView<SettingsParams | void>({ zIndex: 'window' }, (context) => {
     const params = context.params ?? {};
     // Name lookup keeps every settings skin in this page's resource set.
-    const skinName: ThemeName = params.theme === themes.restored ? 'restored'
-        : params.theme === themes.midnight ? 'midnight' : 'classic';
+    const skinName: ThemeName = params.theme === themes.restored ? 'restored' : 'classic';
     const theme = skinName === 'restored' ? themes.restored
-        : skinName === 'midnight' ? themes.midnight
         : params.theme ?? themes.classic;
     const items = params.items ?? defaultItems;
     const panel = params.theme?.settings.panel ?? themes.classic.settings.panel;

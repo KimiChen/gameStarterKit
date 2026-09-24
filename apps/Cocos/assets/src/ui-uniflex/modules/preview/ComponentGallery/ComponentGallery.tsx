@@ -26,11 +26,11 @@ import { ResourceCounter } from '../../../gamecomponents/resource/ResourceCounte
 import { STAR_ROW_HEIGHT, STAR_ROW_WIDTH, StarRow } from '../../../gamecomponents/star/StarRow';
 import { StarLevel } from '../../../gamecomponents/star/StarLevel';
 import { TECH_ICON_HEIGHT, TECH_ICON_WIDTH, TechIcon } from '../../../gamecomponents/tech/TechIcon';
-import { themes, type ComponentTheme, type ThemeName } from '../../../themes/active';
+import { themes, type ComponentTheme } from '../../../themes/active';
 
 const PAGE_WIDTH = 750;
 const PAGE_HEIGHT = 1424;
-const HEADER_HEIGHT = 188;
+const HEADER_HEIGHT = 128;
 const SCROLL_HEIGHT = PAGE_HEIGHT - HEADER_HEIGHT;
 const CONTENT_HEIGHT = 5020;
 const SECTION_WIDTH = 710;
@@ -61,9 +61,8 @@ export interface ComponentGalleryParams {
     readonly onBack: () => void;
 }
 
-/** Shared-component catalog. Theme switch is local to this preview. */
+/** Shared-component catalog using the classic theme. */
 export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zIndex: 'screen' }, (context) => {
-    const [mode, setMode] = useState<ThemeName>('classic');
     const [checked, setChecked] = useState(true);
     const [radio, setRadio] = useState('a');
     const [selectedTab, setSelectedTab] = useState('one');
@@ -82,7 +81,7 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
         setTextHints((current) => [...current, { id, text, textWidth: 200, requestedAtMs: Date.now() }]);
     };
     const completeTextHint = (id: number) => setTextHints((current) => current.filter((item) => item.id !== id));
-    const theme: ComponentTheme = mode === 'classic' ? themes.classic : themes.midnight;
+    const theme: ComponentTheme = themes.classic;
     const preview = theme.preview;
     const pageBackground = preview.background;
     const pageSurface = preview.surface;
@@ -91,12 +90,6 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
     const pageMuted = preview.muted;
     const pageAccent = preview.accent;
     const pageOnAccent = preview.onAccent;
-    const classicSelected = mode === 'classic';
-    const midnightSelected = mode === 'midnight';
-    const classicChip = classicSelected ? pageAccent : pageSurfaceAlt;
-    const midnightChip = midnightSelected ? pageAccent : pageSurfaceAlt;
-    const classicChipText = classicSelected ? pageOnAccent : pageText;
-    const midnightChipText = midnightSelected ? pageOnAccent : pageText;
     const checkedLabel = checked ? '已勾选' : '未勾选';
     const radioA = radio === 'a';
     const radioB = radio === 'b';
@@ -136,8 +129,6 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
         outline: theme.button.skins.cyan.outline,
     }), [theme]);
     const selectTab = (id: string) => setSelectedTab(id);
-    const selectClassic = () => setMode('classic');
-    const selectMidnight = () => setMode('midnight');
     const onPopupClose = () => console.info('[ComponentGallery] close');
     const toggleChecked = () => setChecked(!checked);
     const pickRadioA = () => setRadio('a');
@@ -163,32 +154,10 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                         verticalAlign: 'center',
                     }} />
                 </view>
-                <text value="分类浏览 · 点击体验 · 切换主题" style={{
+                <text value="分类浏览 · 点击体验" style={{
                     width: 702, height: 28, font: font, fontSize: 22, color: pageMuted,
                     verticalAlign: 'center',
                 }} />
-                <view style={{ width: 702, height: 48, flexDirection: 'row', gap: 12 }}>
-                    <view name="ClassicTheme" accessibilityLabel="经典主题" interaction="press" onClick={selectClassic}
-                        style={{
-                            width: 345, height: 48, backgroundColor: classicChip,
-                            justifyContent: 'center', alignItems: 'center',
-                        }}>
-                        <text value="经典主题" style={{
-                            width: 345, height: 48, font: font, fontSize: 24, color: classicChipText,
-                            horizontalAlign: 'center', verticalAlign: 'center',
-                        }} />
-                    </view>
-                    <view name="MidnightTheme" accessibilityLabel="午夜主题" interaction="press" onClick={selectMidnight}
-                        style={{
-                            width: 345, height: 48, backgroundColor: midnightChip,
-                            justifyContent: 'center', alignItems: 'center',
-                        }}>
-                        <text value="午夜主题" style={{
-                            width: 345, height: 48, font: font, fontSize: 24, color: midnightChipText,
-                            horizontalAlign: 'center', verticalAlign: 'center',
-                        }} />
-                    </view>
-                </view>
             </view>
             <scroll-view name="ComponentGallery/Scroll" direction="vertical" inertia
                 style={{ width: PAGE_WIDTH, height: SCROLL_HEIGHT }}>

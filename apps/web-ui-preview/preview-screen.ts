@@ -16,16 +16,16 @@ function previewStars(fallback: number): number {
     return Number.isFinite(value) ? Math.max(0, Math.min(25, Math.floor(value))) : fallback;
 }
 
-export type SpecimenSkin = "classic" | "midnight";
+export type SpecimenSkin = "classic";
 export type PreviewSkinName = SpecimenSkin | "restored";
 
 export function previewSkin(value: string | null): PreviewSkinName {
-    if (value === "midnight" || value === "restored") return value;
+    if (value === "restored") return value;
     return "classic";
 }
 
-export function specimenSkin(value: string | null): SpecimenSkin {
-    return value === "midnight" ? "midnight" : "classic";
+export function specimenSkin(_value: string | null): SpecimenSkin {
+    return "classic";
 }
 
 /** 一张预览的运行时。目录卡片和单独打开的页面共用同一套启动逻辑。 */
@@ -212,7 +212,7 @@ export async function startPreview(session: PreviewSession, entry: ScreenEntry):
         }
         case "settings": {
             const theme = session.skin === "restored" ? themes.restored
-                : session.skin === "midnight" ? themes.midnight : themes.classic;
+                : themes.classic;
             await session.runtime.start(Settings, {
                 theme,
                 onClose: session.back,

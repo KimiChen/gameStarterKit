@@ -52,7 +52,7 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
         <text value="选择功能界面" style={{ width: 650, height: 50, font: theme.font, fontSize: 24, color: '#aab4c4', horizontalAlign: 'center', verticalAlign: 'center' }} />
         <view style={{ width: 616, padding: { top: 36 }, gap: 16, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flexStart', alignItems: 'flexStart' }}>
             <view interaction="press" onClick={() => go('component-gallery')} style={{ width: 616, height: 102, backgroundColor: '#273f5f', justifyContent: 'center', alignItems: 'center' }}>
-                <text value="通用组件目录 · 主题切换" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+                <text value="通用组件目录" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <ActionButton skin={cancelButton} label="小弹窗底板" width={300} onClick={() => go('small-popup')} />
             <view interaction="press" onClick={() => go('backpack')} style={{ width: 300, height: 102, backgroundColor: '#53657d', justifyContent: 'center', alignItems: 'center' }}>

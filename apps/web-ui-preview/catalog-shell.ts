@@ -167,7 +167,6 @@ type CanvasMode = "light" | "dark" | "checker" | "custom";
 /** 预览主题。新增皮肤时在这里加一项，并在 themes 里登记同名主题。 */
 const PREVIEW_SKINS = [
     { id: "classic", label: "经典" },
-    { id: "midnight", label: "午夜" },
     { id: "restored", label: "还原" },
 ] as const;
 type PreviewSkin = (typeof PREVIEW_SKINS)[number]["id"];

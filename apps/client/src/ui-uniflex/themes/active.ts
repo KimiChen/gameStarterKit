@@ -1,6 +1,5 @@
 import type { FontRef, ImageRef } from '../../kits/uniflex/api/core/index';
 import { classicTheme } from './classic/theme';
-import { midnightTheme } from './midnight/theme';
 import { restoredTheme } from './restored/theme';
 
 export type ThemeTextAlign = 'left' | 'center' | 'right';
@@ -13,18 +12,16 @@ type ThemeValues<T> = T extends FontRef | ImageRef ? T
     : T extends object ? { readonly [K in keyof T]: ThemeValues<T[K]> } : T;
 
 export type ComponentTheme = ThemeValues<typeof classicTheme>;
-export type ThemeName = 'classic' | 'midnight' | 'restored';
+export type ThemeName = 'classic' | 'restored';
 
 export const themes: {
     readonly classic: ComponentTheme;
-    readonly midnight: ComponentTheme;
     readonly restored: ComponentTheme;
 } = {
     classic: classicTheme,
-    midnight: midnightTheme,
     restored: restoredTheme,
 };
 
 /** Default skin; pass `theme` to components for runtime switching. Explicit skin props take precedence. */
-export { classicTheme, midnightTheme, restoredTheme };
+export { classicTheme, restoredTheme };
 export { classicTheme as theme };
