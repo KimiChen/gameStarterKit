@@ -81,7 +81,7 @@ mapOriginal 的 O2 小地图回归在关闭重开后的 1.28× 近景执行：�
 再点击地图中心读取格坐标，最后回到中心。图片必须使用完整的 512×256 纹理 UV，在正方导航框中居中半高显示；
 四条视口边线必须留在内容带内（含 2 设计像素线宽的半边）。节点尺寸按实际 CSS / visible 比例换算，
 鼠标点击取最近 CSS 像素；小图量化和相机边界收紧允许落点距目标不超过 30 格。
-`maporiginal-metrics.json` 同时核对八个数据 reader 及五个裁边/渲染模块的 Creator 编译源码与真源一致。
+`maporiginal-metrics.json` 同时核对八个数据 reader、裁边/渲染模块及 O3 的数据持有者、分组加载和烘焙器的 Creator 编译源码与真源一致。
 默认尊重网页选择的竖版；`MAPO_PREVIEW_ORIENTATION=landscape` 临时执行横版回归，并在结束或失败时恢复原尺寸、重新挂载地图。
 
 中央拖动的每段移动、每次滚轮和 LOD 稳定后，还通过 `SettingsView/panel/viewport` 的公开 `ScrollView.getScrollOffset()` 检查后台偏移。偏移变化超过 0.1 或组件不可观测均失败，结果写入步骤的 `settingsScroll`；这样可识别后台滚动容器先吞掉地图输入的回归。
@@ -395,3 +395,13 @@ B2 复核 SC0–SC4 退出摘要及 SC5-B1 的文件哈希、源码沿革、烘�
 并保留实际 WebGL 上下文、画质、原始帧时、预热后的回收基线和截图。
 默认 60 帧上限的跳帧、离线蒙皮 LOD 的权重限制与桌面证据范围见 [SC5 汇总](../../docs/perf/stage3d/2026-09-24-sc5-review.json)。
 支持范围、复跑命令与限制见 [art3d README](../art3d/README.md#sc5-转换链)。
+
+### mapOriginal O3 生命周期回归
+
+`node tools/creator-preview/run.mjs mapOriginal --reuse --out <目录>` 在地图及小地图检查后，
+继续运行 `maporiginal-lifecycle.mjs`：L3 和流畅画质各停留超过 5 秒，检查不需要的源纹理已归还；
+远近档往返、跨地貌跳转与 L1 补块；十次真实关闭/重开；延迟真实概览回调后关闭，再交付迟到结果。
+开关页调用宿主 ViewMgr，地图导航走普通输入；故障钩子在 finally 恢复。
+检查源纹理、RT、实例 reader、兼容旧入口 reader、BufferAsset、展开对象和节点，
+关闭后必须均无持有；不能只用节点数证明释放。证据包括关闭前后快照和完整编译来源指纹。
+本回归保留网页原有方向，完成后恢复普通近景；不主动改用户选定的竖版。

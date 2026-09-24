@@ -9,7 +9,7 @@
 import { Material, Node } from "cc";
 import { buildMapoSpriteMeshes } from "../logic/mapoMesh";
 import type { MapoPolygonInput } from "../logic/mapoMesh";
-import { mapoHasTops, mapoTopsFor, mapoTopsAnimated } from "../logic/mapoTops";
+import { mapoTopsAnimated } from "../logic/mapoTops";
 import {
     syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
     type MapoBatch,
@@ -38,7 +38,7 @@ export class MapoTopRenderer {
     render(polys: readonly MapoPolygonInput[], enabled: boolean): number {
         if (this.disposed) return 0;
         const texture = this.art?.topAtlas(this.kind) ?? null;
-        if (!texture || !enabled || !mapoHasTops(this.kind) || polys.length === 0) {
+        if (!texture || !enabled || !this.art!.data.tops.mapoHasTops(this.kind) || polys.length === 0) {
             this.clear();
             return 0;
         }
@@ -48,7 +48,7 @@ export class MapoTopRenderer {
         }
         this.visible = polys;
         this.animated = mapoTopsAnimated(this.kind, polys);
-        const sprites = mapoTopsFor(this.kind, polys, Infinity, this.seconds);
+        const sprites = this.art!.data.tops.mapoTopsFor(this.kind, polys, Infinity, this.seconds);
         if (sprites.length === 0) { this.clear(); return 0; }
         const geometry = buildMapoSpriteMeshes(sprites);
         syncMapoBatches(this.root, `mapo-top-${this.kind}`, this.batches, geometry, this.material);

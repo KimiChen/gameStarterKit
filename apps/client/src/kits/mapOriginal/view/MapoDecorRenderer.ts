@@ -11,7 +11,6 @@ import { mapoSceneAnimated, mapoSceneSprites } from "../logic/mapoScene";
 import { MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../shared/kits/mapOriginal/content/decor.data";
 import { buildMapoSpriteMeshes, type MapoSpriteInput } from "../logic/mapoMesh";
 import { mapoDecorEnabledFor } from "../logic/mapoSettings";
-import { mapoValueAt } from "../logic/mapoTerrain";
 import type { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
 import {
     syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
@@ -50,7 +49,7 @@ export class MapoDecorRenderer {
         this.animated = false;
         const sprites: MapoSpriteInput[] = [];
         for (const { row, col } of cells) {
-            const place = mapoDecorAt(row, col, mapoValueAt(row, col), enabled);
+            const place = mapoDecorAt(row, col, logic.data.terrain.mapoValueAt(row, col), enabled, logic.data.bands.mapoBandAt);
             if (!place) continue;
             this.animated = this.animated || mapoSceneAnimated(place.cell.scene);
             sprites.push(...mapoSceneSprites(place.cell.scene, MAPO_DECOR_TEXTURES,

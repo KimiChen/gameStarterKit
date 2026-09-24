@@ -578,9 +578,11 @@ async function replayMapOriginalWithMetrics(runner, metrics) {
                     && Math.abs(t.col - target.col) < 30 ? v : null;
             });
             const band = await runner.client.evaluate(`(() => {
-                const found = [...System.entries()].filter(([, m]) => typeof m?.mapoBandAt === "function");
-                if (found.length !== 1) throw new Error("mapoBandAt export is ambiguous");
-                return found[0][1].mapoBandAt(${got.tile.row}, ${got.tile.col});
+                const found = [...System.entries()].filter(([, m]) => typeof m?.mapoArtDiagnostics === "function");
+                if (found.length !== 1) throw new Error("mapoArtDiagnostics export is ambiguous");
+                const maps = found[0][1].mapoArtDiagnostics({row: ${got.tile.row}, col: ${got.tile.col}}).filter(m => !m.closed);
+                if (maps.length !== 1) throw new Error("Expected one live map");
+                return maps[0].band;
             })()`);
             if (band !== target.band) throw new Error(`Biome landing differs: ${band}, expected ${target.band}`);
             return { target, actual: got.tile, band, metrics: await metrics.sample(`L0-${target.name}`, got),
@@ -615,5 +617,6 @@ async function replayMapOriginalWithMetrics(runner, metrics) {
         return { ...value, metrics: await metrics.sample("reopened", value), shot: await runner.shot("maporiginal-reopened") };
     });
     const minimap = await replayMapOriginalMinimap(runner);
-    return { opened, selected, decorAndLabels, noSandboxRow, medium, far, global, jumped, back, city, biomes, qualities, closed, reopened, minimap };
+    const lifecycle = await (await import("./maporiginal-lifecycle.mjs")).replayMapOriginalLifecycle(runner);
+    return { opened, selected, decorAndLabels, noSandboxRow, medium, far, global, jumped, back, city, biomes, qualities, closed, reopened, minimap, lifecycle };
 }

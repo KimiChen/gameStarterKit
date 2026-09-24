@@ -24,31 +24,41 @@ import {
 } from "../../../shared/kits/mapOriginal/content/bands.data";
 import { mapoDecodeBase64, mapoDecodeRle } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 
-let cells: Uint8Array | null = null;
+/** 地图实例的数据读取器；dispose 清空运行时解码结果和 Buffer 视图。 */
+export function createMapoBandsData() {
+    let cells: Uint8Array | null = null;
 
-/** 地貌带层（惰性解码一次）。 */
-function bandCells(): Uint8Array {
-    if (!cells) {
-        cells = mapoDecodeRle(mapoDecodeBase64(MAPO_BAND_RLE_B64), MAPO_BAND_ROWS, MAPO_BAND_COLS);
+    /** 地貌带层（惰性解码一次）。 */
+    function bandCells(): Uint8Array {
+        if (!cells) {
+            cells = mapoDecodeRle(mapoDecodeBase64(MAPO_BAND_RLE_B64), MAPO_BAND_ROWS, MAPO_BAND_COLS);
+        }
+        return cells;
     }
-    return cells;
-}
 
-/**
- * 该格的地貌带：`MAPO_BAND_SNOW` / `MAPO_BAND_DESERT` / `MAPO_BAND_GROUND`。
- * ⚠ 越界格与未覆盖值一律回 `MAPO_BAND_GROUND`（= 基础季件）——照抄原版的 `or "ground"` 回退。
- */
-export function mapoBandAt(row: number, col: number): number {
-    if (row < 0 || col < 0 || row >= MAPO_BAND_ROWS || col >= MAPO_BAND_COLS) {
+    /**
+     * 该格的地貌带：`MAPO_BAND_SNOW` / `MAPO_BAND_DESERT` / `MAPO_BAND_GROUND`。
+     * ⚠ 越界格与未覆盖值一律回 `MAPO_BAND_GROUND`（= 基础季件）——照抄原版的 `or "ground"` 回退。
+     */
+    function mapoBandAt(row: number, col: number): number {
+        if (row < 0 || col < 0 || row >= MAPO_BAND_ROWS || col >= MAPO_BAND_COLS) {
+            return MAPO_BAND_GROUND;
+        }
+        const v = bandCells()[row * MAPO_BAND_COLS + col];
+        if (v === MAPO_BAND_SNOW) return MAPO_BAND_SNOW;
+        if (v === MAPO_BAND_DESERT) return MAPO_BAND_DESERT;
         return MAPO_BAND_GROUND;
     }
-    const v = bandCells()[row * MAPO_BAND_COLS + col];
-    if (v === MAPO_BAND_SNOW) return MAPO_BAND_SNOW;
-    if (v === MAPO_BAND_DESERT) return MAPO_BAND_DESERT;
-    return MAPO_BAND_GROUND;
+
+    /** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+    function mapoBandsDataUsage(): Readonly<Record<string, number>> {
+        return { arrayBufferBytes: cells?.buffer.byteLength ?? 0, cells: cells?.length ?? 0 };
+    }
+
+    return { mapoBandAt, mapoBandsDataUsage,
+        dispose(): void { cells = null; },
+    };
 }
 
-/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
-export function mapoBandsDataUsage(): Readonly<Record<string, number>> {
-    return { arrayBufferBytes: cells?.buffer.byteLength ?? 0, cells: cells?.length ?? 0 };
-}
+/** 兼容离线烘焙与已有测试；地图运行时必须使用 MapoDataStore 的独立读取器。 */
+export const { mapoBandAt, mapoBandsDataUsage } = createMapoBandsData();

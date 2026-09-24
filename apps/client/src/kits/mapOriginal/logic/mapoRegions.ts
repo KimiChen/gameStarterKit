@@ -48,47 +48,6 @@ const SNOW_CELL_BY_ID: ReadonlyMap<number, IMapoRegionCell> =
  */
 const S_MARGIN = 24;
 
-let view: DataView | null = null;
-let count = 0;
-
-/** 注入 `regions.bin`（含 4 字节大端头）。⚠ 长度对不上就拒收。 */
-export function mapoSetRegions(buf: ArrayBuffer | Uint8Array): void {
-    const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-    if (u.length < MAPO_REGION_HEADER_BYTES) throw new Error("mapOriginal 区域表太短");
-    const n = (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3];
-    if (u.length !== MAPO_REGION_HEADER_BYTES + n * MAPO_REGION_RECORD_BYTES) {
-        throw new Error(`mapOriginal 区域表长度不符：${n} 条 / ${u.length} B`);
-    }
-    view = new DataView(u.buffer, u.byteOffset, u.byteLength);
-    count = n;
-}
-
-export function mapoHasRegions(): boolean { return view !== null; }
-export function mapoRegionCount(): number { return count; }
-
-function recordAt(i: number): IMapoRegionPiece {
-    const o = MAPO_REGION_HEADER_BYTES + i * MAPO_REGION_RECORD_BYTES;
-    const v = view!;
-    return {
-        s: v.getUint16(o), d: v.getUint16(o + 2) - MAPO_REGION_D_BIAS,
-        cell: v.getUint8(o + 4), wTiles: v.getUint8(o + 5), cells: v.getUint16(o + 6),
-    };
-}
-
-/** 第一条 `s >= want` 的下标（表已升序）。 */
-function lowerBound(want: number): number {
-    let lo = 0, hi = count;
-    while (lo < hi) {
-        const mid = (lo + hi) >> 1;
-        if (view!.getUint16(MAPO_REGION_HEADER_BYTES + mid * MAPO_REGION_RECORD_BYTES) < want) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    return lo;
-}
-
 export interface IMapoRegionPlacement {
     readonly piece: IMapoRegionPiece;
     readonly cellLayout: IMapoRegionCell;
@@ -106,60 +65,113 @@ export interface IMapoWorldRect {
     readonly bottom: number; readonly top: number;
 }
 
-/**
- * 可视矩形内的区域件，**已是画家序**（表的落盘序）。
- * @param limit 一次最多返回多少件（防一屏几千件把 mesh 撑爆）。
- */
-export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoRegionPlacement[] {
-    if (!view || count === 0) return [];
-    // 屏幕越靠下 s 越大 ⇒ 上边界对应最小 s
-    // 原件按中心 pivot 定位，会同时向锚点上、下外伸；两端都要扩展候选区间。
-    const sTop = Math.floor(mapoRegionSAt(rect.top)) - S_MARGIN;
-    const sBottom = Math.ceil(mapoRegionSAt(rect.bottom)) + S_MARGIN;
-    const out: IMapoRegionPlacement[] = [];
-    for (let i = lowerBound(Math.max(0, sTop)); i < count && out.length < limit; i += 1) {
-        const piece = recordAt(i);
-        if (piece.s > sBottom) break;
-        // ★ 先判带再选件（N1）：格在雪带 ⇒ 雪山件（transform 逐形重读，⛔ 不抄基础季）；
-        //   沙带/其余 ⇒ 基础季件（荒地山 2D 与基础季同件，实测）。
-        //   带归属 = 锚点格的 cell 级地貌带（mapoBands.ts，原版 check_ground_type 同一条链）。
-        const band = mapoBandAt((piece.s + piece.d) / 2, (piece.s - piece.d) / 2);
-        const layout = (band === MAPO_BAND_SNOW ? SNOW_CELL_BY_ID.get(piece.cell) : null)
-            ?? CELL_BY_ID.get(piece.cell);
-        if (!layout) continue;
-        const anchor = mapoRegionPos(piece.s, piece.d);
-        // ★ 件多大 = **原图像素 × prefab 里的 scale**（⛔ 不按足迹拉伸，拉伸过一版是大绿斑）：
-        //   m2 只有 563 px 却要盖满 19 格，靠的就是 `mountain19m_01` 的 scale 2.163；
-        //   三对共用贴图的形全靠 transform 区分 ⇒ ⛔ 只用 native 会把 14 形压成 10 形。
-        const [nw, nh] = layout.size;
-        const w = mapoOriginalPxToWorld(nw * layout.scale[0]);
-        const h = mapoOriginalPxToWorld(nh * layout.scale[1]);
-        // 精灵中心 = 锚点格位置 + prefab 的 pos（本套 pivot 恒 [0.5, 0.5]）。
-        const x = anchor.x + mapoOriginalPxToWorld(layout.offset[0]);
-        const y = anchor.y + mapoOriginalPxToWorld(layout.offset[1]);
-        const r = layout.angle * Math.PI / 180;
-        const cs = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r));
-        const [ka, kb, kc, kd] = mapoPrefabSkew(...layout.skew, ...layout.scale);
-        const kw = Math.abs(w * ka) + Math.abs(h * kc), kh = Math.abs(w * kb) + Math.abs(h * kd);
-        const halfW = (kw * cs + kh * sn) / 2, halfH = (kw * sn + kh * cs) / 2;
-        if (x + halfW < rect.left || x - halfW > rect.right) continue;
-        if (y - halfH > rect.top || y + halfH < rect.bottom) continue;
-        out.push({ piece, cellLayout: layout, x, y, w, h, angleDeg: layout.angle });
+/** 地图实例的数据读取器；dispose 清空运行时解码结果和 Buffer 视图。 */
+export function createMapoRegionsData(bandAt: (row: number, col: number) => number = mapoBandAt) {
+    let view: DataView | null = null;
+
+    let count = 0;
+
+    /** 注入 `regions.bin`（含 4 字节大端头）。⚠ 长度对不上就拒收。 */
+    function mapoSetRegions(buf: ArrayBuffer | Uint8Array): void {
+        const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+        if (u.length < MAPO_REGION_HEADER_BYTES) throw new Error("mapOriginal 区域表太短");
+        const n = (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3];
+        if (u.length !== MAPO_REGION_HEADER_BYTES + n * MAPO_REGION_RECORD_BYTES) {
+            throw new Error(`mapOriginal 区域表长度不符：${n} 条 / ${u.length} B`);
+        }
+        view = new DataView(u.buffer, u.byteOffset, u.byteLength);
+        count = n;
     }
-    return out;
+
+    function mapoHasRegions(): boolean { return view !== null; }
+
+    function mapoRegionCount(): number { return count; }
+
+    function recordAt(i: number): IMapoRegionPiece {
+        const o = MAPO_REGION_HEADER_BYTES + i * MAPO_REGION_RECORD_BYTES;
+        const v = view!;
+        return {
+            s: v.getUint16(o), d: v.getUint16(o + 2) - MAPO_REGION_D_BIAS,
+            cell: v.getUint8(o + 4), wTiles: v.getUint8(o + 5), cells: v.getUint16(o + 6),
+        };
+    }
+
+    /** 第一条 `s >= want` 的下标（表已升序）。 */
+    function lowerBound(want: number): number {
+        let lo = 0, hi = count;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (view!.getUint16(MAPO_REGION_HEADER_BYTES + mid * MAPO_REGION_RECORD_BYTES) < want) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+        return lo;
+    }
+
+    /**
+     * 可视矩形内的区域件，**已是画家序**（表的落盘序）。
+     * @param limit 一次最多返回多少件（防一屏几千件把 mesh 撑爆）。
+     */
+    function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoRegionPlacement[] {
+        if (!view || count === 0) return [];
+        // 屏幕越靠下 s 越大 ⇒ 上边界对应最小 s
+        // 原件按中心 pivot 定位，会同时向锚点上、下外伸；两端都要扩展候选区间。
+        const sTop = Math.floor(mapoRegionSAt(rect.top)) - S_MARGIN;
+        const sBottom = Math.ceil(mapoRegionSAt(rect.bottom)) + S_MARGIN;
+        const out: IMapoRegionPlacement[] = [];
+        for (let i = lowerBound(Math.max(0, sTop)); i < count && out.length < limit; i += 1) {
+            const piece = recordAt(i);
+            if (piece.s > sBottom) break;
+            // ★ 先判带再选件（N1）：格在雪带 ⇒ 雪山件（transform 逐形重读，⛔ 不抄基础季）；
+            //   沙带/其余 ⇒ 基础季件（荒地山 2D 与基础季同件，实测）。
+            //   带归属 = 锚点格的 cell 级地貌带（mapoBands.ts，原版 check_ground_type 同一条链）。
+            const band = bandAt((piece.s + piece.d) / 2, (piece.s - piece.d) / 2);
+            const layout = (band === MAPO_BAND_SNOW ? SNOW_CELL_BY_ID.get(piece.cell) : null)
+                ?? CELL_BY_ID.get(piece.cell);
+            if (!layout) continue;
+            const anchor = mapoRegionPos(piece.s, piece.d);
+            // ★ 件多大 = **原图像素 × prefab 里的 scale**（⛔ 不按足迹拉伸，拉伸过一版是大绿斑）：
+            //   m2 只有 563 px 却要盖满 19 格，靠的就是 `mountain19m_01` 的 scale 2.163；
+            //   三对共用贴图的形全靠 transform 区分 ⇒ ⛔ 只用 native 会把 14 形压成 10 形。
+            const [nw, nh] = layout.size;
+            const w = mapoOriginalPxToWorld(nw * layout.scale[0]);
+            const h = mapoOriginalPxToWorld(nh * layout.scale[1]);
+            // 精灵中心 = 锚点格位置 + prefab 的 pos（本套 pivot 恒 [0.5, 0.5]）。
+            const x = anchor.x + mapoOriginalPxToWorld(layout.offset[0]);
+            const y = anchor.y + mapoOriginalPxToWorld(layout.offset[1]);
+            const r = layout.angle * Math.PI / 180;
+            const cs = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r));
+            const [ka, kb, kc, kd] = mapoPrefabSkew(...layout.skew, ...layout.scale);
+            const kw = Math.abs(w * ka) + Math.abs(h * kc), kh = Math.abs(w * kb) + Math.abs(h * kd);
+            const halfW = (kw * cs + kh * sn) / 2, halfH = (kw * sn + kh * cs) / 2;
+            if (x + halfW < rect.left || x - halfW > rect.right) continue;
+            if (y - halfH > rect.top || y + halfH < rect.bottom) continue;
+            out.push({ piece, cellLayout: layout, x, y, w, h, angleDeg: layout.angle });
+        }
+        return out;
+    }
+
+    /** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */
+    function mapoRegionUv(layout: IMapoRegionCell,
+                                 atlasW: number, atlasH: number): readonly [number, number, number, number] {
+        const [x, y, w, h] = MAPO_REGION_TEXTURES[layout.textureId].rect;
+        return [x / atlasW, y / atlasH, w / atlasW, h / atlasH];
+    }
+
+    /** 仅供测试重置。 */
+    function resetMapoRegions(): void { view = null; count = 0; }
+
+    /** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+    function mapoRegionsDataUsage(): Readonly<Record<string, number>> {
+        return { arrayBufferBytes: view?.buffer.byteLength ?? 0, placements: count };
+    }
+
+    return { mapoSetRegions, mapoHasRegions, mapoRegionCount, mapoRegionsInRect, mapoRegionUv, resetMapoRegions, mapoRegionsDataUsage,
+        dispose(): void { resetMapoRegions(); },
+    };
 }
 
-/** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */
-export function mapoRegionUv(layout: IMapoRegionCell,
-                             atlasW: number, atlasH: number): readonly [number, number, number, number] {
-    const [x, y, w, h] = MAPO_REGION_TEXTURES[layout.textureId].rect;
-    return [x / atlasW, y / atlasH, w / atlasW, h / atlasH];
-}
-
-/** 仅供测试重置。 */
-export function resetMapoRegions(): void { view = null; count = 0; }
-
-/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
-export function mapoRegionsDataUsage(): Readonly<Record<string, number>> {
-    return { arrayBufferBytes: view?.buffer.byteLength ?? 0, placements: count };
-}
+/** 兼容离线烘焙与已有测试；地图运行时必须使用 MapoDataStore 的独立读取器。 */
+export const { mapoSetRegions, mapoHasRegions, mapoRegionCount, mapoRegionsInRect, mapoRegionUv, resetMapoRegions, mapoRegionsDataUsage } = createMapoRegionsData();

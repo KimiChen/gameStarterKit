@@ -7,7 +7,6 @@
  * ⚠ 一座大城 245 个 sprite ⇒ **必须有一屏上限**，⛔ 别无限展开。
  */
 import { Material, Node } from "cc";
-import { mapoCitiesIn, mapoHasCities } from "../logic/mapoCities";
 import { buildMapoSpriteMeshes } from "../logic/mapoMesh";
 import {
     syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
@@ -35,7 +34,7 @@ export class MapoCityRenderer {
            enabled: boolean): number {
         if (this.disposed) return 0;
         const texture = this.art?.cityAtlas ?? null;
-        if (!texture || !enabled || !mapoHasCities()) {
+        if (!texture || !enabled || !this.art!.data.cities.mapoHasCities()) {
             this.clear();
             return 0;
         }
@@ -44,7 +43,7 @@ export class MapoCityRenderer {
             this.material.setProperty("mainTexture", texture);
         }
         const m = MAPO_CITY_MARGIN;
-        const sprites = mapoCitiesIn(view.left - m, view.right + m, view.bottom - m,
+        const sprites = this.art!.data.cities.mapoCitiesIn(view.left - m, view.right + m, view.bottom - m,
                                      view.top + m, Infinity);
         if (sprites.length === 0) { this.clear(); return 0; }
         const geometry = buildMapoSpriteMeshes(sprites);

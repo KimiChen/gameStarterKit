@@ -56,7 +56,7 @@ export class MapoChunkBaker {
             texture.reset({ width: tile.pixels, height: tile.pixels, name: `mapo-cache-${tile.key}` });
             texture.setFilters(Texture2D.Filter.LINEAR, Texture2D.Filter.LINEAR);
             texture.setWrapMode(Texture2D.WrapMode.CLAMP_TO_EDGE, Texture2D.WrapMode.CLAMP_TO_EDGE);
-            for (const part of mapoStaticScene(tile.capture, tile.lod === 1, tile.details)) {
+            for (const part of mapoStaticScene(tile.capture, tile.lod === 1, tile.details, 0, this.art.data)) {
                 const source = this.art.staticTexture(part.texture);
                 if (!source) throw new Error(`mapOriginal cache missing ${part.texture}`);
                 let material = this.materials.get(part.texture);

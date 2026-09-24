@@ -49,8 +49,11 @@ test("mapOriginal metrics: serialized probe preserves callbacks and restores hoo
     const load = (_path: string, _type: unknown, callback: (error: null, a: unknown) => void) => {
         nativeLoads++; callback(null, asset);
     };
-    const modules = ["Terrain", "Bands", "Regions", "Roads", "Cities", "Tops", "Rivers", "Blocks"]
+    const readers = ["Terrain", "Bands", "Regions", "Roads", "Cities", "Tops", "Rivers", "Blocks"]
         .map(name => [name, { [`mapo${name}DataUsage`]: () => ({ arrayBufferBytes: 10 }) }]);
+    const modules = [...readers, ["MapoArtResources", { mapoArtDiagnostics: () => [
+        { closed: false, groups: {}, data: { terrain: { arrayBufferBytes: 120 } } },
+    ] }]];
     const scene = { name: "Scene", children: [], getComponent: () => null };
     const cc = { resources: { load }, Director: { EVENT_BEFORE_UPDATE: "before", EVENT_AFTER_DRAW: "after" },
         director: { root: { device: { numDrawCalls: 3, memoryStatus: {} } }, getScene: () => scene,
@@ -70,7 +73,9 @@ test("mapOriginal metrics: serialized probe preserves callbacks and restores hoo
     const state = vm.runInContext("__mapOriginalMetrics.snapshot()", context);
     assert.equal(state.loads[0].error, null);
     assert.equal(state.sourceTextureRgba8Bytes, 128);
-    assert.equal(state.cpu.retainedArrayBufferBytes, 80);
+    assert.equal(state.cpu.legacyArrayBufferBytes, 80);
+    assert.equal(state.cpu.ownedArrayBufferBytes, 120);
+    assert.equal(state.cpu.retainedArrayBufferBytes, 200);
     assert.equal(state.uploads.bytes, 12);
     assert.equal(state.environment.cssCanvas.width, 200);
     assert.equal(state.environment.backingCanvas.width, 400);

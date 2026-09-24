@@ -11,7 +11,7 @@ import {
     MAPO_RIVER_SYSTEMS,
 } from "../../../shared/kits/mapOriginal/content/river.data";
 import { buildMapoPolygonMeshes, type MapoPolygonInput } from "../logic/mapoMesh";
-import { mapoHasRivers, mapoRiversInRect, type IMapoWorldRectLike } from "../logic/mapoRivers";
+import { type IMapoWorldRectLike } from "../logic/mapoRivers";
 import {
     syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
     type MapoBatch,
@@ -48,7 +48,7 @@ export class MapoRiverRenderer {
         const flow = waterFlow && !!this.art?.riverEffect && !!this.art.riverMask && !!this.art.riverNormal;
         if (this.flow !== flow) { this.clear(); this.material?.destroy(); this.material = null; this.flow = flow; }
         const texture = flow ? this.art!.riverMask : this.art?.riverFill ?? null;
-        if (!texture || !enabled || !mapoHasRivers()) { this.clear(); return []; }
+        if (!texture || !enabled || !this.art!.data.rivers.mapoHasRivers()) { this.clear(); return []; }
         if (!this.material) {
             this.material = createMapoMaterial(mapoUnlitTechnique(), true, flow ? this.art!.riverEffect : this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
@@ -57,7 +57,7 @@ export class MapoRiverRenderer {
                 this.material.setProperty("clockCamera", new Vec4(this.seconds, this.cameraX, this.cameraY, 0));
             }
         }
-        const polys = mapoRiversInRect(rect, Infinity, uvOfSystem, [1, 1, 1, 1]);
+        const polys = this.art!.data.rivers.mapoRiversInRect(rect, Infinity, uvOfSystem, [1, 1, 1, 1]);
         if (polys.length === 0) { this.clear(); return []; }
         const geometry = buildMapoPolygonMeshes(polys);
         syncMapoBatches(this.root, "mapo-rivers", this.batches, geometry, this.material);

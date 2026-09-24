@@ -68,7 +68,7 @@ export interface IMapoDecorPlacement {
  *   近档一屏只有几十格（一格 300×150 世界像素），这层的预算本来就很小。
  */
 export function mapoDecorAt(row: number, col: number, value: number,
-                            enabled: boolean): IMapoDecorPlacement | null {
+                            enabled: boolean, bandAt: (row: number, col: number) => number = mapoBandAt): IMapoDecorPlacement | null {
     if (!enabled) return null;
     const pos = mapoGrid2Pos(row, col);
     // ★ 第 4 道门：城占的格一律不叠资源件（2,689 格，**含中心格** ——
@@ -76,7 +76,7 @@ export function mapoDecorAt(row: number, col: number, value: number,
     if (CITY_OCCUPIED.has(row * 10000 + col)) return null;
     // ★ 资源格：值即格 id，一一对应，⛔ 零猜测
     // ★ 先判带再选件（N1）：雪带 → 雪件表，沙带 → 沙件表，否则基础季表
-    const band = mapoBandAt(row, col);
+    const band = bandAt(row, col);
     const table = band === MAPO_BAND_SNOW ? SNOW_BY_ID
         : band === MAPO_BAND_DESERT ? DESERT_BY_ID : BY_ID;
     const cell = table.get(value) ?? BY_ID.get(value);

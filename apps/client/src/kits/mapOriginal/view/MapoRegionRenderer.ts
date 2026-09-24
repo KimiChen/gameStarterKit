@@ -35,7 +35,7 @@ export class MapoRegionRenderer {
             this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
         }
-        const sprites = mapoRegionSprites(rect);
+        const sprites = mapoRegionSprites(rect, this.art!.data);
         if (sprites.length === 0) { this.clear(); return 0; }
         const geometry = buildMapoSpriteMeshes(sprites);
         syncMapoBatches(this.root, "mapo-regions", this.batches, geometry, this.material);

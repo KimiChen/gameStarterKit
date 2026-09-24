@@ -9,7 +9,7 @@
  */
 import { Material, Node, Texture2D } from "cc";
 import { buildMapoPolygonMeshes, type MapoPolygonInput } from "../logic/mapoMesh";
-import { mapoBlocksInRect, mapoHasBlocks, type IMapoBlockRect } from "../logic/mapoBlocks";
+import { type IMapoBlockRect } from "../logic/mapoBlocks";
 import {
     syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
     type MapoBatch,
@@ -32,7 +32,7 @@ export class MapoBlockRenderer {
     render(rect: IMapoBlockRect, enabled: boolean): MapoPolygonInput[] {
         if (this.disposed) return [];
         const texture = this.art?.blockBase(this.kind) ?? null;
-        if (!texture || !enabled || !mapoHasBlocks(this.kind)) { this.clear(); return []; }
+        if (!texture || !enabled || !this.art!.data.blocks.mapoHasBlocks(this.kind)) { this.clear(); return []; }
         if (!this.wrapped) {
             texture.setWrapMode(Texture2D.WrapMode.REPEAT, Texture2D.WrapMode.REPEAT);
             this.wrapped = true;
@@ -41,7 +41,7 @@ export class MapoBlockRenderer {
             this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
         }
-        const polys = mapoBlocksInRect(this.kind, rect, Infinity);
+        const polys = this.art!.data.blocks.mapoBlocksInRect(this.kind, rect, Infinity);
         if (polys.length === 0) { this.clear(); return []; }
         const geometry = buildMapoPolygonMeshes(polys);
         syncMapoBatches(this.root, `mapo-block-${this.kind}`, this.batches, geometry, this.material);

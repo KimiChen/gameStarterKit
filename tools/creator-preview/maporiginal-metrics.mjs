@@ -123,6 +123,11 @@ export function installMapOriginalMetrics() {
             if (matches.length !== 1) throw new Error(`Expected one ${fn}; found ${matches.length}. Refresh Creator compilation.`);
             usage[name] = matches[0][1][fn]();
         }
+        const owners = modules.filter(([, m]) => typeof m?.mapoArtDiagnostics === "function");
+        if (owners.length !== 1) throw new Error("Expected one mapoArtDiagnostics; refresh Creator compilation.");
+        const maps = owners[0][1].mapoArtDiagnostics();
+        const legacyBytes = Object.values(usage).reduce((n, u) => n + u.arrayBufferBytes, 0);
+        const ownedBytes = maps.reduce((n, map) => n + Object.values(map.data).reduce((sum, u) => sum + u.arrayBufferBytes, 0), 0);
         const rect = canvas.getBoundingClientRect(), debug = gl.getExtension("WEBGL_debug_renderer_info");
         return { elapsedMs: relative(), environment: { userAgent: navigator.userAgent, platform: navigator.platform,
             api: gl.getParameter(gl.VERSION), renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
@@ -132,7 +137,7 @@ export function installMapOriginalMetrics() {
             firstOverviewMs, firstNearMs, loads: loads.map(r => ({ ...r })), textures,
             sourceTextureRgba8Bytes: textures.filter(t => t.valid).reduce((n, t) => n + t.rgba8EstimateBytes, 0),
             rtBytesWithDepth: [...renderTextures.values()].reduce((a, b) => a + b, 0),
-            cpu: { readers: usage, retainedArrayBufferBytes: Object.values(usage).reduce((n, u) => n + u.arrayBufferBytes, 0),
+            cpu: { readers: usage, maps, legacyArrayBufferBytes: legacyBytes, ownedArrayBufferBytes: ownedBytes, retainedArrayBufferBytes: legacyBytes + ownedBytes,
                 loadedBufferAssetBytes: [...assets.values()].filter(a => a.ref.deref()?.isValid).reduce((n, a) => n + (a.record.bufferBytes ?? 0), 0),
                 note: "Reader ArrayBuffers overlap BufferAsset payloads; do not add them. Object counts exclude JS overhead and generated TS constants." },
             pageHeapBytes: performance.memory?.usedJSHeapSize ?? null,
@@ -154,7 +159,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 function inputIdentity() {
     const hashes = {};
     for (const root of ["apps/client/src/kits/mapOriginal", "apps/shared/src/kits/mapOriginal",
-        "apps/kits/mapOriginal/data/maps/s1", "tools/creator-preview/maporiginal.mjs", "tools/creator-preview/maporiginal-metrics.mjs"]) {
+        "apps/kits/mapOriginal/data/maps/s1", "tools/creator-preview/maporiginal.mjs", "tools/creator-preview/maporiginal-metrics.mjs", "tools/creator-preview/maporiginal-lifecycle.mjs"]) {
         const visit = file => {
             if (fs.statSync(file).isDirectory()) fs.readdirSync(file).sort().forEach(name => visit(path.join(file, name)));
             else if (!file.endsWith(".meta")) hashes[path.relative(ROOT, file)] = createHash("sha256").update(fs.readFileSync(file)).digest("hex");
@@ -174,7 +179,7 @@ function inputIdentity() {
     };
     const compiledReaders = ["Terrain", "Bands", "Regions", "Roads", "Cities", "Tops", "Rivers", "Blocks"]
         .map(name => checkCompiled(`kits/mapOriginal/logic/mapo${name}.ts`));
-    const compiledRendering = ["logic/mapoMesh", "logic/mapoScene", "logic/mapoStaticScene", "logic/mapoFar", "view/MapoMinimap"]
+    const compiledRendering = ["logic/mapoMesh", "logic/mapoScene", "logic/mapoStaticScene", "logic/mapoFar", "view/MapoMinimap", "logic/MapoDataStore", "view/MapoAssetGroups", "view/MapoArtResources", "view/MapOriginalWorldView", "view/MapoFarRenderer", "view/MapoChunkBaker"]
         .map(name => checkCompiled(`kits/mapOriginal/${name}.ts`));
     return { head: execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim(), compiledReaders, compiledRendering,
         inputHash: createHash("sha256").update(JSON.stringify(hashes)).digest("hex"), files: hashes };

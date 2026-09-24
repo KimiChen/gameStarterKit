@@ -7,7 +7,7 @@
  */
 import { Material, Node } from "cc";
 import { buildMapoSpriteMeshes } from "../logic/mapoMesh";
-import { mapoHasRoads, mapoRoadsInRect, type IMapoRoadRect } from "../logic/mapoRoads";
+import { type IMapoRoadRect } from "../logic/mapoRoads";
 import {
     syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
     type MapoBatch,
@@ -25,12 +25,12 @@ export class MapoRoadRenderer {
     render(rect: IMapoRoadRect, enabled: boolean): number {
         if (this.disposed) return 0;
         const texture = this.art?.roadAtlas ?? null;
-        if (!texture || !enabled || !mapoHasRoads()) { this.clear(); return 0; }
+        if (!texture || !enabled || !this.art!.data.roads.mapoHasRoads()) { this.clear(); return 0; }
         if (!this.material) {
             this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
             this.material.setProperty("mainTexture", texture);
         }
-        const sprites = mapoRoadsInRect(rect, Infinity);
+        const sprites = this.art!.data.roads.mapoRoadsInRect(rect, Infinity);
         if (sprites.length === 0) { this.clear(); return 0; }
         const geometry = buildMapoSpriteMeshes(sprites);
         syncMapoBatches(this.root, "mapo-roads", this.batches, geometry, this.material);

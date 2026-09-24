@@ -30,7 +30,7 @@ export class MapoFarRenderer {
     render(logic: MapOriginalWorldLogic): void {
         if (this.disposed || !this.art?.overview || !this.art.spriteEffect) return;
         const cam = logic.camera;
-        this.root.active = cam.lod > 0;
+        this.root.active = cam.lod > 0 || !this.art.nearReady(mapoDecorEnabledFor(logic.graphics.quality));
         if (!this.plateMaterial) {
             this.plateMaterial = createMapoMaterial(0, true, this.art.spriteEffect);
             this.plateMaterial.setProperty("mainTexture", this.art.overview);
@@ -42,14 +42,15 @@ export class MapoFarRenderer {
             this.readyCount = 0;
             return;
         }
-        const key = `${cam.version}|${cam.lod}|${logic.graphics.quality}`;
+        const key = `${this.art.contentKey}|${cam.version}|${cam.lod}|${logic.graphics.quality}`;
         if (key !== this.key) {
             this.key = key;
             const scale = cam.lod === 0 ? 0.50 : cam.scale;
             const hw = cam.width / scale / 2, hh = cam.height / scale / 2;
             const lod = cam.lod === 2 ? 2 : 1;
             this.wanted = mapoCacheTiles({ left: cam.x - hw, right: cam.x + hw, bottom: cam.y - hh, top: cam.y + hh },
-                lod, scale, lod === 2 || mapoDecorEnabledFor(logic.graphics.quality));
+                lod, scale, lod === 2 || mapoDecorEnabledFor(logic.graphics.quality))
+                .map((tile) => ({ ...tile, key: `${this.art!.contentKey}|${tile.key}` }));
             this.pinned = new Set(this.wanted.map((t) => t.key));
         }
         this.readyCount = 0;
@@ -59,7 +60,8 @@ export class MapoFarRenderer {
             if (this.cache.get(tile.key)) this.readyCount++;
             else if (!next) next = tile;
         }
-        if (next && !this.baker?.busy && this.cache.reserve(next.bytes, this.pinned)) {
+        if (!next && !this.baker?.busy) this.releaseSources();
+        if (next && this.art.canBake(next.lod === 1 && next.details) && !this.baker?.busy && this.cache.reserve(next.bytes, this.pinned)) {
             const tile = next;
             this.baker ??= new MapoChunkBaker(this.art);
             this.baker.bake(tile, (texture) => {
@@ -75,12 +77,15 @@ export class MapoFarRenderer {
                 const v0 = (c.top - bounds.maxY) / (c.top - c.bottom), v1 = (c.top - bounds.minY) / (c.top - c.bottom);
                 // 顶边沿用图像 UV；SAMPLE_FROM_RT 负责各图形后端的纹理原点差异。
                 geometry.uvs.set([u0, v0, u1, v0, u1, v1, u0, v1]);
-                const batch = createMapoBatch(this.root, `mapo-cache-${tile.key}`, geometry, material);
+                const batch = createMapoBatch(this.root, `mapo-cache-${tile.key.slice(tile.key.lastIndexOf("|") + 1)}`, geometry, material);
                 batch.node.active = this.pinned.has(tile.key);
                 this.cache.put(tile.key, { texture, material, batch }, tile.bytes);
             });
         }
     }
+
+    /** 源材质不能在静态缓存完成或出档后继续钉住原图集。 */
+    releaseSources(): void { this.baker?.dispose(); this.baker = null; }
 
     clear(): void { this.root.active = false; }
     dispose(): void {

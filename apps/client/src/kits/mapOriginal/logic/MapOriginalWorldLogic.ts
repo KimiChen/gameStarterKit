@@ -7,7 +7,7 @@
 import { MAPO_MAP_COLS, MAPO_MAP_ROWS, mapoCellOf } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import { MapoCamera, type MapoCellRef } from "./mapoCamera";
 import { mapoIsNearField, mapoVisibleLayers, type MapoLayerId } from "./mapoLayers";
-import { mapoValueAt, mapoPassClassAt, mapoHasDisplayTerrain } from "./mapoTerrain";
+import { MapoDataStore } from "./MapoDataStore";
 import {
     MAPO_DEFAULT_GRAPHICS, mapoNormalizeGraphics, type IMapoGraphicsSettings,
 } from "./mapoSettings";
@@ -28,7 +28,7 @@ export class MapOriginalWorldLogic {
     private graphicsValue: IMapoGraphicsSettings = MAPO_DEFAULT_GRAPHICS;
     private selected: number | null = null;
 
-    constructor(width: number, height: number) {
+    constructor(width: number, height: number, readonly data = new MapoDataStore()) {
         this.camera = new MapoCamera(width, height);
     }
 
@@ -58,10 +58,10 @@ export class MapOriginalWorldLogic {
     get selectedCell(): number | null { return this.selected; }
 
     tileAt(row: number, col: number): IMapoTileInfo {
-        const detailed = mapoHasDisplayTerrain();
-        const value = mapoValueAt(row, col);
+        const detailed = this.data.terrain.mapoHasDisplayTerrain();
+        const value = this.data.terrain.mapoValueAt(row, col);
         // ⚠ 通行判定始终走通行层：它是 shared 单源，⛔ 不从原版值反推
-        const passCls = mapoPassClassAt(row, col);
+        const passCls = this.data.terrain.mapoPassClassAt(row, col);
         return {
             row, col, cell: mapoCellOf(row, col), value,
             passable: passCls === 0, detailed,

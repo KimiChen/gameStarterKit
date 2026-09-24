@@ -22,84 +22,9 @@ import {
 import type { MapoPolygonInput } from "./mapoMesh";
 import { parseMapoPolyLib, type IMapoPoly } from "./mapoPolyLib";
 
-let geos: IMapoPoly[] = [];
-let view: DataView | null = null;
-let count = 0;
-
-/** 注入 `river-geo.bin`。⚠ 条数/长度对不上就拒收，⛔ 不容忍半截几何库。 */
-export function mapoSetRiverGeo(buf: ArrayBuffer | Uint8Array): void {
-    geos = parseMapoPolyLib(buf, MAPO_RIVER_GEO_COUNT, "河流");
-}
-
-/** 注入 `rivers.bin`（含 4 字节大端头）。⚠ 长度对不上就拒收。 */
-export function mapoSetRivers(buf: ArrayBuffer | Uint8Array): void {
-    const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-    if (u.length < MAPO_RIVER_HEADER_BYTES) throw new Error("mapOriginal 河流表太短");
-    const n = (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3];
-    if (u.length !== MAPO_RIVER_HEADER_BYTES + n * MAPO_RIVER_RECORD_BYTES) {
-        throw new Error(`mapOriginal 河流表长度不符：${n} 条 / ${u.length} B`);
-    }
-    view = new DataView(u.buffer, u.byteOffset, u.byteLength);
-    count = n;
-}
-
-export function mapoHasRivers(): boolean { return view !== null && geos.length > 0; }
-export function mapoRiverCount(): number { return count; }
-
-/** 河格原点格 (R, C) 的世界坐标；节点摆在**河格几何中心**（与原版地表 block 同式）。 */
-export function mapoRiverPos(s: number, d: number): { x: number; y: number } {
-    const row = (s + d) / 2, col = (s - d) / 2;
-    const p = mapoGrid2Pos(row, col);
-    // ⚠ k 格见方的块，中心比原点格低 (k−1)·halfH；k = MAPO_RIVER_TILES = 3
-    return { x: p.x, y: p.y - (MAPO_RIVER_TILES - 1) * MAPO_TILE_HALF_H };
-}
-
 export interface IMapoWorldRectLike {
     readonly left: number; readonly right: number;
     readonly bottom: number; readonly top: number;
-}
-
-/** 第一条 `s >= want` 的下标（表已升序）。 */
-function lowerBound(want: number): number {
-    let lo = 0, hi = count;
-    while (lo < hi) {
-        const mid = (lo + hi) >> 1;
-        if (view!.getUint16(MAPO_RIVER_HEADER_BYTES + mid * MAPO_RIVER_RECORD_BYTES) < want) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    return lo;
-}
-
-/**
- * 可视矩形内的水面多边形，**已是画家序**（表的落盘序）。
- * @param uvOf  水系 → 填充图上的采样点（整片一个点）。
- * @param rgba  整片顶点色（本仓色相）。
- */
-export function mapoRiversInRect(rect: IMapoWorldRectLike, limit: number,
-                                 uvOf: (system: number) => readonly [number, number],
-                                 rgba: readonly [number, number, number, number]): MapoPolygonInput[] {
-    if (!view || count === 0 || geos.length === 0) return [];
-    // 屏幕越靠下 s 越大；⚠ 一片水面能横跨好几格，二分下界要往两边各放一段
-    const halfH = MAPO_TILE_HALF_H;
-    const sTop = Math.floor(-rect.top / halfH) - MAPO_RIVER_S_MARGIN;
-    const out: MapoPolygonInput[] = [];
-    for (let i = Math.max(0, lowerBound(Math.max(0, sTop))); i < count && out.length < limit; i += 1) {
-        const o = MAPO_RIVER_HEADER_BYTES + i * MAPO_RIVER_RECORD_BYTES;
-        const sRaw = view.getUint16(o);
-        if (-(sRaw - MAPO_RIVER_S_BIAS) * halfH < rect.bottom - MAPO_RIVER_S_MARGIN * halfH) break;
-        const s = sRaw - MAPO_RIVER_S_BIAS, d = view.getUint16(o + 2) - MAPO_RIVER_D_BIAS;
-        const geo = geos[view.getUint8(o + 4) - 1];
-        if (!geo) continue;
-        const pos = mapoRiverPos(s, d);
-        if (pos.x + geo.maxX < rect.left || pos.x + geo.minX > rect.right) continue;
-        if (pos.y + geo.minY > rect.top || pos.y + geo.maxY < rect.bottom) continue;
-        out.push({ s: sRaw, x: pos.x, y: pos.y, geo: view.getUint8(o + 4),
-                   verts: geo.verts, indices: geo.indices, uv: uvOf(geo.tag), rgba });
-    }
-    return out;
 }
 
 /**
@@ -109,9 +34,97 @@ export function mapoRiversInRect(rect: IMapoWorldRectLike, limit: number,
  */
 export const MAPO_RIVER_S_MARGIN = 16;
 
-/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
-export function mapoRiversDataUsage(): Readonly<Record<string, number>> {
-    return { arrayBufferBytes: (view?.buffer.byteLength ?? 0)
-        + geos.reduce((sum, g) => sum + g.verts.byteLength + g.indices.byteLength, 0),
-        polygons: geos.length, placements: count };
+/** 地图实例的数据读取器；dispose 清空运行时解码结果和 Buffer 视图。 */
+export function createMapoRiversData() {
+    let geos: IMapoPoly[] = [];
+
+    let view: DataView | null = null;
+
+    let count = 0;
+
+    /** 注入 `river-geo.bin`。⚠ 条数/长度对不上就拒收，⛔ 不容忍半截几何库。 */
+    function mapoSetRiverGeo(buf: ArrayBuffer | Uint8Array): void {
+        geos = parseMapoPolyLib(buf, MAPO_RIVER_GEO_COUNT, "河流");
+    }
+
+    /** 注入 `rivers.bin`（含 4 字节大端头）。⚠ 长度对不上就拒收。 */
+    function mapoSetRivers(buf: ArrayBuffer | Uint8Array): void {
+        const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+        if (u.length < MAPO_RIVER_HEADER_BYTES) throw new Error("mapOriginal 河流表太短");
+        const n = (u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3];
+        if (u.length !== MAPO_RIVER_HEADER_BYTES + n * MAPO_RIVER_RECORD_BYTES) {
+            throw new Error(`mapOriginal 河流表长度不符：${n} 条 / ${u.length} B`);
+        }
+        view = new DataView(u.buffer, u.byteOffset, u.byteLength);
+        count = n;
+    }
+
+    function mapoHasRivers(): boolean { return view !== null && geos.length > 0; }
+
+    function mapoRiverCount(): number { return count; }
+
+    /** 河格原点格 (R, C) 的世界坐标；节点摆在**河格几何中心**（与原版地表 block 同式）。 */
+    function mapoRiverPos(s: number, d: number): { x: number; y: number } {
+        const row = (s + d) / 2, col = (s - d) / 2;
+        const p = mapoGrid2Pos(row, col);
+        // ⚠ k 格见方的块，中心比原点格低 (k−1)·halfH；k = MAPO_RIVER_TILES = 3
+        return { x: p.x, y: p.y - (MAPO_RIVER_TILES - 1) * MAPO_TILE_HALF_H };
+    }
+
+    /** 第一条 `s >= want` 的下标（表已升序）。 */
+    function lowerBound(want: number): number {
+        let lo = 0, hi = count;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (view!.getUint16(MAPO_RIVER_HEADER_BYTES + mid * MAPO_RIVER_RECORD_BYTES) < want) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+        return lo;
+    }
+
+    /**
+     * 可视矩形内的水面多边形，**已是画家序**（表的落盘序）。
+     * @param uvOf  水系 → 填充图上的采样点（整片一个点）。
+     * @param rgba  整片顶点色（本仓色相）。
+     */
+    function mapoRiversInRect(rect: IMapoWorldRectLike, limit: number,
+                                     uvOf: (system: number) => readonly [number, number],
+                                     rgba: readonly [number, number, number, number]): MapoPolygonInput[] {
+        if (!view || count === 0 || geos.length === 0) return [];
+        // 屏幕越靠下 s 越大；⚠ 一片水面能横跨好几格，二分下界要往两边各放一段
+        const halfH = MAPO_TILE_HALF_H;
+        const sTop = Math.floor(-rect.top / halfH) - MAPO_RIVER_S_MARGIN;
+        const out: MapoPolygonInput[] = [];
+        for (let i = Math.max(0, lowerBound(Math.max(0, sTop))); i < count && out.length < limit; i += 1) {
+            const o = MAPO_RIVER_HEADER_BYTES + i * MAPO_RIVER_RECORD_BYTES;
+            const sRaw = view.getUint16(o);
+            if (-(sRaw - MAPO_RIVER_S_BIAS) * halfH < rect.bottom - MAPO_RIVER_S_MARGIN * halfH) break;
+            const s = sRaw - MAPO_RIVER_S_BIAS, d = view.getUint16(o + 2) - MAPO_RIVER_D_BIAS;
+            const geo = geos[view.getUint8(o + 4) - 1];
+            if (!geo) continue;
+            const pos = mapoRiverPos(s, d);
+            if (pos.x + geo.maxX < rect.left || pos.x + geo.minX > rect.right) continue;
+            if (pos.y + geo.minY > rect.top || pos.y + geo.maxY < rect.bottom) continue;
+            out.push({ s: sRaw, x: pos.x, y: pos.y, geo: view.getUint8(o + 4),
+                       verts: geo.verts, indices: geo.indices, uv: uvOf(geo.tag), rgba });
+        }
+        return out;
+    }
+
+    /** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+    function mapoRiversDataUsage(): Readonly<Record<string, number>> {
+        return { arrayBufferBytes: (view?.buffer.byteLength ?? 0)
+            + geos.reduce((sum, g) => sum + g.verts.byteLength + g.indices.byteLength, 0),
+            polygons: geos.length, placements: count };
+    }
+
+    return { mapoSetRiverGeo, mapoSetRivers, mapoHasRivers, mapoRiverCount, mapoRiverPos, mapoRiversInRect, mapoRiversDataUsage,
+        dispose(): void { geos = []; view = null; count = 0; },
+    };
 }
+
+/** 兼容离线烘焙与已有测试；地图运行时必须使用 MapoDataStore 的独立读取器。 */
+export const { mapoSetRiverGeo, mapoSetRivers, mapoHasRivers, mapoRiverCount, mapoRiverPos, mapoRiversInRect, mapoRiversDataUsage } = createMapoRiversData();
