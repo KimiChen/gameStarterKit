@@ -9,6 +9,7 @@ import { ReportDetailEquipment } from './ReportDetailEquipment';
 import { ReportDetailSoldiers } from './ReportDetailSoldiers';
 import { ReportDetailAttributes } from './ReportDetailAttributes';
 import { MailBattleLogPanel } from '../MailBattleLog/MailBattleLogPanel';
+import { MailTroopDetailsPanel } from '../MailTroopDetails/MailTroopDetailsPanel';
 
 export interface MailReportDetailPanelProps {
     readonly visible?: boolean;
@@ -30,10 +31,10 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
     const source = useMemo(() => new ArrayVirtualListDataSource(sections), []);
     const list = useRef<VirtualCollectionController | null>(null);
     const [showLinks, setShowLinks] = useState(false);
-    const [logOpen, setLogOpen] = useState(false);
-    useEffect(() => { if (p.visible === false) setLogOpen(false); }, [p.visible]);
+    const [linkedPage, setLinkedPage] = useState<'battle-log' | 'troop-details' | null>(null);
+    useEffect(() => { if (p.visible === false) setLinkedPage(null); }, [p.visible]);
     const openLinkedPage = (action: string) => {
-        if (action === 'battle-log') setLogOpen(true);
+        if (action === 'battle-log' || action === 'troop-details') setLinkedPage(action);
         p.onAction?.(action);
     };
     useEffect(() => () => source.dispose(), [source]);
@@ -62,7 +63,8 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
             left={77} top={1279} width={255} height={102} onClick={() => p.onAction?.('delete')} />
         <ActionButton source={detailShare} label="分享" outlineColor="#276275"
             left={419} top={1278} width={255} height={102} onClick={() => p.onAction?.('share')} />
-        <MailBattleLogPanel visible={logOpen && p.visible !== false} onClose={() => setLogOpen(false)} onAction={p.onAction} />
+        <MailBattleLogPanel visible={linkedPage === 'battle-log' && p.visible !== false} onClose={() => setLinkedPage(null)} onAction={p.onAction} />
+        <MailTroopDetailsPanel visible={linkedPage === 'troop-details' && p.visible !== false} onClose={() => setLinkedPage(null)} onAction={p.onAction} />
     </view>;
 });
 

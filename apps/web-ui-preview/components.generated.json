@@ -343,6 +343,11 @@
       "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailTabs.tsx"
     },
     {
+      "key": "MailTroopDetailsPanel",
+      "rootName": "MailTroopDetailsPanel",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailTroopDetails/MailTroopDetailsPanel.tsx"
+    },
+    {
       "key": "MainNav",
       "rootName": "MainNav",
       "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx"
@@ -511,6 +516,11 @@
       "key": "TechIcon",
       "rootName": "TechIcon",
       "source": "apps/client/src/ui-uniflex/gamecomponents/tech/TechIcon.tsx"
+    },
+    {
+      "key": "TroopComparisonRow",
+      "rootName": "TroopDetails/Row",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailTroopDetails/TroopComparisonRow.tsx"
     },
     {
       "key": "VictoryPanel",

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/mail-troop-details/row",
+      "kind": "image",
+      "file": "assets/mail_compare_row.png",
+      "width": 656,
+      "height": 62,
+      "sha256": "bdb1fc93fb50a02f46071b9ec5e5a9f2f59eb7c0900c6c8bd44882fcd4dc4d1b"
+    },
+    {
+      "id": "ui/mail-troop-details/body",
+      "kind": "image",
+      "file": "assets/mail_report3_body.png",
+      "width": 638,
+      "height": 83,
+      "sha256": "0d44c639d15cc05e765e5379d945979763a8eb3ea4942e87584f235046407fbf"
+    }
+  ]
+}

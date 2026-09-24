@@ -11,7 +11,7 @@
 - `gamecomponents/soldier/SoldierPortrait` 组合头像底图、图标及动态等级角标。黑色的 `mail_report_detail_soldier_l` 是底图；蓝衣士兵图标复用相邻 `邮件-士兵详情_切图/sprites/mail_soldier_portrait.png`，不是黑色占位。
 - 重复项用显式数据接口并把整项传入子组件，避免当前 AOT 将未标注类型的数组字段折叠为第一项。
 
-纯客户端展示：数据按原稿演示；`onClose` 关闭，`onAction` 提供 `delete`、`share`、`soldier-info`、`attribute-info`、`soldier:player`、`soldier:enemy`、`battle-log`、`troop-details` 回调。底部 `battle-log` 会打开独立的 `MailBattleLogPanel`，关闭日志保留本页位置。删除/分享与部队详情仅提供展示回调，未接服务器业务。
+纯客户端展示：数据按原稿演示；`onClose` 关闭，`onAction` 提供 `delete`、`share`、`soldier-info`、`attribute-info`、`soldier:player`、`soldier:enemy`、`battle-log`、`troop-details` 回调。底部 `battle-log` / `troop-details` 分别打开独立的 `MailBattleLogPanel` / `MailTroopDetailsPanel`，两者互斥显示，关闭后保留本页位置。删除/分享仅提供展示回调，未接服务器业务。
 
 Web 登记：`screens.json`、`catalog.ts`、`preview-screen.ts`；Cocos 登记：`previewCatalog.ts`，`preview.ts` 提供 `createMailReportDetailPreview`；原稿首页可直接打开。
 

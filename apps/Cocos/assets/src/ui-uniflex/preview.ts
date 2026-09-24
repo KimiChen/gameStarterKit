@@ -849,3 +849,9 @@ export function createMailBattleLogPreview(parent: Node): { dispose(): void } {
     const preview = createPreviewScreen(parent, "mail-battle-log", { query: null, navigate: () => preview.dispose() });
     return preview;
 }
+
+/** Troop bonus comparison details, separate from the battle log. */
+export function createMailTroopDetailsPreview(parent: Node): { dispose(): void } {
+    const preview = createPreviewScreen(parent, "mail-troop-details", { query: null, navigate: () => preview.dispose() });
+    return preview;
+}
