@@ -38,6 +38,9 @@ if (baseline && baseline.cells.some(c => !c.rect)) throw new Error("baseline req
 const decorCells = baseline?.cells ?? pages?.cells ?? MAPO_DECOR_TEXTURES;
 const decorSize = baseline?.size ?? (pages ? [1, 1] as const : [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H] as const);
 const opaque = process.argv.includes("--opaque-gallery");
+const textureArg = process.argv.indexOf("--textures");
+const textureDir = textureArg < 0 ? null : path.resolve(process.argv[textureArg + 1]);
+if (textureDir && (baselineDir || pageDir)) throw new Error("--textures cannot be combined with layout trials");
 function decorBatches(sprites: MapoSpriteInput[]): MapoStaticBatch[] {
     // Candidate pages may ONLY split consecutive runs after stable painter sorting.
     sprites.sort(mapoPainterCompare);
@@ -101,7 +104,8 @@ async function capture(name: string, row: number, col: number, span: number) {
         const pngName = `${batch.texture}.png`;
         if (!files.has(`/${pngName}`)) {
             const bytes = baselineDir && batch.texture === "decor-atlas" ? fs.readFileSync(path.join(baselineDir,pngName))
-                : pageDir && batch.texture.endsWith("-trial") ? fs.readFileSync(path.join(pageDir, pngName)) : read(pngName);
+                : pageDir && batch.texture.endsWith("-trial") ? fs.readFileSync(path.join(pageDir, pngName))
+                : textureDir ? fs.readFileSync(path.join(textureDir, pngName)) : read(pngName);
             sourceHashes[pngName] = createHash("sha256").update(bytes).digest("hex");
             files.set(`/${pngName}`, { type: "image/png", data: bytes });
         }
@@ -170,7 +174,7 @@ async function capture(name: string, row: number, col: number, span: number) {
         fs.writeFileSync(path.join(out, "report.json"), JSON.stringify({ name, row, col, bounds, animationSeconds: seconds,
             drawCalls: result.drawCalls, textureSwitches: result.textureSwitches, initialBakeMs: result.initialBakeMs,
             decorLayout: pageDir ?? "installed-single-page",
-            background: spec.background, baselineDir,
+            background: spec.background, baselineDir, textureDir,
             width: spec.width, height: spec.height, shader: "mapo-sprite.effect equivalent / WebGL1 straight alpha",
             geometryWithoutUv: geometryWithoutUv.digest("hex"), geometrySha256: geometryHash.digest("hex"),
             batches: batches.map(b => ({ texture: b.texture, vertices: b.geometry.positions.length / 3, indices: b.geometry.indices16.length })),

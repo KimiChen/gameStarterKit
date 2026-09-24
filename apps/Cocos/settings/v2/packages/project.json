@@ -17,5 +17,8 @@
       "name": "STAGE3D_OVERLAY",
       "value": 2
     }
-  ]
+  ],
+  "script": {
+    "loose": false
+  }
 }

@@ -570,7 +570,7 @@ O4 发布格式验证仍由各批交付。Creator 重放需要本地服务和可
 | O2 定位安全的裁边 | 已完成 | 资源件/河岸/雪 top/道路及小地图已裁边，Creator 实测源纹理再减 46.5 MiB；原包/固定时间画面、单/双页实绘、横竖版与小地图边界回归均通过，预览恢复竖版；详见下方记录 |
 | O3-B1 分组租约与数据生命周期 | 已完成（2026-09-24） | 概览先交付；分组 AssetLease、实例数据持有者、5 秒出档宽限及帧末归还；竖版 40 步与十次重开通过，L3 源纹理 8.50 MiB、关闭后 reader / BufferAsset / 源纹理 / RT 均为 0；全量闸的既有文档不一致单独记录于下文 |
 | O3-B2 Bundle 与版本绑定 | 已完成（2026-09-24） | 独立 `kit-mapOriginal-s1/2d` Bundle、manifest 内容/布局/配置绑定、3 个作者态文件退出运行时；竖版 40 步、5 项故障/缓存检查与 Web 构建通过，全量 `verify:all` 通过 |
-| O4 GPU 压缩 | 未开始 | — |
+| O4 GPU 压缩 | 已交付，移动真机待验收（未退出） | 12 张颜色图使用 ASTC 4×4 + 原 PNG 回退；实际 Web 发布源纹理 82.6253→32.9378 MiB（−60.14%）。水色/法线/格线/选框/极小图保留 PNG；质量、构建和桌面 GPU 证据见下方 |
 | O5 大配置外置 | 未开始 | — |
 | O6 动画更新优化 | 未开始 | 后续批次，不阻塞前五项 |
 
@@ -967,4 +967,102 @@ Bundle 名为 `kit-mapOriginal-s1`。仍沿用 O3-B1 的概览优先、按需分
 本批完整 `npm run verify:all` 通过（服务端 **1,399 项**通过），完整日志保留在上述证据目录。
 B1 记录中的根文档同步问题在当前基线上已不再触发；本批未修改 AGENTS/CLAUDE。
 
-下一批为 O4：独立验证地图纹理压缩、PNG 回退、画质阈值和平台实际 GPU 格式；O5/O6 未实施。
+以上为 O3-B2 完成时的记录。后续压缩实施见下节；O5/O6 未实施。
+
+### O4 实施与桌面验收（2026-09-24，移动真机待验收）
+
+基线提交 `c60d9333`，证据根 `.cache/creator-preview/maporiginal-optimization/o4/`。
+源码与本节同批提交；`summary.json` 绑定最终提交、Git tree 与有效报告/构建文件哈希。
+源 PNG、布局、坐标、动画、manifest 的 `contentVersion` 和 `atlasLayoutVersion` 均未改变。
+本批只修改派生纹理策略与构建/验收工具；另修复发布编译的迭代器语义，见后文。
+
+**压缩分类与画质**：
+
+- `texture-policy.json` 为逐图分类与限值真源；安装器保留 UUID/无关导入项，统一压缩预设、
+  `mipfilter:none` 和 `fixAlphaTransparencyArtifacts:false`，`--check` 检查漂移，未分类新图拒绝安装。
+- 12 张颜色图采用 `maporiginal-color`：ASTC 4×4 / medium，PNG quality=100。
+  Android/iOS/Web/miniGame 均登记同一预设；本批实际构建和设备选择证据限 Web 发布。
+  3D 的 8×8/6×6 预设及全局 `genMipmaps:true` 保持原值；地图实际 ASTC 头和载荷证明只有一级。
+- 使用 Creator 3.8.8 自带 astcenc 5.2.0，`-cl ... 4x4|5x5 -medium`；不加 alpha 权重、不预乘，
+  不修改源图透明 RGB。17 张图都测了 4×4/5×5；12 张颜色图的 4×4 全部通过，5×5 有 8 张被质量门拒绝。
+- 普通颜色图在黑/灰/白三种背景上分别检查可见像素与 alpha 边缘；按 64×64 小块检查局部均值。
+  限值按 8-bit 通道单位冻结：颜色 MAE≤3、p99≤20、任一通道差值>32 的像素≤0.3%、
+  最差局部 MAE≤8；alpha 边缘 MAE≤4、p99≤24、>32 像素≤1%、最差局部 MAE≤8。
+  4×4 在 12 图三背景/边缘中的最高颜色 MAE 为 2.781，最差局部 MAE 为 7.807。
+  这些是本批有损压缩门槛，**不能代替 O2 的无损像素阈值**。
+- 固定原几何、动画 0.37 s、WebGL1 sprite shader，重放草/雪/沙/洛阳/缓存边界及三季完整资源件图库；
+  8 个场景各有 overview/minimap，共 16 组。位置、UV、draw call、纹理切换数不变；
+  整图最高 RGB MAE 0.697、p99 4、最差 64 px 小块 MAE 2.069。
+  对应门槛为 MAE≤2、p99≤16、>32 像素≤0.3%、最差局部 MAE≤6。
+- 水色与法线单独、组合均用**原河流 fragment shader**重放：全图采样 + 3 个有水色的地标 ×
+  0/0.37/1/10 s，共 13 帧。直接上传解码 RGBA，含 alpha=0 的非零 RGB，避免浏览器 PNG
+  解码路径掩盖数据纹理差异；另记录原图 RGB/透明 RGB/法线 RG 误差。
+  仅压缩水色到 4×4 时，最高 MAE 1.530、最差局部 8.841，超过水流门槛 MAE≤1 / 局部≤3，保留 PNG。
+  仅压缩法线 4×4 时 MAE≤0.108、p99≤1、局部≤0.846，桌面试验通过；收益仅 0.1875 MiB，
+  本批仍保留 PNG，后续移动水流画质有证据再单独启用。格线、选框与 6×2 填色图也保留 PNG。
+
+**实际发布包与显存**：
+
+构建为 Creator 3.8.8 `web-mobile;debug=false;md5Cache=true`，使用独立干净目录
+`build-strict/web-mobile`。CLI 返回 36，日志明确 `Build Task Finished`；以成功产物审计和真实引擎
+重放为完成判据。沿用既有大型 TS/Babel 与 Rollup 提示，未将其报告为零构建警告。
+
+`audit_bundle_build.py` 按每张源图 UUID 检查 PNG/ASTC、ImageAsset `fmt`、尺寸/块大小/完整载荷；
+发布 ASTC 必须与通过画质试验的 ASTC **SHA-256 相同**，PNG fallback 和二进制必须与源字节相同。
+实际 12 个 ASTC + 17 个 PNG + 13 个 buffer native 文件；地图不重复进入主包/resources。
+
+| 指标 | PNG 基线 | O4 |
+|---|---:|---:|
+| L0 选中地格后，17 张源纹理实际 GPU 字节 | 86,638,896 B / 82.6253 MiB | 34,537,776 B / 32.9378 MiB |
+| 源纹理减少 | — | 52,101,120 B / 49.6875 MiB（60.14%） |
+| 地图发布目录磁盘体积 | 19,531,890 B | 36,899,182 B |
+| 主应用（不含地图包）磁盘体积 | 127,385,417 B | 127,640,911 B |
+
+发布目录增加 17,367,292 B，是同时保留原 PNG 与 ASTC 的成本；运行时按设备只请求其选择的变体。
+这些磁盘数不是 gzip/网络流量，不是小游戏主包体积。主应用增加 255,494 B 来自下述标准语义编译。
+RT 仍独立按原格式与最多 48 MiB 预算计费，不把源纹理减少计入 RT 收益。
+
+**发布编译修复**：实际打开发布版时发现，默认宽松编译把 `[...mountedPages.values()]` 变为
+`[].concat(mountedPages.values())`，导致 ViewMgr 把 iterator 当作页面并读取空的 `meta`；Map/Set
+快照、地图双指位置、字符串字符展开也受同一规则影响。通过 Creator 项目设置关闭「启用宽松模式」，
+落盘 `project.json → script.loose:false`，保留原有类字段规范选项；不是修改源代码绕过单个调用点。
+真实发布版重新构建后，地图打开/输入/资源释放通过；类型配置测试增加守门，防止恢复此开关。
+开关说明见 [Creator 3.8 项目脚本设置](https://docs.cocos.com/creator/3.8/manual/en/editor/project/)。
+
+**桌面真实发布验收**：
+
+- `release-portrait-host/report.json`：Apple M4 / Chrome 153 / ANGLE Metal / WebGL2，
+  CSS 393×773、DPR 2、backing 786×1546。ASTC 与强制 PNG 两例通过。
+- `release-webgl1-final/report.json`：启动前禁用 WebGL2，实际 API 为 WebGL1；
+  两种纹理路径均通过。保留引擎尝试 WebGL2 时的预期 `16405` 日志，各例仅此一条，无其它警告或异常。
+- `release-landscape-final/report.json`：WebGL2 / CSS 与 backing 均为 1624×750、DPR 1；
+  ASTC 与 PNG 两例通过，console 无警告/异常。横版 L1 实测 RT 含深度 4 MiB。
+- ASTC 例实际请求 12 个 ASTC，并逐张核对 GPU format=89、尺寸和块字节；其余 5 图 format=35。
+  PNG 例在引擎启动前隐藏 ASTC 扩展，17 图实际均为 RGBA8，不请求 ASTC；所有地图 native 响应均为 200。
+- 两种路径均普通点击选中 `(750,749)`、5 级粮田/原版值 26；经过 L0→L1→L2→L3→L0。
+  L3 等待 5.6 秒后只剩两张概览纹理，ASTC **2.125 MiB** / PNG **8.50 MiB**，RT 为 0。
+  竖版 L1 实测 RT 含深度 12 MiB，仍受独立 48 MiB 预算限制；横竖版可见块数不同，不将其当作压缩收益。
+- 每例再经宿主入口连续打开/关闭 10 次，关页后地图实例、租约、reader 数组、BufferAsset、
+  源纹理、RT 和节点全部归零。每次打开都经过 kit 安装与 ticker 接线，未手工驱动地图 update。
+- 初版探针直接 `ViewMgr.open`，缺少 kit 安装，因此没有 ticker，静止远景无法推进宽限释放；
+  该失败记录保留，不作为运行时泄漏结论，也不计作验收证据。探针已改走正常宿主入口。
+  另有浏览器后台暂停导致的超时记录；最终 WebGL1/横版探针启用并登记 CDP focus emulation，
+  仅验证格式/生命周期，不据此声称真实前台帧时、功耗或手机性能。
+
+**编辑器竖版回归**：刷新原有预览并保留网页选择的竖版，最终 CSS 393×719.53125、DPR 2、
+backing 786×1440。`preview-portrait-final/report.json` 的 **40 步通过**，console / 错误浮层均为 0；
+14 个采样窗口、小地图边界/留白、跨雪沙平移、四档画质、延迟回调和十次重开均通过。
+全程持有 focus emulation，`visibility.json` 记录无后台切换；这些采样不用于声明前台帧时收益。
+前一轮 `preview-portrait/report.json` 的 40 步也通过，但恢复普通画质时出现一次 decor 加载超时并自动重试成功，
+原始错误记录保留；保持页面运行的复测未复现，不能将前一轮写作零错误。最终恢复普通近景，
+普通输入选中 `(750,749)` / 原版值 26，截图与页面记录为 `selection-750-749.png/.json`。
+
+质量报告额外绑定场景/河流重放的源图片和解码候选哈希，拒绝把原图误作压缩候选；
+几何、UV、动画时间和 shader 必须一致。`quality-audit.json` 与 `build-strict-audit.json` 均通过。
+完整 `npm run verify:all` 通过：客户端 **1,359 项**、服务端 **1,399 项**、UniFlex **82 项**，
+FGUI **66 项**及其余聚合闸通过，日志为 `verify-all.log`。独立 Python 压缩回归 **6 项**、
+manifest 回归 **3 项**通过，安装器 `--check` 通过；Python 与发布引擎检查不冒称由 verify:all 覆盖。
+
+移动真机尚未连接（`adb devices -l` 无设备）。桌面 ASTC 能力与模拟不支持 ASTC 的 PNG 路径
+不能替代自然不支持设备、Android/iOS/小游戏容器的真机画质和生命周期验收，**O4 保持未退出**。
+O5/O6 尚未开始。

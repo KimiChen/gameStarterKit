@@ -21,6 +21,7 @@ import re
 import struct
 import zlib
 from pathlib import Path
+from texture_policy import POLICY, apply_texture_policy, validate_builder
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -215,6 +216,9 @@ def main() -> int:
                 for p in sorted(content.glob("*.ts")) if p.name != "manifest.data.ts"}
     bindings.update({name: hashlib.sha256(data).hexdigest() for name, data in layouts.items()})
     runtime = make_manifest(a.map, payloads, bindings)
+    if {n for n, r in runtime['assets'].items() if r['type'] == 'texture'} != set(POLICY['assets']):
+        raise ValueError('每张地图运行时纹理必须登记压缩策略')
+    validate_builder(json.loads((assets.parent / 'settings/v2/packages/builder.json').read_text()))
     expected = {}
     ledger = []
     for name, data in payloads.items():
@@ -255,7 +259,7 @@ def main() -> int:
     for lod in (4, 5):
         for suffix in ("png", "info.json"):
             obsolete += [kit / f"plate-lod{lod}.{suffix}", kit / f"plate-lod{lod}.{suffix}.meta"]
-    # 全树 UUID 碰撞检查；只创建缺失的 meta，不覆写已有压缩或采样设置。
+    # 保留已有 UUID/导入设置；只统一本管线拥有的压缩、mip 与透明 RGB 策略。
     owners = {}
     for p in assets.rglob("*.meta"):
         u = json.loads(p.read_text()).get("uuid")
@@ -267,7 +271,12 @@ def main() -> int:
         value = meta_for(str(p.relative_to(assets)), p.name, data)
         if value["uuid"] in owners and owners[value["uuid"]] != mp:
             raise ValueError(f"UUID 撞车：{mp} / {owners[value['uuid']]}")
-        if not mp.exists() or a.remint: metas[mp] = json_bytes(value)
+        if p.suffix == '.png':
+            if mp.exists() and not a.remint: value = json.loads(mp.read_text())
+            logical = next(n for n, r in runtime['assets'].items() if bundle / (r['path'] + '.png') == p)
+            value = apply_texture_policy(value, logical)
+            if not mp.exists() or json.loads(mp.read_text()) != value: metas[mp] = json_bytes(value)
+        elif not mp.exists() or a.remint: metas[mp] = json_bytes(value)
         parent = p.parent
         while parent != assets:
             dm = Path(str(parent) + ".meta")

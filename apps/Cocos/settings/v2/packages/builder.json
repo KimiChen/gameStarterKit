@@ -76,6 +76,43 @@
             }
           }
         }
+      },
+      "maporiginal-color": {
+        "name": "maporiginal-color",
+        "options": {
+          "android": {
+            "astc_4x4": {
+              "quality": "medium"
+            },
+            "png": {
+              "quality": 100
+            }
+          },
+          "ios": {
+            "astc_4x4": {
+              "quality": "medium"
+            },
+            "png": {
+              "quality": 100
+            }
+          },
+          "web": {
+            "astc_4x4": {
+              "quality": "medium"
+            },
+            "png": {
+              "quality": 100
+            }
+          },
+          "miniGame": {
+            "astc_4x4": {
+              "quality": "medium"
+            },
+            "png": {
+              "quality": 100
+            }
+          }
+        }
       }
     }
   },

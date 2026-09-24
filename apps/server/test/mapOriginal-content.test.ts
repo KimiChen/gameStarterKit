@@ -1256,7 +1256,17 @@ test("mapOriginal O1/O2：物理图片唯一、裁边与留边合法，逻辑条
 });
 
 
-test("mapOriginal Bundle：manifest 绑定配置/素材，resources 无重复副本，PNG 可独立发布", () => {
+test("mapOriginal Bundle：manifest 绑定配置/素材，resources 无重复副本，地图专用压缩保留 PNG", () => {
+    const policy = JSON.parse(readFileSync(new URL("../../../tools/maporiginal-assets/texture-policy.json", import.meta.url), "utf8"));
+    const builder = JSON.parse(readFileSync(new URL("../../Cocos/settings/v2/packages/builder.json", import.meta.url), "utf8"));
+    const preset = builder.textureCompressConfig.userPreset[policy.preset];
+    for (const platform of policy.platforms) {
+        assert.deepEqual(preset.overwrite?.[platform] ?? preset.options[platform], {
+            [policy.format]: { quality: policy.quality }, png: { quality: 100 },
+        });
+    }
+    assert.deepEqual(Object.keys(policy.assets).sort(), Object.entries(MAPO_S1_MANIFEST.assets)
+        .filter(([, a]) => a.type === "texture").map(([name]) => name).sort());
     const disk = JSON.parse(kit("manifest.json").toString());
     assert.deepEqual(disk, MAPO_S1_MANIFEST);
     assert.deepEqual(readFileSync(new URL("2d/manifest.json", cocosDir)), kit("manifest.json"));
@@ -1275,7 +1285,11 @@ test("mapOriginal Bundle：manifest 绑定配置/素材，resources 无重复副
             if (row.type === "texture") {
                 assert.deepEqual(row.size, [data.readUInt32BE(16), data.readUInt32BE(20)]);
                 const meta = JSON.parse(readFileSync(new URL(row.path + ".png.meta", cocosDir), "utf8"));
-                assert.notEqual(meta.userData.compressSettings?.useCompressTexture, true, "O3 保留原 PNG，压缩到 O4");
+                assert.equal(meta.subMetas["6c48a"].userData.mipfilter, "none");
+                assert.equal(meta.userData.fixAlphaTransparencyArtifacts, false);
+                if (policy.assets[name] === "color") {
+                    assert.deepEqual(meta.userData.compressSettings, {useCompressTexture: true, presetId: policy.preset});
+                } else assert.equal(meta.userData.compressSettings, undefined, `${name} 必须保持原始 PNG`);
             }
         }
         assert.equal(group.sourceBytes, bytes);

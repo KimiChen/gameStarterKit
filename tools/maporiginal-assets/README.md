@@ -65,6 +65,10 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `verify_fidelity.py` | 对照原包复核 381 个入口及引用、635 切片的全部 RGBA；只读校验，不重写产物 |
 | `audit_assets.py` / `atlas_layout.py` | O0 仓内只读统计、逐片哈希、完整动画引用/全图可达性、每侧 2 px 外间隔的确定性矩形试排；不修改素材 |
 | `compare_images.py` / `test_asset_audit.py` | 同后端 PNG 与局部 ROI 对照；空纹理、共享矩形、透明 RGB 和 packer 回归 |
+| `texture-policy.json` / `texture_policy.py` | 地图逐图压缩分类与质量限值；颜色图使用地图专用 ASTC 4×4 + 原 PNG，水色/法线/细线保持 PNG；安装器统一设置并拒绝未分类的新图 |
+| `measure_compression.py` / `capture_water.mjs` | Creator astcenc 4×4 / 5×5 试验；可见像素、黑/灰/白合成、alpha 边缘、64 px 局部误差；原河流 shader 固定位置/时间重放，直接上传含透明 RGB 的原始字节 |
+| `audit_compression_quality.py` / `test_texture_compression.py` | 冻结压缩限值、固定几何/时间对照与分离水色/法线试验；不得用压缩限值放宽 O2 无损检查 |
+| `audit_bundle_build.py` | 实际发布包的 ASTC 头/尺寸/单级载荷、ImageAsset 格式登记、试验字节绑定、PNG 逐字节回退与分包体积检查 |
 | `test_prefab_bin.py` | 无原包也可运行的严格边界/中文节点/未知组件回归 |
 | `build_blocks.py` | ★ snow / desert 块层：`ground_{desert,snow}.bytes`（152² **行主序**）+ 路径表 51/52 条 → 几何库 + 摆放表 + 两张底纹；校 POT / 贴图归属 / 单位阵 transform |
 | `build_rivers.py` | ★ 河流几何层：`river.bytes`（504² 列主序 / 3×3 逻辑格 / 偏移 −6）+ `river_path.json` 102 条 → 几何库 `river-geo.bin` + 摆放表 `rivers.bin` + 填充色图 `river-fill.png`；带对位校验（覆盖 100.0% 的 `res==47`） |
@@ -82,6 +86,33 @@ python3 tools/maporiginal-assets/build_name_map.py                     # 全量�
 ```
 
 仓外素材根写在 `assets.config.json`，换机器只改那两行。产物落 `out/`（**已 gitignore**）。
+
+地图压缩试验只写 `.cache`；源 PNG 仍由现有导出器维护。`install_to_kit.py` 保留现有 UUID 和
+无关导入选项，但会按 `texture-policy.json` 统一压缩预设、`mipfilter:none` 与透明 RGB 保留。
+手动改某张 `.meta` 不是持久配置；新增/调整地图图片时先修改策略，再安装和运行 `--check`。
+`builder.json` 的 `maporiginal-color` 预设必须与策略相符，PNG quality=100；3D 预设与全局 mip 开关独立。
+压缩候选不能仅凭整图误差转正；现行限值与未覆盖设备见优化文档 §9。
+
+```bash
+python3 tools/maporiginal-assets/measure_compression.py --encoder /path/to/Creator/tools/astc-encoder/astcenc --out .cache/mapo-compression/trials
+node --import tsx tools/maporiginal-assets/capture_layout.ts --seconds 0.37 --gallery --opaque-gallery --out .cache/mapo-compression/layout/png
+node --import tsx tools/maporiginal-assets/capture_layout.ts --seconds 0.37 --gallery --opaque-gallery --out .cache/mapo-compression/layout/4x4 --textures .cache/mapo-compression/trials/4x4
+node tools/maporiginal-assets/capture_water.mjs --textures apps/kits/mapOriginal/data/maps/s1 --out .cache/mapo-compression/water-raw/png
+# 4x4 / 5x5 及 mask-4x4 / normal-4x4 分别重放；后两种目录只有一张使用候选，另一张用源 PNG。
+# capture_water.mjs 用 MAPO_PYTHON 指定有 Pillow 的 Python；缺省 python3。
+python3 tools/maporiginal-assets/audit_compression_quality.py --evidence .cache/mapo-compression
+python3 tools/maporiginal-assets/audit_bundle_build.py --build-dir /path/to/web-mobile --quality-report .cache/mapo-compression/trials/report.json --out .cache/mapo-compression/build-audit.json
+node tools/creator-preview/probe-maporiginal-compression.mjs http://127.0.0.1:7469/ .cache/mapo-compression/build-audit.json .cache/mapo-compression/release
+# 同一发布包另跑 --webgl1 / --landscape；仅创建和关闭自己的标签页。
+```
+
+发布探针要求已有 Chrome 9222 与本机静态发布服务器，不使用编辑器 7456 预览。
+每次打开都走 `AppRuntime.launch → PluginHost.install → NavigationService.open`，确保地图 ticker
+和卸载流程真实接线；不能只用 `ViewMgr.open` 代替入口安装。它记录真实 GPU 格式与字节、
+L1 烘焙/L3 释放、点选和十次重开；PNG 路径通过启动前隐藏 ASTC
+扩展触发，报告明确标注为故障注入，不是自然不支持压缩的手机实测。
+测试页启用 CDP focus emulation，避免切到其它窗口使引擎停止推进；报告登记该条件，
+此探针不能用来宣称真实前台帧时或手机性能。
 
 ## 三、当前反查结果
 
@@ -700,7 +731,8 @@ python3 tools/maporiginal-assets/install_to_kit.py --check
 python3 tools/maporiginal-assets/audit_assets.py --out .cache/mapo-bundle/assets.json
 node tools/creator-preview/run.mjs mapOriginal --reuse --out .cache/mapo-bundle/portrait
 node tools/creator-preview/probe-maporiginal-bundle.mjs <已有预览标签ID> .cache/mapo-bundle/faults
-python3 tools/maporiginal-assets/audit_bundle_build.py --build-dir <web-mobile构建目录> --out .cache/mapo-bundle/build.json
+# O4 起构建审计同时要求对应压缩试验报告（前文流程）：
+python3 tools/maporiginal-assets/audit_bundle_build.py --build-dir <web-mobile构建目录> --quality-report .cache/mapo-compression/trials/report.json --out .cache/mapo-bundle/build.json
 ```
 
 最后一个探针在指定的 localhost:7456 预览内注入旧内容版本、旧布局版本与真实 Bundle 地址缺片，

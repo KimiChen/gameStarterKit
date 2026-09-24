@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""O3 Web PNG 构建审计：地址闭合、无重复主包路径、源文件与 native 字节一致、体积分开。
+"""O4 发布审计：地址闭合、ASTC 实际头/质量绑定、逐字节 PNG fallback、无额外 mip。
 
-python3 tools/maporiginal-assets/audit_bundle_build.py --build-dir <web-mobile output> --out <report.json>
-不把未压缩的磁盘大小当作下载流量；O4 的压缩平台另设格式验证。
+python3 tools/maporiginal-assets/audit_bundle_build.py --build-dir <web-mobile output> --quality-report <trials/report.json> --out <report.json>
+不把磁盘大小当作下载流量；GPU 选择与真正 fallback 另由发布包引擎探针验证。
 """
 import argparse
 import hashlib
 import json
 from pathlib import Path
+from measure_compression import astc_info
+from texture_policy import POLICY, quality_failures
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def audit(base, manifest):
+def audit(base, manifest, quality):
     configs = {}
     for p in (base / 'assets').glob('*/config.*.json'):
         if p.parent.name in configs:
@@ -27,11 +29,50 @@ def audit(base, manifest):
         if other != name and any(v[0].startswith('kits/mapOriginal/') or v[0] in required for v in cfg['paths'].values()):
             raise ValueError(f'{other} 包含重复地图素材')
     native = [p for p in (base / 'assets' / name / 'native').rglob('*') if p.is_file()]
-    hashes = {hashlib.sha256(p.read_bytes()).hexdigest() for p in native}
-    records = [a for a in manifest['assets'].values() if a['type'] in ('texture', 'buffer')]
-    for record in records:
-        if record['sourceSha256'] not in hashes: raise ValueError(f'PNG / binary 发布字节不符：{record["path"]}')
-    if len(native) != len(records): raise ValueError('额外或缺失 native 文件')
+    if quality['contentVersion'] != manifest['contentVersion']: raise ValueError('压缩画质报告版本不符')
+    verified = set()
+    textures = {}
+    for logical, record in manifest['assets'].items():
+        if record['type'] == 'effect': continue
+        extension = '.png' if record['type'] == 'texture' else '.bin'
+        meta = json.loads((ROOT / 'apps/Cocos/assets/bundles' / name / (record['path'] + extension + '.meta')).read_text())
+        uuid = meta['uuid']
+        files = list((base / 'assets' / name / 'native' / uuid[:2]).glob(uuid + '.*'))
+        expected = {extension}
+        compressed = record['type'] == 'texture' and POLICY['assets'][logical] == 'color'
+        if compressed: expected.add('.astc')
+        if {p.suffix for p in files} != expected or len(files) != len(expected):
+            raise ValueError(f'平台变体多余/缺失：{logical}')
+        original = next(p for p in files if p.suffix == extension)
+        if hashlib.sha256(original.read_bytes()).hexdigest() != record['sourceSha256']:
+            raise ValueError(f'PNG fallback / binary 发布字节不符：{logical}')
+        verified.update(files)
+        if record['type'] != 'texture': continue
+        imports = list((base / 'assets' / name / 'import' / uuid[:2]).glob(uuid + '.*.json'))
+        if len(imports) != 1: raise ValueError(f'缺失/重复 image import：{logical}')
+        def formats(value):
+            if isinstance(value, dict):
+                return ([value['fmt']] if 'fmt' in value else []) + sum((formats(v) for v in value.values()), [])
+            return sum((formats(v) for v in value), []) if isinstance(value, list) else []
+        # Creator 3.8.8 ImageAsset.extnames[7]=astc, [0]=png; ASTC_RGBA_4X4=89.
+        expected_fmt = '7@89_0' if compressed else '0'
+        if formats(json.loads(imports[0].read_text())) != [expected_fmt]:
+            raise ValueError(f'ImageAsset 未登记对应变体：{logical}')
+        png_bytes = record['size'][0] * record['size'][1] * 4
+        row = {'size': record['size'], 'rgba8Bytes': png_bytes, 'gpuBytes': png_bytes,
+               'format': 'RGBA8', 'levels': 1, 'native': [str(p.relative_to(base)) for p in files]}
+        if compressed:
+            astc = next(p for p in files if p.suffix == '.astc')
+            info = astc_info(astc.read_bytes())
+            if info['size'] != record['size'] or info['block'] != [4, 4]: raise ValueError(f'错误 ASTC 格式：{logical}')
+            trial = quality['images'][logical]
+            if trial['sourceSha256'] != record['sourceSha256'] or trial['4x4']['astcSha256'] != hashlib.sha256(astc.read_bytes()).hexdigest():
+                raise ValueError(f'发布 ASTC 与画质试验不一致：{logical}')
+            failures = quality_failures(trial['4x4']['errors'])
+            if failures: raise ValueError(f'压缩质量不通过：{logical}: {failures}')
+            row.update(info, format='ASTC_RGBA_4X4')
+        textures[logical] = row
+    if verified != set(native): raise ValueError('额外或缺失 native 文件')
     allfiles = [p for p in base.rglob('*') if p.is_file()]
     def size(folder):
         files = [p for p in folder.rglob('*') if p.is_file()]
@@ -43,6 +84,9 @@ def audit(base, manifest):
             'totalFiles': len(allfiles), 'totalBytes': total, 'bundles': bundles,
             'mapBundleBytes': bundles[name]['bytes'], 'mainApplicationExcludingMapBytes': total - bundles[name]['bytes'],
             'mainResourcesMapPaths': 0, 'verifiedRuntimeAddresses': len(required), 'verifiedNativeFiles': len(native),
+            'textures': textures, 'astcTextures': sum(t['format'] == 'ASTC_RGBA_4X4' for t in textures.values()),
+            'sourceTexturePngBytes': sum(t['rgba8Bytes'] for t in textures.values()),
+            'sourceTextureAstcCapableBytes': sum(t['gpuBytes'] for t in textures.values()),
             'pngAndBinarySourceSha256Matches': True, 'bundleDependencies': config['deps'],
             'md5ImportEntries': len(config['versions']['import']) // 2, 'md5NativeEntries': len(config['versions']['native']) // 2}
 
@@ -51,9 +95,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--build-dir', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--quality-report', type=Path, required=True)
     args = parser.parse_args()
     manifest = json.loads((ROOT / 'apps/kits/mapOriginal/data/maps/s1/manifest.json').read_text())
-    report = audit(args.build_dir, manifest)
+    report = audit(args.build_dir, manifest, json.loads(args.quality_report.read_text()))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps({k: report[k] for k in ['mapBundleBytes', 'mainApplicationExcludingMapBytes', 'verifiedNativeFiles']}))

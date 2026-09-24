@@ -37,6 +37,10 @@
     "type": "texture",
     "fixAlphaTransparencyArtifacts": false,
     "hasAlpha": true,
-    "redirect": "8d7454d0-1a10-49c3-a3e3-03c070e8b282@6c48a"
+    "redirect": "8d7454d0-1a10-49c3-a3e3-03c070e8b282@6c48a",
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "maporiginal-color"
+    }
   }
 }

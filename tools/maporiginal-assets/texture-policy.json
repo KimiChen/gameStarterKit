@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "preset": "maporiginal-color",
+  "format": "astc_4x4",
+  "quality": "medium",
+  "pngQuality": 100,
+  "platforms": ["android", "ios", "web", "miniGame"],
+  "mipfilter": "none",
+  "assets": {
+    "overview.png": "color",
+    "minimap.png": "color",
+    "ground-base.png": "color",
+    "region-atlas.png": "color",
+    "road-atlas.png": "color",
+    "river-fill.png": "tiny-png",
+    "desert-base.png": "color",
+    "snow-base.png": "color",
+    "river-top-atlas.png": "color",
+    "desert-top-atlas.png": "color",
+    "snow-top-atlas.png": "color",
+    "decor-atlas.png": "color",
+    "city-atlas.png": "color",
+    "river-mask.png": "data-rgb-png",
+    "river-normal.png": "data-rg-png",
+    "grid-line.png": "line-png",
+    "choose.png": "line-png"
+  },
+  "colorLimits": {"mae": 3, "p99": 20, "bad32Fraction": 0.003, "worstTileMae": 8},
+  "alphaEdgeLimits": {"mae": 4, "p99": 24, "bad32Fraction": 0.01, "worstTileMae": 8},
+  "renderLimits": {"mae": 2, "p99": 16, "bad32Fraction": 0.003, "worstTileMae": 6},
+  "waterLimits": {"mae": 1, "p99": 8, "bad32Fraction": 0.001, "worstTileMae": 3}
+}

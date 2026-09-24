@@ -19,6 +19,13 @@ const CLIENT_ROOT = join(ROOT, "apps/client");
 const CONFIG_PATH = join(CLIENT_ROOT, "tsconfig.test.json");
 const LEGACY_CONFIG_PATH = join(CLIENT_ROOT, "tsconfig.json");
 
+test("Creator release preserves Map/Set/string spread semantics used by page and map lifecycles", () => {
+  // 3.8.8 loose builds emitted [].concat(map.values()), leaving an iterator as one element.
+  // ViewMgr.syncInput then read undefined page.meta; editor/Node tests did not reproduce it.
+  const project = JSON.parse(readFileSync(join(ROOT, "apps/Cocos/settings/v2/packages/project.json"), "utf8"));
+  assert.equal(project.script?.loose, false, "Creator 脚本必须关闭 loose；发布包另验页面挂载/关闭与地图指针交互");
+});
+
 function collectTypeScriptFiles(directory: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
