@@ -29,6 +29,7 @@ export const componentSpecimens: readonly ComponentSpecimenSpec[] = [
     { id: "cmp-dropdown", group: "g-dropdown", groupLabel: "下拉框", label: "下拉选择", width: 320, height: 344, wide: false },
     { id: "cmp-empty", group: "g-status", groupLabel: "状态", label: "空状态", width: 674, height: 168, wide: true },
     { id: "cmp-progress", group: "g-progress", groupLabel: "进度条", label: "进度条", width: 674, height: 34, wide: true },
+    { id: "cmp-marquee", group: "g-marquee", groupLabel: "跑马灯", label: "滚动公告", width: 674, height: 56, wide: true },
     { id: "cmp-check", group: "g-check", groupLabel: "复选框", label: "复选框", width: 210, height: 60, wide: false },
     { id: "cmp-radio", group: "g-radio", groupLabel: "单选框", label: "单选框", width: 440, height: 60, wide: false },
     { id: "cmp-quantity", group: "g-quantity", groupLabel: "数量", label: "数量", width: 674, height: 85, wide: true },

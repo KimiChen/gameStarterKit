@@ -16,6 +16,7 @@ import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { characterTab, heroDetailTab, heroListTab, mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
+import { Marquee } from '../../../components/marquee/Marquee';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
 import { RewardItem } from '../../../gamecomponents/item/RewardItem';
@@ -166,6 +167,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showInput = part === 'cmp-input';
     const showDropdown = part === 'cmp-dropdown';
     const showProgress = part === 'cmp-progress';
+    const showMarquee = part === 'cmp-marquee';
     const showEmpty = part === 'cmp-empty';
     const showTabs = showMailTab || showCharacterTab || showHeroListTab || showHeroDetailTab;
     const showQuantity = part === 'cmp-quantity';
@@ -241,6 +243,11 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
         </view>
         <view visible={showProgress} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <ProgressBar theme={theme} left={0} top={0} width={674} height={34} value={72} max={100} label="72%" />
+        </view>
+        <view visible={showMarquee} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <Marquee text="联盟活动即将开始，请各位成员做好准备！" left={0} top={0}
+                width={width} height={height} font={font} fontSize={26}
+                color={pageText} backgroundColor={pageSurfaceAlt} paused={!showMarquee} />
         </view>
         <view visible={showEmpty} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <EmptyState theme={theme} left={283} top={4} label="空状态" labelLeft={232} labelTop={124} labelWidth={210} />

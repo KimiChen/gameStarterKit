@@ -14,6 +14,7 @@ import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
+import { Marquee } from '../../../components/marquee/Marquee';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
 import { RewardItem } from '../../../gamecomponents/item/RewardItem';
@@ -28,7 +29,7 @@ const PAGE_WIDTH = 750;
 const PAGE_HEIGHT = 1424;
 const HEADER_HEIGHT = 188;
 const SCROLL_HEIGHT = PAGE_HEIGHT - HEADER_HEIGHT;
-const CONTENT_HEIGHT = 4020;
+const CONTENT_HEIGHT = 4220;
 const SECTION_WIDTH = 710;
 const INNER_WIDTH = 674;
 const SECTION_GAP = 24;
@@ -344,6 +345,21 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                         <view style={{ width: INNER_WIDTH, height: 85 }}>
                             <QuantityControl theme={theme} left={0} top={0} value={quantity} max={9}
                                 skin={QUANTITY_LAYOUT} onChange={(value) => setQuantity(value)} />
+                        </view>
+                    </view>
+                    <view name="MarqueeSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="跑马灯" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view style={{ position: 'relative', width: INNER_WIDTH, height: 56 }}>
+                            <Marquee text="联盟活动即将开始，请各位成员做好准备！" left={0} top={0}
+                                width={INNER_WIDTH} height={56} font={font} fontSize={26}
+                                color={pageText} backgroundColor={pageSurfaceAlt} />
                         </view>
                     </view>
                     <view name="ItemsSection" style={{

@@ -273,6 +273,11 @@
       "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx"
     },
     {
+      "key": "Marquee",
+      "rootName": "Marquee",
+      "source": "apps/client/src/ui-uniflex/components/marquee/Marquee.tsx"
+    },
+    {
       "key": "NotificationBadge",
       "rootName": "NotificationBadge",
       "source": "apps/client/src/ui-uniflex/components/badge/NotificationBadge.tsx"

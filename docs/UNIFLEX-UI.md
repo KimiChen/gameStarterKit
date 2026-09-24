@@ -63,6 +63,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 | 勾选 | `CheckBox` |
 | 数量加减 / 滑条 | `QuantityControl` |
 | 进度条 | `ProgressBar` |
+| 横向滚动公告 | `Marquee`（`text` + 视口尺寸；可设 `speed` / `gap` / `paused` / 精确 `textWidth`） |
 | 星级 | `StarRow` |
 | 输入框 | `InputText` |
 | 下拉框 | `Dropdown`（`dropdownSkins.ts` 提供皮肤） |
