@@ -17,9 +17,8 @@
   ⚠ **沙漠山不需要新美术**：`desert_client_res_id`（荒地山1..14）的 2D `src_name` 与基础季
   **逐字相同**（只有 `src_name_3d` 不同）⇒ 2D 沙盘沙漠带的山件就是基础季件（实测，
   14/14 全中）；客户端沙漠带回落基础季格，⛔ 不要为此复制一份图集格。
-  ⚠ 图集 2048×4096（3×10 格）：基础 13 + 雪 13 = 26 格 > 2048² 的 15 格位，故加高一倍
-  （竖着加 ⇒ 基础季 13 格的图内坐标**逐字节不变**）；选单图而不是按套分两张，是因为
-  一屏会混着两种带（带界穿屏），单图集单材质才能继续一张 mesh 合批。
+  ⚠ 26 个逻辑件保留独立 transform，按完整 RGBA / 原画布去重成 19 个图片条目；
+  图集坐标由 textureId 解析，不再使用固定格位。
 
 ★ **件的大小 = 原图像素 × prefab 里的 scale**（M0-B2，MAPORIGINAL-2D §3.3）：
   m2 只有 563 px 却要盖满 19 格的足迹，靠的就是 `mountain19m_01` 的 scale 2.163。
@@ -33,7 +32,7 @@
   早先分的「山脉 / 林丛 / 散落」三族是本仓自创的分类，树簇与草丛件已移除 ——
   48..61 在原版全是 `山1..山14`，⛔ 别再往里塞 tree/grass。
 
-⚠ 格子按最大原图定（m5 697×345）：只有 m5 被缩 2.4%，其余全是原生像素。
+⚠ 既有缩采样上限按最大原图定（m5 697×345）：只有 m5 被缩 2.4%，其余全是原生像素。
   ⛔ 别为了省纹理缩到 512 —— 件在世界里要跨到 3.5 格宽（M0-B2 还要再乘 prefab 的 scale）。
 """
 from __future__ import annotations
@@ -52,16 +51,15 @@ import land_variants as LV  # noqa: E402
 import mountain_forms as MF  # noqa: E402
 import prefab_bin  # noqa: E402
 from prefab_visual import visual_fields
+from texture_layout import build_atlas, runtime_textures, write_types
 from build_tops import normalize  # noqa: E402
 from decode_ktx import resolve_by_name  # noqa: E402
 
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 OUT = os.path.join(HERE, CFG["outDir"])
 
-CELL_W, CELL_H = 682, 409
-GRID_COLS, GRID_ROWS = 3, 10          # 30 格位 ≥ 基础 13 + 雪 13
+STORAGE_MAX_W, STORAGE_MAX_H = 682, 409
 SCALE_MIN, SCALE_MAX = 0.1, 8.0      # 入库校验：prefab 的 scale 必须落在这区间
-ATLAS_W, ATLAS_H = 2048, 4096
 SNOW_DIR = "scene/ground/mountain_snow"
 
 
@@ -133,10 +131,9 @@ def main() -> int:
                              "的实测被推翻，沙漠带要有自己的山件图集格了" % (v, desert_src, base_src))
         desert_same += 1
 
-    atlas = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
-    cells = []
+    cells, images = [], []
 
-    def place(slot: int, v: int, tr: dict, variant: str) -> None:
+    def place(v: int, tr: dict, variant: str) -> None:
         shan, form, _tex, shape = MF.FORMS[v]
         logical, src = sprites[tr["texture"].lower()]
         native = [src.width, src.height]            # ★ 原图像素（未缩、未裁）
@@ -144,29 +141,27 @@ def main() -> int:
             raise SystemExit("⛔ %s（%s）的 prefab size %s ≠ 原图 %s —— 贴图对应搞错了"
                              % (form, variant, tr["size"], native))
         im = src.copy()
-        im.thumbnail((CELL_W, CELL_H), Image.LANCZOS)
-        gx, gy = (slot % GRID_COLS) * CELL_W, (slot // GRID_COLS) * CELL_H
-        ox, oy = (CELL_W - im.width) // 2, (CELL_H - im.height)       # ⚠ 底对齐
-        atlas.paste(im, (gx + ox, gy + oy))
+        im.thumbnail((STORAGE_MAX_W, STORAGE_MAX_H), Image.LANCZOS)
+        images.append((logical, im, native))
         cells.append({"id": v, "kind": "mountain", "variant": variant, "shan": shan,
                       "form": form, "shape": shape,
                       "footprintCells": len(MF.footprint_cells(v, 0)),
-                      "cell": [gx, gy, CELL_W, CELL_H],
-                      "art": [ox, oy, im.width, im.height],
-                      "native": native,
                       "scale": tr["scale"], "offset": tr["offset"], "angle": tr["angle"],
                       "lowZ": tr["lowZ"], **{k: tr[k] for k in ("size", "pivot", "skew", "mirror_x", "mirror_y", "color", "add_color")}, "source": logical})
 
-    for idx, v in enumerate(MF.VALUES):
-        place(idx, v, read_transform(MF.PREFAB_DIR_BASE, MF.FORMS[v][1]), "base")
-    for k, v in enumerate(MF.VALUES):
-        place(len(MF.VALUES) + k, v, read_transform(SNOW_DIR, MF.FORMS[v][1]), "snow")
+    for v in MF.VALUES:
+        place(v, read_transform(MF.PREFAB_DIR_BASE, MF.FORMS[v][1]), "base")
+    for v in MF.VALUES:
+        place(v, read_transform(SNOW_DIR, MF.FORMS[v][1]), "snow")
 
+    atlas, layout, aliases = build_atlas("region", images)
+    for c in cells:
+        c["textureId"] = aliases[c["source"]]
     d = os.path.join(OUT, "pack", a.map)
     os.makedirs(d, exist_ok=True)
     atlas.save(os.path.join(d, "region-atlas.png"))
-    info = {"schemaVersion": 3, "mapId": a.map, "cell": [CELL_W, CELL_H],
-            "gridCols": GRID_COLS, "gridRows": GRID_ROWS, "size": [ATLAS_W, ATLAS_H],
+    write_types(d)
+    info = {"schemaVersion": 4, "mapId": a.map, "storageLimit": [STORAGE_MAX_W, STORAGE_MAX_H], **layout,
             "anchor": "prefab-pivot",
             "indexing": "格 id = 原版 res 值（48..61，⛔ 无 56）；贴图由 prefab 字符串池读出；"
                         "变体格同 id 空间、按 variant 分表（N1）",
@@ -196,8 +191,8 @@ def main() -> int:
  *   `logic/mapoBands.ts` 的 cell 级地貌带定。⚠ **沙漠带的山件 = 基础季件**：
  *   land 表荒地山1..14 的 2D `src_name` 与基础季逐字相同（实测 14/14），⛔ 没有沙件表。
  *   ⚠ `autumn_*` 不接（M0-B3）。
- * ⚠ 锚点是**底边中点**，⛔ 不是几何中心。
- * ★ **件的大小 = `native` × `scale`**（M0-B2，§3.3）：`native` 是原图像素、`scale` 是 prefab 里
+ * ★ 锚点来自 prefab position/pivot；与图集格位、图片底边无关。
+ * ★ **件的大小 = `size` × `scale`**（M0-B2，§3.3）：`size` 是 prefab 画布、`scale` 是 prefab 里
  *   那个 sprite 的缩放。m2 只有 563 px 却要盖满 19 格，靠的就是 `mountain19m_01` 的 2.163；
  *   三对共用贴图的形**全靠 transform 区分** ⇒ ⛔ 只用 native 会把 14 形压成 10 形。
  * ★ `offset` 是精灵**中心**相对锚点格的偏移（原版 px，+y 向上）；`pivot` 恒 [0.5, 0.5]。
@@ -205,6 +200,8 @@ def main() -> int:
  * ⚠ 早先按连通区跨度把件**拉大到整片区**，真机一看是糊成一团的大绿斑，⛔ 别按足迹拉伸 ——
  *   `scale` 是原版给的定值，⛔ 不是我们按格数算的。
  */
+
+import type { MapoTextureLayouts } from "./atlas-layout.types";
 
 export interface IMapoRegionCell {
     /** ★ 原版 res 值（48..61），同时是 `regions.bin` 里的 cell 字段。 */
@@ -220,11 +217,9 @@ export interface IMapoRegionCell {
     readonly shape: string;
     /** 该形覆盖的格数（1 / 2 / 4 / 7 / 19）。 */
     readonly footprintCells: number;
-    readonly cell: readonly [number, number, number, number];
-    readonly art: readonly [number, number, number, number];
-    /** ★ **原图像素尺寸**（未裁 bbox），等于 prefab 里 sprite 的 `size`。 */
-    readonly native: readonly [number, number];
-    /** ★ prefab 里 sprite 的缩放 [x, y]。件的世界尺寸 = native × scale × (halfW / 150)。 */
+    /** Stable image identity; multiple logical forms can share pixels. */
+    readonly textureId: string;
+    /** ★ prefab 里 sprite 的缩放 [x, y]。件的世界尺寸 = size × scale × (halfW / 150)。 */
     readonly scale: readonly [number, number];
     /** ★ 精灵**中心**相对锚点格的偏移（原版 px，+y 向上）。 */
     readonly offset: readonly [number, number];
@@ -244,13 +239,13 @@ export interface IMapoRegionCell {
 
 export const MAPO_REGION_ATLAS_W = %d;
 export const MAPO_REGION_ATLAS_H = %d;
-export const MAPO_REGION_CELL_W = %d;
-export const MAPO_REGION_CELL_H = %d;
+export const MAPO_REGION_STORAGE_LIMIT: readonly [number, number] = [%d, %d];
+export const MAPO_REGION_TEXTURES: MapoTextureLayouts = %s;
 /** 基础季 13 形。 */
 export const MAPO_REGION_CELLS: readonly IMapoRegionCell[] = %s;
 /** 雪山 13 形（id = 原版 res 值；N1）。 */
 export const MAPO_REGION_SNOW_CELLS: readonly IMapoRegionCell[] = %s;
-''' % (a.map, ATLAS_W, ATLAS_H, CELL_W, CELL_H,
+''' % (a.map, *layout['size'], STORAGE_MAX_W, STORAGE_MAX_H, json.dumps(runtime_textures(layout), ensure_ascii=False),
        json.dumps([{k: v for k, v in c.items() if k != "source"}
                    for c in cells if c["variant"] == "base"], ensure_ascii=False, indent=2),
        json.dumps([{k: v for k, v in c.items() if k != "source"}

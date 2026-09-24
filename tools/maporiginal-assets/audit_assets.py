@@ -16,6 +16,7 @@ import numpy as np
 from PIL import Image
 
 from atlas_layout import trial, validate_layout
+from texture_layout import resolved_cells
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = ROOT / "apps/shared/src/kits/mapOriginal/content"
@@ -79,15 +80,12 @@ def storage_summary(entries):
 def atlas_cells(data):
     read = lambda name: json.loads((data / name).read_text())
     groups = {"decor": read("decor-atlas.info.json")["cells"], "region": [],
-              "city": read("cities.info.json")["atlas"]["cells"],
-              "road": read("roads.info.json")["atlas"]["cells"],
+              "city": resolved_cells(read("cities.info.json")["atlas"]),
+              "road": resolved_cells(read("roads.info.json")["atlas"]),
               "choose": read("choose.info.json")["pieces"]}
-    for cell in read("region-atlas.info.json")["cells"]:
-        x, y, _, _ = cell["cell"]
-        ox, oy, w, h = cell["art"]
-        groups["region"].append({**cell, "rect": [x+ox, y+oy, w, h]})
+    groups["region"] = resolved_cells(read("region-atlas.info.json"))
     for kind, atlas in read("top-atlas.info.json")["atlases"].items():
-        groups[kind+"-top"] = atlas["cells"]
+        groups[kind+"-top"] = resolved_cells(atlas)
     return groups
 
 

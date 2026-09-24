@@ -47,8 +47,9 @@ test("mapOriginal 手摆件：三族齐备，组数与件数是实测值", () =>
     // ★ 图集是**缩过的**、native 是原版像素 —— 世界尺寸只能按 native 算
     for (const a of MAPO_TOP_ATLASES) {
         for (const c of a.cells) {
-            assert.equal(c.rect[2], Math.max(1, Math.round(c.native[0] * MAPO_TOP_DOWNSCALE)));
-            assert.equal(c.rect[3], Math.max(1, Math.round(c.native[1] * MAPO_TOP_DOWNSCALE)));
+            const texture = a.textures[c.textureId];
+            assert.equal(texture.rect[2], Math.max(1, Math.round(texture.nativeSize[0] * MAPO_TOP_DOWNSCALE)));
+            assert.equal(texture.rect[3], Math.max(1, Math.round(texture.nativeSize[1] * MAPO_TOP_DOWNSCALE)));
         }
     }
 });
@@ -91,8 +92,9 @@ test("mapOriginal 手摆件：尺寸走 prefab.size × scale、锚点位置 = �
 test("mapOriginal 手摆件：UV 用**图集**尺寸归一化（⛔ 不是 native）", () => {
     const c = ATLAS.cells[0];
     const uv = mapoTopUv(KIND, c);
-    assert.ok(Math.abs(uv[0] - c.rect[0] / ATLAS.size[0]) < 1e-9);
-    assert.ok(Math.abs(uv[2] - c.rect[2] / ATLAS.size[0]) < 1e-9);
-    assert.ok(Math.abs(uv[3] - c.rect[3] / ATLAS.size[1]) < 1e-9);
+    const texture = ATLAS.textures[c.textureId];
+    assert.ok(Math.abs(uv[0] - texture.rect[0] / ATLAS.size[0]) < 1e-9);
+    assert.ok(Math.abs(uv[2] - texture.rect[2] / ATLAS.size[0]) < 1e-9);
+    assert.ok(Math.abs(uv[3] - texture.rect[3] / ATLAS.size[1]) < 1e-9);
     assert.ok(uv[0] + uv[2] <= 1 && uv[1] + uv[3] <= 1, "UV 必须在 0..1 内");
 });

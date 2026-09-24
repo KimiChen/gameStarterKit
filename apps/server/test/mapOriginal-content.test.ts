@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import type { IMapoTextureLayout, MapoTextureLayouts } from "@game/shared/kits/mapOriginal/content/atlas-layout.types";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
@@ -22,8 +23,8 @@ import {
     MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS, type IMapoDecorCell,
 } from "@game/shared/kits/mapOriginal/content/decor.data";
 import {
-    MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_CELL_H,
-    MAPO_REGION_CELL_W, MAPO_REGION_SNOW_CELLS,
+    MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_TEXTURES,
+    MAPO_REGION_STORAGE_LIMIT, MAPO_REGION_SNOW_CELLS,
 } from "@game/shared/kits/mapOriginal/content/region.data";
 import {
     MAPO_BAND_COLS, MAPO_BAND_DESERT, MAPO_BAND_GROUND, MAPO_BAND_HEADER_BYTES,
@@ -49,7 +50,7 @@ import {
     MAPO_TOP_ATLASES, MAPO_TOP_DOWNSCALE, MAPO_TOP_RECORD_BYTES,
 } from "@game/shared/kits/mapOriginal/content/tops.data";
 import {
-    MAPO_ROAD_ATLAS_H, MAPO_ROAD_ATLAS_W, MAPO_ROAD_CELLS, MAPO_ROAD_D_BIAS,
+    MAPO_ROAD_ATLAS_H, MAPO_ROAD_ATLAS_W, MAPO_ROAD_CELLS, MAPO_ROAD_TEXTURES, MAPO_ROAD_D_BIAS,
     MAPO_ROAD_HALF_H, MAPO_ROAD_HALF_W, MAPO_ROAD_HEADER_BYTES, MAPO_ROAD_RECORD_BYTES,
     MAPO_ROAD_SIDE, MAPO_ROAD_S_BIAS,
 } from "@game/shared/kits/mapOriginal/content/roads.data";
@@ -514,10 +515,9 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
         grid: { side: number; halfW: number; halfH: number; tilesPerCell: number; key: string };
         sBias: number; dBias: number; recordBytes: number; headerBytes: number;
         placements: number; placementSha256: string; typeCount: number; resIds: number[];
-        atlas: { size: [number, number]; downscale: number; sha256: string;
+        atlas: { size: [number, number]; downscale: number; sha256: string; textures: MapoTextureLayouts;
                  cells: { id: number; typeId: number; clientResId: number; prefab: string;
-                          rect: [number, number, number, number];
-                          native: [number, number]; cls: string; source: string; variant: string }[] };
+                          textureId: string; cls: string; source: string; variant: string }[] };
         binding: { degrees: number[]; typeIdToClientResId: number; tier: string };
     };
     assert.equal(meta.grid.side, MAPO_ROAD_SIDE);
@@ -534,15 +534,16 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
     assert.equal(meta.atlas.cells.length, 36);
     assert.equal(MAPO_ROAD_CELLS.length, 36);
     for (const c of meta.atlas.cells) {
-        assert.deepEqual(c.native, [MAPO_ROAD_HALF_W * 2, MAPO_ROAD_HALF_H * 2],
+        const texture = meta.atlas.textures[c.textureId];
+        assert.deepEqual(texture.nativeSize, [MAPO_ROAD_HALF_W * 2, MAPO_ROAD_HALF_H * 2],
             `路片 ${c.id}（${c.cls}）不是一个路格见方`);
         const shared = MAPO_ROAD_CELLS.find((x) => x.id === c.id)!;
         assert.ok(shared, `路片 ${c.id} 必须进 shared`);
-        assert.deepEqual([...shared.rect], c.rect);
-        assert.deepEqual([...shared.native], c.native);
+        assert.equal(shared.textureId, c.textureId);
+        assert.deepEqual(MAPO_ROAD_TEXTURES[shared.textureId], stripTextureSources(texture));
         assert.equal(shared.cls, c.cls);
-        assert.equal(c.rect[2], Math.round(c.native[0] * meta.atlas.downscale));
-        const [x, y, w, h] = c.rect;
+        assert.equal(texture.rect[2], Math.round(texture.nativeSize[0] * meta.atlas.downscale));
+        const [x, y, w, h] = texture.rect;
         assert.ok(x >= 0 && y >= 0 && x + w <= MAPO_ROAD_ATLAS_W && y + h <= MAPO_ROAD_ATLAS_H);
         assert.ok(c.source.startsWith(`scene/ground/${c.variant === "snow" ? "road_snow" : "road"}/`), `路片 ${c.id} 的 source`);
     }
@@ -605,8 +606,7 @@ test("mapOriginal 内容：_top_group 手摆细节自洽（组数对齐几何库
     const meta = JSON.parse(kit("top-atlas.info.json").toString("utf8")) as {
         atlases: Record<string, {
             size: [number, number]; pad: number; downscale: number; fill: number;
-            sha256: string; cells: { id: number; rect: [number, number, number, number];
-                                     native: [number, number]; source: string }[];
+            sha256: string; textures: MapoTextureLayouts; cells: { id: number; textureId: string; source: string }[];
         }>;
         recordBytes: number;
         families: Record<string, { groups: number; sprites: number; bytes: number; sha256: string }>;
@@ -629,16 +629,17 @@ test("mapOriginal 内容：_top_group 手摆细节自洽（组数对齐几何库
         assert.equal(sha256(kit(`${atlas.kind}-top-atlas.png`)), a.sha256);
         assert.equal(atlas.cells.length, a.cells.length);
         for (const c of a.cells) {
+            const texture = a.textures[c.textureId];
             const shared = atlas.cells.find((x) => x.id === c.id)!;
             assert.ok(shared, `${atlas.kind} 图集格 ${c.id} 必须进 shared`);
-            assert.deepEqual([...shared.rect], c.rect);
-            assert.deepEqual([...shared.native], c.native);
+            assert.equal(shared.textureId, c.textureId);
+            assert.deepEqual(atlas.textures[shared.textureId], stripTextureSources(texture));
             // ★ 图集里是**缩过的**、native 是原版像素 —— 两者必须按 downscale 对上
-            assert.equal(c.rect[2], Math.max(1, Math.round(c.native[0] * MAPO_TOP_DOWNSCALE)),
+            assert.equal(texture.rect[2], Math.max(1, Math.round(texture.nativeSize[0] * MAPO_TOP_DOWNSCALE)),
                 `${atlas.kind} 格 ${c.id} 宽与 downscale 不符`);
-            assert.equal(c.rect[3], Math.max(1, Math.round(c.native[1] * MAPO_TOP_DOWNSCALE)),
+            assert.equal(texture.rect[3], Math.max(1, Math.round(texture.nativeSize[1] * MAPO_TOP_DOWNSCALE)),
                 `${atlas.kind} 格 ${c.id} 高与 downscale 不符`);
-            const [x, y, w, h] = c.rect;
+            const [x, y, w, h] = texture.rect;
             assert.ok(x >= 0 && y >= 0 && x + w <= a.size[0] && y + h <= a.size[1],
                 `${atlas.kind} 格 ${c.id} 越出图集`);
             // ⚠ 贴图路径必须已归一化：⛔ 不许残留打包器前缀或 @@材质名
@@ -961,28 +962,28 @@ test("mapOriginal 内容：mapoRegionPos 与 mapoGrid2Pos 同式（含奇数行�
 
 test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常量", () => {
     const meta = JSON.parse(kit("region-atlas.info.json").toString("utf8")) as {
-        cell: [number, number]; gridCols: number; size: [number, number]; anchor: string;
+        storageLimit: [number, number]; textures: MapoTextureLayouts; size: [number, number]; anchor: string;
         variants?: { desertSameAsBase: number };
-        cells: { id: number; kind: string; variant: string; cell: [number, number, number, number];
-                 art: [number, number, number, number]; native: [number, number];
+        cells: { id: number; kind: string; variant: string; textureId: string;
                  scale: [number, number]; offset: [number, number]; angle: number;
                  pivot: [number, number]; lowZ: number; source: string }[];
     };
-    assert.deepEqual(meta.cell, [MAPO_REGION_CELL_W, MAPO_REGION_CELL_H]);
+    assert.deepEqual(meta.storageLimit, MAPO_REGION_STORAGE_LIMIT);
     assert.deepEqual(meta.size, [MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H]);
     assert.equal(meta.anchor, "prefab-pivot", "位置语义来自 prefab，不再统一图片底边定位");
-    // ★ N1：一张图集装两套（基础 13 + 雪 13 = 26 格，2048×4096）
+    // O1：26 个逻辑件共享 19 张图片；各自 transform 保留。
     assert.equal(meta.cells.length, MAPO_REGION_CELLS.length + MAPO_REGION_SNOW_CELLS.length);
     const byKey = new Map([...MAPO_REGION_CELLS, ...MAPO_REGION_SNOW_CELLS]
         .map((c) => [`${c.variant}:${c.id}`, c]));
-    const slots = new Set<string>();
+    assert.equal(Object.keys(meta.textures).length, 19);
     for (const c of meta.cells) {
+        const texture = meta.textures[c.textureId];
         const shared = byKey.get(`${c.variant ?? "base"}:${c.id}`);
         assert.ok(shared, `区域件格 ${c.variant}:${c.id} 必须进 shared`);
         assert.equal(shared.kind, c.kind);
-        assert.deepEqual([...shared.cell], c.cell);
-        assert.deepEqual([...shared.art], c.art);
-        assert.deepEqual([...shared.native], c.native, `区域件格 ${c.variant}:${c.id} 原图像素`);
+        assert.equal(shared.textureId, c.textureId);
+        assert.deepEqual(MAPO_REGION_TEXTURES[shared.textureId], stripTextureSources(texture));
+        assert.deepEqual(shared.size, texture.nativeSize);
         // ★ M0-B2：件的大小 = 原图像素 × prefab 里的 scale，⛔ 只抄像素会把 14 形压成 10 形
         assert.deepEqual([...shared.scale], c.scale, `区域件格 ${c.variant}:${c.id} 的 scale`);
         assert.deepEqual([...shared.offset], c.offset, `区域件格 ${c.variant}:${c.id} 的 offset`);
@@ -992,12 +993,12 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
             `区域件格 ${c.variant}:${c.id} 的 scale ${c.scale} 不在 (0.1, 8.0) 内`);
         // 当前山体 sprite 的原版锚点均为中心；mesh 直接消费该字段。
         assert.deepEqual(c.pivot, [0.5, 0.5], `区域件格 ${c.variant}:${c.id} 的 pivot 不是中心`);
-        assert.ok(Math.abs(c.native[0] / c.native[1] - c.art[2] / c.art[3]) < 0.02,
+        assert.ok(Math.abs(texture.nativeSize[0] / texture.nativeSize[1] - texture.storageSize[0] / texture.storageSize[1]) < 0.02,
             `区域件格 ${c.variant}:${c.id} 缩略图没保住纵横比`);
         // ★ 件在世界里的**实际**宽度 = 原图像素 × scale ÷ 一格 300 px。
         //   ⚠ 必须随足迹单调放大：19 格的形只用 native 只有 1.88 格（比 7 格的形还小），
         //   补上 scale 后才是 4.06 格 —— 这条就是为 M0-B3.3 的那个缺陷设的。
-        const tiles = (c.native[0] * c.scale[0]) / (MAPO_ORIGINAL_TILE_HALF_W * 2);
+        const tiles = (texture.nativeSize[0] * c.scale[0]) / (MAPO_ORIGINAL_TILE_HALF_W * 2);
         assert.ok(tiles > 0.8 && tiles < 5,
             `区域件格 ${c.variant}:${c.id} 在原版里占 ${tiles.toFixed(2)} 格，不像地物`);
         const want = new Map<number, readonly [number, number]>([
@@ -1009,16 +1010,10 @@ test("mapOriginal 内容：区域件图集布局 = shared 的 MAPO_REGION_* 常�
         const band = want.get(fp)!;
         assert.ok(tiles >= band[0] && tiles <= band[1],
             `区域件格 ${c.variant}:${c.id}（足迹 ${fp} 格）宽 ${tiles.toFixed(2)} 格，不在 ${band} 内`);
-        const [ax, ay, aw, ah] = c.art;
-        assert.ok(ax >= 0 && ay >= 0 && ax + aw <= MAPO_REGION_CELL_W
-            && ay + ah <= MAPO_REGION_CELL_H, `区域件格 ${c.variant}:${c.id} 图内矩形越界`);
-        // ★ UV 不越界：格必须整张落在图集内（N1 图集已加高到 2048×4096）
-        const [cx, cy, cw, ch] = c.cell;
+        const [cx, cy, cw, ch] = texture.rect;
+        assert.ok(cw <= MAPO_REGION_STORAGE_LIMIT[0] && ch <= MAPO_REGION_STORAGE_LIMIT[1]);
         assert.ok(cx >= 0 && cy >= 0 && cx + cw <= MAPO_REGION_ATLAS_W && cy + ch <= MAPO_REGION_ATLAS_H,
-            `区域件格 ${c.variant}:${c.id} 越出图集`);
-        const slot = `${cx},${cy}`;
-        assert.ok(!slots.has(slot), `区域件格 ${c.variant}:${c.id} 的槽位 ${slot} 撞车`);
-        slots.add(slot);
+            `区域件 ${c.variant}:${c.id} 越出图集`);
         // ⚠ 素材全部来自原版切片，⛔ 存证不许写本机绝对路径
         assert.ok(!c.source.startsWith("/"), `区域件格 ${c.variant}:${c.id} 的 source 必须是仓外相对路径`);
         assert.ok(c.source.startsWith("scene/"), `区域件格 ${c.variant}:${c.id} 的 source 必须是原版资源路径`);
@@ -1204,5 +1199,47 @@ test("mapOriginal 内容：选材清单 select.json ⛔ 不许再出现 3D 侧�
                 assert.ok(!p.includes(bad), `select.json 的 ${g.kind} 组还指着 3D 侧：${p}`);
             }
         }
+    }
+});
+
+/** Source aliases are audit-only and must not enter runtime layout records. */
+function stripTextureSources(texture: IMapoTextureLayout): IMapoTextureLayout {
+    const { sources: _sources, ...runtime } = texture as IMapoTextureLayout & { sources?: string[] };
+    return runtime;
+}
+
+test("mapOriginal O1：物理图片唯一、留边不重叠，逻辑条目只引用图片 ID", () => {
+    const region = JSON.parse(kit("region-atlas.info.json").toString());
+    const road = JSON.parse(kit("roads.info.json").toString()).atlas;
+    const city = JSON.parse(kit("cities.info.json").toString()).atlas;
+    const tops = JSON.parse(kit("top-atlas.info.json").toString()).atlases;
+    for (const [atlas, size, count] of [[region, [2048, 2048], 19], [road, [512, 1024], 18],
+        [city, [512, 1024], 158], [tops.snow, [512, 1024], 8]] as const) {
+        assert.deepEqual(atlas.size, size);
+        const textures = Object.values(atlas.textures) as IMapoTextureLayout[];
+        assert.equal(textures.length, count);
+        const ids = new Set(textures.map(t => t.textureId));
+        for (const cell of atlas.cells) {
+            assert.ok(ids.has(cell.textureId));
+            for (const key of ["rect", "native", "cell", "art"]) assert.ok(!(key in cell));
+        }
+        for (let i = 0; i < textures.length; i++) {
+            const t = textures[i], [x, y, w, h] = t.rect;
+            assert.equal(t.layoutVersion, 1);
+            assert.equal(t.atlasId, atlas.atlasId);
+            assert.match(t.contentHash, /^[a-f0-9]{64}$/);
+            assert.deepEqual(t.storageSize, [w, h]);
+            assert.deepEqual(t.trimRect, [0, 0, w, h]);
+            assert.ok(x >= 2 && y >= 2 && x + w + 2 <= size[0] && y + h + 2 <= size[1]);
+            for (const other of textures.slice(i + 1)) {
+                const [ox, oy, ow, oh] = other.rect;
+                assert.ok(x + w + 4 <= ox || ox + ow + 4 <= x || y + h + 4 <= oy || oy + oh + 4 <= y);
+            }
+        }
+    }
+    for (const base of MAPO_ROAD_CELLS.slice(0, 18)) {
+        const snow = MAPO_ROAD_CELLS[base.snowId];
+        assert.equal(snow.textureId, base.textureId);
+        assert.notEqual(snow.clientResId, base.clientResId);
     }
 });

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
-    MAPO_CITY_CELLS, MAPO_CITY_DOWNSCALE, MAPO_CITY_PIECES, MAPO_CITY_PLACEMENTS,
+    MAPO_CITY_CELLS, MAPO_CITY_TEXTURES, MAPO_CITY_DOWNSCALE, MAPO_CITY_PIECES, MAPO_CITY_PLACEMENTS,
     MAPO_CITY_PLACEMENT_BYTES, MAPO_CITY_SPRITE_BYTES,
 } from "../src/shared/kits/mapOriginal/content/cities.data";
 import {
@@ -110,10 +110,11 @@ test("mapOriginal 城址：UV 在 [0,1]，尺寸走 native（⛔ 不是图集里
         const [u0, v0, uw, vh] = mapoCityUv(c);
         assert.ok(u0 >= 0 && v0 >= 0 && u0 + uw <= 1 && v0 + vh <= 1, `格 ${c.id} 的 UV 越界`);
         // ★ native 是**原版像素**、rect 是缩过的 ⇒ 两者的比必须落在 downscale 附近
-        const k = c.rect[2] / c.native[0];
+        const texture = MAPO_CITY_TEXTURES[c.textureId];
+        const k = texture.rect[2] / texture.nativeSize[0];
         assert.ok(Math.abs(k - MAPO_CITY_DOWNSCALE) < 0.06,
             `格 ${c.id} 的缩放比 ${k} 偏离 ${MAPO_CITY_DOWNSCALE}`);
-        assert.ok(c.rect[0] + c.rect[2] <= aw && c.rect[1] + c.rect[3] <= ah, `格 ${c.id} 出图集`);
+        assert.ok(texture.rect[0] + texture.rect[2] <= aw && texture.rect[1] + texture.rect[3] <= ah, `格 ${c.id} 出图集`);
     }
 });
 

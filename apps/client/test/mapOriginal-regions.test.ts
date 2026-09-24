@@ -38,8 +38,8 @@ test("mapOriginal 区域件：世界尺寸 = 原图像素 × prefab 的 scale（
         mapoSetRegions(makeTable([{ row: 700, col: 700, cell: cell.id }]));
         const [p] = mapoRegionsInRect(WHOLE, 8);
         assert.ok(p, `格 ${cell.id} 没摆出来`);
-        assert.equal(p.w, mapoOriginalPxToWorld(cell.native[0] * cell.scale[0]), `格 ${cell.id} 宽`);
-        assert.equal(p.h, mapoOriginalPxToWorld(cell.native[1] * cell.scale[1]), `格 ${cell.id} 高`);
+        assert.equal(p.w, mapoOriginalPxToWorld(cell.size[0] * cell.scale[0]), `格 ${cell.id} 宽`);
+        assert.equal(p.h, mapoOriginalPxToWorld(cell.size[1] * cell.scale[1]), `格 ${cell.id} 高`);
         assert.equal(p.angleDeg, cell.angle, `格 ${cell.id} 角度`);
     }
 });
@@ -99,8 +99,8 @@ test("mapOriginal 区域件（N1）：雪带锚点出**雪山件**（transform �
     assert.equal(p.cellLayout, SNOW_59, "雪带里的山12 必须用雪山件格");
     // ★ 雪山 7m_03 的贴图是 mountain_snow/png/4.png（733×427，scale 1.0），
     //   与基础季（m5 697×345，scale 1.15871）**不是同一份 transform** —— 尺寸必须按雪山的算
-    assert.equal(p.w, mapoOriginalPxToWorld(SNOW_59.native[0] * SNOW_59.scale[0]), "雪山宽");
-    assert.equal(p.h, mapoOriginalPxToWorld(SNOW_59.native[1] * SNOW_59.scale[1]), "雪山高");
+    assert.equal(p.w, mapoOriginalPxToWorld(SNOW_59.size[0] * SNOW_59.scale[0]), "雪山宽");
+    assert.equal(p.h, mapoOriginalPxToWorld(SNOW_59.size[1] * SNOW_59.scale[1]), "雪山高");
 });
 
 test("mapOriginal 区域件（N1）：沙带/绿地的锚点仍是**基础季**件", () => {
@@ -125,6 +125,6 @@ test("mapOriginal 区域件（N1）：雪山表与基础季表同 id 空间、�
         assert.ok(snow !== base, `形 ${base.id} 的雪/基础格不该是同一对象`);
         assert.equal(snow.variant, "snow");
         assert.equal(base.variant, "base");
-        assert.notDeepEqual([...snow.cell], [...base.cell], `形 ${base.id} 的雪/基础格不该同坐标`);
+        assert.notEqual(snow.textureId, base.textureId, `形 ${base.id} 的雪/基础格不该同坐标`);
     }
 });

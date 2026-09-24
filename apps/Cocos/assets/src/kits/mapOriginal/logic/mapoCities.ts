@@ -13,7 +13,7 @@ import { mapoReadPrefabVisual, mapoPrefabUv, type MapoPrefabVisual } from "./map
  *   ⛔ 这里别再套一次。
  */
 import {
-    MAPO_CITY_ATLAS_SIZE, MAPO_CITY_CELLS, MAPO_CITY_PIECES, MAPO_CITY_PLACEMENTS,
+    MAPO_CITY_ATLAS_SIZE, MAPO_CITY_CELLS, MAPO_CITY_TEXTURES, MAPO_CITY_PIECES, MAPO_CITY_PLACEMENTS,
     MAPO_CITY_PLACEMENT_BYTES, MAPO_CITY_SPRITE_BYTES, type IMapoCityCell,
 } from "../../../shared/kits/mapOriginal/content/cities.data";
 import {
@@ -97,7 +97,7 @@ export function mapoCityPlacements(): readonly IMapoCityPlacement[] {
 
 /** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */
 export function mapoCityUv(cell: IMapoCityCell): readonly [number, number, number, number] {
-    const [x, y, w, h] = cell.rect;
+    const [x, y, w, h] = MAPO_CITY_TEXTURES[cell.textureId].rect;
     const [aw, ah] = MAPO_CITY_ATLAS_SIZE;
     return [x / aw, y / ah, w / aw, h / ah];
 }

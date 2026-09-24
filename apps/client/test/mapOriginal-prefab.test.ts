@@ -5,8 +5,8 @@ import { mapoPrefabSkew, mapoReadPrefabVisual, mapoPrefabUv } from "../src/kits/
 import { mapoSceneSprites } from "../src/kits/mapOriginal/logic/mapoScene";
 import { buildMapoSpriteMesh } from "../src/kits/mapOriginal/logic/mapoMesh";
 import { mapoGridLineSprites } from "../src/kits/mapOriginal/logic/mapoGridLines";
-import { mapoRoadsInRect, mapoSetRoads } from "../src/kits/mapOriginal/logic/mapoRoads";
-import { MAPO_ROAD_CELLS, MAPO_ROAD_ATLAS_W, MAPO_ROAD_ATLAS_H } from "../src/shared/kits/mapOriginal/content/roads.data";
+import { mapoRoadsInRect, mapoSetRoads, mapoRoadCellAt, mapoRoadPos } from "../src/kits/mapOriginal/logic/mapoRoads";
+import { MAPO_ROAD_CELLS, MAPO_ROAD_TEXTURES, MAPO_ROAD_ATLAS_W, MAPO_ROAD_ATLAS_H } from "../src/shared/kits/mapOriginal/content/roads.data";
 import { MAPO_DECOR_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../src/shared/kits/mapOriginal/content/decor.data";
 import type { IMapoPrefabNode } from "../src/shared/kits/mapOriginal/content/prefabs.types";
 
@@ -110,13 +110,28 @@ test("mapOriginal prefab：真实静态记录保留极端 pivot、镜像、skew 
     assert.deepEqual(counts, { pivot: 129, mirror: 341, skew: 394, color: 793, add: 21 });
 });
 
-test("mapOriginal 雪地道路：42,018 片中 6,012 片消费雪皮 UV", () => {
-    mapoSetRoads(readFileSync(new URL("../../kits/mapOriginal/data/maps/s1/roads.bin", import.meta.url)));
+test("mapOriginal 雪地道路：6,012 片仍选雪地 clientResId，再解析共享图片", () => {
+    const raw = readFileSync(new URL("../../kits/mapOriginal/data/maps/s1/roads.bin", import.meta.url));
+    mapoSetRoads(raw);
     const all = mapoRoadsInRect({ left: -1e9, right: 1e9, top: 1e9, bottom: -1e9 }, 50_000);
-    const snowRects = new Set(MAPO_ROAD_CELLS.filter((c) => c.clientResId >= 26001 && c.clientResId <= 26018)
-        .map((c) => `${c.rect[0] / MAPO_ROAD_ATLAS_W},${c.rect[1] / MAPO_ROAD_ATLAS_H}`));
     assert.equal(all.length, 42_018);
-    assert.equal(all.filter((s) => snowRects.has(`${Math.min(s.uv[0], s.uv[0] + s.uv[2])},${s.uv[1]}`)).length, 6_012);
+    let snow = 0;
+    for (let i = 0; i < all.length; i++) {
+        const o = 4 + i * 6, s = raw.readUInt16BE(o), d = raw.readUInt16BE(o + 2) - 1125;
+        const p = mapoRoadPos((s + d) / 2, (s - d) / 2);
+        const cell = mapoRoadCellAt(raw[o + 4], p.x, p.y)!;
+        if (cell.clientResId >= 26001 && cell.clientResId <= 26018) snow++;
+        const [x, y, w, h] = MAPO_ROAD_TEXTURES[cell.textureId].rect;
+        const uv = [x / MAPO_ROAD_ATLAS_W, y / MAPO_ROAD_ATLAS_H, w / MAPO_ROAD_ATLAS_W, h / MAPO_ROAD_ATLAS_H];
+        if (raw[o + 5]) { uv[0] += uv[2]; uv[2] = -uv[2]; }
+        assert.deepEqual(all[i].uv, uv);
+    }
+    assert.equal(snow, 6_012);
+    for (const base of MAPO_ROAD_CELLS.slice(0, 18)) {
+        const skin = MAPO_ROAD_CELLS[base.snowId];
+        assert.notEqual(skin.clientResId, base.clientResId);
+        assert.equal(skin.textureId, base.textureId);
+    }
 });
 
 test("mapOriginal 格线：按格边铺原图高度，两条边没有额外屏幕宽度补偿", () => {

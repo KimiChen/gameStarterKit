@@ -43,6 +43,7 @@ import struct
 import sys
 
 from PIL import Image
+from texture_layout import build_atlas, pixel_hash, runtime_textures, write_types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -56,7 +57,6 @@ SV = CFG["sourceVersionRoot"]
 SKIN = "road"
 ROAD_ATLAS_XML = "scene/_output_atlas_scene/atlas_tex/road.xml"   # 只用于切片存证
 DOWNSCALE = 0.5          # ★ 400 px 的片在 LOD0 只占 85 世界像素，存 200 px 仍 2.3× 过采样
-ATLAS_W, ATLAS_H, PAD = 1024, 1024, 2
 S_BIAS, D_BIAS = 0, 1125
 DEG_OF_CLASS = {"line": 2, "horizonalturn": 2, "upverticalturn": 2, "downverticalturn": 2,
                 "upend": 1, "downend": 1, "uptcross": 3, "downtcross": 3, "xcross": 4}
@@ -135,8 +135,7 @@ def main() -> int:
     for line in open(os.path.join(OUT, "sprites.jsonl"), encoding="utf-8"):
         r = json.loads(line)
         sprites[r["logical"]] = r["out"]
-    atlas = Image.new("RGBA", (ATLAS_W, ATLAS_H), (0, 0, 0, 0))
-    cells, x, y, row_h = [], PAD, PAD, 0
+    cells, images, originals = [], [], {}
     cell_of = {}
     for variant, i in [(variant, tid) for variant in ("base", "snow") for tid in ids]:
         binding = bind if variant == "base" else snow_bind
@@ -146,22 +145,27 @@ def main() -> int:
             raise SystemExit("⛔ 路片没落位：%s —— 先跑 slice_atlas.py %s" % (logical, ROAD_ATLAS_XML))
         im = Image.open(p).convert("RGBA")
         native = [im.width, im.height]
+        originals[variant, i] = pixel_hash(im)
         tw, th = max(1, round(im.width * DOWNSCALE)), max(1, round(im.height * DOWNSCALE))
         im = im.resize((tw, th), Image.LANCZOS)
-        if x + tw + PAD > ATLAS_W:
-            x, y, row_h = PAD, y + row_h + PAD, 0
-        if y + th + PAD > ATLAS_H:
-            raise SystemExit("⛔ 路片图集装不下")
-        atlas.paste(im, (x, y))
+        images.append((logical, im, native))
         if variant == "base": cell_of[i] = len(cells)
         cells.append({"id": len(cells), "typeId": i, "clientResId": binding[i][2], "variant": variant,
-                      "snowId": ids.index(i) + len(ids), "prefab": binding[i][1], "rect": [x, y, tw, th],
-                      "native": native, "cls": logical.split("/")[-2], "source": logical})
-        x += tw + PAD
-        row_h = max(row_h, th)
+                      "snowId": ids.index(i) + len(ids), "prefab": binding[i][1], "cls": logical.split("/")[-2], "source": logical})
+
+    for tid in ids:
+        if originals["base", tid] != originals["snow", tid]:
+            raise ValueError(f"道路原始切片不再等价: {tid}; 需审核变体素材")
+    atlas, layout, aliases = build_atlas("road", images)
+    for c in cells:
+        c["textureId"] = aliases[c["source"]]
+    for base in cells[:len(ids)]:
+        if base["textureId"] != cells[base["snowId"]]["textureId"]:
+            raise ValueError(f"道路存储切片不再等价: {base['id']}")
     d = os.path.join(OUT, "pack", m)
     os.makedirs(d, exist_ok=True)
     atlas.save(os.path.join(d, "road-atlas.png"))
+    write_types(d)
 
     # ── 摆放表（按 s 升序 = 画家序）──────────────────────────────
     recs = []
@@ -174,14 +178,14 @@ def main() -> int:
     open(os.path.join(d, "roads.bin"), "wb").write(blob)
 
     info = {
-        "schemaVersion": 2, "mapId": m, "skins": ["road", "road_snow"],
+        "schemaVersion": 3, "mapId": m, "skins": ["road", "road_snow"],
         "grid": {"side": side, "halfW": half_w, "halfH": half_h,
                  "tilesPerCell": round(half_w / 150, 6),
                  "key": "(row << 16) | col", "order": "lua tiles；bytes 侧是 (col, row) 转置"},
         "sBias": S_BIAS, "dBias": D_BIAS, "recordBytes": 6, "headerBytes": 4,
         "placements": len(recs), "placementSha256": hashlib.sha256(blob).hexdigest(),
         "typeCount": len(trip), "resIds": ids,
-        "atlas": {"size": [ATLAS_W, ATLAS_H], "downscale": DOWNSCALE, "cells": cells,
+        "atlas": {**layout, "downscale": DOWNSCALE, "cells": cells,
                   "sha256": hashlib.sha256(open(os.path.join(d, "road-atlas.png"), "rb").read()).hexdigest()},
         "binding": {"method": "base.cw 的 client_res 表（id → prefab → 贴图）；"
                               "邻接度结构签名作交叉校验",
@@ -203,17 +207,16 @@ def main() -> int:
  * ★ 选片**在制图期就烘死了**（`tiles` 的值即 `type_info` 下标），运行时 ⛔ 不做邻接判断 ——
  *   与河同构。每片带一个**水平翻转**位。
  * ★ [实测] client_res → prefab → texture；[disasm] 地貌带选 `_雪地` 同名资源。
- * ⚠ 图集按 **%.2g×** 缩存，`native` 记原版像素（世界尺寸依据）。
+ * ⚠ 图集按 **%.2g×** 缩存，`nativeSize` 记原版像素（世界尺寸依据）。
  */
+
+import type { MapoTextureLayouts } from "./atlas-layout.types";
 
 export interface IMapoRoadCell {
     readonly id: number;
     readonly snowId: number;
     readonly clientResId: number;
-    /** 图集像素矩形 [x, y, w, h]（**已缩**）。 */
-    readonly rect: readonly [number, number, number, number];
-    /** 原图像素（**未缩**，恒 400×200 = 一个路格）。 */
-    readonly native: readonly [number, number];
+    readonly textureId: string;
     /** 片类：line / horizonalturn / up+downverticalturn / up+downend / up+downtcross / xcross。 */
     readonly cls: string;
 }
@@ -231,17 +234,18 @@ export const MAPO_ROAD_HEADER_BYTES = 4;
 export const MAPO_ROAD_ATLAS_W = %d;
 export const MAPO_ROAD_ATLAS_H = %d;
 export const MAPO_ROAD_CELLS: readonly IMapoRoadCell[] = %s;
+export const MAPO_ROAD_TEXTURES: MapoTextureLayouts = %s;
 ''' % (m, side, half_w, half_h, DOWNSCALE, side, half_w, half_h, S_BIAS, D_BIAS,
-       ATLAS_W, ATLAS_H,
-       json.dumps([{"id": c["id"], "snowId": c["snowId"], "clientResId": c["clientResId"], "rect": c["rect"], "native": c["native"], "cls": c["cls"]}
-                   for c in cells], ensure_ascii=False))
+       *layout["size"],
+       json.dumps([{"id": c["id"], "snowId": c["snowId"], "clientResId": c["clientResId"], "textureId": c["textureId"], "cls": c["cls"]}
+                   for c in cells], ensure_ascii=False), json.dumps(runtime_textures(layout), ensure_ascii=False))
     open(os.path.join(d, "roads.data.ts"), "w", encoding="utf-8").write(ts)
 
     print("  网格 %d²，半宽/半高 %d/%d（= %.4g 个逻辑格）" % (side, half_w, half_h, half_w / 150))
     print("  绑定：base.cw client_res（type_info id +%d）；邻接度交叉校验 %s"
           % (TYPE_ID_TO_CLIENT_RES, obs))
-    print("  图集 %d 片（%d²，%.2g× 缩存）；摆放 %d 条（%.0f KB）"
-          % (len(cells), ATLAS_W, DOWNSCALE, len(recs), len(blob) / 1024))
+    print("  图集 %d 片（%s，%.2g× 缩存）；摆放 %d 条（%.0f KB）"
+          % (len(cells), layout["size"], DOWNSCALE, len(recs), len(blob) / 1024))
     print("  片类分布 %s" % dict(collections.Counter(c["cls"] for c in cells)))
     print("→ %s" % d)
     return 0

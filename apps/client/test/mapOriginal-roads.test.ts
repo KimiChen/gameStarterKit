@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-    MAPO_ROAD_ATLAS_H, MAPO_ROAD_ATLAS_W, MAPO_ROAD_CELLS, MAPO_ROAD_D_BIAS,
+    MAPO_ROAD_ATLAS_H, MAPO_ROAD_ATLAS_W, MAPO_ROAD_CELLS, MAPO_ROAD_TEXTURES, MAPO_ROAD_D_BIAS,
     MAPO_ROAD_HALF_H, MAPO_ROAD_HALF_W, MAPO_ROAD_HEADER_BYTES, MAPO_ROAD_RECORD_BYTES,
     MAPO_ROAD_SIDE, MAPO_ROAD_S_BIAS,
 } from "../src/shared/kits/mapOriginal/content/roads.data";
@@ -43,7 +43,7 @@ test("mapOriginal 道路：路格自成一套网格（半宽 200 / 半高 100 = 
     assert.ok(Math.abs(MAPO_ROAD_WORLD_HALF_H - MAPO_TILE_HALF_H * 4 / 3) < 1e-6);
     // ★ 每张路片正好一个路格见方
     for (const c of MAPO_ROAD_CELLS) {
-        assert.deepEqual([...c.native], [400, 200], `路片 ${c.id}（${c.cls}）`);
+        assert.deepEqual([...MAPO_ROAD_TEXTURES[c.textureId].nativeSize], [400, 200], `路片 ${c.id}（${c.cls}）`);
     }
 });
 
@@ -109,7 +109,8 @@ test("mapOriginal 道路：水平翻转用 **UV 宽取负**（⛔ 不翻顶点�
                             { row: 202, col: 202, cell: 0, flip: 0 }]));
     const [flipped, plain] = mapoRoadsInRect(WHOLE, 9);
     const cell = MAPO_ROAD_CELLS.find((x) => x.id === 0)!;
-    const u0 = cell.rect[0] / MAPO_ROAD_ATLAS_W, uw = cell.rect[2] / MAPO_ROAD_ATLAS_W;
+    const texture = MAPO_ROAD_TEXTURES[cell.textureId];
+    const u0 = texture.rect[0] / MAPO_ROAD_ATLAS_W, uw = texture.rect[2] / MAPO_ROAD_ATLAS_W;
     assert.ok(Math.abs(plain.uv[0] - u0) < 1e-9 && Math.abs(plain.uv[2] - uw) < 1e-9, "未翻");
     assert.ok(Math.abs(flipped.uv[0] - (u0 + uw)) < 1e-9, "翻转后起点挪到右边");
     assert.ok(Math.abs(flipped.uv[2] + uw) < 1e-9, "翻转后 UV 宽取负");
@@ -119,5 +120,5 @@ test("mapOriginal 道路：水平翻转用 **UV 宽取负**（⛔ 不翻顶点�
     // v 方向不受影响
     assert.equal(flipped.uv[1], plain.uv[1]);
     assert.equal(flipped.uv[3], plain.uv[3]);
-    assert.ok(cell.rect[1] / MAPO_ROAD_ATLAS_H === plain.uv[1]);
+    assert.ok(texture.rect[1] / MAPO_ROAD_ATLAS_H === plain.uv[1]);
 });

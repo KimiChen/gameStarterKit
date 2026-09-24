@@ -27,7 +27,7 @@ import {
     mapoOriginalPxToWorld, mapoRegionPos, mapoRegionSAt, type IMapoRegionPiece,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import {
-    MAPO_REGION_CELLS, MAPO_REGION_SNOW_CELLS, type IMapoRegionCell,
+    MAPO_REGION_CELLS, MAPO_REGION_SNOW_CELLS, MAPO_REGION_TEXTURES, type IMapoRegionCell,
 } from "../../../shared/kits/mapOriginal/content/region.data";
 import { MAPO_BAND_SNOW } from "../../../shared/kits/mapOriginal/content/bands.data";
 import { mapoBandAt } from "./mapoBands";
@@ -152,9 +152,8 @@ export function mapoRegionsInRect(rect: IMapoWorldRect, limit: number): IMapoReg
 /** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */
 export function mapoRegionUv(layout: IMapoRegionCell,
                              atlasW: number, atlasH: number): readonly [number, number, number, number] {
-    const [ax, ay, aw, ah] = layout.art;
-    const [cx, cy] = layout.cell;
-    return [(cx + ax) / atlasW, (cy + ay) / atlasH, aw / atlasW, ah / atlasH];
+    const [x, y, w, h] = MAPO_REGION_TEXTURES[layout.textureId].rect;
+    return [x / atlasW, y / atlasH, w / atlasW, h / atlasH];
 }
 
 /** 仅供测试重置。 */

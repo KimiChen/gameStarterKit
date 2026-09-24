@@ -16,7 +16,7 @@ import { mapoOriginalPxToWorld, mapoPos2GridRaw } from "../../../shared/kits/map
 import {
     MAPO_ROAD_ATLAS_H, MAPO_ROAD_ATLAS_W, MAPO_ROAD_CELLS, MAPO_ROAD_D_BIAS,
     MAPO_ROAD_HALF_H, MAPO_ROAD_HALF_W, MAPO_ROAD_HEADER_BYTES, MAPO_ROAD_RECORD_BYTES,
-    MAPO_ROAD_S_BIAS, type IMapoRoadCell,
+    MAPO_ROAD_S_BIAS, MAPO_ROAD_TEXTURES, type IMapoRoadCell,
 } from "../../../shared/kits/mapOriginal/content/roads.data";
 import { mapoBandAt } from "./mapoBands";
 import { MAPO_BAND_SNOW } from "../../../shared/kits/mapOriginal/content/bands.data";
@@ -77,6 +77,14 @@ function lowerBound(want: number): number {
     return lo;
 }
 
+/** Select the logical skin before resolving its shared image. */
+export function mapoRoadCellAt(cellId: number, x: number, y: number): IMapoRoadCell | undefined {
+    const cell = CELL_BY_ID.get(cellId);
+    if (!cell) return undefined;
+    const grid = mapoPos2GridRaw(x, y);
+    return mapoBandAt(grid.row, grid.col) === MAPO_BAND_SNOW ? CELL_BY_ID.get(cell.snowId) : cell;
+}
+
 /** 可视矩形内的路片，**已是画家序**（表的落盘序）。 */
 export function mapoRoadsInRect(rect: IMapoRoadRect, limit: number): MapoSpriteInput[] {
     if (!view || count === 0) return [];
@@ -89,18 +97,17 @@ export function mapoRoadsInRect(rect: IMapoRoadRect, limit: number): MapoSpriteI
         const o = MAPO_ROAD_HEADER_BYTES + i * MAPO_ROAD_RECORD_BYTES;
         const sRaw = view.getUint16(o);
         if (sRaw > sBottom) break;
-        let cell = CELL_BY_ID.get(view.getUint8(o + 4));
-        if (!cell) continue;
         const s = sRaw - MAPO_ROAD_S_BIAS, d = view.getUint16(o + 2) - MAPO_ROAD_D_BIAS;
         const row = (s + d) / 2, col = (s - d) / 2;
         const p = mapoRoadPos(row, col);
-        const grid = mapoPos2GridRaw(p.x, p.y);
-        if (mapoBandAt(grid.row, grid.col) === MAPO_BAND_SNOW) cell = CELL_BY_ID.get(cell.snowId)!;
-        const w = mapoOriginalPxToWorld(cell.native[0]);
-        const h = mapoOriginalPxToWorld(cell.native[1]);
+        const cell = mapoRoadCellAt(view.getUint8(o + 4), p.x, p.y);
+        if (!cell) continue;
+        const texture = MAPO_ROAD_TEXTURES[cell.textureId];
+        const w = mapoOriginalPxToWorld(texture.nativeSize[0]);
+        const h = mapoOriginalPxToWorld(texture.nativeSize[1]);
         if (p.x + w / 2 < rect.left || p.x - w / 2 > rect.right) continue;
         if (p.y - h / 2 > rect.top || p.y + h / 2 < rect.bottom) continue;
-        const [ax, ay, aw, ah] = cell.rect;
+        const [ax, ay, aw, ah] = texture.rect;
         const u0 = ax / MAPO_ROAD_ATLAS_W, v0 = ay / MAPO_ROAD_ATLAS_H;
         const uw = aw / MAPO_ROAD_ATLAS_W, vh = ah / MAPO_ROAD_ATLAS_H;
         // ⚠ 水平翻转 = **UV 宽取负**（起点挪到右边）：⛔ 别翻顶点

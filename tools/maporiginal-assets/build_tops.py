@@ -36,6 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import prefab_bin  # noqa: E402
 from prefab_visual import visual_fields, pack_visual
+from texture_layout import build_atlas, runtime_textures, write_types
 from decode_ktx import resolve_by_name  # noqa: E402
 
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
@@ -47,12 +48,10 @@ FAMILIES = [("river", "map/%s/cn/river_path.json"),
             ("snow", "map/%s/cn/ground_snow_path.json")]
 # ⚠ **每族一张图集**：river 78 种贴图、总面积 1,546 万 px²，三族合并放不进 4096²。
 #   而且每族本来就各有一个材质（一个材质只能挂一张 mainTexture），分开天然合拍。
-PAD = 2
-# ★ 图集里按 0.4× 缩存，`native` 仍记**原版像素**当尺寸依据（与山族件 `native`/`art` 同惯例）。
+# ★ 图集里按 0.4× 缩存，`nativeSize` 仍记**原版像素**当尺寸依据（与山族件 `nativeSize`/`storageSize` 同惯例）。
 #   依据：本仓世界尺度 = 32/150 = 0.213 ⇒ 900 px 的件在 LOD0 只占 192 世界像素，
 #   存 360 px 仍有 1.9× 过采样。⛔ 别按原生像素装：78 张 900×450 要 59 MB 显存。
 TOP_DOWNSCALE = 0.4
-ATLAS_SIZES = (512, 1024, 2048, 4096)
 SCALE_MIN, SCALE_MAX = 0.05, 12.0
 
 _MUTIL = re.compile(r"^asset/scene/_output_atlas_scene/atlas_mutil_assets/(.+)$")
@@ -137,7 +136,7 @@ def main() -> int:
     d = os.path.join(OUT, "pack", m)
     os.makedirs(d, exist_ok=True)
 
-    # ── 每族一张图集：按高度降序的架式装箱，图集取能装下的最小 POT ──
+    # ── 保持逻辑 cell 顺序；snow 紧凑装箱，river/desert 暂保留旧页位置 ──
     atlas_info = {}
     for kind, groups in fam_groups.items():
         fam_tex = sorted({it["tex"] for g in groups for it in g} | {tex for root in dynamic[kind].values() for tex in textures(root)})
@@ -149,37 +148,19 @@ def main() -> int:
             th = max(1, round(im.height * TOP_DOWNSCALE))
             imgs.append((th, tw, tex, im.resize((tw, th), Image.LANCZOS), native))
         imgs.sort(key=lambda x: (-x[0], -x[1]))
-        packed = None
-        for side in ATLAS_SIZES:
-            atlas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-            cells, x, y, row_h, ok = [], PAD, PAD, 0, True
-            for h, w, tex, im, native in imgs:
-                if x + w + PAD > side:
-                    x, y, row_h = PAD, y + row_h + PAD, 0
-                if y + h + PAD > side:
-                    ok = False
-                    break
-                atlas.paste(im, (x, y))
-                cells.append({"id": len(cells), "rect": [x, y, w, h],
-                              "native": native, "source": tex})
-                x += w + PAD
-                row_h = max(row_h, h)
-            if ok:
-                packed = (side, atlas, cells)
-                break
-        if packed is None:
-            raise SystemExit("⛔ %s 的 top 图集连 %d² 都装不下（%d 种贴图）"
-                             % (kind, ATLAS_SIZES[-1], len(imgs)))
-        side, atlas, cells = packed
+        atlas, layout, aliases = build_atlas(kind + "-top", [(tex, im, native) for _, _, tex, im, native in imgs],
+                                             legacy_size={"river": (2048, 2048), "desert": (512, 512)}.get(kind))
+        cells = [{"id": i, "textureId": aliases[tex], "source": tex}
+                 for i, (_, _, tex, _, _) in enumerate(imgs)]
         atlas.save(os.path.join(d, "%s-top-atlas.png" % kind))
         cell_of = {c["source"]: c["id"] for c in cells}
-        fill = sum(c["rect"][2] * c["rect"][3] for c in cells) / (side * side)
-        atlas_info[kind] = {"size": [side, side], "pad": PAD, "downscale": TOP_DOWNSCALE,
-                            "fill": round(fill, 4), "cells": cells,
+        fill = sum(t["rect"][2] * t["rect"][3] for t in layout["textures"].values()) / (atlas.width * atlas.height)
+        atlas_info[kind] = {**layout, "downscale": TOP_DOWNSCALE, "fill": round(fill, 4), "cells": cells,
                             "sha256": hashlib.sha256(
                                 open(os.path.join(d, "%s-top-atlas.png" % kind), "rb").read()).hexdigest()}
         used[kind] = cell_of
-        print("  %-7s top 图集 %d 种 / %d²（填充 %.0f%%）" % (kind, len(cells), side, fill * 100))
+        print("  %-7s top 图集 %d 种 / %s（填充 %.0f%%）" % (kind, len(cells), layout["size"], fill * 100))
+    write_types(d)
 
     from pathlib import Path
     scenes = {kind: {index: compile_node(root, used[kind]) for index, root in entries.items()} for kind, entries in dynamic.items()}
@@ -204,12 +185,12 @@ def main() -> int:
         summary[kind] = {"groups": len(groups), "sprites": sum(len(g) for g in groups),
                          "bytes": len(blob), "sha256": hashlib.sha256(blob).hexdigest()}
 
-    info = {"schemaVersion": 2, "mapId": m, "atlases": atlas_info, "recordBytes": 60,
+    info = {"schemaVersion": 3, "mapId": m, "atlases": atlas_info, "recordBytes": 60,
             "layout": "大端：u16 组数；组数×u16 每组件数；然后所有件按组序、组内按 low_z 升序："
                       "{u16 图集格, f32 x, f32 y, f32 sx, f32 sy, f32 angle, 2f size, 2f pivot, 2f skew, 2B mirror, 4B color, 4B addColor, f32 lowZ}",
             "families": summary,
             "note": "贴图路径已归一化：剥掉 _output_atlas_scene/atlas_mutil_assets 前缀与 @@材质名后缀；"
-                    "图集按 %.2g× 缩存，native 记原图像素，显示尺寸和锚点独立取 prefab 字段" % TOP_DOWNSCALE}
+                    "图集按 %.2g× 缩存，nativeSize 记原图像素，显示尺寸和锚点独立取 prefab 字段" % TOP_DOWNSCALE}
     json.dump(info, open(os.path.join(d, "top-atlas.info.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
 
@@ -220,18 +201,17 @@ def main() -> int:
  *   （MAPORIGINAL-2D §1.6）：底是「面」、top 是「手摆的点缀」（岸石 / 草丛 / 雪堆 / 沙丘纹）。
  * ★ **每族一张图集**：river %d 件 / desert %d 件 / snow %d 件，合计 **%d 件**。
  *   三族合并放不进 4096²（river 一族的贴图总面积就有 1,546 万 px²），而每族本来各有一个材质。
- * ⚠ 图集按 **%.2g×** 缩存，`native` 记**原版像素**（贴图采样依据，与山族件同惯例）：
+ * ⚠ 图集按 **%.2g×** 缩存，`nativeSize` 记**原版像素**（贴图采样依据，与山族件同惯例）：
  *   本仓世界尺度 = 32/150 = 0.213 ⇒ 900 px 的件在 LOD0 只占 192 世界像素，
  *   存 %d px 仍有约 1.9× 过采样。⛔ 别按原生像素装，那要 59 MB 显存。
  * ⚠ 组内次序按 **`low_z` 升序**（同值按子序）—— 原版靠它定同组内谁压谁，⛔ 别按子节点原序。
  */
 
+import type { MapoTextureLayouts } from "./atlas-layout.types";
+
 export interface IMapoTopCell {
     readonly id: number;
-    /** 图集像素矩形 [x, y, w, h]（**已缩**）。 */
-    readonly rect: readonly [number, number, number, number];
-    /** 原图像素（**未缩**）。native 只记采样尺寸，显示使用 prefab.size × scale。 */
-    readonly native: readonly [number, number];
+    readonly textureId: string;
 }
 
 export interface IMapoTopAtlas {
@@ -241,6 +221,7 @@ export interface IMapoTopAtlas {
     readonly groups: number;
     readonly sprites: number;
     readonly cells: readonly IMapoTopCell[];
+    readonly textures: MapoTextureLayouts;
 }
 
 /** 单件记录长度（u16 图集格 + 6 × f32）。 */
@@ -252,7 +233,8 @@ export const MAPO_TOP_ATLASES: readonly IMapoTopAtlas[] = %s;
        TOP_DOWNSCALE,
        json.dumps([{"kind": k, "size": atlas_info[k]["size"],
                     "groups": summary[k]["groups"], "sprites": summary[k]["sprites"],
-                    "cells": [{"id": c["id"], "rect": c["rect"], "native": c["native"]}
+                    "textures": runtime_textures(atlas_info[k]),
+                    "cells": [{"id": c["id"], "textureId": c["textureId"]}
                               for c in atlas_info[k]["cells"]]}
                    for k, _ in FAMILIES], ensure_ascii=False))
     open(os.path.join(d, "tops.data.ts"), "w", encoding="utf-8").write(ts)

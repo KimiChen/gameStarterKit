@@ -12,7 +12,7 @@
   各带独立 pos / scale / angle / `low_z`，按 **`low_z` 升序**决定压盖。⛔ 别按子节点原序画。
 
 ★ 规模（实测）：**15 个件覆盖全部 249 座**（东/南/西/北 × 小城/都城 8 个 + 关卡 3 + 码头 3
-  + 洛阳专用 1），合计 1,850 个 sprite、158 张贴图。
+  + 洛阳专用 1），合计 1,642 个 sprite、158 张贴图。
 
 ⚠ 件是**按城序号引用**的，⛔ 一个件被多座城共用（如北方小城 84 座）⇒ 落盘只存
   「15 个件的摆放库 + 249 座的 (件号, 锚点格)」，⛔ 别把件展开 249 份。
@@ -37,6 +37,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import prefab_bin  # noqa: E402
 from prefab_visual import visual_fields, pack_visual
+from texture_layout import build_atlas, runtime_textures, write_types
 from build_tops import normalize  # noqa: E402
 from ctable_cw import BaseCw, Ref  # noqa: E402
 from decode_ktx import _name_map, resolve_by_name  # noqa: E402
@@ -44,10 +45,8 @@ from decode_ktx import _name_map, resolve_by_name  # noqa: E402
 CFG = json.load(open(os.path.join(HERE, "assets.config.json")))
 OUT = os.path.join(HERE, CFG["outDir"])
 
-PAD = 2
-# ★ 与 top 件同惯例：图集按 0.4× 缩存，`native` 记原版像素当世界尺寸依据。
+# ★ 与 top 件同惯例：图集按 0.4× 缩存，`nativeSize` 记原版像素当世界尺寸依据。
 DOWNSCALE = 0.4
-ATLAS_SIZES = (512, 1024, 2048, 4096)
 SCALE_MIN, SCALE_MAX = 0.05, 12.0
 
 
@@ -168,30 +167,14 @@ def main() -> int:
         tw, th = max(1, round(im.width * DOWNSCALE)), max(1, round(im.height * DOWNSCALE))
         imgs.append((th, tw, tex, im.resize((tw, th), Image.LANCZOS), [im.width, im.height]))
     imgs.sort(key=lambda x: (-x[0], -x[1]))
-    packed = None
-    for side in ATLAS_SIZES:
-        atlas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-        cells, x, y, row_h, ok = [], PAD, PAD, 0, True
-        for h, w, tex, im, native in imgs:
-            if x + w + PAD > side:
-                x, y, row_h = PAD, y + row_h + PAD, 0
-            if y + h + PAD > side:
-                ok = False
-                break
-            atlas.paste(im, (x, y))
-            cells.append({"id": len(cells), "rect": [x, y, w, h], "native": native, "source": tex})
-            x += w + PAD
-            row_h = max(row_h, h)
-        if ok:
-            packed = (side, atlas, cells)
-            break
-    if packed is None:
-        raise SystemExit("⛔ 城址图集连 %d² 都装不下（%d 种贴图）" % (ATLAS_SIZES[-1], len(imgs)))
-    side, atlas, cells = packed
+    atlas, layout, aliases = build_atlas("city", [(tex, im, native) for _, _, tex, im, native in imgs])
+    cells = [{"id": i, "textureId": aliases[tex], "source": tex}
+             for i, (_, _, tex, _, _) in enumerate(imgs)]
     atlas.save(os.path.join(d, "city-atlas.png"))
+    write_types(d)
     cell_of = {c["source"]: c["id"] for c in cells}
-    fill = sum(c["rect"][2] * c["rect"][3] for c in cells) / (side * side)
-    print("  图集 %d 种 / %d²（填充 %.0f%%）" % (len(cells), side, fill * 100))
+    fill = sum(t["rect"][2] * t["rect"][3] for t in layout["textures"].values()) / (atlas.width * atlas.height)
+    print("  图集 %d 种 / %s（填充 %.0f%%）" % (len(cells), layout["size"], fill * 100))
 
     # ── 摆放库 ────────────────────────────────────────────────
     parts = [struct.pack(">HH", len(pieces), len(placed))]
@@ -206,8 +189,8 @@ def main() -> int:
     open(os.path.join(d, "cities.bin"), "wb").write(blob)
 
     info = {
-        "schemaVersion": 2, "mapId": m,
-        "atlas": {"size": [side, side], "pad": PAD, "downscale": DOWNSCALE,
+        "schemaVersion": 3, "mapId": m,
+        "atlas": {**layout, "downscale": DOWNSCALE,
                   "fill": round(fill, 4), "cells": cells,
                   "sha256": hashlib.sha256(
                       open(os.path.join(d, "city-atlas.png"), "rb").read()).hexdigest()},
@@ -238,12 +221,11 @@ def main() -> int:
  *   （%d 座渡口非零，§11-1），⛔ 渲染侧别再套一次。
  */
 
+import type { MapoTextureLayouts } from "./atlas-layout.types";
+
 export interface IMapoCityCell {
   readonly id: number;
-  /** 图集像素矩形 [x, y, w, h]（**已缩**）。 */
-  readonly rect: readonly [number, number, number, number];
-  /** 原图像素（**未缩**）。native 只记采样尺寸，显示使用 prefab.size × scale。 */
-  readonly native: readonly [number, number];
+  readonly textureId: string;
 }
 
 export interface IMapoCityPiece {
@@ -262,6 +244,7 @@ export const MAPO_CITY_ATLAS_SIZE: readonly [number, number] = %s;
 export const MAPO_CITY_PLACEMENTS = %d;
 export const MAPO_CITY_PIECES: readonly IMapoCityPiece[] = %s;
 export const MAPO_CITY_CELLS: readonly IMapoCityCell[] = %s;
+export const MAPO_CITY_TEXTURES: MapoTextureLayouts = %s;
 ''' % (m, len(pieces), len(placed), sum(len(p["items"]) for p in pieces), len(placed),
        DOWNSCALE, offsets,
        info["recordBytes"]["sprite"], info["recordBytes"]["placement"], DOWNSCALE,
@@ -269,8 +252,8 @@ export const MAPO_CITY_CELLS: readonly IMapoCityCell[] = %s;
        json.dumps([{"order": i, "resId": p["resId"], "name": p["name"],
                     "sprites": len(p["items"])} for i, p in enumerate(pieces)],
                   ensure_ascii=False),
-       json.dumps([{"id": c["id"], "rect": c["rect"], "native": c["native"]} for c in cells],
-                  ensure_ascii=False))
+       json.dumps([{"id": c["id"], "textureId": c["textureId"]} for c in cells], ensure_ascii=False),
+       json.dumps(runtime_textures(layout), ensure_ascii=False))
     open(os.path.join(d, "cities.data.ts"), "w", encoding="utf-8").write(ts)
 
     print("→ %s（件 %d / 精灵 %d / 摆位 %d，%.0f KB）"

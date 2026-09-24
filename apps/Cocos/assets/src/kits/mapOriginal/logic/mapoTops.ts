@@ -83,7 +83,7 @@ export function mapoTopsAnimated(kind: string, polys: readonly MapoPolygonInput[
 /** 图集格 → 归一化 UV [u0, v0, uw, vh]（v 原点在上）。 */
 export function mapoTopUv(kind: string, cell: IMapoTopCell): readonly [number, number, number, number] {
     const meta = LIBS.get(kind)!.meta;
-    const [x, y, w, h] = cell.rect;
+    const [x, y, w, h] = meta.textures[cell.textureId].rect;
     return [x / meta.size[0], y / meta.size[1], w / meta.size[0], h / meta.size[1]];
 }
 
@@ -100,7 +100,10 @@ export function mapoTopsFor(kind: string, polys: readonly MapoPolygonInput[],
     for (const p of polys) {
         const scene = MAPO_TOP_SCENES[kind]?.[p.geo - 1];
         if (scene) {
-            const cells = lib.meta.cells.map((c) => ({ ...c, source: "" }));
+            const cells = lib.meta.cells.map((c) => {
+                const texture = lib.meta.textures[c.textureId];
+                return { id: c.id, rect: texture.rect, native: texture.nativeSize, source: "" };
+            });
             const sprites = mapoSceneSprites(scene, cells, lib.meta.size, seconds,
                 { x: p.x, y: p.y, row: p.s, col: 0 });
             if (out.length + sprites.length > limit) return out;

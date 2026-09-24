@@ -228,7 +228,7 @@ def main() -> int:
             continue
         open(mp, "w", encoding="utf-8").write(json.dumps(meta, ensure_ascii=False, indent=2) + "\n")
 
-    for name in ("decor.data.ts", "region.data.ts", "tops.data.ts", "cities.data.ts", "roads.data.ts", "river.data.ts", "choose.data.ts", "top-scenes.data.ts"):
+    for name in ("atlas-layout.types.ts", "decor.data.ts", "region.data.ts", "tops.data.ts", "cities.data.ts", "roads.data.ts", "river.data.ts", "choose.data.ts", "top-scenes.data.ts"):
         data = open(os.path.join(src, name), "rb").read()
         dest = os.path.join(REPO, "apps/shared/src/kits/mapOriginal/content", name)
         if a.check:

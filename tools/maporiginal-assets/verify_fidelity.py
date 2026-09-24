@@ -10,6 +10,7 @@ import land_variants as LV
 import prefab_bin
 import prefab_scene
 from build_tops import FAMILIES
+from texture_layout import resolved_cells, validate_textures
 
 
 def main():
@@ -30,10 +31,15 @@ def main():
     assert len(paths) == 381, len(paths)
     assert decor['substitutions'] == []
     report = {'prefabEntries': len(paths), 'expandedNodes': nodes, 'substitutions': 0, 'atlases': {}}
-    groups = [('decor', decor['cells'], (256, 192)), ('city', city['atlas']['cells'], None),
-              ('region', region['cells'], tuple(region['cell'])),
-              ('road', read('roads.info.json')['atlas']['cells'], None)]
-    groups += [(kind + '-top', a['cells'], None) for kind, a in read('top-atlas.info.json')['atlases'].items()]
+    layouts = {'region': region, 'city': city['atlas'], 'road': read('roads.info.json')['atlas']}
+    layouts.update({kind+'-top': atlas for kind, atlas in read('top-atlas.info.json')['atlases'].items()})
+    for name, layout in layouts.items():
+        with Image.open(data / (name+'-atlas.png')) as image:
+            validate_textures(layout, image.convert('RGBA'))
+    groups = [('decor', decor['cells'], (256, 192)), ('city', resolved_cells(city['atlas']), None),
+              ('region', resolved_cells(region), tuple(region['storageLimit'])),
+              ('road', resolved_cells(read('roads.info.json')['atlas']), None)]
+    groups += [(kind + '-top', resolved_cells(a), None) for kind, a in read('top-atlas.info.json')['atlases'].items()]
     choose = read('choose.info.json')
     groups.append(('choose', list({p['source']: p for p in choose['pieces']}.values()), None))
     for name, cells, thumbnail in groups:
@@ -41,9 +47,8 @@ def main():
         semi, pixels = 0, 0
         for c in cells:
             im = Image.open(source.sprite(c['source'])).convert('RGBA')
-            if 'rect' in c: x, y, w, h = c['rect']
-            else:
-                gx, gy = c['cell'][:2]; ox, oy, w, h = c['art']; x, y = gx + ox, gy + oy
+            x, y, w, h = c['rect']
+            if 'native' in c: assert list(im.size) == c['native'], f'{name}: native canvas changed'
             if thumbnail: im.thumbnail(thumbnail, Image.Resampling.LANCZOS)
             else: im = im.resize((w, h), Image.Resampling.LANCZOS)
             expected = np.asarray(im)

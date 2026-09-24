@@ -589,3 +589,42 @@ python3 tools/maporiginal-assets/install_to_kit.py
 `minimap.png`（512²）；`overview.info.json` 记录输入资产、代码和几何指纹。
 旧 `bake_content.py` 仅转调新入口，旧 `plate-lod4/5` 安装时清理，禁止再用 res 调色板生成地图。
 运行时 L1 / L2 分块缓存复用同一展开逻辑；L3 仅采样 overview，范围和预算见 kit README §六。
+
+## O1：图集去重重排
+
+`texture_layout.py` 与 `atlas_layout.py` 负责图片身份、完整 RGBA 去重和非旋转确定性装箱。
+图片条目与逻辑件分离，四个导出器保留原逻辑 ID 顺序。图片 ID 使用图集族＋规范来源路径的 SHA-256 前 20 位；
+同图来源排序最前的路径作规范来源，加入其他不同图片或改变布局不会改变该 ID；调整别名集合需重建引用。
+去重同时比较完整 RGBA、像素尺寸和 nativeSize；透明像素 RGB 也参与，贴入时不用 alpha mask。
+河岸和沙地 top 本批保留原架式位置，山体/道路/城市/雪 top 使用每侧 2 px 外间隔的 MaxRects。
+`atlas-layout.types.ts` 为公共生成契约；长来源路径、别名放 info JSON，运行时只存 ID 与布局。
+
+修改前先备份 kit 数据和 shared 内容到 `.cache`，并在旧布局下采集固定时间画面；改后再采集一次。
+以下命令中的 Python 需要 Pillow/numpy，固定时间采集与概览烘焙需要本机 Chrome 9222：
+
+```bash
+python3 tools/maporiginal-assets/test_texture_layout.py
+node --import tsx tools/maporiginal-assets/capture_layout.ts --out .cache/mapo-repack/render-before
+# 修改导出器或输入后：
+python3 tools/maporiginal-assets/pack_regions.py
+python3 tools/maporiginal-assets/build_roads.py
+python3 tools/maporiginal-assets/build_cities.py
+python3 tools/maporiginal-assets/build_tops.py
+python3 tools/maporiginal-assets/verify_repack.py --before .cache/mapo-repack/before/data --after tools/maporiginal-assets/out/pack/s1 --report .cache/mapo-repack/repack.json
+python3 tools/maporiginal-assets/install_to_kit.py
+npm run sync:shared
+node --import tsx tools/maporiginal-assets/bake_overview.ts
+python3 tools/maporiginal-assets/install_to_kit.py
+python3 tools/maporiginal-assets/emit_ledger.py --out apps/kits/mapOriginal/art/LICENSES.md
+node --import tsx tools/maporiginal-assets/capture_layout.ts --out .cache/mapo-repack/render-after
+python3 tools/maporiginal-assets/verify_fidelity.py --report .cache/mapo-repack/fidelity.json
+python3 tools/maporiginal-assets/compare_images.py --before .cache/mapo-repack/render-before/luoyang/overview.png --after .cache/mapo-repack/render-after/luoyang/overview.png --roi city-wall:350,420,320,170 --roi mountain:160,320,220,140 --out .cache/mapo-repack/luoyang-diff.json
+```
+
+`verify_repack.py` 对全部逻辑条目逐片比较像素、原画布、变换和来源，并比较全部 `.bin/.bytes`、城市件库与 top 件数。
+`verify_fidelity.py` 继续独立对照原包；新布局还校验版本、哈希、完整画布、别名、越界与重叠。
+打包重复两次需对 PNG / info / data TS / 二进制逐文件比较字节；安装后使用 `install_to_kit.py --check` 核对镜像。
+固定时间采集覆盖草地、雪地、沙地、洛阳与跨块范围，1024² 输出、2× 超采样、动画时间 0，
+通过近景同源 Logic 展开、WebGL1 和 overview 相同混合公式渲染；每个 report 记录源图哈希、几何指纹和批次。
+它不代替 Creator 的真实四档 LOD、缓存接缝、点选和横竖版回归，水面仍按既有静态填充色口径。
+全图和所有关键局部 ROI 必须分别过 §7 阈值；只比较整图平均值不能验收。
