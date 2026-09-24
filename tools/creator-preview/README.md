@@ -312,6 +312,23 @@ LOD2 拒播 / 回收以及返回近档不重播。稳态窗口的每一帧须同
 远档、内容 `hideAtLod`、降档超额都会结束旧播放；回到近档需内容重新发起。停止清粒子并入空闲池，
 `evict()` 销毁空闲节点，舞台释放关闭全部池。Cocos 默认粒子材质随节点销毁后在 AFTER_DRAW 回收。
 
+### SC4-B4 帧调度对照
+
+`--vfx` 可显式加 `--frame-rate 60` 或 `--frame-rate 120`，只调整本次新建预览页的
+`cc.game.frameRate`，结束或失败时恢复原值。省略参数时沿用引擎原值。报告的 `framePacing`
+记录原值、请求值、实际值与恢复值，每帧另记 `extra.targetFrameRate`；实际帧率仍由
+原始 `performance.now()` 间隔计算，不能用请求上限或引擎 dt 代替。
+
+```bash
+node tools/creator-preview/run.mjs stage3d --perf --vfx --frame-rate 60 --expect-webgl 2 --new-window --out .cache/sc4-b4/pacing-60 --summary .cache/sc4-b4/pacing-60-summary.json
+node tools/creator-preview/run.mjs stage3d --perf --vfx --frame-rate 120 --expect-webgl 2 --new-window --out .cache/sc4-b4/pacing-120 --summary .cache/sc4-b4/pacing-120-summary.json
+```
+
+本机 Creator 3.8.8 / Chrome 153 的 60 上限在空场景也出现跳帧；120 上限是区分引擎限帧与
+场景容量的显式对照，不修改工程或生产帧率。两种设置的报告须分别保留，不用 120 上限的结果
+声称默认 60 上限已修复；前后台切换仍使整窗失败。SC4-B4 的退出判定与限制见
+[SC4 复核记录](../../docs/perf/stage3d/2026-09-24-sc4-review.json)。
+
 ## SC4-B3 low 退化
 
 桌面退化复跑（同一 Creator 3.8.8 工程，原生预览仍选 WebpageFullScreen / Rotate off）：

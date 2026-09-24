@@ -25,6 +25,15 @@ test("Vfx preview: explicit high stress load, existing WebGL options and unknown
     assert.throws(() => parseVfxPerfArgs(["--perf", "--vfx", "--quality", "low"]), /stress/);
     assert.throws(() => parseVfxPerfArgs(["--perf", "--vfx", "--skinned"]), /Unknown/);
 });
+test("Vfx preview: pacing override is explicit, bounded and rejects duplicate options", () => {
+    assert.equal(parseVfxPerfArgs(["--perf", "--vfx"]).frameRate, null);
+    for (const rate of [60, 120]) assert.equal(parseVfxPerfArgs(["--perf", "--vfx", "--frame-rate", String(rate)]).frameRate, rate);
+    for (const rate of ["0", "30", "61", "Infinity", "120fps", "--new-window"]) {
+        assert.throws(() => parseVfxPerfArgs(["--perf", "--vfx", "--frame-rate", rate]), /requires 60 or 120/);
+    }
+    assert.throws(() => parseVfxPerfArgs(["--perf", "--vfx", "--frame-rate"]), /requires 60 or 120/);
+    assert.throws(() => parseVfxPerfArgs(["--perf", "--vfx", "--frame-rate", "120", "--frame-rate", "60"]), /Unknown/);
+});
 test("Vfx preview: requires actual populated particle draws and a simultaneous 100-unit skinned load", () => {
     assert.equal(assertVfxDraws(evidence()).particles, 1500);
     for (const property of ["active", "playing", "scheduled"] as const) {

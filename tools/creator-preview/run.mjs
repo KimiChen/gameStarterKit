@@ -1245,7 +1245,7 @@ async function main() {
     if (process.argv.includes("--vfx")) {
       const { runVfxPerf, parseVfxPerfArgs } = await import("./vfx-perf.mjs");
       const options = parseVfxPerfArgs(process.argv.slice(3));
-      if (options.help) { console.log("stage3d --perf --vfx: --expect-webgl 1|2 [--force-webgl1] [--new-window] [--out DIR]"); return 0; }
+      if (options.help) { console.log("stage3d --perf --vfx: --expect-webgl 1|2 [--force-webgl1] [--frame-rate 60|120] [--new-window] [--out DIR]"); return 0; }
       const result = await runVfxPerf(options); console.log(JSON.stringify(result)); return result.ok ? 0 : 1;
     }
     if (process.argv.includes("--skinned")) {

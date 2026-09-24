@@ -699,8 +699,14 @@ node tools/creator-preview/run.mjs stage3d --perf --quality high --expect-webgl 
 SC3 退出沿用并复核 [B5 六份报告](perf/stage3d/2026-09-24-sc3-b5.json)：每档请求 500 个立方体，low 的 100 个
 名额受 details 门控而隐藏，medium / high 激活 300 / 500 个；两种上下文各档 draw call 为 3 / 4 / 4、三角数为
 194 / 3794 / 6194。桌面 M4 的稳态 p95 范围为 17.9–34.6 ms，六组各 20 次开关的 GFX 内存均回基线。
-这些数字不构成 60fps、移动端或微信容量承诺；蒙皮 / 特效与 low 退化验收归 SC4，阶段证据索引见
+这些 SC3 数字不构成 60fps、移动端或微信容量承诺；阶段证据索引见
 [SC3 汇总](perf/stage3d/2026-09-24-sc3-review.json)。
+
+SC4已退出，正式 `SkinnedUnits` / `Vfx` 的接法见 §3。100两骨单位+50特效在桌面WebGL2、high / shadows=0、
+显式引擎帧率上限120下，实际标准窗口59.97fps，另连续3,600帧约60秒为60.00fps；每帧55次绘制提交，
+20次联合回收后引用 / 节点 / GFX回基线。默认60上限在本机仍跳帧（49.83fps），生产配置未改；
+消费方须按自身帧率配置、内容和WebGL1 low退化路径复验。对照命令、配置恢复和限制见
+[帧调度对照](../tools/creator-preview/README.md#sc4-b4-帧调度对照) 与 [SC4汇总](perf/stage3d/2026-09-24-sc4-review.json)。
 
 ## 9. 新页面开发清单
 

@@ -1,6 +1,6 @@
 # `lvr` kit 的 3D 场景管线 —— 需求文档
 
-> - 日期：2026-09-24。状态：**需求 v1.6（2026-09-24），lvr 接入未开工**；框架 SC0–SC3 已退出，SC4-B3 完成，消费通知见 §8；不代表 lvr 内容已交付。
+> - 日期：2026-09-24。状态：**需求 v1.6（2026-09-24），lvr 接入未开工**；框架 SC0–SC4 已退出，A3 的框架前置齐备，消费通知见 §8；不代表 lvr 内容已交付。
 > - 归属：本文是 [lvr.md](lvr.md) §9.1 拍板「走 B：自建 3D 管线，用 Cocos 的 3D 能力」之后拆出的独立需求，
 >   **由单独的人/单独的排期实现**，⛔ 不占 lvr.md §7 的 100–200 人月核心工程估算。
 > - 逆向源：`../sourceVersion/lvr-1.0.0/`（仓外，只读）。本文引用的类名与目录均为实测。
@@ -252,3 +252,5 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 - **2026-09-23 框架 SC1 先例通知**（tag `sc1-exit`，commit 由该 tag 解析）：`Stage3dFixtureView` 与 `stage3d-dev.scene` 已提供正式舞台 / 全局租约、同步资源持有、overlay 原始输入 / cancel、画质与压缩预设先例；bundle 所有权、UUID 依赖闭合和 `verify:assets3d` 已交付。桌面 WebGL2 / 实际 WebGL1 各 20 次关闭后节点 / 业务引用回基线、GFX 增量为 0，p95 为 19.3 / 19.5 ms，完整范围及偏差见 [框架退出记录](docs/3d.md#10-实施状态回写) 与 [SC1 汇总](docs/perf/stage3d/2026-09-23-sc1-review.json)。lvr A1 仍等 SC2 纯数学与 SC3 完整异步 AssetLease / 调度，不能复制 SC1 临时夹具 loader；A3 的 SC4 阶段前置不变。上述固定灰盒不充当 lvr 样本或 low 档容量证据，未实施任何 lvr 内容。
 
 - **2026-09-24 文档 v1.6 / 框架 SC4-B3 通知**：按用户要求将 A3 证据统一为桌面 WebGL1 low 退化与故障恢复。框架 B3 已按调整后的范围完成（实现 `5855bc3f`）；SC4 的阶段性能要求与 B4 收尾仍待完成，lvr A3 继续等 SC4 退出，lvr 内容接入未勾选。
+
+- **2026-09-24 框架 SC4 消费通知：A3 可开工**（tag `sc4-exit`，commit由该tag解析）：正式 `SkinnedUnits`（预烘焙 / 实际jointTexture与布局分批 / socket / 显式实时退化）及 `Vfx`（池 / 跟随 / LOD门 / 寿命 / 租约回收）已退出。[SC4汇总](docs/perf/stage3d/2026-09-24-sc4-review.json)附100两骨单位+50特效的WebGL2容量证据：显式120上限下实际约60Hz，连续3,600帧平均60.00fps、p95 18.9ms，20次回收无增长；默认60上限在本机仍有帧调度跳帧，未改生产配置，lvr须按自身实际配置复验。[SC4-B3](docs/perf/stage3d/2026-09-24-sc4-b3.json)的桌面WebGL1 low浮点 / RGBA8、缺instancing、实时 / 公告板退化及PNG / 故障恢复证据已复核。接法见 [CLIENT §3](docs/CLIENT.md#3-view-与-logic-分层) 与 [预览复跑说明](tools/creator-preview/README.md#sc4-b3-low-退化)。lvr自身立项 / 样本仍按本文件推进；A3内容、多clip / 跨atlas、WebGL1 low与故障恢复须另行验收，A0–A5未勾选。

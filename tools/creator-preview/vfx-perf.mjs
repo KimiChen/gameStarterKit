@@ -14,7 +14,15 @@ const check = (value, message) => { if (!value) throw new Error(message); };
 const component = 'cc.director.getScene().getComponentsInChildren("Stage3dDevScene")[0]';
 export function parseVfxPerfArgs(argv) {
   check(argv.includes("--perf"), "--vfx requires --perf");
-  const options = parseStage3dPerfArgs(argv.filter((arg) => arg !== "--vfx"));
+  const args = argv.filter((arg) => arg !== "--vfx");
+  const index = args.indexOf("--frame-rate");
+  let frameRate = null;
+  if (index !== -1) {
+    frameRate = Number(args[index + 1]);
+    check([60, 120].includes(frameRate), "--frame-rate requires 60 or 120 (explicit desktop pacing comparison)");
+    args.splice(index, 2);
+  }
+  const options = { ...parseStage3dPerfArgs(args), frameRate };
   if (!options.help) check(options.quality === "high", "100 units + 50 effects requires high developer stress configuration");
   return options;
 }
@@ -105,11 +113,16 @@ export async function runVfxPerf(options) {
     check(report.environment.previewDevice === STAGE3D_PREVIEW_DEVICE && viewport.cssWidth === 375 && viewport.cssHeight === 812
       && viewport.backingWidth === 750 && viewport.backingHeight === 1624 && viewport.dpr === 2, "Select WebpageFullScreen / Rotate off in native Creator preview");
     check(options.expectWebgl === null || report.environment.webgl === options.expectWebgl, "Actual WebGL context mismatch");
+    report.framePacing = { original: await client.evaluate("cc.game.frameRate"), requested: options.frameRate ?? null };
+    if (options.frameRate != null) await client.evaluate(`cc.game.frameRate = ${options.frameRate}`);
+    report.framePacing.actual = await client.evaluate("cc.game.frameRate");
+    check(report.framePacing.actual === (options.frameRate ?? report.framePacing.original), "Frame-rate override was not applied");
     report.boot = await client.evaluate('({ started: performance.timeOrigin, completed: Date.now() })');
     await client.evaluate(`globalThis[${JSON.stringify(FRAME_PROBE)}] = () => {
       const c = ${component}, effects = [...c.skinned.entities, ...c.vfx.effects].filter(e => e.state !== 'released');
       return { admitted: effects.length, active: effects.filter(e => e.state === 'active').length,
-        skins: c.skinned.entities.filter(e => e.state === 'active').length, vfx: c.vfx.effects.filter(e => e.state === 'active').length }; }`);
+        skins: c.skinned.entities.filter(e => e.state === 'active').length, vfx: c.vfx.effects.filter(e => e.state === 'active').length,
+        targetFrameRate: cc.game.frameRate }; }`);
     report.perf.activation = await captureAfter(client, () => client.evaluate(enable(true)), { warmupFrames: 0, sampleFrames: 120, timeoutMs: 60000 });
     await active(); await pause(60); report.phases.initial = await client.evaluate(sceneSource); assertVfxDraws(report.phases.initial);
     await client.screenshot(path.join(out, "combined.png"), { format: "png" });
@@ -138,6 +151,7 @@ export async function runVfxPerf(options) {
     report.perf.steady = await capture(client, { warmupFrames: 60, sampleFrames: 240, timeoutMs: 60000 });
     report.phases.steady = await client.evaluate(sceneSource); assertVfxDraws(report.phases.steady);
     check(report.perf.steady.raw.frames.filter(f => f.phase === 'sample').every(f => f.extra.skins === 100 && f.extra.vfx === 50), "Combined load missing inside measured window");
+    check(report.perf.steady.raw.frames.every(f => f.extra.targetFrameRate === report.framePacing.actual), "Frame-rate setting changed inside measured window");
     await client.evaluate(enable(false)); await capture(client, { warmupFrames: 60, sampleFrames: 1, timeoutMs: 30000 }, false);
     report.perf.memory = { prewarmedClosed: await client.evaluate(sceneSource), cycles: [] };
     for (let index = 0; index < 20; index++) {
@@ -157,12 +171,19 @@ export async function runVfxPerf(options) {
   } catch (error) { report.error = error.message; if (error.invalidWindow) report.invalidWindow = error.invalidWindow; }
   finally {
     if (client) { report.console ??= await client.evaluate("window.__creatorPreviewLogs || []").catch(() => []);
-      await client.evaluate(enable(false)).catch(() => {}); client.close(); }
+      await client.evaluate(enable(false)).catch(() => {});
+      if (report.framePacing) {
+        try {
+          report.framePacing.restored = await client.evaluate(`(() => { cc.game.frameRate = ${report.framePacing.original}; return cc.game.frameRate; })()`);
+          check(report.framePacing.restored === report.framePacing.original, "Original frame-rate setting was not restored");
+        } catch (error) { report.ok = false; report.error ??= error.message; }
+      }
+      client.close(); }
     report.finishedAt = new Date().toISOString();
     const reportPath = path.join(out, "report.json"), bytes = JSON.stringify(report, null, 2) + "\n"; fs.writeFileSync(reportPath, bytes);
     const summaryPath = path.resolve(options.summary ?? path.join(ROOT, "docs/perf/stage3d", `${report.startedAt.slice(0,10)}-sc4-b2-webgl${report.environment?.webgl ?? 2}.json`));
     if (report.ok) { fs.mkdirSync(path.dirname(summaryPath), { recursive: true });
-      fs.writeFileSync(summaryPath, JSON.stringify({ schemaVersion: 1, kind: report.kind, environment: report.environment, performance: report.perf.summary,
+      fs.writeFileSync(summaryPath, JSON.stringify({ schemaVersion: 1, kind: report.kind, environment: report.environment, framePacing: report.framePacing, performance: report.perf.summary,
         load: { skinnedUnits: 100, particleSystems: 50, productionMaxEffects: 48, stressOverride: 50 },
         raw: { path: reportPath, sha256: createHash("sha256").update(bytes).digest("hex") },
         limitations: "Desktop two-bone greybox + 50 particle systems; explicit stress override, not a production budget increase or WeChat evidence. Screenshots require review." }, null, 2) + "\n"); }

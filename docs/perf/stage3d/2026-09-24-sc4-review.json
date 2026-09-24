@@ -1,0 +1,920 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-24",
+  "stage": "SC4",
+  "batch": "SC4-B4",
+  "status": "exited",
+  "stageExit": true,
+  "tag": "sc4-exit",
+  "commit": "resolve refs/tags/sc4-exit",
+  "verificationBase": "1e614d5c9dd298bfdcf9ca88918b7221b455b7ce",
+  "scope": "Evidence reconciliation, explicit desktop pacing comparison, document handoff and stage exit review. No runtime TypeScript, asset, production frame-rate, quality budget or package-lock change.",
+  "priorBatches": [
+    {
+      "batch": "SC4-B1",
+      "commit": "04bb5e60eaf16942018e334cde61cafba536f099",
+      "path": "docs/perf/stage3d/2026-09-24-sc4-b1.json",
+      "sha256": "ee96eb60b9f1b8011b6dcc51751f00e77396b102e2981e6ae76e750ec7d757c5"
+    },
+    {
+      "batch": "SC4-B2",
+      "commit": "8330dbf86f3af8d1632680b8547c10a06ccd6c06",
+      "path": "docs/perf/stage3d/2026-09-24-sc4-b2.json",
+      "sha256": "bd6782b211a9a9a670a864e1798fdfdef6564387d2086b3a8f4005ebaab8b66b"
+    },
+    {
+      "batch": "SC4-B3",
+      "commit": "5855bc3f160bca38a7a729009f18eff8bea91504",
+      "path": "docs/perf/stage3d/2026-09-24-sc4-b3.json",
+      "sha256": "c955931c5851ef937ce0addce9a77ed773c08ea36a92ee55c4843489dc6a97ef"
+    }
+  ],
+  "evidenceAudit": {
+    "method": {
+      "path": ".cache/sc4-b4/audit-evidence.py",
+      "sha256": "5b1d1719414c0c98dea93932c858a19085719ea2a549a25faa181863b0f6231e"
+    },
+    "record": {
+      "path": ".cache/sc4-b4/evidence-audit.json",
+      "sha256": "0e14c56909ce078655cd841582927dd56c0e0d55be6ee5db1717bf95e08db4a4"
+    },
+    "referenceCount": 210,
+    "uniqueReferencedPaths": 156,
+    "counts": {
+      "identical": 183,
+      "superseded": 27
+    },
+    "baselineSourcesChecked": 63,
+    "lineage": [
+      "B2 adds Vfx/pool configuration and combined fixture; B3 adds skinning policy, realtime material retirement and fixture failure cleanup.",
+      "All 27 superseded references match their original implementation commits; subsequent changes belong to B2/B3 or the accepted 1e614d5c documentation scope revision.",
+      "Baseline runtime sources and their preview mirrors match the isolated checkout; the only new executable change in B4 is the explicit Vfx preview frame-rate option."
+    ]
+  },
+  "inheritedPerformance": {
+    "method": {
+      "path": ".cache/sc4-b4/recompute-perf.mjs",
+      "sha256": "6ede3c16c77a4a3e117a4242942dd9aec36521d694945bb9324bc941b4832b8f"
+    },
+    "record": {
+      "path": ".cache/sc4-b4/perf-recalculation.json",
+      "sha256": "709a5b3d16d90a1b42bfc6924666ab271a3120d8998d272aeec1d01da7252487"
+    },
+    "rawFrames": 3798,
+    "memoryCycles": 180,
+    "runs": [
+      {
+        "batch": "SC4-B1",
+        "label": "webgl2",
+        "report": {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-webgl2/report.json",
+          "sha256": "031bdeaaef2c71f885f3aa908ebaf9f0e578243c04860961cdfcb9ef5cd938de"
+        },
+        "meanFps": 42.13039356810978,
+        "steady": {
+          "count": 240,
+          "p50Ms": 18.599999997764826,
+          "p95Ms": 34.099999997764826,
+          "maxMs": 35.100000001490116,
+          "meanMs": 23.73583333332402
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      {
+        "batch": "SC4-B1",
+        "label": "webgl1",
+        "report": {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-webgl1/report.json",
+          "sha256": "0465e1c64b58126249808142a07ec2c30a67200e64bca9df7cfb2996b7aa3182"
+        },
+        "meanFps": 59.25633302054798,
+        "steady": {
+          "count": 240,
+          "p50Ms": 16.699999999254942,
+          "p95Ms": 17.600000001490116,
+          "maxMs": 33.69999999925494,
+          "meanMs": 16.87583333334575
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      {
+        "batch": "SC4-B1",
+        "label": "rgba8",
+        "report": {
+          "path": "/Users/kimi/.codex/worktrees/sc4-b1-skinned-units/kitVersion/.cache/sc4-b1/final-rgba8/report.json",
+          "sha256": "32bf10b129cb43f4ac5dbd8f9485bec8218991d8b53b90c6a93c777ad71d2bb7"
+        },
+        "meanFps": 58.53801312229255,
+        "steady": {
+          "count": 240,
+          "p50Ms": 16.699999999254942,
+          "p95Ms": 17.800000000745058,
+          "maxMs": 37.19999999925494,
+          "meanMs": 17.08291666666046
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      {
+        "batch": "SC4-B2",
+        "label": "WebGL2",
+        "report": {
+          "path": ".cache/sc4-b2/accepted2-webgl2/report.json",
+          "sha256": "5af342b750251387712643084bbf5a7e4c0a7a52998d639948d426d28e8764b3"
+        },
+        "meanFps": 57.11837783805927,
+        "steady": {
+          "count": 240,
+          "p50Ms": 16.699999999254942,
+          "p95Ms": 19.5,
+          "maxMs": 36.19999999925494,
+          "meanMs": 17.507500000003105
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      {
+        "batch": "SC4-B2",
+        "label": "WebGL1",
+        "report": {
+          "path": ".cache/sc4-b2/accepted2-webgl1/report.json",
+          "sha256": "75c8eb2447cc90072eb37364b1bab4721f95a7553f49cc771afddddebd95596f"
+        },
+        "meanFps": 56.66658796306231,
+        "steady": {
+          "count": 240,
+          "p50Ms": 16.700000002980232,
+          "p95Ms": 30.600000001490116,
+          "maxMs": 33.5,
+          "meanMs": 17.647083333336436
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      {
+        "batch": "SC4-B3",
+        "label": "baked",
+        "report": {
+          "path": ".cache/sc4-b3/final-baked/report.json",
+          "sha256": "156a11570ec1cacacfb8a3bdd9b26eccada85adbf38819ec6878077579be6a88"
+        },
+        "meanFps": 56.686664462225174,
+        "steady": {
+          "count": 240,
+          "p50Ms": 16.700000002980232,
+          "p95Ms": 32.600000001490116,
+          "maxMs": 33.5,
+          "meanMs": 17.640833333320916
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      {
+        "batch": "SC4-B3",
+        "label": "rgba8",
+        "report": {
+          "path": ".cache/sc4-b3/final-rgba8/report.json",
+          "sha256": "8a4de8d2e7c7305005aa1ef77c960250a3045c5925fe38c95e555bc56a71fd08"
+        },
+        "meanFps": 59.26364915926239,
+        "steady": {
+          "count": 240,
+          "p50Ms": 16.69999999552965,
+          "p95Ms": 17.5,
+          "maxMs": 32.70000000298023,
+          "meanMs": 16.873749999981374
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      {
+        "batch": "SC4-B3",
+        "label": "no-instancing",
+        "report": {
+          "path": ".cache/sc4-b3/final-no-instancing/report.json",
+          "sha256": "283d28a7646c2938608fe2d8c5f5cb1caf3e76c1627b98d6b4be4131b153f174"
+        },
+        "meanFps": 57.60092161472524,
+        "steady": {
+          "count": 240,
+          "p50Ms": 16.700000002980232,
+          "p95Ms": 17.69999999552965,
+          "maxMs": 33.70000000298023,
+          "meanMs": 17.360833333339542
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      {
+        "batch": "SC4-B3",
+        "label": "realtime",
+        "report": {
+          "path": ".cache/sc4-b3/final-realtime-retry/report.json",
+          "sha256": "d09f1dbe6d3efbc05308b1f273efebbebbf23467eb1b13c9151f7a41e8280d18"
+        },
+        "meanFps": 56.25219735145904,
+        "steady": {
+          "count": 240,
+          "p50Ms": 16.799999997019768,
+          "p95Ms": 32.600000001490116,
+          "maxMs": 33.600000001490116,
+          "meanMs": 17.777083333333334
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42484,
+            "textureBytes": 4556932
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42484,
+            "textureBytes": 4556932
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      }
+    ]
+  },
+  "inheritedMutations": {
+    "detected": 8,
+    "batches": {
+      "B1": 3,
+      "B2": 1,
+      "B3": 4
+    },
+    "basis": "Original failure logs were hash-verified; no production behavior changed in B4, so mutations were not repeated."
+  },
+  "performanceAcceptance": {
+    "status": "passed-under-explicit-fixture-configuration",
+    "basis": "3d.md section 6.2 requires actual desktop WebGL2 100-unit + 50-effect 60fps evidence and does not prescribe a requested engine frame-rate ceiling. 3D-ASSETS.md section 15.2 already defines approximately 60fps as measured throughput (raw interval total), explicitly not a per-frame 16.67ms deadline; subsequent stages inherit that definition. The 120 ceiling is an explicit benchmark configuration, while acceptance uses only unmodified wall-clock output: 59.97fps in the standard window and 60.00fps across 3600 consecutive frames. No requirement, load or frozen budget is reduced.",
+    "scope": "Measured desktop fixture capacity; not a default-configuration 60fps guarantee. The default 60-ceiling pacing issue remains a documented limitation for consumer verification.",
+    "default60Fixed": false,
+    "productionConfigurationChanged": false
+  },
+  "freshCombinedRuns": [
+    {
+      "label": "webgl2-fullscreen",
+      "report": {
+        "path": ".cache/sc4-b4/webgl2-fullscreen/report.json",
+        "sha256": "bbe56b173e58f2799b7ad3760b8c8d0590e2c8c6e40b8979599fc3608a6d0d63"
+      },
+      "screenshot": {
+        "path": ".cache/sc4-b4/webgl2-fullscreen/combined.png",
+        "sha256": "aeaf64b21e0c44de5315b2a8abea2d99ceda1e5d4e97fed78a1a4711c88f03f8"
+      },
+      "environment": {
+        "webgl": 2,
+        "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGL2Device",
+        "pipeline": "WebPipeline",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "previewDevice": "WebpageFullScreen",
+        "viewport": {
+          "cssWidth": 375,
+          "cssHeight": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624,
+          "dpr": 2
+        }
+      },
+      "framePacing": {
+        "original": 60,
+        "requested": null,
+        "actual": 60,
+        "basis": "unchanged engine default; confirmed by immediately following same-page diagnostic"
+      },
+      "performance": {
+        "unit": {
+          "frame": "ms",
+          "gfxMemory": "bytes",
+          "drawCalls": "calls/frame",
+          "triangles": "triangles/frame",
+          "instances": "instances/frame"
+        },
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "sampleIndex": "independent seq; not root.frameCount",
+        "activation": {
+          "intervals": {
+            "count": 120,
+            "p50Ms": 16.700000002980232,
+            "p95Ms": 33.5,
+            "maxMs": 44.899999998509884,
+            "meanMs": 19.882499999987584
+          },
+          "peak": {
+            "drawCalls": 55,
+            "triangles": 12894,
+            "instances": 1650,
+            "bufferBytes": 254476,
+            "textureBytes": 8409220,
+            "totalBytes": 8663696
+          },
+          "firstActiveSeq": 3,
+          "peakActive": 150
+        },
+        "steady": {
+          "intervals": {
+            "count": 240,
+            "p50Ms": 16.799999997019768,
+            "p95Ms": 33.70000000298023,
+            "maxMs": 35.5,
+            "meanMs": 20.069166666672874
+          },
+          "drawCalls": {
+            "p50": 55,
+            "p95": 55,
+            "max": 55,
+            "last": 55
+          },
+          "triangles": {
+            "p50": 12830,
+            "p95": 12894,
+            "max": 12894,
+            "last": 12826
+          },
+          "instances": {
+            "p50": 1618,
+            "p95": 1650,
+            "max": 1650,
+            "last": 1616
+          },
+          "finalMemory": {
+            "bufferBytes": 254476,
+            "textureBytes": 8409220
+          }
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      "meanFps": 49.82767927582231,
+      "compiledSources": [
+        {
+          "source": "apps/client/src/view/scene3d/Vfx.ts",
+          "sha256": "50e358c11ab72eb94a7fc9686805d918bd152e6f1be1d405209bfabfc676a76f",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/d5/d5b92cd8a9aa31dfeae3248e5499bca6d603c593.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/cocosVfx.ts",
+          "sha256": "a3b48296c064aa4ee7681321cc697b7a7bb1c194f9b3dc753e195ba529e7ac1a",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/20/20ab668d9bd4688b98753b06858deadc13033571.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/VfxFixture.ts",
+          "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/42/42293dc91d702af372162a308e4d58755937f5ab.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+          "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js.map"
+        }
+      ],
+      "steadyLoadEveryFrame": {
+        "skins": 100,
+        "vfx": 50
+      },
+      "closedSceneNodes": 10,
+      "closedVfxPrefabRefs": 0,
+      "unexpectedErrors": 0
+    },
+    {
+      "label": "webgl2-capacity-retry",
+      "report": {
+        "path": ".cache/sc4-b4/webgl2-capacity-retry/report.json",
+        "sha256": "8d1e7451b4389e26e593401479afddf2ac3af126ad1209292557d059c63f5b4e"
+      },
+      "screenshot": {
+        "path": ".cache/sc4-b4/webgl2-capacity-retry/combined.png",
+        "sha256": "12f070f4749dff3dc2d81ecc09873bb3b1b7c1aae489525520d4e1684de4408f"
+      },
+      "environment": {
+        "webgl": 2,
+        "glVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGL2Device",
+        "pipeline": "WebPipeline",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "previewDevice": "WebpageFullScreen",
+        "viewport": {
+          "cssWidth": 375,
+          "cssHeight": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624,
+          "dpr": 2
+        }
+      },
+      "framePacing": {
+        "original": 60,
+        "requested": 120,
+        "actual": 120,
+        "restored": 60
+      },
+      "performance": {
+        "unit": {
+          "frame": "ms",
+          "gfxMemory": "bytes",
+          "drawCalls": "calls/frame",
+          "triangles": "triangles/frame",
+          "instances": "instances/frame"
+        },
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "sampleIndex": "independent seq; not root.frameCount",
+        "activation": {
+          "intervals": {
+            "count": 120,
+            "p50Ms": 16.600000001490116,
+            "p95Ms": 18.19999999552965,
+            "maxMs": 38.19999999552965,
+            "meanMs": 16.694166666703918
+          },
+          "peak": {
+            "drawCalls": 55,
+            "triangles": 12894,
+            "instances": 1650,
+            "bufferBytes": 254476,
+            "textureBytes": 8409220,
+            "totalBytes": 8663696
+          },
+          "firstActiveSeq": 3,
+          "peakActive": 150
+        },
+        "steady": {
+          "intervals": {
+            "count": 240,
+            "p50Ms": 16.600000001490116,
+            "p95Ms": 18.30000000447035,
+            "maxMs": 19,
+            "meanMs": 16.675416666672877
+          },
+          "drawCalls": {
+            "p50": 55,
+            "p95": 55,
+            "max": 55,
+            "last": 55
+          },
+          "triangles": {
+            "p50": 12826,
+            "p95": 12894,
+            "max": 12894,
+            "last": 12794
+          },
+          "instances": {
+            "p50": 1616,
+            "p95": 1650,
+            "max": 1650,
+            "last": 1600
+          },
+          "finalMemory": {
+            "bufferBytes": 254476,
+            "textureBytes": 8409220
+          }
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      "meanFps": 59.96851652880003,
+      "compiledSources": [
+        {
+          "source": "apps/client/src/view/scene3d/Vfx.ts",
+          "sha256": "50e358c11ab72eb94a7fc9686805d918bd152e6f1be1d405209bfabfc676a76f",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/d5/d5b92cd8a9aa31dfeae3248e5499bca6d603c593.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/cocosVfx.ts",
+          "sha256": "a3b48296c064aa4ee7681321cc697b7a7bb1c194f9b3dc753e195ba529e7ac1a",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/20/20ab668d9bd4688b98753b06858deadc13033571.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/VfxFixture.ts",
+          "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/42/42293dc91d702af372162a308e4d58755937f5ab.js.map"
+        },
+        {
+          "source": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+          "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962",
+          "compiledMap": "apps/Cocos/temp/programming/packer-driver/targets/preview/chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js.map"
+        }
+      ],
+      "steadyLoadEveryFrame": {
+        "skins": 100,
+        "vfx": 50
+      },
+      "closedSceneNodes": 10,
+      "closedVfxPrefabRefs": 0,
+      "unexpectedErrors": 0
+    }
+  ],
+  "sustainedCapacity": {
+    "report": {
+      "path": ".cache/sc4-b4/sustained-capacity.json",
+      "sha256": "6967fe8b3376a2c163b941286c4614c62e3ae9d91a79d9b93363d4046a5541b1"
+    },
+    "method": {
+      "path": ".cache/sc4-b4/sustained-capacity.mjs",
+      "sha256": "673abdac984b38c1757302b2889dda7158fda0c82168ab748548ada2a73c9c78"
+    },
+    "warmupFrames": 60,
+    "sampleFrames": 3600,
+    "observedSeconds": 59.99979999999702,
+    "framePacing": {
+      "original": 60,
+      "requested": 120,
+      "actual": 120,
+      "restored": 60
+    },
+    "frameIntervals": {
+      "count": 3600,
+      "p50Ms": 16.69999999552965,
+      "p95Ms": 18.899999998509884,
+      "maxMs": 21.700000002980232,
+      "meanMs": 16.666611111110285
+    },
+    "meanFps": 60.00020000066964,
+    "allFramesLoad": {
+      "skins": 100,
+      "vfx": 50,
+      "drawCalls": 55
+    },
+    "visibilityChanges": 0
+  },
+  "pacingDiagnosis": {
+    "method": {
+      "path": ".cache/sc4-b4/diagnose-pacing.mjs",
+      "sha256": "168f7d887bcfd750688c8d6eccc9163d85b45a1da9f2b014558b3f618b941eb0"
+    },
+    "report": {
+      "path": ".cache/sc4-b4/pacing-diagnostic.json",
+      "sha256": "4714af8ae5fab80e95233833cc83844fc11710e1cd47c31db30938cbdb6edc23"
+    },
+    "comparisons": [
+      {
+        "case": "empty60",
+        "targetFrameRate": 60,
+        "visibilityChanges": 0,
+        "meanFps": 48.60619005321178,
+        "engine": {
+          "n": 487,
+          "mean": 20.57351129362838,
+          "p50": 16.899999998509884,
+          "p95": 33.400000005960464,
+          "max": 36.900000005960464
+        },
+        "cpuUpdateThroughDraw": {
+          "n": 487,
+          "mean": 0.5531827516287748,
+          "p50": 0.5,
+          "p95": 0.7999999970197678,
+          "max": 3.7000000029802322
+        },
+        "raf": {
+          "n": 600,
+          "mean": 16.671333333328366,
+          "p50": 16.69999999552965,
+          "p95": 18,
+          "max": 21.599999994039536
+        },
+        "population": [
+          "0+0"
+        ]
+      },
+      {
+        "case": "combined60",
+        "targetFrameRate": 60,
+        "visibilityChanges": 0,
+        "meanFps": 53.2164501732122,
+        "engine": {
+          "n": 533,
+          "mean": 18.791181988748555,
+          "p50": 16.899999998509884,
+          "p95": 33.20000000298023,
+          "max": 35.20000000298023
+        },
+        "cpuUpdateThroughDraw": {
+          "n": 533,
+          "mean": 2.535834896897174,
+          "p50": 2.7999999970197678,
+          "p95": 3.4000000059604645,
+          "max": 4.0999999940395355
+        },
+        "raf": {
+          "n": 600,
+          "mean": 16.671166666671635,
+          "p50": 16.700000002980232,
+          "p95": 20.200000002980232,
+          "max": 21.5
+        },
+        "population": [
+          "100+50"
+        ]
+      },
+      {
+        "case": "combined120DiagnosticOnly",
+        "targetFrameRate": 120,
+        "visibilityChanges": 0,
+        "meanFps": 60.00339453479004,
+        "engine": {
+          "n": 601,
+          "mean": 16.665723793679685,
+          "p50": 16.700000002980232,
+          "p95": 17.899999998509884,
+          "max": 19.099999994039536
+        },
+        "cpuUpdateThroughDraw": {
+          "n": 601,
+          "mean": 2.575207986594635,
+          "p50": 2.8000000044703484,
+          "p95": 3.399999998509884,
+          "max": 4.0999999940395355
+        },
+        "raf": {
+          "n": 600,
+          "mean": 16.66766666666915,
+          "p50": 16.799999997019768,
+          "p95": 18,
+          "max": 19.100000001490116
+        },
+        "population": [
+          "100+50"
+        ]
+      }
+    ],
+    "engineSource": {
+      "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/pal/pacer/pacer-web.ts",
+      "sha256": "778f2a808a564751a6ba49d200c34b56b6f461eef76cbad3d5b2b4d3b411f7b3"
+    },
+    "inference": "The locked Pacer floors elapsed wall time into target slots and skips an rAF when that slot is already counted. Empty-scene skipping, regular rAF callbacks, low update-to-draw CPU time and recovery with a 120 ceiling support a frame-pacing limitation rather than capacity saturation. This is a diagnosis, not an engine fix; CPU update-to-draw time is not GPU time."
+  },
+  "earlierAttempts": [
+    {
+      "report": {
+        "path": ".cache/sc4-b4/webgl2-baseline/report.json",
+        "sha256": "07209ca387ff9a0782297776eaba4d001b08ed4e0fc6143a0a62630476e22332"
+      },
+      "ok": false,
+      "reason": "Select WebpageFullScreen / Rotate off in native Creator preview"
+    },
+    {
+      "report": {
+        "path": ".cache/sc4-b4/webgl2-capacity/report.json",
+        "sha256": "06323cf29df5259a917260c6895fcd71c6c97683876568de195b0862d2a90326"
+      },
+      "ok": false,
+      "reason": "Invalid real-frame window: visibility-changed, status:failed, capture-invalid, visibility-contaminated, incomplete-window, incomplete-samples"
+    }
+  ],
+  "sustainedHiddenAttempt": {
+    "path": ".cache/sc4-b4/sustained-hidden-attempt.json",
+    "sha256": "fa92d0c4e6898767d3c3dfabed9af14c7acdc16dd404a0836465f6ce515f6a98"
+  },
+  "visualReview": {
+    "screenshots": [
+      "webgl2-fullscreen/combined.png",
+      "webgl2-capacity-retry/combined.png"
+    ],
+    "result": "Both show the same 100 greybox biped grid and stage. Queue/particle assertions confirm all 50 systems, including small translucent particles. Profiler FPS differs as expected; it is not the primary measurement."
+  },
+  "verification": {
+    "worktree": "/Users/kimi/.codex/worktrees/sc4-b4-exit/kitVersion",
+    "isolation": "Committed 1e614d5c plus B4 changes; concurrent mapOriginal work remains in the original checkout.",
+    "node": "v26.5.0",
+    "setup": "npm ci --ignore-scripts --prefer-offline; rebuild UniFlex AOT; sync:client; reuse 60 existing Creator .meta files only for identical generated inputs.",
+    "verifyAll": {
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 505.26642370224,
+      "log": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b4-exit/kitVersion/.cache/sc4-b4/verify-all.log",
+        "sha256": "72d71b4181c5a7c6a0f30ad293c36045fad7966777f64f619fde464123c390a0"
+      },
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1345,
+        80,
+        1393
+      ],
+      "totalTests": 3034
+    },
+    "finalInventory": {
+      "command": "npm run verify:inventory",
+      "exitCode": 0,
+      "log": {
+        "path": "/Users/kimi/.codex/worktrees/sc4-b4-exit/kitVersion/.cache/sc4-b4/final-inventory.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      }
+    }
+  },
+  "limitations": [
+    "Only Apple M4 / Chrome 153 / Creator 3.8.8 WebPipeline desktop, high developer override, shadows off, 375x812 CSS / DPR 2.",
+    "The 60 ceiling still skips frames in this environment. The 120 ceiling is explicit in raw evidence and restored after each run; it does not promise default-configuration sustained 60fps.",
+    "p95 intervals exceed 16.67ms even when average delivery tracks 60Hz; no per-frame deadline or GPU timing claim.",
+    "100 two-bone greyboxes and 50 capacity-50/rate-30/lifetime-1 CPU ParticleSystems only; no 30/80-bone, maximum-weight, mobile or consumer-content capacity extrapolation.",
+    "Production Vfx caps remain 8/24/48; 50 is the existing explicit stress override. B3 WebGL1 low evidence remains fault-injected desktop evidence.",
+    "mmo optional 3D integration is not selected and no completed MMO batch is rewritten; lvr A0-A5 integration remains incomplete.",
+    "Raw reports and screenshots stay in ignored local evidence paths; this committed summary binds their hashes."
+  ],
+  "nextBatch": "SC5-B1",
+  "changedExecutableSources": [
+    {
+      "path": "/Users/kimi/.codex/worktrees/sc4-b4-exit/kitVersion/tools/creator-preview/vfx-perf.mjs",
+      "sha256": "560fabfebfb761095ba2d76f6387ea45cf8965ede5bf0a9a8c06bcec3b93f3f5"
+    },
+    {
+      "path": "/Users/kimi/.codex/worktrees/sc4-b4-exit/kitVersion/tools/creator-preview/run.mjs",
+      "sha256": "7cb5827248d98f3df5018f742210ae11922e7129631c2af319be984de5a80751"
+    },
+    {
+      "path": "/Users/kimi/.codex/worktrees/sc4-b4-exit/kitVersion/apps/server/test/vfx-preview.test.ts",
+      "sha256": "486d4e07f5ad759b3fabec8a08992136da3d36bcc535c11fd2b0ff6c0fa64650"
+    }
+  ],
+  "synchronization": {
+    "command": "git pull --rebase origin new",
+    "exitCode": 0,
+    "before": "1e614d5c9dd298bfdcf9ca88918b7221b455b7ce",
+    "after": "1e614d5c9dd298bfdcf9ca88918b7221b455b7ce",
+    "restoredFiles": 12,
+    "allHashesMatch": true,
+    "stashRemoved": true,
+    "log": {
+      "path": "/Users/kimi/.codex/worktrees/sc4-b4-exit/kitVersion/.cache/sc4-b4/pull-rebase.log",
+      "sha256": "d05549dae4bfc516206e473e7dea63ab56c6c12e7a02217d8bae2980f5eb2612"
+    }
+  }
+}
