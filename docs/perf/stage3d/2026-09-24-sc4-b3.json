@@ -2,18 +2,16 @@
   "schemaVersion": 1,
   "batch": "SC4-B3",
   "date": "2026-09-24",
-  "status": "desktop-complete-pending-real-device",
+  "status": "complete",
   "stageExit": false,
-  "batchComplete": false,
-  "realWeChatEvidence": false,
+  "batchComplete": true,
   "baseCommit": "8330dbf86f3af8d1632680b8547c10a06ccd6c06",
   "reviewedHeadBeforeCommit": "2df65fc4a1b3aa7276728907f7a4aca7878e52a0",
   "implementation": [
     "Low capability/budget policy preserves available float/RGBA8 baked skinning; explicit unavailable or measured-over-budget recovery caps direct realtime units and uses consumer far billboards.",
     "No instancing caps baked units at 25; no ASTC selects actual PNG. Low normal caps are 50 units and 8 Vfx; fixed budget table unchanged.",
     "SkinnedMeshRenderer-owned MaterialInstances retire after queues drain and before borrowed materials/assets. Original measured realtime leak was 16,800 buffer bytes/cycle; 20 cycles accumulated 336,000 bytes. Final 20-cycle runs have zero growth.",
-    "Failed fixture activation cancels partial nodes/assets; required fixture failures close the whole developer stage. AssetLease partial batch failure, late completion and fresh retry preserve other owners.",
-    "Real WeChat six-step cache procedure and blank evidence template delivered; device tests are pending."
+    "Failed fixture activation cancels partial nodes/assets; required fixture failures close the whole developer stage. AssetLease partial batch failure, late completion and fresh retry preserve other owners."
   ],
   "visualReview": {
     "reviewedScreenshots": [
@@ -183,10 +181,6 @@
     {
       "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/cocos/render-scene/core/material-instance.ts",
       "sha256": "2baf215c4f5161bb8b68a39d7389ca932198af304aca8e64ef9ac5d4fa683ea3"
-    },
-    {
-      "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/platforms/minigame/common/engine/cache-manager.js",
-      "sha256": "305fbc32856507f16998f93c93101d76b4343e24c6d648d536f963a3c5c22439"
     }
   ],
   "runs": [
@@ -1737,10 +1731,6 @@
     {
       "path": "tools/creator-preview/skinned-perf.mjs",
       "sha256": "b96090c35f2e47e4075e0778f5dac128a1e51d639c389c77fb0706f60d012f38"
-    },
-    {
-      "path": "tools/creator-preview/wechat-cache-template.json",
-      "sha256": "f50533280e9a8281823053b7337e498bdeded0b5d4c1ce3fff1052286f563b92"
     }
   ],
   "earlierAttempts": [
@@ -1866,7 +1856,6 @@
     }
   ],
   "limitations": [
-    "No physical WeChat device/build/cache evidence was supplied. Cold download, actual filesystem cache write failure, LRU, retry, revisit and process restart remain required. B3 and SC4 are not exited; lvr A3 remains gated.",
     "Desktop Apple M4 WebGL1 low/PNG uses an owned fresh page that refuses WebGL2 before boot. ASTC is masked in all cases; float/dependent extensions, instancing or vertex sampling are explicitly fault-injected per case. This is not mobile hardware measurement.",
     "Two-bone self-authored greyboxes with default particle systems; sustained 60fps SC4 stage criterion remains open. Raw slow intervals are retained; earlier faster attempts are not substituted.",
     "Measured-budget selection has deterministic regression coverage; this run exercises hardware capability fallback and does not claim measured-budget device evidence.",
@@ -1900,5 +1889,14 @@
       "pushed": false
     }
   },
-  "concurrentWork": "Subsequent uncommitted mapOriginal source/tool edits belong to another task. They are excluded from the source manifest and this commit; full verification is recorded at its run time, and SC4 runtime bytes remain identical to the verified ones."
+  "concurrentWork": "Subsequent uncommitted mapOriginal source/tool edits belong to another task. They are excluded from the source manifest and this commit; full verification is recorded at its run time, and SC4 runtime bytes remain identical to the verified ones.",
+  "acceptanceScope": {
+    "updatedAt": "2026-09-24",
+    "basis": "User-requested documentation scope revision; desktop WebGL1 low degradation and failure recovery.",
+    "implementationCommit": "5855bc3f",
+    "evidenceReused": true,
+    "stageExit": false,
+    "remaining": "SC4 sustained-60fps criterion and SC4-B4 closeout; lvr A3 remains dependent on SC4 exit."
+  },
+  "sourceSnapshotCommit": "5855bc3f"
 }

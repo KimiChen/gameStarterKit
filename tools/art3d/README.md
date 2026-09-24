@@ -91,7 +91,7 @@ UUID、文件 SHA 及采样元数据身份执行；配置、授权映射与检�
    RGBA8 验证使用显式能力故障注入，同时关闭 RGBA32F 的 SAMPLED_TEXTURE / RENDER_TARGET
    能力，核对实际纹理格式为 RGBA8、宽度 144，且实际编译 shader 的
    `CC_DEVICE_SUPPORT_FLOAT_TEXTURE` 为 0；只屏蔽 OES_texture_float 会留下 render-target
-   能力并产生格式与 shader 分支不一致。该注入不代表天然低端设备或真实微信硬件。
+   能力并产生格式与 shader 分支不一致。该注入不代表天然低端硬件。
    两个 GLB 文件、两个 skeleton UUID 或不同 clip 名字都不能证明纹理分开；若引擎仍放同一纹理，
    调整布局后重验，跨图集验收继续 pending，不能以文件分组替代引擎证据。
 4. 烘焙 / instancing / 浮点与 RGBA8 关节纹理 / WebGL1 行为属于 SC0-B3/B5 的真实引擎证据，

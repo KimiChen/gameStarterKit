@@ -128,7 +128,7 @@ lightmap 绑定，保存首载峰值、60 帧预热 + 240 帧原始间隔，以�
 `WebGLDevice` 且管线为 `WebPipeline` 时，首次夹具加载前的完整精确消息
 `This device does not support WebGL2` 记录为 `expectedBootDiagnostics`。这是 Creator 3.8.8
 先尝试 WebGL2 再回退 WebGL1 的初始化诊断；原始 console 全量保留。缺少冷启动时间证据、
-消息文本不同、夹具加载后出现或其他错误仍使检查失败，不能用于豁免微信真机错误。
+消息文本不同、夹具加载后出现或其他错误仍使检查失败。
 
 `inspectLightmapApi()` 仅检查已加载模块的方法与源码，不运行烘焙。
 主进程 `inspect-lightmap-browser` 同样只检查安装路径下两处明确的 Lightmap 包目录。

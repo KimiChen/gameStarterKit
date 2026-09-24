@@ -73,5 +73,5 @@ low 验 details 零加载；真实 GPU 能力仍由 quality 限制。此开关�
 首次加入扩展时在 Creator 扩展管理器刷新并确认启用；正常游戏启动场景仍是 `scene.scene`。
 
 本批证据见 [SC1-B8 摘要](../../docs/perf/stage3d/2026-09-22-sc1-b8.json)。WebGL1 使用单独测试页禁止
-WebGL2 context 创建，实际由 Creator WebGLDevice 渲染；不是微信真机证据。构建过滤在 Creator 中调用
+WebGL2 context 创建，实际由 Creator WebGLDevice 渲染；此证据限于桌面 WebGL1。构建过滤在 Creator 中调用
 注册钩子验证，不代表完整平台构建。20 次正式混合页面生命周期和 SC3/SC4 性能 / 缓存验证仍在后续批次。

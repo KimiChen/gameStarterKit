@@ -260,7 +260,7 @@ LOD2 一律拒播，内容 `hideAtLod` 与 details 门同样生效；禁用或�
 `maxUnitsWithoutInstancing` 上限约束，换模型前先安装关闭 instancing 的副本。首次进入实时的每个 clip
 重建一次求值状态，后续切换复用；不因缺少浮点纹理直接放弃可用的 RGBA8 预烘焙。
 `setLod / setQuality / evict / close` 沿用实体池语义；若新能力完全没有关节纹理，调用方先显式转换或移除 baked 单位。
-本批没有自动能力退化政策，完整 low / 公告板及真机缓存门仍在 SC4-B3。
+SC4-B3 已提供显式 low 退化策略与远档公告板；RGBA8 可用时保留烘焙，只有关节纹理不可用或提供的实测帧时超预算才退化。接法见 [预览工具说明](../tools/creator-preview/README.md#sc4-b3-low-退化)。
 
 玩法通过 `logic/gameplay/GameplayRegistry` 登记 factory 与该玩法自己的 room joiner，
 `RoomController.startRegistered` 取得同一 registration 的快照后接管精确 room capability。组合点采用生成式
@@ -336,7 +336,7 @@ SLG 的八件套包装逐件取得租约、收齐结果后统一校验，保留�
 微信、WebGL1 / GLES2、未知平台或 GPU 默认 low；消费 `details`、`shadows`、`maxUnits`、`maxEffects`、
 纹理及蒙皮能力字段，不自行重新判档。开发预览可用 `?quality=low|medium|high&shadows=0`；生产忽略覆写，
 开发覆写也不能开启硬件缺失的能力。SC1 已交付判档、数据表校验和压缩预设，SC3 已交付 `AssetPlan` / `EntityPool`
-的细节层加载门控与逐帧激活预算；蒙皮容量与真机缓存验收归 SC4。数据表和保守回退政策见 [画质说明](../tools/art3d/quality.md)。
+的细节层加载门控与逐帧激活预算；蒙皮容量与退化验收归 SC4。数据表和保守回退政策见 [画质说明](../tools/art3d/quality.md)。
 
 正式先例为 `Stage3dFixtureView` 与独立 `stage3d-dev.scene`（后者不进构建）；资产路径使用
 `{ bundle, path }`，GLB 取已登记的 Prefab 子路径，不能按 GLB 根路径加载 Prefab。
@@ -699,7 +699,7 @@ node tools/creator-preview/run.mjs stage3d --perf --quality high --expect-webgl 
 SC3 退出沿用并复核 [B5 六份报告](perf/stage3d/2026-09-24-sc3-b5.json)：每档请求 500 个立方体，low 的 100 个
 名额受 details 门控而隐藏，medium / high 激活 300 / 500 个；两种上下文各档 draw call 为 3 / 4 / 4、三角数为
 194 / 3794 / 6194。桌面 M4 的稳态 p95 范围为 17.9–34.6 ms，六组各 20 次开关的 GFX 内存均回基线。
-这些数字不构成 60fps、移动端或微信容量承诺；蒙皮 / 特效与真实微信缓存门仍在 SC4，阶段证据索引见
+这些数字不构成 60fps、移动端或微信容量承诺；蒙皮 / 特效与 low 退化验收归 SC4，阶段证据索引见
 [SC3 汇总](perf/stage3d/2026-09-24-sc3-review.json)。
 
 ## 9. 新页面开发清单

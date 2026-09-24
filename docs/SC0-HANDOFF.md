@@ -9,7 +9,7 @@
 - “保留”指保留验收资产、断言、现有配置或历史记录，不表示原型已成为正式框架 API。
 - “替换”须在目标批次完成正式实现与对应回归后进行；删除临时实现时同步清除入口、导入和诊断引用。
 - `apps/client/src` 是客户端真源；注册表用 codegen 更新，`apps/Cocos/assets/src` 用 `sync:client` 更新，禁止手改镜像。
-- SC0 固定桌面夹具不证明真实微信设备性能、缓存行为、任意骨架或内容包工具链；SC4-B3 和 SC5 继续执行各自验收。
+- SC0 固定桌面夹具不证明任意骨架、移动端容量或内容包工具链；SC4-B3 和 SC5 继续执行各自验收。
 
 ## 2. 运行时原型
 
@@ -41,7 +41,7 @@ FGUI 空白不保证传到全局 `input`；SC0 已验证从 UI/GRoot 明确分�
 | 回收粒子 processor 默认材质 | 经公开 `processor.getDefaultMaterial()` 记录此实例材质，等旧渲染引用退出后销毁 | SC4-B2；不能销毁共享外来材质 |
 | 首次实时模式重建动画状态 | 先挂非 instancing 材质，再切 `useBakedAnimation=false`，只调用一次 `addClip(existingMainClip)` 重建无 evaluator 的旧状态；之后复用 | SC4-B1；不改私有状态、不复制 clip、不反复重建；恢复时先切 baked 再恢复共享材质 |
 | 自定义关节纹理行对齐 | 两固定布局采用 float 宽 72、Creator RGBA8 宽 144；每骨每帧 3 / 12 texel 不跨 shader 行 | SC4-B1；正式布局按真实骨架和 clip 计算，保留跨行反例；不能沿用旧 64/128 布局 |
-| RGBA8 故障注入保持能力一致 | 引擎启动前同时屏蔽 float sampling 和相依 color-buffer 扩展，核对 SAMPLED_TEXTURE / RENDER_TARGET 均缺席、实际 RGBA8 和 shader macro=0 | SC4-B3 探针；只操作自有页面并恢复 hook，不能将注入结果记为天然低端 / 微信设备证据 |
+| RGBA8 故障注入保持能力一致 | 引擎启动前同时屏蔽 float sampling 和相依 color-buffer 扩展，核对 SAMPLED_TEXTURE / RENDER_TARGET 均缺席、实际 RGBA8 和 shader macro=0 | SC4-B3 探针；只操作自有页面并恢复 hook，不能将注入结果记为天然低端硬件证据 |
 
 跨图集另须保留当前按父 Material/Pass 隔离的事实：3.8.8 `InstancedBuffer.merge` 不把 jointTexture 放入分批键。
 正式 SkinnedUnits 按实际 jointTexture 和兼容实例布局分组，切 clip 后重新分组，不以 GLB 文件、UUID 或 clip 名替代 GPU 身份。

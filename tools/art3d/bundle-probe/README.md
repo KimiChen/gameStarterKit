@@ -56,6 +56,6 @@ node tools/creator-preview/probe-bundle-install.mjs "$BUNDLE_PROBE_OUT" after-un
 当前内置 allowlist 仅含标准 / unlit effect，版本、源文件与 meta 哈希在
 `apps/server/tools/plugin/creator-builtins-3.8.8.json`；本批验收时对照实际安装引擎核验。
 
-本探针不代替 SC1-B5 的完整资产格式、GLB、压缩、预算、授权检查，不代替 SC4 微信真机远程缓存验收。
+本探针不代替 SC1-B5 的完整资产格式、GLB、压缩、预算、授权检查。
 构建政策对应 Creator 官方 [Asset Bundle 文档](https://docs.cocos.com/creator/3.8/manual/en/asset/bundle.html)，
 具体 `package3d` profile 与 `.meta.bundleConfigID` 由当前安装版 3.8.8 的 Profile / AssetDB API 验证。
