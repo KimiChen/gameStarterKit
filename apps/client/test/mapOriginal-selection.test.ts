@@ -11,7 +11,7 @@ import { mapoGrid2Pos } from "../src/shared/kits/mapOriginal/api/hexmap/index";
 import { mapoSceneSprites } from "../src/kits/mapOriginal/logic/mapoScene";
 import { mapoSelectionSprites } from "../src/kits/mapOriginal/logic/mapoSelection";
 import { MAPO_CHOOSE } from "../src/shared/kits/mapOriginal/content/choose.data";
-import { MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../src/shared/kits/mapOriginal/content/decor.data";
+import { MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../tools/maporiginal-assets/read_presentation";
 function pieces(row: number, col: number, value: number) {
     const p = mapoDecorAt(row, col, value, true)!;
     return mapoSceneSprites(p.cell.scene, MAPO_DECOR_TEXTURES,

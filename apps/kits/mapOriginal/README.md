@@ -166,7 +166,7 @@ BufferAsset、reader ArrayBuffer 及展开对象归零。选中地块时，L3 �
 复测命令与口径见 [素材工具 O0](../../../tools/maporiginal-assets/README.md#o0可复测素材与预览基线)，
 实施状态只见 [优化方案 §9](../../../docs/MAPORIGINAL-2D-OPTIMIZATION.md#9-实施状态唯一登记处)。
 运行时素材位于 `apps/Cocos/assets/bundles/kit-mapOriginal-s1/2d/`，由 `manifest.json` 管理
-32 个逻辑素材的组、地址、源字节数和版本；文件按组目录存储，地址带源 SHA-256 的前 16 位。
+34 个逻辑素材的组、地址、源字节数和版本；文件按组目录存储，地址带源 SHA-256 的前 16 位。
 先加载并严格核对 manifest，再加载概览及其它需求组；布局 / 内容 / 配置不匹配时不安装任何图层。
 二进制额外校验长度与 CRC32，保留原 reader 的格式和边界验证。纹理校验尺寸，源 PNG hash 只在
 管线检查；ASTC / ETC 等平台变体由 Creator 构建清单和缓存版本处理。
@@ -367,7 +367,15 @@ trimRect / layoutVersion / contentHash`。资源件、道路、河岸及雪 top 
 
 同事修改美术或配置应改输入和导出器，再走生成 → 安装 → 同步；不手改派生图片表和 Cocos 镜像。
 重建与核验入口见 [素材工具 O2](../../../tools/maporiginal-assets/README.md#o2保留原画布的透明裁边)。
-当前内容 TS 为 17 文件、1,542,445 B；配置外置仍是后续独立批次。
+资源件节点/动画/图片表保存在 `data/maps/s1/decor-config.json`，三族 top 的布局和动态场景保存在
+`tops-config.json`。安装器以相同 UTF-8 JSON 字节生成带内容哈希的 `.bin`，供 BufferAsset 按组加载；
+扩展名用于 Creator 原始字节导入，不代表改为二进制 schema。先验证长度/CRC，再验证 schema、
+版本、纹理引用、矩形边界、节点和轨道，整组通过才 ready。失败沿用原组重试，不静默跳过坏节点。
+资源件配置归 resources，top 配置归 geography；宽限结束、加载取消或关页时沿组生命周期清理。
+`MapoDataStore` 持有各实例配置；运行时不导入离线工具，也不从空的离线兼容 reader 借配置。
+`decor.data.ts` / `tops.data.ts` 只留类型与小常量，`top-scenes.data.ts` 已退役。
+当前 content TS 为 18 文件、829,964 B（含类型及 manifest），通行层、带归属与小型规则仍保留 shared 入口。
+具体格式试验、构建差额和验收数字只登记在优化方案 §9。
 
 ### 件的大小也是原版参数，⛔ 不按格拉伸
 

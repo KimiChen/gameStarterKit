@@ -7,7 +7,7 @@ import { buildMapoSpriteMesh } from "../src/kits/mapOriginal/logic/mapoMesh";
 import { mapoGridLineSprites } from "../src/kits/mapOriginal/logic/mapoGridLines";
 import { mapoRoadsInRect, mapoSetRoads, mapoRoadCellAt, mapoRoadPos } from "../src/kits/mapOriginal/logic/mapoRoads";
 import { MAPO_ROAD_CELLS, MAPO_ROAD_TEXTURES, MAPO_ROAD_ATLAS_W, MAPO_ROAD_ATLAS_H } from "../src/shared/kits/mapOriginal/content/roads.data";
-import { MAPO_DECOR_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../src/shared/kits/mapOriginal/content/decor.data";
+import { MAPO_DECOR_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../tools/maporiginal-assets/read_presentation";
 import type { IMapoPrefabNode } from "../src/shared/kits/mapOriginal/content/prefabs.types";
 
 const PLACE = { x: 0, y: 0, row: 0, col: 0 };

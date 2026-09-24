@@ -3,9 +3,9 @@ import { test } from 'node:test';
 import { buildMapoSpriteMesh, type MapoSpriteInput } from '../src/kits/mapOriginal/logic/mapoMesh';
 import { mapoSceneSprites } from '../src/kits/mapOriginal/logic/mapoScene';
 import type { IMapoPrefabNode } from '../src/shared/kits/mapOriginal/content/prefabs.types';
-import { MAPO_DECOR_CELLS, MAPO_DECOR_SNOW_CELLS, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from '../src/shared/kits/mapOriginal/content/decor.data';
-import { MAPO_TOP_ATLASES } from '../src/shared/kits/mapOriginal/content/tops.data';
-import { MAPO_TOP_SCENES } from '../src/shared/kits/mapOriginal/content/top-scenes.data';
+import { MAPO_DECOR_CELLS, MAPO_DECOR_SNOW_CELLS, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../tools/maporiginal-assets/read_presentation";
+import { MAPO_TOP_ATLASES } from "../../../tools/maporiginal-assets/read_presentation";
+import { MAPO_TOP_SCENES } from "../../../tools/maporiginal-assets/read_presentation";
 
 /** Independent affine interpolation of the original untrimmed quad. */
 function sameSourcePixels(sprite: MapoSpriteInput): void {

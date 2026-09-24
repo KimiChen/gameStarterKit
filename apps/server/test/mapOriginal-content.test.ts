@@ -21,7 +21,7 @@ import {
 import {
     MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_TEXTURES,
     MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS, MAPO_DECOR_IMAGE_CELLS, MAPO_DECOR_IMAGES, type IMapoDecorCell,
-} from "@game/shared/kits/mapOriginal/content/decor.data";
+} from "../../../tools/maporiginal-assets/read_presentation";
 import {
     MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_TEXTURES,
     MAPO_REGION_STORAGE_LIMIT, MAPO_REGION_SNOW_CELLS,
@@ -48,7 +48,7 @@ import {
 } from "@game/shared/kits/mapOriginal/content/blocks.data";
 import {
     MAPO_TOP_ATLASES, MAPO_TOP_DOWNSCALE, MAPO_TOP_RECORD_BYTES,
-} from "@game/shared/kits/mapOriginal/content/tops.data";
+} from "../../../tools/maporiginal-assets/read_presentation";
 import {
     MAPO_ROAD_ATLAS_H, MAPO_ROAD_ATLAS_W, MAPO_ROAD_CELLS, MAPO_ROAD_TEXTURES, MAPO_ROAD_D_BIAS,
     MAPO_ROAD_HALF_H, MAPO_ROAD_HALF_W, MAPO_ROAD_HEADER_BYTES, MAPO_ROAD_RECORD_BYTES,
@@ -65,7 +65,7 @@ function kit(name: string): Buffer { return readFileSync(new URL(name, kitDir));
 function cocos(name: string): Buffer {
     const logical = name === "terrain.bin" ? "terrain.bytes" : name;
     const record = name === "terrain.bytes" ? undefined : MAPO_S1_MANIFEST.assets[logical];
-    return readFileSync(new URL(record ? record.path + name.slice(name.lastIndexOf(".")) : `2d/${name}`, cocosDir));
+    return readFileSync(new URL(record ? record.path + (record.type === "buffer" ? ".bin" : name.slice(name.lastIndexOf("."))) : `2d/${name}`, cocosDir));
 }
 function sha256(b: Buffer | Uint8Array): string {
     return createHash("sha256").update(b).digest("hex");

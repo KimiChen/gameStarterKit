@@ -58,17 +58,21 @@ export interface IMapoDecorCell {
     readonly scene: IMapoPrefabNode;
 }
 '''
-    ts += f'export const MAPO_DECOR_ATLAS_W = {atlas.width};\nexport const MAPO_DECOR_ATLAS_H = {atlas.height};\n'
-    ts += 'export const MAPO_DECOR_IMAGE_CELLS = '+json.dumps([{k:v for k,v in c.items() if k != 'source'} for c in cells])+' as const;\n'
-    ts += 'export const MAPO_DECOR_IMAGES: MapoTextureLayouts = '+json.dumps(runtime_textures(layout))+';\n'
-    ts += '''export const MAPO_DECOR_TEXTURES: readonly IMapoPrefabCell[] = MAPO_DECOR_IMAGE_CELLS.map(c => {
-    const texture = MAPO_DECOR_IMAGES[c.textureId];
-    return { id: c.id, textureId: c.textureId, rect: texture.rect, window: texture };
-});
-'''
-    for variant, name in [('base','MAPO_DECOR_CELLS'),('snow','MAPO_DECOR_SNOW_CELLS'),('desert','MAPO_DECOR_DESERT_CELLS')]:
-        ts += 'export const '+name+': readonly IMapoDecorCell[] = '+json.dumps(variants[variant],ensure_ascii=False,separators=(',',':'))+';\n'
-    (out/'decor.data.ts').write_text(ts)
+    ts += """export interface IMapoDecorConfig {
+    readonly schemaVersion: 1;
+    readonly mapId: string;
+    readonly kind: "decor";
+    readonly size: readonly [number, number];
+    readonly cells: readonly { readonly id: number; readonly textureId: string }[];
+    readonly textures: MapoTextureLayouts;
+    readonly variants: Readonly<Record<"base" | "snow" | "desert", readonly IMapoDecorCell[]>>;
+}
+"""
+    config = {"schemaVersion": 1, "mapId": args.map, "kind": "decor", "size": list(atlas.size),
+              "cells": [{k: v for k, v in c.items() if k != 'source'} for c in cells],
+              "textures": runtime_textures(layout), "variants": variants}
+    (out/'decor-config.json').write_text(json.dumps(config, ensure_ascii=False, separators=(',', ':')))
+    (out/'decor.data.ts').write_text(ts.replace('IMapoPrefabNode, IMapoPrefabCell', 'IMapoPrefabNode'))
     write_types(out)
     print(f'完整 prefab:135，节点:{info["nodes"]}，纹理:{len(cells)}，替代等级:0；{atlas.size}')
 

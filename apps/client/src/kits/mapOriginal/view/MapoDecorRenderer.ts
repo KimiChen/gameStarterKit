@@ -6,9 +6,7 @@
  * ⚠ 图集没加载出来就整层不建 —— ⛔ 不用纯色方块占位（那比没有还难看）。
  */
 import { Material, Node } from "cc";
-import { mapoDecorAt } from "../logic/mapoDecor";
 import { mapoSceneAnimated, mapoSceneSprites } from "../logic/mapoScene";
-import { MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../shared/kits/mapOriginal/content/decor.data";
 import { buildMapoSpriteMeshes, type MapoSpriteInput } from "../logic/mapoMesh";
 import { mapoDecorEnabledFor } from "../logic/mapoSettings";
 import type { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
@@ -49,11 +47,11 @@ export class MapoDecorRenderer {
         this.animated = false;
         const sprites: MapoSpriteInput[] = [];
         for (const { row, col } of cells) {
-            const place = mapoDecorAt(row, col, logic.data.terrain.mapoValueAt(row, col), enabled, logic.data.bands.mapoBandAt);
+            const place = logic.data.decor.mapoDecorAt(row, col, logic.data.terrain.mapoValueAt(row, col), enabled, logic.data.bands.mapoBandAt);
             if (!place) continue;
             this.animated = this.animated || mapoSceneAnimated(place.cell.scene);
-            sprites.push(...mapoSceneSprites(place.cell.scene, MAPO_DECOR_TEXTURES,
-                [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H], this.seconds, place));
+            sprites.push(...mapoSceneSprites(place.cell.scene, logic.data.decor.textures,
+                logic.data.decor.size, this.seconds, place));
         }
         if (sprites.length === 0) { this.clear(); return 0; }
         const geometry = buildMapoSpriteMeshes(sprites);

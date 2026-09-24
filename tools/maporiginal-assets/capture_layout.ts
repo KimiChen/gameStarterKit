@@ -19,7 +19,7 @@ import { mapoSetRiverGeo, mapoSetRivers } from "../../apps/client/src/kits/mapOr
 import { mapoSetTops } from "../../apps/client/src/kits/mapOriginal/logic/mapoTops";
 import { mapoSetRoads } from "../../apps/client/src/kits/mapOriginal/logic/mapoRoads";
 import { mapoSceneSprites } from "../../apps/client/src/kits/mapOriginal/logic/mapoScene";
-import { MAPO_DECOR_CELLS, MAPO_DECOR_SNOW_CELLS, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../apps/client/src/shared/kits/mapOriginal/content/decor.data";
+import { MAPO_DECOR_CELLS, MAPO_DECOR_SNOW_CELLS, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "./read_presentation";
 import type { IMapoPrefabCell } from "../../apps/client/src/shared/kits/mapOriginal/content/prefabs.types";
 
 const timeArg = process.argv.indexOf("--seconds");

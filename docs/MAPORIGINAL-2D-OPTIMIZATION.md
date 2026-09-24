@@ -570,7 +570,7 @@ O4 发布格式验证仍由各批交付。Creator 重放需要本地服务和可
 | O3-B1 分组租约与数据生命周期 | 已完成（2026-09-24） | 概览先交付；分组 AssetLease、实例数据持有者、5 秒出档宽限及帧末归还；竖版 40 步与十次重开通过，L3 源纹理 8.50 MiB、关闭后 reader / BufferAsset / 源纹理 / RT 均为 0；全量闸的既有文档不一致单独记录于下文 |
 | O3-B2 Bundle 与版本绑定 | 已完成（2026-09-24） | 独立 `kit-mapOriginal-s1/2d` Bundle、manifest 内容/布局/配置绑定、3 个作者态文件退出运行时；竖版 40 步、5 项故障/缓存检查与 Web 构建通过，全量 `verify:all` 通过 |
 | O4 GPU 压缩 | 已完成（桌面发布验收） | 12 张颜色图使用 ASTC 4×4 + 原 PNG 回退；实际 Web 发布源纹理 82.6253→32.9378 MiB（−60.14%）。水色/法线/格线/选框/极小图保留 PNG；质量、构建和桌面 GPU 证据见下方 |
-| O5 大配置外置 | 未开始 | — |
+| O5 大配置外置 | 已完成（桌面发布验收） | decor / top 场景及布局已外置 JSON；相关发布 JS 640,420→40,878 B，净减 599,542 B；完整树与固定时间等价、41 步竖版重放及 6 条发布路径通过。全量闸因缺少无关 Mail.psd 未通过，详见下方记录 |
 | O6 动画更新优化 | 未开始 | 后续批次，不阻塞前五项 |
 
 阶段退出时记录源码提交、产物指纹、命令退出码、设备/图形 API、证据目录和前后分项统计。
@@ -966,7 +966,7 @@ Bundle 名为 `kit-mapOriginal-s1`。仍沿用 O3-B1 的概览优先、按需分
 本批完整 `npm run verify:all` 通过（服务端 **1,399 项**通过），完整日志保留在上述证据目录。
 B1 记录中的根文档同步问题在当前基线上已不再触发；本批未修改 AGENTS/CLAUDE。
 
-以上为 O3-B2 完成时的记录。后续压缩实施见下节；O5/O6 未实施。
+以上为 O3-B2 完成时的记录。后续压缩与配置外置实施见下节；O6 未实施。
 
 ### O4 实施与桌面验收（2026-09-24）
 
@@ -1063,4 +1063,95 @@ FGUI **66 项**及其余聚合闸通过，日志为 `verify-all.log`。独立 Py
 manifest 回归 **3 项**通过，安装器 `--check` 通过；Python 与发布引擎检查不冒称由 verify:all 覆盖。
 
 **O4 已按桌面发布验收完成。**
-O5/O6 尚未开始。
+后续 O5 实施见下节；O6 尚未开始。
+
+
+### O5 实施与验收（2026-09-24）
+
+基线提交 `ac272cee`；证据根 `.cache/creator-preview/maporiginal-optimization/o5/`。
+`summary.json` 绑定本批最终源码提交、文件哈希、发布包与各项报告，失败记录同时保留。
+本批外置资源件完整树/动画/布局与 top 完整动态树/布局；其它较小图片表、规则、通行层和带归属
+仍保留 TS，本批未全量 JSON 化 shared，也未修改原版坐标、LOD 档界或图片像素。
+
+**数据和生命周期**：
+
+- `pack_decor.py` 导出 `decor-config.json`：135 个资源 prefab、659 个节点、320 个纹理引用。
+- `build_tops.py` 导出 `tops-config.json`：3 个图集、92 个纹理引用、4 个动态场景；
+  1,899 个静态 top 记录继续使用原二进制库。`top-scenes.data.ts` 及其镜像已移除，
+  `decor.data.ts` / `tops.data.ts` 只留类型和小常量。
+- 安装器把可读 JSON 的相同 UTF-8 字节发布为 `.bin` BufferAsset，保持长度/CRC 验证及按组释放；
+  `.bin` 是 Creator 导入约定，内容仍是 JSON。路径、manifest 内容版及布局版绑定这些外置配置。
+- decor 随 resources、top 随 geography 加载；纯 Logic reader 先验证 schemaVersion/mapId、
+  UTF-8、字段集合、数值/向量、纹理和帧 ID、图集/裁边边界、节点深度及轨道，再原子安装。
+  缺失/损坏使整组失败并走已有重试，未就绪不借全局配置、不忽略坏节点。
+- `MapoDataStore` 独立持有配置与索引。宽限到期、关页清空配置；取消后的迟到 Asset 沿原租约归还。
+  诊断新增 `decor` 和 top 配置持有量；对象个数、配置源字节与 ArrayBuffer 分开，不能相加当 JS 堆。
+  离线工具通过 `read_presentation.ts` 显式注入，Node 文件读取不进入运行时或 shared。
+
+**格式选择实测**（Apple M4，Node v26.5.0；`format-final.json`）：
+
+| 格式 / 指标 | decor | tops | 合计 |
+|---|---:|---:|---:|
+| 外置 JSON 原字节 | 626,411 B | 87,991 B | 714,402 B |
+| JSON gzip level 9 | 61,719 B | 12,084 B | 73,803 B |
+| 字符串字典 + f64 二进制候选 | 555,743 B | 76,547 B | 632,290 B |
+| 二进制 gzip level 9 | 56,770 B | 12,167 B | 68,937 B |
+
+二进制保留全部字段与 f64、不量化，只比 JSON 少 4,866 B 的 gzip 估算值；
+其解码中位数约为 JSON.parse 的两倍以上，20 份结果经显式 GC 测得的每份保留堆约为 JSON 的两倍。
+本批选择 JSON。gzip 是离线传输估算，未把源包体积当作实际 HTTP 下载量。
+JSON.parse 本身只占加载的一部分；当前发布 reader 连同 UTF-8、CRC 与完整校验，
+decor / top 中位数分别 **6.97 / 1.02 ms**，p95 **7.75 / 1.16 ms**。
+原三份 TS 的隔离冷编译中位数合计约 **6.58 ms**，执行约 **2.00 ms**；
+这些是同一桌面运行时微基准，不能相加推算整页启动时间或声称各设备同比加速。
+保留堆按解析结果分别记录；TS 编译产物持有量另列，不与数据对象重复求和。
+
+**脚本与发布包**：
+
+content TS（含类型和 manifest）由 **19 文件 / 1,555,855 B** 降为 **18 文件 / 829,964 B**。
+`measure_config_build.mjs` 用 AST 分离实际发布的 System.register 模块；12 个相关模块
+（含新增 reader、manifest 与消费者开销）由 **640,420 B → 40,878 B**，净减 **599,542 B（585.49 KiB）**。
+完整主 JS 为 5,564,041→5,168,659 B；同期生成的 Mail 等非地图模块不同，`build-size.json`
+将其单列，完整主 JS 差额不作为本批净收益。
+外置数据增加两次按组请求及 714,402 B 原始 Bundle 负载；不宣称总体源文件体积下降。
+近景仍需解析完整配置，实际收益是脚本不再内嵌大对象，出档可回收配置，L3 不加载或保留它们。
+
+实际 Web 发布目录为 `build-final/web-mobile/`。`build-audit.json` 验证 34 个资源地址及 manifest、
+44 个 native 文件、两份配置发布字节与源 SHA 完全一致；纹理/effect 与 O4 逐项一致，
+显式提供原 manifest 复用画质证据，继续逐张验证当前 ASTC 与 O4 试验文件 hash 一致。
+报告保留原画质内容版本和当前内容版本，未重新标注历史画质试验。
+PNG/ASTC 驻留、图集大小与原版布局不变，overview 重烘几何 SHA 仍为
+`62b400a794b65ba6286e1eabd637eeb572189cc4e087b4c6269554b1cb0a18fe`，PNG 字节未变。
+
+**已取得的回归证据**：
+
+- 迁移前 TS 与新 JSON 逐字段 deepEqual（包括负零）；冻结树指纹及 0 / 0.125 / 0.5 / 1 / 2 / 10 秒
+  共 **834 个样本 / 2,011 个精灵**的求值指纹，覆盖变换、乘加色、纹理窗口和 UV。
+- 客户端地图 + 服务端内容专项 **121 项通过**；增加截断、错版、非法纹理 ID、越界裁边、错误轨道、
+  非法 UTF-8、未就绪/失败不污染实例与清理后重新加载。安装器 Python **4 项**、压缩与证据绑定 **7 项**通过。
+- 原包 381 个入口及图集像素核验通过；源图片不变，原有道路/山体/城市等内容回归继续通过。
+- 编辑器 `preview-portrait-focus/report.json` **41 步通过**、console / 错误浮层均为 0，
+  实际 canvas 为 CSS 393×719.53125、DPR 2、backing 786×1440；包括完整 LOD 往返、地貌/画质、
+  十次关闭/重开和迟到回调。L3 的 decor/top 所有配置计数归零，关页后全部地图持有归零。
+- 首轮 `preview-portrait` 的 23 步在超高画质采样遇到后台可见性变化而失败，console 为 0；
+  另一次无输出的重试被主动终止。有效重放显式设置 `MAPO_PREVIEW_FOCUS=1`，在同一 CDP 会话
+  保持引擎推进并在报告登记，不把它的采样值当真实前台帧时或功耗证据。
+
+- 实际发布包的 `release-portrait` / `release-landscape-final` / `release-webgl1` 各有
+  ASTC 和注入不支持 ASTC 后的 PNG 回退两条路径，合计 **6 条通过**。均验证两份外置配置已装载、
+  L1 缓存、L3 配置计数归零、十次关闭/重开全部释放；源纹理 GPU 字节分别为
+  34,537,776 / 86,638,896 B，与 O4 一致。WebGL2 无 console 错误；WebGL1 各保留一条
+  主动禁用 WebGL2 后的预期引擎 16405，除此以外无警告/错误。
+- 首轮 `release-landscape` 在地图加载前出现 `release boot` 超时，console 为 0，
+  尚未产生地图 native 请求；同一发布包顺序重跑通过。原因未确认，失败报告保留，不计入通过路径。
+  发布探针也使用 focus emulation，其结果只作为格式、配置和生命周期证据。
+- 原有预览已恢复竖版与普通近景，普通输入选中 `(750,749)` / 原版值 26；
+  `restored-portrait.json/.png` 记录 CSS 393×719.53125、DPR 2、backing 786×1440，console 为 0。
+- `verify:core`、客户端 **1,363 项**、FGUI **66 项**与类型检查通过；独立补跑服务端全量
+  **1,399 项通过**。最终同步校验、安装器 `--check` 与 `git diff --check` 通过。
+- **`npm run verify:all` 未通过**：UniFlex **81/82 项**，
+  `ScreenHeader instance overrides are the properties that differ from the component` 因缺少
+  `apps/art/uniflex/Mail/Mail.psd` 报 ENOENT；日志为 `verify-all.log`。
+  本批未修改该测试或 Mail 素材，未用占位 PSD 绕过。服务端补跑日志为 `server-tests.log`。
+
+**O5 已按上述桌面范围完成；全量聚合闸的无关素材缺失单独保留。O6 未开始。**

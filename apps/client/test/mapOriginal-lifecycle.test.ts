@@ -1,3 +1,4 @@
+import { decorConfigBytes, topConfigBytes } from "../../../tools/maporiginal-assets/read_presentation";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -14,6 +15,7 @@ import { MAPO_S1_MANIFEST, mapoValidateManifest, mapoValidateBuffer, mapoValidat
 const bytes = (name: string) => readFileSync(new URL(`../../kits/mapOriginal/data/maps/s1/${name}`, import.meta.url));
 const retained = (data: MapoDataStore) => Object.values(data.usage()).reduce((n, u) => n + u.arrayBufferBytes, 0);
 function populate(data: MapoDataStore): void {
+    data.decor.mapoSetDecorConfig(decorConfigBytes); data.tops.mapoSetTopConfig(topConfigBytes);
     data.terrain.mapoSetDisplayTerrain(bytes("terrain.bytes"));
     data.terrain.mapoPassClassAt(750, 749);
     data.bands.mapoBandAt(220, 80);

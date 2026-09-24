@@ -6,6 +6,7 @@ import { createMapoRoadsData } from "./mapoRoads";
 import { createMapoCitiesData } from "./mapoCities";
 import { createMapoBlocksData } from "./mapoBlocks";
 import { createMapoRiversData } from "./mapoRivers";
+import { createMapoDecorData } from "./mapoDecor";
 import { createMapoTopsData } from "./mapoTops";
 
 import { MAPO_S1_MANIFEST } from "./mapoManifest";
@@ -35,6 +36,7 @@ export class MapoDataStore {
     readonly blocks = createMapoBlocksData();
     readonly rivers = createMapoRiversData();
     readonly tops = createMapoTopsData();
+    readonly decor = createMapoDecorData();
     private closed = false;
 
     constructor(readonly identity: MapoContentIdentity = MAPO_S1_CONTENT) {}
@@ -48,7 +50,7 @@ export class MapoDataStore {
 
     /** 不触发惰性解码；缓冲区计真实字节，对象只计个数。 */
     usage(): Readonly<Record<string, Readonly<Record<string, number>>>> {
-        return { terrain: this.terrain.mapoTerrainDataUsage(), bands: this.bands.mapoBandsDataUsage(),
+        return { decor: this.decor.mapoDecorDataUsage(), terrain: this.terrain.mapoTerrainDataUsage(), bands: this.bands.mapoBandsDataUsage(),
             regions: this.regions.mapoRegionsDataUsage(), roads: this.roads.mapoRoadsDataUsage(),
             cities: this.cities.mapoCitiesDataUsage(), blocks: this.blocks.mapoBlocksDataUsage(),
             rivers: this.rivers.mapoRiversDataUsage(), tops: this.tops.mapoTopsDataUsage() };
@@ -57,6 +59,6 @@ export class MapoDataStore {
     dispose(): void {
         if (this.closed) return;
         this.closed = true;
-        this.clearGeography(); this.terrain.dispose(); this.cities.dispose();
+        this.clearGeography(); this.terrain.dispose(); this.cities.dispose(); this.decor.dispose();
     }
 }

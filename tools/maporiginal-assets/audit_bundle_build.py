@@ -14,7 +14,17 @@ from texture_policy import POLICY, quality_failures
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def audit(base, manifest, quality):
+def verify_quality_binding(manifest, quality, previous_manifest=None):
+    if quality['contentVersion'] == manifest['contentVersion']: return
+    if not previous_manifest or quality['contentVersion'] != previous_manifest['contentVersion']:
+        raise ValueError('压缩画质报告版本不符')
+    visual = lambda m: {k: v for k, v in m['assets'].items() if v['type'] in ('texture', 'effect')}
+    if manifest['mapId'] != previous_manifest['mapId'] or visual(manifest) != visual(previous_manifest):
+        raise ValueError('复用画质证据要求所有源纹理、effect、尺寸和地址完全相同')
+
+
+def audit(base, manifest, quality, previous_manifest=None):
+    verify_quality_binding(manifest, quality, previous_manifest)
     configs = {}
     for p in (base / 'assets').glob('*/config.*.json'):
         if p.parent.name in configs:
@@ -29,7 +39,6 @@ def audit(base, manifest, quality):
         if other != name and any(v[0].startswith('kits/mapOriginal/') or v[0] in required for v in cfg['paths'].values()):
             raise ValueError(f'{other} 包含重复地图素材')
     native = [p for p in (base / 'assets' / name / 'native').rglob('*') if p.is_file()]
-    if quality['contentVersion'] != manifest['contentVersion']: raise ValueError('压缩画质报告版本不符')
     verified = set()
     textures = {}
     for logical, record in manifest['assets'].items():
@@ -81,6 +90,7 @@ def audit(base, manifest, quality):
     total = sum(p.stat().st_size for p in allfiles)
     return {'basis': 'Uncompressed Web build files on disk, not network transfer bytes or miniGame main package',
             'mapId': manifest['mapId'], 'contentVersion': manifest['contentVersion'],
+            'qualitySourceContentVersion': quality['contentVersion'],
             'totalFiles': len(allfiles), 'totalBytes': total, 'bundles': bundles,
             'mapBundleBytes': bundles[name]['bytes'], 'mainApplicationExcludingMapBytes': total - bundles[name]['bytes'],
             'mainResourcesMapPaths': 0, 'verifiedRuntimeAddresses': len(required), 'verifiedNativeFiles': len(native),
@@ -96,9 +106,11 @@ def main():
     parser.add_argument('--build-dir', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--quality-report', type=Path, required=True)
+    parser.add_argument('--previous-manifest', type=Path, help='仅配置变更时，显式用旧 manifest 核对所有纹理/effect 完全相同；仍逐张核验发布 ASTC hash')
     args = parser.parse_args()
     manifest = json.loads((ROOT / 'apps/kits/mapOriginal/data/maps/s1/manifest.json').read_text())
-    report = audit(args.build_dir, manifest, json.loads(args.quality_report.read_text()))
+    report = audit(args.build_dir, manifest, json.loads(args.quality_report.read_text()),
+                   json.loads(args.previous_manifest.read_text()) if args.previous_manifest else None)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps({k: report[k] for k in ['mapBundleBytes', 'mainApplicationExcludingMapBytes', 'verifiedNativeFiles']}))

@@ -8,9 +8,24 @@ from measure_compression import astc_info, image_error
 from texture_policy import POLICY, apply_texture_policy, quality_failures, validate_builder
 from install_to_kit import meta_for
 from audit_compression_quality import verify_sources
+from audit_bundle_build import verify_quality_binding
 
 
 class CompressionTests(unittest.TestCase):
+    def test_config_only_revision_reuses_quality_only_with_exact_visual_bindings(self):
+        old = {'mapId': 's1', 'contentVersion': 'old', 'assets': {
+            'image': {'type': 'texture', 'sourceSha256': 'png', 'size': [4, 4]},
+            'shader': {'type': 'effect', 'sourceSha256': 'shader'}}}
+        current = deepcopy(old); current['contentVersion'] = 'new'
+        current['assets']['config'] = {'type': 'buffer', 'sourceSha256': 'json'}
+        quality = {'contentVersion': 'old'}
+        with self.assertRaises(ValueError): verify_quality_binding(current, quality)
+        verify_quality_binding(current, quality, old)
+        for name in ('image', 'shader'):
+            bad = deepcopy(current); bad['assets'][name]['sourceSha256'] = 'changed'
+            with self.assertRaises(ValueError): verify_quality_binding(bad, quality, old)
+        with self.assertRaises(ValueError): verify_quality_binding(current, {'contentVersion': 'other'}, old)
+
     def test_astc_header_counts_blocks_not_pixels_and_rejects_trailing_mips(self):
         data = bytes.fromhex('13aba15c') + bytes([4, 4, 1]) + b''.join(n.to_bytes(3, 'little') for n in (7, 5, 1)) + b'\0' * 64
         self.assertEqual(astc_info(data)['gpuBytes'], 64)

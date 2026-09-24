@@ -78,7 +78,13 @@ if __name__ == "__main__":
     if args.before_content:
         for filename, names in [('decor.data.ts', ['MAPO_DECOR_CELLS', 'MAPO_DECOR_SNOW_CELLS', 'MAPO_DECOR_DESERT_CELLS']),
                                 ('top-scenes.data.ts', ['MAPO_TOP_SCENES'])]:
-            assert json_exports(args.before_content/filename, names) == json_exports(args.after_content/filename, names), filename
+            before = json_exports(args.before_content/filename, names)
+            if filename == 'decor.data.ts':
+                variants = json.loads((args.after/'decor-config.json').read_text())['variants']
+                after = dict(zip(names, (variants[k] for k in ('base', 'snow', 'desert'))))
+            else:
+                after = {'MAPO_TOP_SCENES': json.loads((args.after/'tops-config.json').read_text())['scenes']}
+            assert before == after, filename
         result['unchangedPrefabGraphs'] = True
     if args.minimap_source:
         meta = json.loads((args.after/'minimap.info.json').read_text())

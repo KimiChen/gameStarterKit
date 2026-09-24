@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
     MAPO_TOP_ATLASES, MAPO_TOP_DOWNSCALE, MAPO_TOP_RECORD_BYTES,
-} from "../src/shared/kits/mapOriginal/content/tops.data";
+} from "../../../tools/maporiginal-assets/read_presentation";
 import { mapoOriginalPxToWorld } from "../src/shared/kits/mapOriginal/api/hexmap/index";
 import {
     MAPO_TOP_KINDS, mapoHasTops, mapoSetTops, mapoTopUv, mapoTopsFor,

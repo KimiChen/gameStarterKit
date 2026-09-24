@@ -7,7 +7,7 @@ import { MapoCamera } from "../src/kits/mapOriginal/logic/mapoCamera";
 import { mapoCacheTiles, MAPO_CACHE_BYTES, MapoLodCache } from "../src/kits/mapOriginal/logic/mapoLodCache";
 import { buildMapoSpriteMesh, buildMapoSpriteMeshes, buildMapoPolygonMeshes, type MapoSpriteInput } from "../src/kits/mapOriginal/logic/mapoMesh";
 import { mapoLayoutLabels, mapoCityMarkers } from "../src/kits/mapOriginal/logic/mapoLabels";
-import { MAPO_DECOR_CELLS, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../src/shared/kits/mapOriginal/content/decor.data";
+import { MAPO_DECOR_CELLS, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS, MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../tools/maporiginal-assets/read_presentation";
 import { mapoSceneSprites } from "../src/kits/mapOriginal/logic/mapoScene";
 import { MAPO_STATIC_DECOR_MARGIN, mapoRegionSprites } from "../src/kits/mapOriginal/logic/mapoStaticScene";
 import { mapoSetRegions, resetMapoRegions } from "../src/kits/mapOriginal/logic/mapoRegions";

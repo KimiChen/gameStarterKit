@@ -1,7 +1,6 @@
 import type { MapoDataStore } from "./MapoDataStore";
 /** 静态缓存与概览烘焙共用的场景展开；所有坐标、UV、锚点仍由近景同一套逻辑提供。 */
 import { mapoGrid2Pos, MAPO_MAP_ROWS, MAPO_MAP_COLS, MAPO_TILE_HALF_W, MAPO_TILE_HALF_H } from "../../../shared/kits/mapOriginal/api/hexmap/index";
-import { MAPO_DECOR_TEXTURES, MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H } from "../../../shared/kits/mapOriginal/content/decor.data";
 import { MAPO_REGION_ATLAS_W, MAPO_REGION_ATLAS_H } from "../../../shared/kits/mapOriginal/content/region.data";
 import { MAPO_RIVER_SYSTEMS } from "../../../shared/kits/mapOriginal/content/river.data";
 import { buildMapoGroundMeshes, buildMapoPolygonMeshes, buildMapoSpriteMeshes, type MapoGeometry, type MapoSpriteInput } from "./mapoMesh";
@@ -12,7 +11,7 @@ import { mapoRegionsInRect, mapoRegionUv } from "./mapoRegions";
 import { mapoRoadsInRect } from "./mapoRoads";
 import { mapoRiversInRect } from "./mapoRivers";
 import { mapoPrefabSkew, mapoPrefabUv } from "./mapoPrefab";
-import { mapoDecorAt } from "./mapoDecor";
+import { mapoOfflineDecor } from "./mapoDecor";
 import { mapoSceneSprites } from "./mapoScene";
 import { mapoValueAt } from "./mapoTerrain";
 import type { IMapoPrefabCell } from "../../../shared/kits/mapOriginal/content/prefabs.types";
@@ -36,8 +35,10 @@ export function mapoRegionSprites(rect: IMapoGroundRect, data?: MapoDataStore): 
 
 /** 资源件可以越过块边，按完整 prefab 展开后做实际几何相交；不按格心裁掉跨块部分。 */
 export function mapoStaticDecorSprites(rect: IMapoGroundRect, seconds = 0,
-    textures: readonly IMapoPrefabCell[] = MAPO_DECOR_TEXTURES,
-    atlas: readonly [number, number] = [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H], data?: MapoDataStore): MapoSpriteInput[] {
+    textures?: readonly IMapoPrefabCell[],
+    atlas?: readonly [number, number], data?: MapoDataStore): MapoSpriteInput[] {
+    const decor = data?.decor ?? mapoOfflineDecor;
+    textures ??= decor.textures; atlas ??= decor.size;
     // 当前资产最大外伸 < 256 世界像素；下面对实际顶点的回归测试守住这个内容契约。
     const margin = MAPO_STATIC_DECOR_MARGIN;
     const s0 = -(rect.top + margin) / MAPO_TILE_HALF_H - 2;
@@ -49,7 +50,7 @@ export function mapoStaticDecorSprites(rect: IMapoGroundRect, seconds = 0,
         for (let col = Math.max(0, Math.floor((s0 - d1) / 2)); col <= Math.min(MAPO_MAP_COLS - 1, Math.ceil((s1 - d0) / 2)); col++) {
             const p = mapoGrid2Pos(row, col);
             if (p.x < rect.left - margin || p.x > rect.right + margin || p.y < rect.bottom - margin || p.y > rect.top + margin) continue;
-            const place = mapoDecorAt(row, col, (data?.terrain.mapoValueAt ?? mapoValueAt)(row, col), true, data?.bands.mapoBandAt);
+            const place = decor.mapoDecorAt(row, col, (data?.terrain.mapoValueAt ?? mapoValueAt)(row, col), true, data?.bands.mapoBandAt);
             if (!place) continue;
             out.push(...mapoSceneSprites(place.cell.scene, textures, atlas, seconds, place));
         }

@@ -82,12 +82,14 @@ export class MapoArtResources {
             texture("minimap", MAPO_MINIMAP_ASSET)]);
         group("geography", [texture("ground-base", MAPO_GROUND_BASE_ASSET), texture("region-atlas", MAPO_REGION_ATLAS_ASSET),
             texture("road-atlas", MAPO_ROAD_ATLAS_ASSET), texture("river-fill", MAPO_RIVER_FILL_ASSET),
+            buffer("tops-config", mapoAssetPath("tops-config.json")),
             buffer(MAPO_REGIONS_ASSET, MAPO_REGIONS_ASSET), buffer(MAPO_ROADS_ASSET, MAPO_ROADS_ASSET),
             buffer(MAPO_RIVER_GEO_ASSET, MAPO_RIVER_GEO_ASSET), buffer(MAPO_RIVERS_ASSET, MAPO_RIVERS_ASSET),
             ...MAPO_BLOCK_KINDS.reduce<Entry[]>((out, kind) => out.concat([texture(`${kind}-base`, mapoBlockBaseAsset(kind)),
                 buffer(mapoBlockGeoAsset(kind), mapoBlockGeoAsset(kind)), buffer(mapoBlockTableAsset(kind), mapoBlockTableAsset(kind))]), []),
             ...MAPO_TOP_KINDS.reduce<Entry[]>((out, kind) => out.concat([texture(`${kind}-top-atlas`, mapoTopAtlasAsset(kind)), buffer(mapoTopsAsset(kind), mapoTopsAsset(kind))]), []),
         ], () => {
+            inject("tops-config", this.data.tops.mapoSetTopConfig);
             inject(MAPO_REGIONS_ASSET, this.data.regions.mapoSetRegions);
             inject(MAPO_ROADS_ASSET, this.data.roads.mapoSetRoads);
             inject(MAPO_RIVER_GEO_ASSET, this.data.rivers.mapoSetRiverGeo);
@@ -101,7 +103,8 @@ export class MapoArtResources {
         // 点选只需 terrain 数据，不因此钉住 32 MiB 的资源图集。
         group("selection", [buffer(MAPO_TERRAIN_ASSET, MAPO_TERRAIN_ASSET)],
             () => inject(MAPO_TERRAIN_ASSET, this.data.terrain.mapoSetDisplayTerrain), () => this.data.terrain.dispose());
-        group("resources", [texture("decor-atlas", MAPO_DECOR_ATLAS_ASSET)]);
+        group("resources", [texture("decor-atlas", MAPO_DECOR_ATLAS_ASSET), buffer("decor-config", mapoAssetPath("decor-config.json"))],
+            () => inject("decor-config", this.data.decor.mapoSetDecorConfig), () => this.data.decor.dispose());
         group("cities", [texture("cityAtlas", MAPO_CITY_ATLAS_ASSET), buffer(MAPO_CITIES_ASSET, MAPO_CITIES_ASSET)],
             () => inject(MAPO_CITIES_ASSET, this.data.cities.mapoSetCities), () => this.data.cities.dispose());
         group("water", [effect("riverEffect", "mapo-river"), texture("riverMask", mapoAssetPath("river-mask.png")), texture("riverNormal", mapoAssetPath("river-normal.png"))]);

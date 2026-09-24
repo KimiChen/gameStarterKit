@@ -56,7 +56,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `ctable_cw.py` | ★ `base.cw`（66.8 MB ctable）**通用解码器**，格式逆自 `libnative-lib.so`（值解码 `0xb3fdb0` / 子项寻址 `0xb3f930` / 表布局 `0xb3fb50`）。`tables()` 读表目录（= 根的第 0 个子项，2,397 张）、`table(idx)` 解 `(array, hash)`、`rows(idx)` 按「含 `id` 键」向下展平多级分桶出行。⚠ **每行本身就是一个表对象**（长度天然可变）⇒ ⛔ 别再假设定长行；⚠ 根子项里也有**非表**的裸值对象，`table()` 对它们回 `None`（⛔ 别让它抛异常打断遍历）
 | `build_roads.py` | 42,018 路片摆放 + 18 基础/18 雪地皮肤；运行时按路片中心的 logic_background 选皮 |
 | `recon_road.py` | ⏸ 道路层数据链勘察（**只勘察不出产物**）：坐标系由干净集 `road_info.lua` 直给（1125²、半宽 200/半高 100 = 4/3 逻辑格）、lua 与 bytes **42,018/42,018 逐条互证**（⚠ bytes 是 (col,row) 转置）、`type_info` 烘死片、id→精灵靠邻接度签名绑定 |
-| `build_tops.py` | 三族 1,899 静态记录/92 纹理；完整视觉字段 60 B；含引用/动画的组另导出 top-scenes.data.ts |
+| `build_tops.py` | 三族 1,899 静态记录/92 纹理；完整视觉字段 60 B；布局与含引用/动画的组导出 tops-config.json；TS 只留类型/常量 |
 | `asset_source.py` | 只读原包寻址与切片查询，处理大小写 / @@ 别名 / hash fallback |
 | `prefab_scene.py` / `timeline_bin.py` / `scene_export.py` | 展开 prefab 引用与覆盖、时间线和事件子件；遇到未支持的视觉语义拒绝导出 |
 | `prefab_visual.py` | 城池/手摆静态精灵共用的 56 B 参数记录 |
@@ -716,7 +716,7 @@ RGBA 阈值（MAE≤1、差值>8 的比例≤0.1%），不能靠扩大 ROI 消�
 运行时先经 AssetLease 加载 manifest 并严格核对版本和内容，然后才启动其它组。二进制在解析前检查
 长度和 CRC32（损坏/混版检测，非安全摘要）；纹理检查尺寸。完整 SHA-256 是源制品的身份，
 不用于校验 ASTC/ETC 平台输出；Creator 的内容寻址地址和构建版本负责平台缓存。
-32 个运行时素材以外，`minimap-mask.png`、`decor-atlas.info.json`、`region-atlas.info.json` 等
+34 个运行时素材以外，`minimap-mask.png`、`decor-atlas.info.json`、`region-atlas.info.json` 等
 制作信息只留在 kit，`resources/kits/mapOriginal/maps/s1/` 不再发布地图副本。
 源文件大小不等于构建输出或网络流量，审计报告分别列 Bundle 源字节、主包地图素材字节及脚本配置字节。
 
@@ -739,3 +739,39 @@ python3 tools/maporiginal-assets/audit_bundle_build.py --build-dir <web-mobile�
 确认图层不误安装且恢复加载；再测试已加载 Asset 的断网复用，以及释放后禁 HTTP 缓存的断网失败路径。
 不会新建缓存或改 CDN；finally 撤掉钩子、恢复网络和地图页。故障期控制台错误保留在报告中。
 修改宿主 builder profile 后需重启 Creator 使其重新读取设置；默认配置回退警告不能当成 profile 已生效。
+
+
+## O5：按图层加载的表现配置
+
+`pack_decor.py` 生成 `decor-config.json`（135 个 prefab、659 个节点、320 张纹理的完整引用），
+`build_tops.py` 生成 `tops-config.json`（3 个图集布局及 4 个动态场景）。原版树、transform、颜色、
+帧和轨道均保留，静态 top 摆放仍用已有 60 B 记录。
+作者检查 kit 中可读的 JSON；修改输入/导出器后重新生成，不手改 Cocos 内容哈希路径。
+安装器把 JSON 原字节映射成 `.bin` BufferAsset，并绑定到 resources / geography；
+长度、CRC、schema 与语义校验通过才交给实例 reader。默认兼容 reader 为空，离线烘焙/测试
+显式通过 `read_presentation.ts` 注入，客户端运行时不得导入这个 Node 入口。
+
+```bash
+python3 tools/maporiginal-assets/pack_decor.py --map s1
+python3 tools/maporiginal-assets/build_tops.py --map s1
+python3 tools/maporiginal-assets/install_to_kit.py
+npm run sync:shared
+node --import tsx tools/maporiginal-assets/bake_overview.ts
+python3 tools/maporiginal-assets/install_to_kit.py
+python3 tools/maporiginal-assets/emit_ledger.py --out apps/kits/mapOriginal/art/LICENSES.md
+npm run sync:shared
+node --import tsx --expose-gc tools/maporiginal-assets/measure_config.mjs --input apps/kits/mapOriginal/data/maps/s1 --baseline ac272cee --runtime --out .cache/mapo-config/format.json
+node tools/maporiginal-assets/measure_config_build.mjs --before <before-web-build> --after <after-web-build> --out .cache/mapo-config/build.json
+```
+
+格式试验比较无量化的字符串字典/f64 二进制与 JSON；`--runtime` 额外测量发布 reader 的
+UTF-8 解码、JSON 解析、CRC 与完整 schema 校验。保留堆使用 20 份解析结果和显式 GC，
+不当作整页内存。脚本冷编译使用不同 source 避免 V8 代码缓存，解析结果保留量另列；
+构建工具按 System.register 模块计量，把无关生成页差异单列。
+当前采用 JSON，传输压缩只按 gzip level 9 估算，未声称线上流量或加载速度同比下降。
+
+只有配置变化且所有纹理/effect 的源哈希、尺寸、地址完全相同时，发布审计可显式使用
+`audit_bundle_build.py --previous-manifest <原画质报告对应manifest>` 复用 O4 画质证据；
+它仍逐张核验实际发布 ASTC 字节与原试验 hash，报告同时记录两个内容版本。
+Creator 完整重放可设置 `MAPO_PREVIEW_FOCUS=1`，报告会登记 focus emulation；
+这适用于格式、图层和生命周期验证，不能作为真实前台帧时证据。

@@ -82,6 +82,10 @@ async function run(mode) {
         await until(`(${pageWalkSource}).nodes.some(n=>n.text?.includes('(750, 749)'))`,'selected original cell');
         await ready();
         result.selected=await snap();
+        if (manifest.assets['decor-config.json']) {
+            const data=result.selected.cpu.maps.find(m=>!m.closed)?.data;
+            if(data?.decor?.prefabs!==135||data?.tops?.atlases!==3)throw Error('External presentation configuration not installed');
+        }
         if(webgl1&&!result.selected.environment.api.startsWith('WebGL 1.'))throw Error('WebGL1 was not selected');
         const textures=result.selected.textures.filter(t=>t.valid);
         if(textures.length!==Object.keys(audit.textures).length)throw Error('Not all texture groups loaded');
@@ -115,6 +119,10 @@ async function run(mode) {
         await zoom(3,240);await sleep(5600);
         result.l3=await snap();
         if(result.l3.rtBytesWithDepth||result.l3.textures.filter(t=>t.valid).length!==2)throw Error('L3 retained near sources');
+        if (manifest.assets['decor-config.json']) {
+            const data=result.l3.cpu.maps.find(m=>!m.closed)?.data;
+            if(!data||[...Object.values(data.decor),...Object.values(data.tops)].some(v=>v!==0))throw Error('L3 retained external presentation configuration');
+        }
         await zoom(0,-240);await ready();
         for(let i=0;i<10;i++) {
             const state=await close();result.cycles.push({cycle:i+1,source:state.sourceTextureRgba8Bytes,rt:state.rtBytesWithDepth,cpu:state.cpu.retainedArrayBufferBytes,maps:state.cpu.maps.length});

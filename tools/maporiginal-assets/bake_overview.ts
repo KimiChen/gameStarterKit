@@ -3,6 +3,7 @@
  * 本机 Chrome 9222 的独立标签页执行 WebGL1 正交烘焙；只读取派生包，关闭自己的标签页。
  * 与运行时 MapoChunkBaker 共用 mapoStaticScene，不能按 res 类别上色替代原地貌。
  */
+import "./read_presentation";
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
@@ -26,6 +27,7 @@ async function main() {
         sourceHashes[name] = createHash("sha256").update(bytes).digest("hex");
         return bytes;
     };
+    read("tops-config.json");
     for (const kind of ["desert", "snow"]) {
         mapoSetBlockGeo(kind, read(`${kind}-geo.bin`)); mapoSetBlocks(kind, read(`${kind}.bin`));
     }
@@ -109,12 +111,13 @@ async function main() {
         const codeHashes: Record<string,string> = {};
         const geometrySources = ["mapoStaticScene", "mapoMesh", "mapoScene", "mapoPrefab", "mapoGround",
             "mapoBlocks", "mapoPolyLib", "mapoRegions", "mapoRoads", "mapoRivers", "mapoTops", "mapoBands", "mapoFar"];
-        const contentSources = ["ground", "blocks", "region", "roads", "river", "tops", "top-scenes", "bands"];
+        const contentSources = ["ground", "blocks", "region", "roads", "river", "tops", "bands"];
         for (const relative of [
             ...geometrySources.map((name) => `apps/client/src/kits/mapOriginal/logic/${name}.ts`),
             ...contentSources.map((name) => `apps/shared/src/kits/mapOriginal/content/${name}.data.ts`),
             "apps/shared/src/kits/mapOriginal/api/hexmap/index.ts",
-            "tools/maporiginal-assets/bake_overview.ts", "tools/maporiginal-assets/shaders/mapo-sprite.effect",
+            "tools/maporiginal-assets/bake_overview.ts", "tools/maporiginal-assets/read_presentation.ts",
+            "apps/client/src/kits/mapOriginal/logic/mapoPresentation.ts", "tools/maporiginal-assets/shaders/mapo-sprite.effect",
         ]) {
             codeHashes[relative] = createHash("sha256").update(fs.readFileSync(relative)).digest("hex");
         }

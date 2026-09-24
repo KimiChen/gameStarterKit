@@ -11,7 +11,7 @@ import {
 } from "../src/shared/kits/mapOriginal/content/labels.data";
 import {
     MAPO_DECOR_CELLS, MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
-} from "../src/shared/kits/mapOriginal/content/decor.data";
+} from "../../../tools/maporiginal-assets/read_presentation";
 import {
     MAPO_BAND_DESERT, MAPO_BAND_GROUND, MAPO_BAND_SNOW,
 } from "../src/shared/kits/mapOriginal/content/bands.data";

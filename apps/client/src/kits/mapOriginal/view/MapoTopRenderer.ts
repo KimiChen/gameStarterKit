@@ -9,7 +9,6 @@
 import { Material, Node } from "cc";
 import { buildMapoSpriteMeshes } from "../logic/mapoMesh";
 import type { MapoPolygonInput } from "../logic/mapoMesh";
-import { mapoTopsAnimated } from "../logic/mapoTops";
 import {
     syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
     type MapoBatch,
@@ -47,7 +46,7 @@ export class MapoTopRenderer {
             this.material.setProperty("mainTexture", texture);
         }
         this.visible = polys;
-        this.animated = mapoTopsAnimated(this.kind, polys);
+        this.animated = this.art!.data.tops.mapoTopsAnimated(this.kind, polys);
         const sprites = this.art!.data.tops.mapoTopsFor(this.kind, polys, Infinity, this.seconds);
         if (sprites.length === 0) { this.clear(); return 0; }
         const geometry = buildMapoSpriteMeshes(sprites);

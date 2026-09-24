@@ -1,4 +1,4 @@
-import { MAPO_TOP_SCENES } from "../../../shared/kits/mapOriginal/content/top-scenes.data";
+import { mapoReadTopConfig } from "./mapoPresentation";
 import { mapoSceneAnimated, mapoSceneSprites } from "./mapoScene";
 import { mapoReadPrefabVisual, mapoPrefabUv, type MapoPrefabVisual } from "./mapoPrefab";
 /**
@@ -13,7 +13,7 @@ import { mapoReadPrefabVisual, mapoPrefabUv, type MapoPrefabVisual } from "./map
  *   ⛔ 不是图集里的像素 —— 图集是按 0.4× 缩存的。
  */
 import {
-    MAPO_TOP_ATLASES, MAPO_TOP_RECORD_BYTES, type IMapoTopAtlas, type IMapoTopCell,
+    MAPO_TOP_KINDS, MAPO_TOP_RECORD_BYTES, type IMapoTopAtlas, type IMapoTopCell, type IMapoTopConfig,
 } from "../../../shared/kits/mapOriginal/content/tops.data";
 import type { MapoPolygonInput, MapoSpriteInput } from "./mapoMesh";
 
@@ -27,12 +27,18 @@ interface TopLib {
     groups: TopSprite[][];
 }
 
-export const MAPO_TOP_KINDS: readonly string[] = MAPO_TOP_ATLASES.map((a) => a.kind);
+export { MAPO_TOP_KINDS };
 
 /** 地图实例的数据读取器；dispose 清空运行时解码结果和 Buffer 视图。 */
 export function createMapoTopsData() {
-    const LIBS: Map<string, TopLib> = new Map(
-        MAPO_TOP_ATLASES.map((meta) => [meta.kind, { meta, groups: [] }]));
+    const LIBS = new Map<string, TopLib>();
+    let config: IMapoTopConfig | null = null, sourceBytes = 0;
+    function mapoSetTopConfig(bytes: ArrayBuffer | Uint8Array): void {
+        const next = mapoReadTopConfig(bytes);
+        LIBS.clear();
+        for (const meta of next.atlases) LIBS.set(meta.kind, { meta, groups: [] });
+        config = next; sourceBytes = bytes.byteLength;
+    }
 
     /** 注入 `<kind>-tops.bin`。⚠ 组数/件数/长度任一对不上就拒收。 */
     function mapoSetTops(kind: string, buf: ArrayBuffer | Uint8Array): void {
@@ -77,7 +83,7 @@ export function createMapoTopsData() {
 
     function mapoTopsAnimated(kind: string, polys: readonly MapoPolygonInput[]): boolean {
         return polys.some((p) => {
-            const scene = MAPO_TOP_SCENES[kind]?.[p.geo - 1];
+            const scene = config?.scenes[kind]?.[p.geo - 1];
             return !!scene && mapoSceneAnimated(scene);
         });
     }
@@ -100,7 +106,7 @@ export function createMapoTopsData() {
         if (!lib || lib.groups.length === 0) return [];
         const out: MapoSpriteInput[] = [];
         for (const p of polys) {
-            const scene = MAPO_TOP_SCENES[kind]?.[p.geo - 1];
+            const scene = config?.scenes[kind]?.[p.geo - 1];
             if (scene) {
                 const cells = lib.meta.cells.map((c) => {
                     const texture = lib.meta.textures[c.textureId];
@@ -130,14 +136,14 @@ export function createMapoTopsData() {
 
     /** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
     function mapoTopsDataUsage(): Readonly<Record<string, number>> {
-        return { arrayBufferBytes: 0, groups: [...LIBS.values()].reduce((sum, l) => sum + l.groups.length, 0),
+        return { arrayBufferBytes: 0, configSourceBytes: sourceBytes, atlases: LIBS.size, groups: [...LIBS.values()].reduce((sum, l) => sum + l.groups.length, 0),
             sprites: [...LIBS.values()].reduce((sum, l) => sum + l.groups.reduce((n, g) => n + g.length, 0), 0) };
     }
 
-    return { mapoSetTops, mapoHasTops, mapoTopsAnimated, mapoTopUv, mapoTopsFor, mapoTopsDataUsage,
-        dispose(): void { for (const lib of LIBS.values()) lib.groups = []; },
+    return { mapoSetTopConfig, mapoSetTops, mapoHasTops, mapoTopsAnimated, mapoTopUv, mapoTopsFor, mapoTopsDataUsage,
+        dispose(): void { LIBS.clear(); config = null; sourceBytes = 0; },
     };
 }
 
 /** 兼容离线烘焙与已有测试；地图运行时必须使用 MapoDataStore 的独立读取器。 */
-export const { mapoSetTops, mapoHasTops, mapoTopsAnimated, mapoTopUv, mapoTopsFor, mapoTopsDataUsage } = createMapoTopsData();
+export const { mapoSetTopConfig, mapoSetTops, mapoHasTops, mapoTopsAnimated, mapoTopUv, mapoTopsFor, mapoTopsDataUsage } = createMapoTopsData();

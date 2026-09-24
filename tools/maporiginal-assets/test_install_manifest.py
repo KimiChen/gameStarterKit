@@ -36,6 +36,15 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(len(assets), len(set(assets)))
         self.assertEqual(sum(g['sourceBytes'] for g in before['groups'].values()), sum(a['sourceBytes'] for a in before['assets'].values()))
 
+    def test_external_configuration_binds_buffer_address_and_layout_version(self):
+        before = make_manifest('s1', self.payloads, self.bindings)
+        self.payloads['tops-config.json'] = b'changed scenes or layout'
+        after = make_manifest('s1', self.payloads, self.bindings)
+        self.assertEqual(after['assets']['tops-config.json']['type'], 'buffer')
+        self.assertNotEqual(before['assets']['tops-config.json']['path'], after['assets']['tops-config.json']['path'])
+        self.assertNotEqual(before['atlasLayoutVersion'], after['atlasLayoutVersion'])
+        self.assertNotEqual(before['contentVersion'], after['contentVersion'])
+
 
 if __name__ == '__main__':
     unittest.main()

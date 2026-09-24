@@ -1290,6 +1290,11 @@ async function main() {
     report.tab = { id: tab.id, created: tab.created };
     client = await CdpClient.connect(tab.wsUrl);
     runner = new Runner(client, options, outDir);
+    // 地图格式/生命周期验证可显式保持引擎推进；报告登记，不能据此声明真实前台帧时。
+    if (options.scenario === "mapOriginal" && process.env.MAPO_PREVIEW_FOCUS === "1") {
+      report.focusEmulation = true;
+      await client.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+    }
     if (options.reuse && !tab.created) {
       await client.send("Page.bringToFront");
       const walk = await runner.walk();

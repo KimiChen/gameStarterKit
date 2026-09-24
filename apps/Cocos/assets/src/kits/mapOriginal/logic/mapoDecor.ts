@@ -22,11 +22,9 @@
  *   ⛔ 不是只有 249 个中心格；而 2,689 格 100% 是 `res==1` 平地 ⇒ 抑制**只能靠占格表**，
  *   ⛔ 没法从地形值推出来。
  */
-import {
- MAPO_DECOR_CELLS,
-    MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS,
-    type IMapoDecorCell,
-} from "../../../shared/kits/mapOriginal/content/decor.data";
+import type { IMapoDecorCell, IMapoDecorConfig } from "../../../shared/kits/mapOriginal/content/decor.data";
+import type { IMapoPrefabCell } from "../../../shared/kits/mapOriginal/content/prefabs.types";
+import { mapoReadDecorConfig } from "./mapoPresentation";
 import { MAPO_CITY_CELL_KEYS } from "../../../shared/kits/mapOriginal/content/labels.data";
 import {
     MAPO_BAND_DESERT, MAPO_BAND_SNOW,
@@ -35,16 +33,6 @@ import {
     mapoGrid2Pos,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import { mapoBandAt } from "./mapoBands";
-
-/** 值/城址 id → 图集格。一次算好，⛔ 不要每格 find。 */
-const BY_ID: ReadonlyMap<number, IMapoDecorCell> =
-    new Map(MAPO_DECOR_CELLS.map((c) => [c.id, c]));
-
-/** 变体套：值 → 图集格（N1）。⚠ 键同样是**原版 res 值**，表不同而已。 */
-const SNOW_BY_ID: ReadonlyMap<number, IMapoDecorCell> =
-    new Map(MAPO_DECOR_SNOW_CELLS.map((c) => [c.id, c]));
-const DESERT_BY_ID: ReadonlyMap<number, IMapoDecorCell> =
-    new Map(MAPO_DECOR_DESERT_CELLS.map((c) => [c.id, c]));
 
 /** 城**占**的全部格（2,689 格，含中心格）：这些格一律不画资源件（第 4 道门）。 */
 const CITY_OCCUPIED = new Set<number>(MAPO_CITY_CELL_KEYS);
@@ -57,6 +45,20 @@ export interface IMapoDecorPlacement {
     readonly y: number;
 }
 
+/** 与图层同寿命；模块只保留空读取器供离线工具显式注入。 */
+export function createMapoDecorData() {
+    let config: IMapoDecorConfig | null = null, sourceBytes = 0;
+    let textures: readonly IMapoPrefabCell[] = [];
+    const tables = new Map<string, ReadonlyMap<number, IMapoDecorCell>>();
+    function mapoSetDecorConfig(bytes: ArrayBuffer | Uint8Array): void {
+        const next = mapoReadDecorConfig(bytes);
+        const nextTextures = next.cells.map(c => {
+            const texture = next.textures[c.textureId];
+            return { id: c.id, textureId: c.textureId, rect: texture.rect, window: texture };
+        });
+        for (const variant of ["base", "snow", "desert"] as const) tables.set(variant, new Map(next.variants[variant].map(c => [c.id, c])));
+        config = next; textures = nextTextures; sourceBytes = bytes.byteLength;
+    }
 /**
  * 这一格放什么摆件；不放回 null。
  *
@@ -67,7 +69,7 @@ export interface IMapoDecorPlacement {
  * ⛔ 所以别再加「密度系数」。要省开销请整层关掉（流畅档），或靠 LOD 门控。
  *   近档一屏只有几十格（一格 300×150 世界像素），这层的预算本来就很小。
  */
-export function mapoDecorAt(row: number, col: number, value: number,
+function mapoDecorAt(row: number, col: number, value: number,
                             enabled: boolean, bandAt: (row: number, col: number) => number = mapoBandAt): IMapoDecorPlacement | null {
     if (!enabled) return null;
     const pos = mapoGrid2Pos(row, col);
@@ -77,9 +79,22 @@ export function mapoDecorAt(row: number, col: number, value: number,
     // ★ 资源格：值即格 id，一一对应，⛔ 零猜测
     // ★ 先判带再选件（N1）：雪带 → 雪件表，沙带 → 沙件表，否则基础季表
     const band = bandAt(row, col);
-    const table = band === MAPO_BAND_SNOW ? SNOW_BY_ID
-        : band === MAPO_BAND_DESERT ? DESERT_BY_ID : BY_ID;
-    const cell = table.get(value) ?? BY_ID.get(value);
+    const table = tables.get(band === MAPO_BAND_SNOW ? "snow" : band === MAPO_BAND_DESERT ? "desert" : "base");
+    const cell = table?.get(value);
     if (!cell || cell.kind !== "res") return null;
     return { row, col, cell, x: pos.x, y: pos.y };
 }
+
+    return { mapoSetDecorConfig, mapoDecorAt,
+        get config(): IMapoDecorConfig | null { return config; },
+        get textures(): readonly IMapoPrefabCell[] { return textures; },
+        get size(): readonly [number, number] { return config?.size ?? [1, 1]; },
+        mapoDecorDataUsage(): Readonly<Record<string, number>> {
+            return { arrayBufferBytes: 0, configSourceBytes: sourceBytes, textures: textures.length,
+                prefabs: [...tables.values()].reduce((n, table) => n + table.size, 0) };
+        },
+        dispose(): void { config = null; sourceBytes = 0; textures = []; tables.clear(); },
+    };
+}
+export const mapoOfflineDecor = createMapoDecorData();
+export const { mapoDecorAt, mapoSetDecorConfig } = mapoOfflineDecor;

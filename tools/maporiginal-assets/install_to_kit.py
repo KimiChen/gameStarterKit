@@ -30,6 +30,7 @@ OUT = os.path.join(HERE, CFG["outDir"])
 
 # out/pack/<id>/ 里的名字 -> 出品名。KIT_ONLY 的不进 Cocos 运行时镜像。
 FILES = {
+    "decor-config.json": "decor-config.json", "tops-config.json": "tops-config.json",
     "overview.png": "overview.png", "overview.info.json": "overview.info.json",
     "mapo-sprite.effect": "mapo-sprite.effect", "mapo-river.effect": "mapo-river.effect",
     "river-mask.png": "river-mask.png", "river-normal.png": "river-normal.png", "grid-line.png": "grid-line.png",
@@ -82,7 +83,7 @@ KIT_ONLY = {"overview.info.json", "surface.info.json", "choose.info.json","terra
 #   `_native: ".bin"`，而库里的原生文件是 .bytes ⇒ 运行时报「the native asset is missing」。
 #   Creator 按 uuid + 内容哈希缓存，改 .meta 不会让它重导 ⇒ 换路径（连带换掉确定性 uuid）
 #   才能拿到一次干净的导入。权威产物仍叫 terrain.bytes，⛔ 不改。
-MIRROR_RENAME = {"terrain.bytes": "terrain.bin"}
+MIRROR_RENAME = {"terrain.bytes": "terrain.bin", "decor-config.json": "decor-config.bin", "tops-config.json": "tops-config.bin"}
 
 
 def uuid_for(rel: str) -> str:
@@ -149,18 +150,18 @@ def meta_for(rel: str, name: str, data: bytes = b"") -> dict:
 GROUPS = {
     "overview": ([], ["mapo-sprite.effect", "overview.png", "minimap.png"]),
     "geography": (["overview"], ["ground-base.png", "region-atlas.png", "road-atlas.png", "river-fill.png",
-        "regions.bin", "roads.bin", "river-geo.bin", "rivers.bin"]
+        "regions.bin", "roads.bin", "river-geo.bin", "rivers.bin", "tops-config.json"]
         + [f"{kind}{suffix}" for kind in ("desert", "snow") for suffix in ("-base.png", "-geo.bin", ".bin")]
         + [f"{kind}{suffix}" for kind in ("river", "desert", "snow") for suffix in ("-top-atlas.png", "-tops.bin")]),
     "selection": (["overview"], ["terrain.bytes"]),
-    "resources": (["overview", "selection", "geography"], ["decor-atlas.png"]),
+    "resources": (["overview", "selection", "geography"], ["decor-atlas.png", "decor-config.json"]),
     "cities": (["overview"], ["city-atlas.png", "cities.bin"]),
     "water": (["overview"], ["mapo-river.effect", "river-mask.png", "river-normal.png"]),
     "grid": (["overview"], ["grid-line.png"]),
     "choose": (["overview"], ["choose.png"]),
 }
 GENERATED_LAYOUTS = ("atlas-layout.types.ts", "decor.data.ts", "region.data.ts", "tops.data.ts", "cities.data.ts",
-                     "roads.data.ts", "river.data.ts", "choose.data.ts", "top-scenes.data.ts")
+                     "roads.data.ts", "river.data.ts", "choose.data.ts")
 
 
 def json_bytes(value):
@@ -192,7 +193,8 @@ def make_manifest(map_id, payloads, bindings):
                                     "sourceBytes": sum(len(payloads[name]) for name in names)}
     if set(manifest["assets"]) != set(FILES) - KIT_ONLY:
         raise ValueError("每个运行时素材必须恰好有一个组")
-    manifest["atlasLayoutVersion"] = "trim-v1-" + digest({k: bindings[k] for k in GENERATED_LAYOUTS})
+    manifest["atlasLayoutVersion"] = "trim-v1-" + digest({**{k: bindings[k] for k in GENERATED_LAYOUTS},
+        **{k: hashlib.sha256(payloads[k]).hexdigest() for k in ("decor-config.json", "tops-config.json")}})
     manifest["contentVersion"] = "sha256-" + digest(manifest)
     return manifest
 
@@ -213,7 +215,7 @@ def main() -> int:
     payloads = {name: ((Path(HERE) / "shaders" if name.endswith(".effect") else src) / name).read_bytes() for name in FILES}
     layouts = {name: (src / name).read_bytes() for name in GENERATED_LAYOUTS}
     bindings = {p.name: hashlib.sha256(layouts.get(p.name, p.read_bytes())).hexdigest()
-                for p in sorted(content.glob("*.ts")) if p.name != "manifest.data.ts"}
+                for p in sorted(content.glob("*.ts")) if p.name not in ("manifest.data.ts", "top-scenes.data.ts")}
     bindings.update({name: hashlib.sha256(data).hexdigest() for name, data in layouts.items()})
     runtime = make_manifest(a.map, payloads, bindings)
     if {n for n, r in runtime['assets'].items() if r['type'] == 'texture'} != set(POLICY['assets']):
@@ -245,7 +247,7 @@ def main() -> int:
         "convert": "安装器绑定逻辑组、源文件 SHA-256、CRC32 与 shared 配置哈希；平台派生纹理由 Creator 构建缓存绑定",
         "meta": "本仓确定性铸造 uuid=sha1(mapOriginal::<相对路径>)"})
     # 只清除本管线的已知旧文件，拒绝静默删除同事新增的未知文件。
-    obsolete = []
+    obsolete = [content / "top-scenes.data.ts"]
     for root in (legacy, bundle):
         if not root.exists(): continue
         for p in root.rglob("*"):

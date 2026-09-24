@@ -139,7 +139,7 @@ def check_refs(ids, entries, group):
 
 def audit_references(data, entries):
     names = ["MAPO_DECOR_CELLS", "MAPO_DECOR_SNOW_CELLS", "MAPO_DECOR_DESERT_CELLS"]
-    decor = json_exports(CONTENT / "decor.data.ts", names)
+    decor = dict(zip(names, (json.loads((data / "decor-config.json").read_text())["variants"][k] for k in ("base", "snow", "desert"))))
     terrain_bytes, bands_bytes = (data / "terrain.bytes").read_bytes(), (data / "bands.bytes").read_bytes()
     rows, cols = struct.unpack_from(">II", terrain_bytes)
     if struct.unpack_from(">HH", bands_bytes) != (rows, cols):
@@ -164,7 +164,7 @@ def audit_references(data, entries):
                           "textureIds": sorted(declared), "mapReferencedTextureIds": sorted(used_ids)}
     reach = {"decor": {"variants": variants, "unreferencedTextureIds": check_refs(all_refs, entries, "decor"),
                        "scope": "All map cells by biome; city overlap is not permanent invisibility proof."}}
-    scenes = json_exports(CONTENT / "top-scenes.data.ts", ["MAPO_TOP_SCENES"])["MAPO_TOP_SCENES"]
+    scenes = json.loads((data / "tops-config.json").read_text())["scenes"]
     for kind in ("river", "snow", "desert"):
         placed = (data / ("rivers.bin" if kind == "river" else kind+".bin")).read_bytes()
         n = struct.unpack_from(">I", placed)[0]

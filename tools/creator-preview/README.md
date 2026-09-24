@@ -88,6 +88,9 @@ mapOriginal 的 O2 小地图回归在关闭重开后的 1.28× 近景执行：�
 
 贴图检查读取已渲染 MeshRenderer 的共享材质 `mainTexture` 与绘卷 Sprite 的纹理尺寸，不主动加载图片。地标预期坐标由总览公开节点位置换算，点击标签后与局部详情坐标比对。总览显示期间局部世界处于隐藏状态，因此绘卷的「位置不变」在关闭面板后通过公开世界节点位置、LOD 与选格共同验证。2026-09-10 的美术接入样本为 23 步、19 张截图，见 docs/evidence/creator-2026-09-10/slg-art/。
 
+地图格式/生命周期重放可显式设置 `MAPO_PREVIEW_FOCUS=1`，在同一 CDP 会话内启用 focus emulation，
+避免其它窗口遮挡时引擎暂停；`report.json.focusEmulation` 登记这一条件，不作为真实前台帧时证据。
+
 退出码：0 全部通过；1 有步骤失败（失败现场也会截图 `NN-failed-<step>.jpg`，报告仍落盘）；2 参数/连接错误。
 `report.json` 的 `ok`、`steps[].ok/detail/error/screenshots`、`console[]` 是复核依据；截图只是佐证。
 

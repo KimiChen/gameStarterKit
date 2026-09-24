@@ -164,11 +164,6 @@ def main() -> int:
 
     from pathlib import Path
     scenes = {kind: {index: compile_node(root, used[kind]) for index, root in entries.items()} for kind, entries in dynamic.items()}
-    Path(d, "top-scenes.data.ts").write_text('/** 生成物：带引用/动画的完整 top 节点图；静态组仍走紧凑二进制。 */\n'
-        + 'import type { IMapoPrefabNode } from "./prefabs.types";\n'
-        + 'export const MAPO_TOP_SCENES: Readonly<Record<string, Readonly<Record<number, IMapoPrefabNode>>>> = '
-        + json.dumps(scenes, ensure_ascii=False, separators=(',', ':')) + ';\n')
-
     # ── 每族一份摆放库 ──────────────────────────────────────────
     summary = {}
     for kind, groups in fam_groups.items():
@@ -227,16 +222,25 @@ export interface IMapoTopAtlas {
 /** 单件记录长度（u16 图集格 + 6 × f32）。 */
 export const MAPO_TOP_RECORD_BYTES = 60;
 export const MAPO_TOP_DOWNSCALE = %s;
-export const MAPO_TOP_ATLASES: readonly IMapoTopAtlas[] = %s;
+export const MAPO_TOP_KINDS: readonly string[] = ["river", "desert", "snow"];
+export interface IMapoTopConfig {
+    readonly schemaVersion: 1;
+    readonly mapId: string;
+    readonly kind: "tops";
+    readonly atlases: readonly IMapoTopAtlas[];
+    readonly scenes: Readonly<Record<string, Readonly<Record<number, import("./prefabs.types").IMapoPrefabNode>>>>;
+}
 ''' % (m, summary["river"]["sprites"], summary["desert"]["sprites"], summary["snow"]["sprites"],
        sum(v["sprites"] for v in summary.values()), TOP_DOWNSCALE, round(900 * TOP_DOWNSCALE),
-       TOP_DOWNSCALE,
-       json.dumps([{"kind": k, "size": atlas_info[k]["size"],
-                    "groups": summary[k]["groups"], "sprites": summary[k]["sprites"],
-                    "textures": runtime_textures(atlas_info[k]),
-                    "cells": [{"id": c["id"], "textureId": c["textureId"]}
-                              for c in atlas_info[k]["cells"]]}
-                   for k, _ in FAMILIES], ensure_ascii=False))
+       TOP_DOWNSCALE)
+    config = {"schemaVersion": 1, "mapId": m, "kind": "tops", "scenes": scenes,
+              "atlases": [{"kind": k, "size": atlas_info[k]["size"],
+                           "groups": summary[k]["groups"], "sprites": summary[k]["sprites"],
+                           "textures": runtime_textures(atlas_info[k]),
+                           "cells": [{"id": c["id"], "textureId": c["textureId"]} for c in atlas_info[k]["cells"]]}
+                          for k, _ in FAMILIES]}
+    Path(d, "tops-config.json").write_text(json.dumps(config, ensure_ascii=False, separators=(',', ':')))
+    Path(d, "top-scenes.data.ts").unlink(missing_ok=True)
     open(os.path.join(d, "tops.data.ts"), "w", encoding="utf-8").write(ts)
 
     print("  合计 %d 件 / %d 种贴图"
