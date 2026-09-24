@@ -303,6 +303,11 @@
       "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailPanel.tsx"
     },
     {
+      "key": "MailReportDetailPanel",
+      "rootName": "MailReportDetailPanel",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/MailReportDetailPanel.tsx"
+    },
+    {
       "key": "MailReportItem",
       "rootName": "MailReportItem",
       "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailReports.tsx"
@@ -348,6 +353,71 @@
       "source": "apps/client/src/ui-uniflex/components/quantity/QuantityControl.tsx"
     },
     {
+      "key": "ReportDetailAttributes",
+      "rootName": "ReportDetailAttributes",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailAttributes.tsx"
+    },
+    {
+      "key": "ReportDetailCasualty",
+      "rootName": "ReportDetail/Casualty",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailSummary.tsx"
+    },
+    {
+      "key": "ReportDetailEquipment",
+      "rootName": "ReportDetailEquipment",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailEquipment.tsx"
+    },
+    {
+      "key": "ReportDetailEquipmentOwner",
+      "rootName": "ReportDetailEquipmentOwner",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailEquipment.tsx"
+    },
+    {
+      "key": "ReportDetailHero",
+      "rootName": "ReportDetail/Hero",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailHeroes.tsx"
+    },
+    {
+      "key": "ReportDetailHeroes",
+      "rootName": "ReportDetailHeroes",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailHeroes.tsx"
+    },
+    {
+      "key": "ReportDetailLinks",
+      "rootName": "ReportDetail/Links",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/MailReportDetailPanel.tsx"
+    },
+    {
+      "key": "ReportDetailSectionHeading",
+      "rootName": "ReportDetailSectionHeading",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailChrome.tsx"
+    },
+    {
+      "key": "ReportDetailSectionItem",
+      "rootName": "ReportDetailSection",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/MailReportDetailPanel.tsx"
+    },
+    {
+      "key": "ReportDetailShips",
+      "rootName": "ReportDetailShips",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailShips.tsx"
+    },
+    {
+      "key": "ReportDetailSlots",
+      "rootName": "ReportDetailSlots",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailSlots.tsx"
+    },
+    {
+      "key": "ReportDetailSoldiers",
+      "rootName": "ReportDetailSoldiers",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailSoldiers.tsx"
+    },
+    {
+      "key": "ReportDetailSummary",
+      "rootName": "ReportDetailSummary",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/ReportDetailSummary.tsx"
+    },
+    {
       "key": "ResourceCounter",
       "rootName": "ResourceCounter",
       "source": "apps/client/src/ui-uniflex/gamecomponents/resource/ResourceCounter.tsx"
@@ -386,6 +456,11 @@
       "key": "ShopPanel",
       "rootName": "Shop",
       "source": "apps/client/src/ui-uniflex/modules/shop/Shop/ShopPanel.tsx"
+    },
+    {
+      "key": "SoldierPortrait",
+      "rootName": "SoldierPortrait",
+      "source": "apps/client/src/ui-uniflex/gamecomponents/soldier/SoldierPortrait.tsx"
     },
     {
       "key": "StarLevel",

@@ -837,3 +837,9 @@ export function createMailPreview(parent: Node) {
     const preview = createPreviewScreen(parent, "mail-popup", { query: null, navigate: () => preview.dispose() });
     return preview;
 }
+
+/** Battle report detail with one continuous comparison list. */
+export function createMailReportDetailPreview(parent: Node): { dispose(): void } {
+    const preview = createPreviewScreen(parent, "mail-report-detail", { query: null, navigate: () => preview.dispose() });
+    return preview;
+}

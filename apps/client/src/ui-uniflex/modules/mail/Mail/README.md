@@ -12,6 +12,8 @@
 - 提示条显示当前页签的「邮件数：数量/容量」，默认容量 200，可由 `capacity` 覆盖。系统/联盟按列表条目计数，战报按文件夹内的全部报告计数（折叠不改变数量），个人为 0。
 - 个人页显示「暂无邮件」，不显示删除/领取按钮；提示条下移至 y=1339。
 
+点击战报结果卡会打开 `MailReportDetailPanel`（战报详情），关闭后保留当前页签、文件夹和列表位置。
+
 这是客户端展示页。`onSelectTab` 报告页签切换；`onAction` 报告 `open:*`、`report:*`、`toggle:*`、`delete-read:*`、`claim:*`；`onClose` 由宿主处理关闭。折叠和已读显示为页面内演示状态，删除/领取只发回调，不接入账号邮件或奖励服务。默认打开战报页签，可用 `initialTab` 指定首签。
 
 Web 的启动登记在 `apps/web-ui-preview/preview-screen.ts`，Cocos 在 `previewCatalog.ts`（`UniFlexPreview` 的委托目录）；`preview.ts` 另提供 `createMailPreview`。

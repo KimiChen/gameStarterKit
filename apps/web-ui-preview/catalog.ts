@@ -56,6 +56,7 @@ const SCREEN_LABEL: Record<string, string> = {
     confirm: "确认弹窗",
     backpack: "背包界面",
     "backpack-edited": "背包编辑稿",
+    "mail-report-detail": "战报详情",
     "mail-popup": "邮件",
     mail: "邮件战报",
     settings: "设置界面",

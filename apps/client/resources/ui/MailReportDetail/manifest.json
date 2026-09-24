@@ -1,0 +1,449 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/mail-report-detail/window",
+      "kind": "image",
+      "file": "assets/mail_report_detail_window.png",
+      "width": 714,
+      "height": 1186,
+      "sha256": "8e24f71514b35fcdb852143e825781b4e15abe4af3d6f6a80da9d142c31a9f19"
+    },
+    {
+      "id": "ui/mail-report-detail/panel",
+      "kind": "image",
+      "file": "assets/mail_report_detail_panel.png",
+      "width": 673,
+      "height": 928,
+      "sha256": "6d60f9d0510afda50a643544cb28481e5bb34f71a08f2ab951d15d1fa10cade2"
+    },
+    {
+      "id": "ui/mail-report-detail/card",
+      "kind": "image",
+      "file": "assets/mail_report_detail_card.png",
+      "width": 656,
+      "height": 182,
+      "sha256": "d4a4284bbd0e88602c8ba2a7d5ba9eccccfe1961d3ba2193188478eec9abff63",
+      "nineSlice": [
+        24,
+        24,
+        24,
+        24
+      ]
+    },
+    {
+      "id": "ui/mail-report-detail/tab-circle",
+      "kind": "image",
+      "file": "assets/mail_report_detail_tab_circle.png",
+      "width": 86,
+      "height": 86,
+      "sha256": "ad3183aa431dc6651bd070c926c730506039864af42ad98356bae07dbd1d0362"
+    },
+    {
+      "id": "ui/mail-report-detail/icon-log",
+      "kind": "image",
+      "file": "assets/mail_report_detail_icon_log.png",
+      "width": 74,
+      "height": 84,
+      "sha256": "0f1924c3f2f3d6589da70b70fca630ab60d08888f41fe70122e2184238e09001"
+    },
+    {
+      "id": "ui/mail-report-detail/icon-troop",
+      "kind": "image",
+      "file": "assets/mail_report_detail_icon_troop.png",
+      "width": 66,
+      "height": 76,
+      "sha256": "c0546e9db4439782c6c79680a3ac0af4c08b25aac2f4554751c84d5ced6219b2"
+    },
+    {
+      "id": "ui/mail-report-detail/share",
+      "kind": "image",
+      "file": "assets/mail_report_detail_share.png",
+      "width": 82,
+      "height": 75,
+      "sha256": "b36f61dd5ca68302d33552fbab378e21144c059cad9d467b6872cf15ab697ec5",
+      "nineSlice": [
+        26,
+        32,
+        52,
+        39
+      ]
+    },
+    {
+      "id": "ui/mail-report-detail/bar-track",
+      "kind": "image",
+      "file": "assets/mail_report_detail_bar_track.png",
+      "width": 439,
+      "height": 29,
+      "sha256": "a68e392714640c923f12dea0ba1976dd2ace2c86ce9add9586aef2975b3c640f"
+    },
+    {
+      "id": "ui/mail-report-detail/bar-fill",
+      "kind": "image",
+      "file": "assets/mail_report_detail_bar_fill.png",
+      "width": 435,
+      "height": 25,
+      "sha256": "3ef5dbd78706dddc023793acb91945591b0092145834a8e7a722fbd862313c9f"
+    },
+    {
+      "id": "ui/mail-report-detail/ship",
+      "kind": "image",
+      "file": "assets/mail_report_detail_ship.png",
+      "width": 104,
+      "height": 75,
+      "sha256": "2b613cac83add77a5d4c1f67bb05b1bd21e34fa9c4612aed5d7153c7046b39ae"
+    },
+    {
+      "id": "ui/mail-report-detail/vs",
+      "kind": "image",
+      "file": "assets/mail_report_detail_vs.png",
+      "width": 76,
+      "height": 68,
+      "sha256": "2423958264ca2867de63d23edc696b531d961b7f134d6222e069d664065ca516"
+    },
+    {
+      "id": "ui/mail-report-detail/power",
+      "kind": "image",
+      "file": "assets/mail_report_detail_power.png",
+      "width": 47,
+      "height": 44,
+      "sha256": "7d4336bb040b24707a234820978c3b33e8166ea6baf2d22505cce6262a6180e2"
+    },
+    {
+      "id": "ui/mail-report-detail/section-bar",
+      "kind": "image",
+      "file": "assets/mail_report_detail_section_bar.png",
+      "width": 652,
+      "height": 54,
+      "sha256": "bf0f25192f5137ae0520004be23bced320c6de865812322c09439aa50699436f"
+    },
+    {
+      "id": "ui/mail-report-detail/portrait-player",
+      "kind": "image",
+      "file": "assets/mail_report_detail_portrait_player.png",
+      "width": 121,
+      "height": 123,
+      "sha256": "19320c815ba248fd88ce8364bfc199986286e4205b1e3e0563a344bd660907c9"
+    },
+    {
+      "id": "ui/mail-report-detail/power-sm",
+      "kind": "image",
+      "file": "assets/mail_report_detail_power_sm.png",
+      "width": 36,
+      "height": 32,
+      "sha256": "46db2c400eecb0345ca4e7be00b379b784c5bdb92262a4cd9dbb0e4570639a50"
+    },
+    {
+      "id": "ui/mail-report-detail/result-head",
+      "kind": "image",
+      "file": "assets/mail_report_detail_result_head.png",
+      "width": 652,
+      "height": 158,
+      "sha256": "495d72192b9e9ff3dc9feac40dfac2295e7e4f87dc4ce3dfaaa110466cb34ad2"
+    },
+    {
+      "id": "ui/mail-report-detail/level-pill",
+      "kind": "image",
+      "file": "assets/mail_report_detail_level_pill.png",
+      "width": 49,
+      "height": 19,
+      "sha256": "43a5953744b73505f21cdf9ec9bc9a477a775cef687130de9d7024f6fd7c5366"
+    },
+    {
+      "id": "ui/mail-report-detail/skill-axe",
+      "kind": "image",
+      "file": "assets/mail_report_detail_skill_axe.png",
+      "width": 34,
+      "height": 42,
+      "sha256": "bda902e8dde0be8749d74e0dfdf4b25d7c0abc48bc3fbb25e367ab98764aa00a"
+    },
+    {
+      "id": "ui/mail-report-detail/placeholder",
+      "kind": "image",
+      "file": "assets/mail_report_detail_placeholder.png",
+      "width": 64,
+      "height": 74,
+      "sha256": "88a08c0fe7e7acd330af9ae3e046472a9545829d5be66ffa21357f36d4389df2"
+    },
+    {
+      "id": "ui/mail-report-detail/hero-plate",
+      "kind": "image",
+      "file": "assets/mail_report_detail_hero_plate.png",
+      "width": 91,
+      "height": 91,
+      "sha256": "ed7d2c8b8fd46d1bf847220383751de50de10b8c0d492b7820e4e2451536aa22"
+    },
+    {
+      "id": "ui/mail-report-detail/hero-cat",
+      "kind": "image",
+      "file": "assets/mail_report_detail_hero_cat.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "0ca7d43ff074599797ed4224041e36af3d2eaacc4faea585c626a8052af95fc7"
+    },
+    {
+      "id": "ui/mail-report-detail/hero-box",
+      "kind": "image",
+      "file": "assets/mail_report_detail_hero_box.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "d16d3794cc7cb4503b552cf48fa368e0184bf1b4b77eb055e7bbc558cd97a9bd"
+    },
+    {
+      "id": "ui/mail-report-detail/hero-shark",
+      "kind": "image",
+      "file": "assets/mail_report_detail_hero_shark.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "70d5301c32ad50aa4afad4c1fcf6c678600dfd988e7062773c1960ccb8ce0198"
+    },
+    {
+      "id": "ui/mail-report-detail/placeholder-lg",
+      "kind": "image",
+      "file": "assets/mail_report_detail_placeholder_lg.png",
+      "width": 64,
+      "height": 75,
+      "sha256": "e5194d990135c76918f8923f3680ba56eee5c0c41f73b5a50ee88fa7066bc9b8"
+    },
+    {
+      "id": "ui/mail-report-detail/hero-horn",
+      "kind": "image",
+      "file": "assets/mail_report_detail_hero_horn.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "c7f69fe09707688ee55af2a6460242fd8b08f478b07bcf9e156034b2e76a5dd3"
+    },
+    {
+      "id": "ui/mail-report-detail/hero-fox",
+      "kind": "image",
+      "file": "assets/mail_report_detail_hero_fox.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "8d76572724ac8f0cef0ab308f98833e3cd4c09c32a0a325423cc871239cd34fd"
+    },
+    {
+      "id": "ui/mail-report-detail/hero-bandit",
+      "kind": "image",
+      "file": "assets/mail_report_detail_hero_bandit.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "dbf89b2593e7c971da9f700d5fb379e00756bec00ec905db8aab7f44f94944ec"
+    },
+    {
+      "id": "ui/mail-report-detail/skill-ship",
+      "kind": "image",
+      "file": "assets/mail_report_detail_skill_ship.png",
+      "width": 47,
+      "height": 49,
+      "sha256": "86ba1567328f289286bdd2e89c4bd0469ccb81bb2fa51c787c91ad8a24a56667"
+    },
+    {
+      "id": "ui/mail-report-detail/slot",
+      "kind": "image",
+      "file": "assets/mail_report_detail_slot.png",
+      "width": 68,
+      "height": 68,
+      "sha256": "3e15628520ead519139ba793b42d02be5581ddfc8a023913cc3033ef1819778d"
+    },
+    {
+      "id": "ui/mail-report-detail/skill-cannon",
+      "kind": "image",
+      "file": "assets/mail_report_detail_skill_cannon.png",
+      "width": 56,
+      "height": 47,
+      "sha256": "7454340c38ee06f350a477bfa9732bdc8ee0e0c060011160edfa61cc482f92c4"
+    },
+    {
+      "id": "ui/mail-report-detail/skill-gear",
+      "kind": "image",
+      "file": "assets/mail_report_detail_skill_gear.png",
+      "width": 49,
+      "height": 48,
+      "sha256": "ceac39421f4b90e93c0cb86929640e9c0507c6fdb383e824217cd605adb91cd2"
+    },
+    {
+      "id": "ui/mail-report-detail/slot-b",
+      "kind": "image",
+      "file": "assets/mail_report_detail_slot_b.png",
+      "width": 68,
+      "height": 68,
+      "sha256": "05fe0c67dca3c860cb61361aec0965111fb7dc5535491843d81fb6c89a01f795"
+    },
+    {
+      "id": "ui/mail-report-detail/skill-sail",
+      "kind": "image",
+      "file": "assets/mail_report_detail_skill_sail.png",
+      "width": 58,
+      "height": 43,
+      "sha256": "a483c4bbca5e46eb5391c7a619a8e5deb3f0c2303170eb78ca5a3da915f4b17f"
+    },
+    {
+      "id": "ui/mail-report-detail/lock",
+      "kind": "image",
+      "file": "assets/mail_report_detail_lock.png",
+      "width": 43,
+      "height": 55,
+      "sha256": "3f35845a1eb8d1bbcf85e6e10d755b3041bd3b6727b717ccc6be406fa9731df5"
+    },
+    {
+      "id": "ui/mail-report-detail/equip-sword",
+      "kind": "image",
+      "file": "assets/mail_report_detail_equip_sword.png",
+      "width": 47,
+      "height": 49,
+      "sha256": "f3b8501c9736aa7d85abb848b188347a0969ef1ac3ca1d33eca6ff71f792de2b"
+    },
+    {
+      "id": "ui/mail-report-detail/equip-slot",
+      "kind": "image",
+      "file": "assets/mail_report_detail_equip_slot.png",
+      "width": 68,
+      "height": 68,
+      "sha256": "8aee6af850d994ef04633c6054b5ba5bcc3b9c325ef60576f3cdb4318c226710"
+    },
+    {
+      "id": "ui/mail-report-detail/equip-bottle",
+      "kind": "image",
+      "file": "assets/mail_report_detail_equip_bottle.png",
+      "width": 53,
+      "height": 46,
+      "sha256": "1f3f78775402e7ffd570858f80655103635a635f228b3a1d40af5ce87fc87369"
+    },
+    {
+      "id": "ui/mail-report-detail/equip-horn",
+      "kind": "image",
+      "file": "assets/mail_report_detail_equip_horn.png",
+      "width": 47,
+      "height": 45,
+      "sha256": "630ebb95ce8a8b684dfefcd587f7a0fe296ab66486b822f1f2f8888c6ef9ccc0"
+    },
+    {
+      "id": "ui/mail-report-detail/equip-shield",
+      "kind": "image",
+      "file": "assets/mail_report_detail_equip_shield.png",
+      "width": 44,
+      "height": 51,
+      "sha256": "d9914db34be4edaeba7080ea2d91ee0dccf84fa183ba1ddb09a1169de705d43c"
+    },
+    {
+      "id": "ui/mail-report-detail/face-bandit",
+      "kind": "image",
+      "file": "assets/mail_report_detail_face_bandit.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "8ff3f41164c13f57a18db50ca1e72167213313df094abcc40bfcfc298e74f9e9"
+    },
+    {
+      "id": "ui/mail-report-detail/face-brown",
+      "kind": "image",
+      "file": "assets/mail_report_detail_face_brown.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "b4ab8a94d96fe2a5ccec07789d87fe3dc9484b588ce8e3ba3e76d86cb6c53663"
+    },
+    {
+      "id": "ui/mail-report-detail/face-red",
+      "kind": "image",
+      "file": "assets/mail_report_detail_face_red.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "3c5dcd049f693061c9386f829fa30c4f171272efd86db63874f4d0a24a9886d9"
+    },
+    {
+      "id": "ui/mail-report-detail/face-blonde",
+      "kind": "image",
+      "file": "assets/mail_report_detail_face_blonde.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "974c8d350b5c94e7c5883810f41707bfd54d1411e5de3aca4e95a625479dbb0d"
+    },
+    {
+      "id": "ui/mail-report-detail/face-skull",
+      "kind": "image",
+      "file": "assets/mail_report_detail_face_skull.png",
+      "width": 95,
+      "height": 97,
+      "sha256": "f4c04e7e8e16c4a9cdc81b54701de0ecd9642dca092330b2d3c81ee27251f652"
+    },
+    {
+      "id": "ui/mail-report-detail/info",
+      "kind": "image",
+      "file": "assets/mail_report_detail_info.png",
+      "width": 44,
+      "height": 45,
+      "sha256": "206fdb3dbd3009617ef75ae0fd5e6a9acf147eaec0c4aaf6759fbace54d2550e"
+    },
+    {
+      "id": "ui/mail-report-detail/power-xs",
+      "kind": "image",
+      "file": "assets/mail_report_detail_power_xs.png",
+      "width": 38,
+      "height": 34,
+      "sha256": "80d60f0d7dbf721a92db3ea8f55faa9e29d27de0971541ab4d4c15d73cb77140"
+    },
+    {
+      "id": "ui/mail-report-detail/dot",
+      "kind": "image",
+      "file": "assets/mail_report_detail_dot.png",
+      "width": 31,
+      "height": 31,
+      "sha256": "c98c6ae02676a227ccf9e84b54472ac92ab4fa45917285adf9b0aaf080e6b504"
+    },
+    {
+      "id": "ui/mail-report-detail/soldier-l",
+      "kind": "image",
+      "file": "assets/mail_report_detail_soldier_l.png",
+      "width": 89,
+      "height": 99,
+      "sha256": "96fa239510dae59d15df027dccbe54028d49420a5b57bfb445d30eba9bd7c815"
+    },
+    {
+      "id": "ui/mail-report-detail/face-sangis",
+      "kind": "image",
+      "file": "assets/mail_report_detail_face_sangis.png",
+      "width": 94,
+      "height": 95,
+      "sha256": "98207a11dceb1047bfe495c19075bb32f89684c165beae5ef9492e3b64fe1e8c"
+    },
+    {
+      "id": "ui/mail-report-detail/victory-banner",
+      "kind": "image",
+      "file": "assets/mail_report_detail_victory_banner.png",
+      "width": 750,
+      "height": 201,
+      "sha256": "4d2f4098f092e9a7fac1d391b345aea135597a75f4cdf2e863b23e746604042f"
+    },
+    {
+      "id": "ui/mail-report-detail/line",
+      "kind": "image",
+      "file": "assets/mail_report_detail_line.png",
+      "width": 268,
+      "height": 3,
+      "sha256": "e45c27efd0c46daf964dbe9d3bffe7bd7b2863bd86f8bb35f7b9450f479bfd56"
+    },
+    {
+      "id": "ui/mail-report-detail/bar-fill-red",
+      "kind": "image",
+      "file": "assets/mail_report_detail_bar_fill_red.png",
+      "width": 92,
+      "height": 25,
+      "sha256": "282fbb4d1932ae12c8410e7f180175f61a20bbc2defacb2f9882dbe16e39a9c4"
+    },
+    {
+      "id": "ui/mail-report-detail/bar-seam",
+      "kind": "image",
+      "file": "assets/mail_report_detail_bar_seam.png",
+      "width": 4,
+      "height": 25,
+      "sha256": "01640f6b11146be415d7e68afa512ecaabc1a493eb44109c9fee1d7805dabe79"
+    },
+    {
+      "id": "ui/mail-report-detail/soldier-icon",
+      "kind": "image",
+      "file": "assets/mail_soldier_portrait.png",
+      "width": 53,
+      "height": 64,
+      "sha256": "6d5904b2e55120b10f7a53934a12e93ac4ecc8429295b675c5342775231cdc80"
+    }
+  ]
+}

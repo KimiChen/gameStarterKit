@@ -50,6 +50,14 @@
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"
     },
     {
+      "id": "mail-report-detail",
+      "aliases": ["mail-report-detail", "mailReportDetail"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "MailReportDetail",
+      "rootName": "MailReportDetail",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailReportDetail/MailReportDetail.tsx"
+    },
+    {
       "id": "mail-popup",
       "aliases": ["mail-popup", "mailPopup"],
       "canvas": { "width": 750, "height": 1624 },
