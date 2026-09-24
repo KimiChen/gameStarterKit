@@ -13,7 +13,6 @@
 - AI 调试能力必须显式配置开放，审计日志不得记录账号、密钥、Prompt 正文、工具参数或业务数据值。
 - 多进程下 service 的启动流程在每个 worker 各执行一遍：startup 贡献必须声明 `scope`（`process` 每进程一次，`server` 全区服一次且必须幂等）；全局副作用禁止挂进 `AppStartEvent` 处理器。
 - 玩家 Owner 跨进程调用的可选调度字段必须在无值时省略，不能把 `undefined` 写进 JSON-safe IPC envelope。登录建档、离线暂存和退出保存的内部 Action 必须在所有 service worker 的 `LocalActionRegistry` 登记；退出保存也通过玩家 Owner 的 Action 执行，不能在裸连接回调里修改 Bean。
-- 独立原生房间循环通过 `NativeLobbyRoomHost` 登记，由宿主进入 Action 上下文并管理停机；不要另起未追踪的常驻计时器。启动失败和正常 drain 都先停止新 tick、等待在途任务，再关闭 Redis。推送等待不能占用房间变更 FIFO。
 - service 的 dev 启动（`pnpm dev`、pm2 dev、多进程子进程）统一经 `deploy/dev/entrypoint.cjs`；禁止裸 `ts-node/register` 或 transpileOnly —— bean transform 会被静默跳过，垫片的 `_class_info` 金丝雀负责 fail-fast。
 - `workerNum`、`taskWorkerNum`、`userTaskWorkerNum` 全为 0 才走单进程；多进程适配模块必须在分支内惰性加载，再动态加载 ESM runtime bundle。`ALLOY_MULTI_PROCESS_ENABLED=0` 仅作显式逃生门，禁止在 bundle/addon 失败时静默降级。
 - 内部 HTTP 必须在合并 `sN.json5` 后解析 `internalPort`（缺省为最终 `clientPort + 10000`）；`gmSecret` 为空或端口冲突时 fail-fast，客户端端口不承载内部路由。

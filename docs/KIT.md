@@ -51,64 +51,16 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 
 ## 3. 包格式：`kit.json`
 
-### 原生服务端 kit（2026-09-23）
+### serverNew kit（2026-09-24）
 
-`serverNew` 使用独立原生 kit 工具链，登记目录为 `apps/serverNew/kits/<id>/`，命令为 `npm run kit:native -- <command>`。旧 `apps/kits/`、旧 `plugin` 命令和下文旧服 schema 保持原有语义；原生操作不调用旧服 codegen，也不写 `apps/server/`。
+`serverNew` 的可分发 kit 使用框架工具 `pnpm -C apps/serverNew/server kit -- pack/install/check/uninstall`（`scripts/kit/kit.cjs`），
+样例为 `apps/serverNew/kits/kitSample`。kit 只拥有 `apps/shared/schema/protocols/C2S/<id>.json` 与 `src/modules/<id>/`：
+schema 的每个 API 必须有同名 `action/Action<名>.ts`，安装 / 卸载经 `tools/lobby-protocol` 独立刷新 wire 后再跑宿主
+`pnpm generate`；干净宿主闭环见 `pnpm verify:kit-clean-host`。
 
-- 服务端源和测试：`apps/serverNew/server/{src,test}/modules/<id>/`；API 位于模块 `api/<surface>/index.ts`。
-- shared 真源：`apps/shared/src/kits/<id>/`；原生 RPC descriptor：`apps/shared/src/native/lobbyRpc/domains/`。
-- 客户端真源：`apps/client/src/kits/<id>/`；清单生成独立 native catalog，经宿主扩展点合并。业务使用类型明确的 `AppPorts.nativeLobbyRpc`，默认旧服连接行为不变。
-- RPC 合集继承已有通用协议并加入原生域，旧服注册表不包含 gameDemo。信封和传输编解码从既有真源生成链接版本，不另维护手写副本。
-- `verify/routes.cjs` 提供真实协议场景，`verify/protocolVectors/` 提供请求/响应向量，均随包分发。
-
-当前原生格式为 `native-kit.json` 格式 1，仅支持代码与 Cocos View 清单，不支持 SQL、旧服 mode/worker/effect、FGUI 资源、运行配置或引擎文件。旧版原生试验包 0.2.x 使用旧工具链，不能直接交给新安装器；须先排空旧部署，在具备原生扩展点的宿主安装新包，再恢复保留的数据。原生独立制品从 gameDemo 0.3.0 开始。
-
-宿主能力声明为 `apps/serverNew/server/native-kit-capabilities.json`，kit 通过 `native-requires.json` 消费版本窗口。`native-data.json` 声明持久键、数据版本和 preserve 策略。安装前显式指定 `NATIVE_KIT_PROFILE` 并排空、停止所有 worker；写文件前进入 detached，成功生成后转 drained，须显式 resume。卸载或安装失败保留全部业务数据并保持 detached；没有迁移器时拒绝跨数据版本、删减持久键、降级和同版本内容变更。
-
-工具实现与完整命令见 [原生 kit 工具](../apps/serverNew/tools/kit/README.md)，运维状态机见 [生命周期](../apps/serverNew/server/src/runtime/kit/README.md)，本轮验证以 [实施记录](gameDemo实施记录.md) 为准。正式分发仍须审核与签名。
-
-`kit.json` 有自己的 schema（`apps/server/tools/plugin/kit-schema-v1.json`）：登记面字段与 `plugin.json` v2 同名同义，但路径
-pattern、命名空间闸（`isKitClientDir`）、entry 形态都指向 `kits/`——⛔ 不是「复用 plugin schema 片段」，是两份 schema 共用一个解释器。
-
-```json
-{
-  "schemaVersion": 1,
-  "id": "slg",
-  "version": "1.0.0",
-  "description": "SLG 地基：世界地图 / 行军 / 联盟",
-  "api": { "worldmap": { "version": 1, "minSupported": 1 }, "march": { "version": 1, "minSupported": 1 } },
-  "domains": ["slg", "slgAdmin"],
-  "modes": [{ "id": "battle", "constantName": "SlgBattle" }, { "id": "march", "constantName": "SlgMarch" }],
-  "sql": { "files": ["sql/001-init.sql"], "tables": [{ "name": "k_slg_tile", "zone": "per-zone" }, { "name": "k_slg_world", "zone": "global" }] },
-  "userKeys": ["tileOwner", "marchQueue"],
-  "entry": "apps/client/src/kits/slg/index.ts",
-  "routes": [], "menu": [], "viewDirs": [], "views": [], "owners": []
-}
-```
-
-- `api`：命名 api 面集合（§4）；任一面变化必 bump `version`。单面 kit 用 `default`。
-- `modes`：kit 自带的玩法清单（id + constantName），锁抬头用它替代插件的单个 `constantName`；所有权按每个 mode 各推一组
-  gameplay 规则（`gameplays/<modeId>/`、`apps/shared/src/gameplays/<modeId>/`、`rooms/modes/<modeId>/`、`<Constant>Room.ts`、
-  `wire-vectors/<modeId>.ts`、`<modeId>-*.test.ts`）。
-- `sql.files`：迁移文件顺序；`sql.tables`：每张表的 `zone`（§5）。
-- **MMO MF7a 增量可选字段（2026-09-19 交付，⛔ 不 bump schemaVersion，K0-2 `requires` 先例；进锁抬头与身份摘要）**：
-  `sql.tables[].role: "world-event"` = 该表按框架固定的世界事件表形态（必备列 `event_id / instance_id / seq / kind / payload /
-  status / attempts / checkpoint_rev`，`db:bootstrap` 的形状机检缺列 fail-closed）；`workers: [{ id, entry }]` = 后台 worker
-  清单，`entry` 固定形态 `apps/server/src/kits/<id>/workers/<worker>.ts`（默认导出 `defineKitWorker({ pass })`，§4），每个
-  worker 对应一行 `singleton_lease('kit:<id>:<worker>')`（bootstrap 预置，§5）。
-- **MMO MF9 增量可选字段（2026-09-19 交付，同样 ⛔ 不 bump schemaVersion，进锁抬头与身份摘要）**：`contributions: { <id>: { kind:
-  "data" | "module", ends: [shared | server | client], schema? | export? } }` = kit 定义的**贡献点**（§4：module 恰好一端且带
-  `export`；data 带 `schema`（解释器支持的 draft-07 子集，加载期 fail-fast），schema 的 sha256 进锁 / 身份摘要——schema 变了就是
-  契约变了）；`fragments: [<name>]` = kit 提供的 state fragment（文件 `apps/kits/<id>/fragments/<name>.state.json`，
-  `{ schemaVersion: 1, root?: WireField[], player?: WireField[] }`，字段形态与 state.json 一致；mode 的 state.json 以
-  `"<kitId>:<name>"` 引用，字段注入 root / players value 类型，文件字节并入该 mode 的 contractDigest）。
-- `userKeys`：kit 的 per-user Redis 键名清单——冷档 freeze/thaw 按它快照与 UNLINK（框架 PR：freeze/thaw 读该清单）。
-- 没有 `version` = 宿主自有 kit（与插件同规则：不可打包、不进锁）。
-- 派生形态：`client`（有登记）/ `gameplay`（modes 非空）/ `server`（有 sql 或 `apps/server/src/kits/<id>/`）——纯 SQL + 服务的
-  kit 合法（插件工具的「两者皆无即拒绝」对 kit 放宽为「三者皆无即拒绝」）。
-- 锁：与插件同一目录、同一形态，抬头多一个 `"class":"kit"`。**锁目录改为 `scripts/packages/`**（框架 PR：两把插件锁
-  `git mv`，`plugin-lock.test.ts`、`foreignLockOwners`、两两不交、id 大小写归一唯一都只扫这一处）——kit 与 plugin 的 id
-  共享同一命名空间，撞名即拒绝。
+当前限制（需框架侧补齐后才能把完整玩法打成包）：一个 kit 只能有一个协议域；不管客户端、`lobbyRpc/checks/<id>.ts` 与旧服
+codegen 契约向量；模块 Bean 卸载后在 `generated/records` 中的记录处理尚无约定。gameDemo 因此按 heroRecruit 的同一动线
+在仓内开发（服务端模块 + `apps/plugins/gameDemo` 客户端插件），见 [gameDemo 插件](../apps/plugins/gameDemo/README.md)。
 
 ## 4. kit-api：插件怎么建在 kit 上
 

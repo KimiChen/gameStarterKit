@@ -21,6 +21,10 @@ import { ActionSettingTagRefresh } from '../../../../src/runtime/action/S2S/sett
 import { ActionUserQuitGuild } from '../../../../src/modules/user/action/ActionUserQuitGuild'
 import { ActionUserFieldValUpdate } from '../../../../src/modules/user/action/ActionUserFieldValUpdate'
 import { ActionUserRename } from '../../../../src/modules/user/action/ActionUserRename'
+import { ActionGameDemoMailDeliver } from '../../../../src/modules/gameDemo/action/ActionGameDemoMailDeliver'
+import { ActionGameDemoSeasonScore } from '../../../../src/modules/gameDemo/action/ActionGameDemoSeasonScore'
+import { ActionGameDemoSeasonTick } from '../../../../src/modules/gameDemo/action/ActionGameDemoSeasonTick'
+import { ActionGameDemoBossTick } from '../../../../src/modules/gameDemo/action/ActionGameDemoBossTick'
 
 export const Actions = {
     'activity/ActivityStageTask': ActionActivityStageTask,
@@ -46,4 +50,8 @@ export const Actions = {
     'user/UserQuitGuild': ActionUserQuitGuild,
     'user/UserFieldValUpdate': ActionUserFieldValUpdate,
     'user/UserRename': ActionUserRename,
+    'gameDemo/GameDemoMailDeliver': ActionGameDemoMailDeliver,
+    'gameDemo/GameDemoSeasonScore': ActionGameDemoSeasonScore,
+    'gameDemo/GameDemoSeasonTick': ActionGameDemoSeasonTick,
+    'gameDemo/GameDemoBossTick': ActionGameDemoBossTick,
 }

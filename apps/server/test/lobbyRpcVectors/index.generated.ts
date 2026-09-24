@@ -2,6 +2,7 @@
 import arenaVectors from "./arena";
 import arenaShopVectors from "./arenaShop";
 import chatVectors from "./chat";
+import gameDemoVectors from "./gameDemo";
 import guildVectors from "./guild";
 import heroRecruitVectors from "./heroRecruit";
 import incomeVectors from "./income";
@@ -21,6 +22,7 @@ export const LOBBY_RPC_VECTOR_FILES: Readonly<Record<string, LobbyRpcVectorFile>
     arena: arenaVectors,
     arenaShop: arenaShopVectors,
     chat: chatVectors,
+    gameDemo: gameDemoVectors,
     guild: guildVectors,
     heroRecruit: heroRecruitVectors,
     income: incomeVectors,

@@ -1,5 +1,9 @@
 # gameDemo 实施记录
 
+> **2026-09-24 更新**：本文记录的是 gameDemo 首版（原生 kit 工具链 + AtomicHash 存储）的实施过程。该实现已按新框架标准动线重写
+> （schema → Action → Bean，共享资源走 Task Worker，跨实体经可靠队列），原生 kit 工具链、`AtomicHash` / `OwnedRoom` 等已移除。
+> 当前结构以 [gameDemo 插件](../apps/plugins/gameDemo/README.md) 与 [docs/KIT.md](KIT.md) 为准，下文仅作历史记录。
+
 2026-09-22 开始并完成 P0–P7；2026-09-23 按用户要求改为旧服零改动的独立原生 kit 工具链（P8，见末节）。最终结论见 [gameDemo框架能力验收报告](gameDemo框架能力验收报告.md)。以下保留历史阶段记录，旧工具链接法由 P8 替代。
 
 ## P0 当前产物（只读包基线）

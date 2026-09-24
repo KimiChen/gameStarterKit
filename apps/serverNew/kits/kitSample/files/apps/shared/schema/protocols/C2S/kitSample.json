@@ -1,0 +1,25 @@
+{
+  "domain": "kitSample",
+  "contractVersion": 1,
+  "errorCodes": [],
+  "types": {
+    "IKitSamplePingReq": { "kind": "object", "fields": [] },
+    "IKitSamplePingRes": {
+      "kind": "object",
+      "fields": [
+        { "name": "message", "kind": "string", "minLength": 1, "maxLength": 32 }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "KitSamplePing",
+      "route": "kitSample.ping",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "kitSample",
+      "request": { "kind": "ref", "ref": "IKitSamplePingReq" },
+      "response": { "kind": "ref", "ref": "IKitSamplePingRes" }
+    }
+  ]
+}

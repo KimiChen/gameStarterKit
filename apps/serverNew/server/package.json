@@ -33,7 +33,6 @@
         "generate": "pnpm gen:lobby-contract && ts-node --project scripts/generator/tsconfig.record-refresh.json ./scripts/generator/differ/AutoGen.ts && pnpm gen:modules && pnpm gen:error-codes",
         "http.js测试": "node dist/http/index.js -p bearjoy -v dev -ap 25001",
         "kit": "node scripts/kit/kit.cjs",
-        "kit:lifecycle": "node scripts/kit-lifecycle.cjs",
         "lint": "eslint src",
         "lint:baseline": "node scripts/lint/check-lint.js",
         "lint:baseline:update": "node scripts/lint/check-lint.js --update",

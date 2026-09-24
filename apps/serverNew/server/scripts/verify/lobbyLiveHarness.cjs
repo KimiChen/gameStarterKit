@@ -284,7 +284,7 @@ class LobbyClient {
  * 而单进程下同一端口就是旧客户端端口之外的那个独立端点。
  */
 function createHarness(fixture) {
-    const contract = require(path.join(SERVER_ROOT, 'generated/lobby-contract/native/lobbyRpc/index.generated'))
+    const contract = require(path.join(SERVER_ROOT, 'generated/lobby-contract/protocol/lobbyRpc'))
     const httpContract = require(path.join(SERVER_ROOT, 'generated/lobby-contract/protocol/http'))
 
     const h = {

@@ -3,15 +3,15 @@
     "semanticArtifacts": {
         "unifiedRecord": {
             "path": "generated/records/record.json",
-            "semanticSha256": "de543ade5982324b8647a51b5ccda0b62dd3116619165ae911bbaf8dc95f7edb"
+            "semanticSha256": "c74ec2a62d25ce41152bb54c608bcde37dd42d8979617c0000b3939c5c2ce2fb"
         },
         "beanDefinition": {
             "path": "generated/records/bean.json5",
-            "semanticSha256": "23c10b554e14bb47e7c840bc68483f94d3538c3a24409c57ca7f6604a33431a0"
+            "semanticSha256": "2e730af95618e50e0bc36a52dd8f9096e38ee5726b2c955ae1aedfc214d186c0"
         },
         "protocolDefinition": {
             "path": "generated/records/proto.json5",
-            "semanticSha256": "de543ade5982324b8647a51b5ccda0b62dd3116619165ae911bbaf8dc95f7edb"
+            "semanticSha256": "c74ec2a62d25ce41152bb54c608bcde37dd42d8979617c0000b3939c5c2ce2fb"
         },
         "c2sServiceProtocol": {
             "path": "generated/protocol/server/C2S/serviceProto.ts",
@@ -19,29 +19,29 @@
         },
         "s2sServiceProtocol": {
             "path": "generated/protocol/server/S2S/serviceProto.ts",
-            "semanticSha256": "7f070b4c0c36037553ee2fd2f02ed435b00b53f386666b729b5a911ccb113cca"
+            "semanticSha256": "bf881eb705a3a61515b1cda8d40e8865f3894052caf06cc47d624a8b6da5316b"
         }
     },
     "physicalArtifacts": {
         "unifiedRecord": {
             "path": "generated/records/record.json",
-            "sha256": "ea18e6a0a0e9641b2e7344d12a20cd3b60c8a2b896cdcf629caed2c381da20cd"
+            "sha256": "47a06e9f8e3036b8b7381a4a2a3cd433e067aa361450d743d47c0b0f9e30cf0d"
         },
         "beanDefinition": {
             "path": "generated/records/bean.json5",
-            "sha256": "6d10d60a9103ff925e4562b725c0d345fc09e1979d838104a1b86a458cc3f1f7"
+            "sha256": "0b4db11d4416374dff4fa5060957291ad279b89841c95db115910c314f3e44b5"
         },
         "protocolDefinition": {
             "path": "generated/records/proto.json5",
-            "sha256": "be2482a5b54d24b7f08af05d1d5ba9c24523bac52045c28fc410ba85a95caf67"
+            "sha256": "6c08c091f2bf54f4594662a1c1f089ddb43dc918378863e07062ae5a9e05eec2"
         },
         "c2sServiceProtocol": {
             "path": "generated/protocol/server/C2S/serviceProto.ts",
-            "sha256": "9887bcae965aeaffa21c8615193f8cb321174953b4d437aed5b91cd88417115d"
+            "sha256": "9bf7c36aea362c3825c6cf6ed3b4cdc71186a2c8880fb8dbfed4ff45be50f2aa"
         },
         "s2sServiceProtocol": {
             "path": "generated/protocol/server/S2S/serviceProto.ts",
-            "sha256": "d67765577c174e2a44fa87c2cc263bf080fca53159f728e4e8113f21b6292550"
+            "sha256": "79e8a20e9483972dfe27fae86da51fdca5368fa08a4555077e86b6a939dbbc76"
         }
     },
     "excludedRecordCandidates": {
@@ -58,7 +58,7 @@
         "protocol": {
             "directionVersions": {
                 "C2S": 844,
-                "S2S": 91
+                "S2S": 95
             },
             "routes": [
                 {
@@ -148,6 +148,30 @@
                     "direction": "S2S",
                     "kind": "api",
                     "name": "default/Default"
+                },
+                {
+                    "direction": "S2S",
+                    "kind": "api",
+                    "name": "gameDemo/GameDemoBossTick",
+                    "serviceType": "Base"
+                },
+                {
+                    "direction": "S2S",
+                    "kind": "api",
+                    "name": "gameDemo/GameDemoMailDeliver",
+                    "serviceType": "Base"
+                },
+                {
+                    "direction": "S2S",
+                    "kind": "api",
+                    "name": "gameDemo/GameDemoSeasonScore",
+                    "serviceType": "Base"
+                },
+                {
+                    "direction": "S2S",
+                    "kind": "api",
+                    "name": "gameDemo/GameDemoSeasonTick",
+                    "serviceType": "Base"
                 },
                 {
                     "direction": "S2S",
@@ -879,6 +903,81 @@
                     "fields": []
                 },
                 {
+                    "key": "S2S:gameDemo/ReqGameDemoBossTick",
+                    "kind": "request",
+                    "version": 100,
+                    "fields": []
+                },
+                {
+                    "key": "S2S:gameDemo/ReqGameDemoMailDeliver",
+                    "kind": "request",
+                    "version": 103,
+                    "fields": [
+                        {
+                            "name": "gold",
+                            "id": 102,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": []
+                        },
+                        {
+                            "name": "source",
+                            "id": 100,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": []
+                        },
+                        {
+                            "name": "title",
+                            "id": 101,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": []
+                        }
+                    ]
+                },
+                {
+                    "key": "S2S:gameDemo/ReqGameDemoSeasonScore",
+                    "kind": "request",
+                    "version": 104,
+                    "fields": [
+                        {
+                            "name": "at",
+                            "id": 103,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": []
+                        },
+                        {
+                            "name": "batchId",
+                            "id": 101,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": []
+                        },
+                        {
+                            "name": "score",
+                            "id": 102,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": []
+                        },
+                        {
+                            "name": "uid",
+                            "id": 100,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": []
+                        }
+                    ]
+                },
+                {
+                    "key": "S2S:gameDemo/ReqGameDemoSeasonTick",
+                    "kind": "request",
+                    "version": 100,
+                    "fields": []
+                },
+                {
                     "key": "S2S:gm/ReqChangeServerState",
                     "kind": "request",
                     "version": 2,
@@ -1287,7 +1386,7 @@
             ]
         },
         "bean": {
-            "nextModId": 306,
+            "nextModId": 308,
             "beans": [
                 {
                     "className": "Activity",
@@ -2880,6 +2979,1000 @@
                             "deleted": false,
                             "type": "Array",
                             "collectionTypes": ["int"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoBossEventBean",
+                    "nextFieldId": 6,
+                    "diffType": 1,
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "amount",
+                            "id": 5,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "at",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "kind",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "sequence",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "uid",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoBossFighterBean",
+                    "nextFieldId": 11,
+                    "diffType": 1,
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "active",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "boolean",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "autoAttack",
+                            "id": 6,
+                            "deleted": false,
+                            "type": "boolean",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "damage",
+                            "id": 9,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "damageSeq",
+                            "id": 10,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "generation",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "hp",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "maxHp",
+                            "id": 5,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "nextAttackAt",
+                            "id": 7,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "reviveAt",
+                            "id": 8,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "uid",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoBossLobby",
+                    "nextFieldId": 3,
+                    "diffType": 2,
+                    "idFieldType": "int",
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "id",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "members",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoBossMemberBean"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoBossMemberBean",
+                    "nextFieldId": 4,
+                    "diffType": 1,
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "bossId",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "generation",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "uid",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoBossRoom",
+                    "nextFieldId": 14,
+                    "diffType": 2,
+                    "idFieldType": "int",
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.ModBean",
+                    "modId": 306,
+                    "fields": [
+                        {
+                            "name": "attackSeq",
+                            "id": 9,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "events",
+                            "id": 12,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoBossEventBean"],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "eventSeq",
+                            "id": 10,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "fighters",
+                            "id": 11,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoBossFighterBean"],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "hp",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "id",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "nextCounterAt",
+                            "id": 8,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "phase",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "respawnAt",
+                            "id": 6,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "revision",
+                            "id": 5,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "rewards",
+                            "id": 13,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoRewardBean"],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "runNumber",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "startedAt",
+                            "id": 7,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoGuildBean",
+                    "nextFieldId": 4,
+                    "diffType": 1,
+                    "idFieldType": "int",
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "id",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "name",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "owner",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoGuildDirectory",
+                    "nextFieldId": 8,
+                    "diffType": 2,
+                    "idFieldType": "int",
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "guilds",
+                            "id": 5,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoGuildBean"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "guildSeq",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "id",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "invites",
+                            "id": 7,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoGuildInviteBean"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "inviteSeq",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "joinSeq",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "members",
+                            "id": 6,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoGuildMemberBean"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoGuildInviteBean",
+                    "nextFieldId": 5,
+                    "diffType": 1,
+                    "idFieldType": "int",
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "guildId",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "id",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "inviter",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "target",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoGuildMemberBean",
+                    "nextFieldId": 4,
+                    "diffType": 1,
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "guildId",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "joinSeq",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "uid",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoMailBean",
+                    "nextFieldId": 7,
+                    "diffType": 1,
+                    "idFieldType": "int",
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "claimed",
+                            "id": 6,
+                            "deleted": false,
+                            "type": "boolean",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "createdAt",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "gold",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "id",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "read",
+                            "id": 5,
+                            "deleted": false,
+                            "type": "boolean",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "title",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoPlayer",
+                    "nextFieldId": 21,
+                    "diffType": 2,
+                    "idFieldType": "int",
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.ModBean",
+                    "modId": 307,
+                    "fields": [
+                        {
+                            "name": "batchCount",
+                            "id": 13,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "batchFinePill",
+                            "id": 16,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "batchPill",
+                            "id": 15,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "batchScore",
+                            "id": 17,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "batchSeq",
+                            "id": 12,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "batchStartedAt",
+                            "id": 14,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "deliveredSources",
+                            "id": 20,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["string", "int"],
+                            "saveType": "SaveType.ForRedis",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "dew",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "finePill",
+                            "id": 6,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "herb",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "heroExp",
+                            "id": 8,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "heroLevel",
+                            "id": 7,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "id",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "initialized",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "boolean",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "mails",
+                            "id": 19,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoMailBean"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "mailSeq",
+                            "id": 18,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "pill",
+                            "id": 5,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "shopDay",
+                            "id": 9,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "shopDew",
+                            "id": 11,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "shopHerb",
+                            "id": 10,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoRewardBean",
+                    "nextFieldId": 5,
+                    "diffType": 1,
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "gold",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "source",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "title",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "uid",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoScoreBean",
+                    "nextFieldId": 4,
+                    "diffType": 1,
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "score",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "sequence",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "uid",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        }
+                    ]
+                },
+                {
+                    "className": "GameDemoSeason",
+                    "nextFieldId": 12,
+                    "diffType": 2,
+                    "idFieldType": "int",
+                    "saveType": "SaveType.All",
+                    "modType": "ModType.None",
+                    "modId": 0,
+                    "fields": [
+                        {
+                            "name": "applied",
+                            "id": 10,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["string", "int"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "endsAt",
+                            "id": 5,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "id",
+                            "id": 1,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "number",
+                            "id": 2,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "phase",
+                            "id": 3,
+                            "deleted": false,
+                            "type": "string",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "rewardedCount",
+                            "id": 8,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "rewards",
+                            "id": 11,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoRewardBean"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "scores",
+                            "id": 9,
+                            "deleted": false,
+                            "type": "Map",
+                            "collectionTypes": ["int", "GameDemoScoreBean"],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "scoreSeq",
+                            "id": 7,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "settledAt",
+                            "id": 6,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
+                            "saveType": "SaveType.All",
+                            "modType": "ModType.None"
+                        },
+                        {
+                            "name": "startedAt",
+                            "id": 4,
+                            "deleted": false,
+                            "type": "int",
+                            "collectionTypes": [],
                             "saveType": "SaveType.All",
                             "modType": "ModType.None"
                         }
@@ -8382,6 +9475,18 @@
                     "subModType": "GuildApply",
                     "isMap": true,
                     "mapKeyType": "int"
+                },
+                {
+                    "name": "gameDemoBossRoom",
+                    "id": 306,
+                    "type": "GameDemoBossRoom",
+                    "isMap": false
+                },
+                {
+                    "name": "gameDemoPlayer",
+                    "id": 307,
+                    "type": "GameDemoPlayer",
+                    "isMap": false
                 }
             ]
         },
@@ -10299,26 +11404,6 @@
             {
                 "sourceName": "MailStateKeys.LOCK_MAIL_CACHE_INIT",
                 "value": "lock:global_mail_init"
-            },
-            {
-                "sourceName": "NativeKitLifecycle.lifecycleKey",
-                "value": "nativeKit:lifecycle:v1"
-            },
-            {
-                "sourceName": "NativeKitLifecycle.runtimesKey",
-                "value": "nativeKit:runtimes:v1"
-            },
-            {
-                "sourceName": "NativeLobbyAssets.balanceKey",
-                "value": "nativeLobby:shop:balance:v1"
-            },
-            {
-                "sourceName": "NativeLobbyAssets.itemsKey",
-                "value": "nativeLobby:grants:items:v1"
-            },
-            {
-                "sourceName": "NativeLobbyAssets.versionsKey",
-                "value": "nativeLobby:assets:versions:v1"
             },
             {
                 "sourceName": "NativeLobbyIdentityMap.key",
@@ -15259,6 +16344,17 @@
                     "routes": ["default/Default"]
                 },
                 {
+                    "sourceName": "GameDemoS2S",
+                    "direction": "S2S",
+                    "package": "gameDemo",
+                    "routes": [
+                        "gameDemo/GameDemoBossTick",
+                        "gameDemo/GameDemoMailDeliver",
+                        "gameDemo/GameDemoSeasonScore",
+                        "gameDemo/GameDemoSeasonTick"
+                    ]
+                },
+                {
                     "sourceName": "GmS2S",
                     "direction": "S2S",
                     "package": "gm",
@@ -15311,6 +16407,98 @@
                     "sourceName": "ActionDefault"
                 },
                 {
+                    "route": "C2S:gameDemo.alchemyGet",
+                    "sourceName": "ActionGameDemoAlchemyGet"
+                },
+                {
+                    "route": "C2S:gameDemo.alchemyStart",
+                    "sourceName": "ActionGameDemoAlchemyStart"
+                },
+                {
+                    "route": "C2S:gameDemo.assets",
+                    "sourceName": "ActionGameDemoAssets"
+                },
+                {
+                    "route": "C2S:gameDemo.bossAttack",
+                    "sourceName": "ActionGameDemoBossAttack"
+                },
+                {
+                    "route": "C2S:gameDemo.bossEnter",
+                    "sourceName": "ActionGameDemoBossEnter"
+                },
+                {
+                    "route": "C2S:gameDemo.bossGet",
+                    "sourceName": "ActionGameDemoBossGet"
+                },
+                {
+                    "route": "C2S:gameDemo.bossLeave",
+                    "sourceName": "ActionGameDemoBossLeave"
+                },
+                {
+                    "route": "C2S:gameDemo.bossList",
+                    "sourceName": "ActionGameDemoBossList"
+                },
+                {
+                    "route": "C2S:gameDemo.buy",
+                    "sourceName": "ActionGameDemoBuy"
+                },
+                {
+                    "route": "C2S:gameDemo.guildCreate",
+                    "sourceName": "ActionGameDemoGuildCreate"
+                },
+                {
+                    "route": "C2S:gameDemo.guildGet",
+                    "sourceName": "ActionGameDemoGuildGet"
+                },
+                {
+                    "route": "C2S:gameDemo.guildInvite",
+                    "sourceName": "ActionGameDemoGuildInvite"
+                },
+                {
+                    "route": "C2S:gameDemo.guildLeave",
+                    "sourceName": "ActionGameDemoGuildLeave"
+                },
+                {
+                    "route": "C2S:gameDemo.guildRespond",
+                    "sourceName": "ActionGameDemoGuildRespond"
+                },
+                {
+                    "route": "C2S:gameDemo.heroGet",
+                    "sourceName": "ActionGameDemoHeroGet"
+                },
+                {
+                    "route": "C2S:gameDemo.heroUpgrade",
+                    "sourceName": "ActionGameDemoHeroUpgrade"
+                },
+                {
+                    "route": "C2S:gameDemo.initialize",
+                    "sourceName": "ActionGameDemoInitialize"
+                },
+                {
+                    "route": "C2S:gameDemo.mailClaim",
+                    "sourceName": "ActionGameDemoMailClaim"
+                },
+                {
+                    "route": "C2S:gameDemo.mailList",
+                    "sourceName": "ActionGameDemoMailList"
+                },
+                {
+                    "route": "C2S:gameDemo.mailRead",
+                    "sourceName": "ActionGameDemoMailRead"
+                },
+                {
+                    "route": "C2S:gameDemo.seasonEnd",
+                    "sourceName": "ActionGameDemoSeasonEnd"
+                },
+                {
+                    "route": "C2S:gameDemo.seasonGet",
+                    "sourceName": "ActionGameDemoSeasonGet"
+                },
+                {
+                    "route": "C2S:gameDemo.shop",
+                    "sourceName": "ActionGameDemoShop"
+                },
+                {
                     "route": "C2S:heroRecruit.buy",
                     "sourceName": "ActionHeroRecruitBuy"
                 },
@@ -15361,6 +16549,22 @@
                 {
                     "route": "S2S:default/Default",
                     "sourceName": "ActionDefault"
+                },
+                {
+                    "route": "S2S:gameDemo/GameDemoBossTick",
+                    "sourceName": "ActionGameDemoBossTick"
+                },
+                {
+                    "route": "S2S:gameDemo/GameDemoMailDeliver",
+                    "sourceName": "ActionGameDemoMailDeliver"
+                },
+                {
+                    "route": "S2S:gameDemo/GameDemoSeasonScore",
+                    "sourceName": "ActionGameDemoSeasonScore"
+                },
+                {
+                    "route": "S2S:gameDemo/GameDemoSeasonTick",
+                    "sourceName": "ActionGameDemoSeasonTick"
                 },
                 {
                     "route": "S2S:gm/ChangeServerState",
@@ -15577,6 +16781,76 @@
                 {
                     "sourceName": "FundItem",
                     "logicalName": "/pay/FundItem",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoBossEventBean",
+                    "logicalName": "/gameDemo/GameDemoBossEventBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoBossFighterBean",
+                    "logicalName": "/gameDemo/GameDemoBossFighterBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoBossLobby",
+                    "logicalName": "/gameDemo/GameDemoBossLobby",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoBossMemberBean",
+                    "logicalName": "/gameDemo/GameDemoBossMemberBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoBossRoom",
+                    "logicalName": "/gameDemo/GameDemoBossRoom",
+                    "mods": ["gameDemoBossRoom"]
+                },
+                {
+                    "sourceName": "GameDemoGuildBean",
+                    "logicalName": "/gameDemo/GameDemoGuildBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoGuildDirectory",
+                    "logicalName": "/gameDemo/GameDemoGuildDirectory",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoGuildInviteBean",
+                    "logicalName": "/gameDemo/GameDemoGuildInviteBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoGuildMemberBean",
+                    "logicalName": "/gameDemo/GameDemoGuildMemberBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoMailBean",
+                    "logicalName": "/gameDemo/GameDemoMailBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoPlayer",
+                    "logicalName": "/gameDemo/GameDemoPlayer",
+                    "mods": ["gameDemoPlayer"]
+                },
+                {
+                    "sourceName": "GameDemoRewardBean",
+                    "logicalName": "/gameDemo/GameDemoRewardBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoScoreBean",
+                    "logicalName": "/gameDemo/GameDemoScoreBean",
+                    "mods": []
+                },
+                {
+                    "sourceName": "GameDemoSeason",
+                    "logicalName": "/gameDemo/GameDemoSeason",
                     "mods": []
                 },
                 {
@@ -15921,14 +17195,14 @@
         }
     },
     "counts": {
-        "routes": 31,
-        "protocolMessages": 45,
-        "protocolFields": 105,
-        "beans": 94,
-        "beanFields": 626,
-        "mods": 30,
+        "routes": 35,
+        "protocolMessages": 49,
+        "protocolFields": 112,
+        "beans": 108,
+        "beanFields": 720,
+        "mods": 32,
         "errorCodes": 312,
-        "redisKeys": 24,
+        "redisKeys": 19,
         "databaseTables": 32,
         "databaseFields": 346,
         "classListEntries": 28

@@ -13,7 +13,7 @@ import {
     LOBBY_TRANSPORT_VERSION,
     UserRpc,
     ALL_LOBBY_RPC_TYPES,
-} from '../../../generated/lobby-contract/native/lobbyRpc/index.generated'
+} from '../../../generated/lobby-contract/protocol/lobbyRpc'
 import { NativeLobbyPendingRoutes } from '../../../src/runtime/lobby/NativeLobbyPendingRoutes'
 import { LobbyAuthRejection } from '@arthropoda/game-engine'
 

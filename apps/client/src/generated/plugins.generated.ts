@@ -46,6 +46,7 @@ export const PLUGIN_IDS: readonly string[] = [
     "arena",
     "arenaShop",
     "builtin",
+    "gameDemo",
     "heroRecruit",
     "income",
     "redeem",
@@ -97,6 +98,18 @@ export const GENERATED_PLUGINS: readonly GeneratedPluginDescriptor[] = [
         ],
         menu: [
             { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+        ],
+    },
+    {
+        id: "gameDemo",
+        resident: false,
+        load: () => import("../plugins/gameDemo/index").then((m) => m.createPluginModule()),
+        dependencies: [],
+        routes: [
+            { id: "gameDemo", view: "GameDemo", group: "authenticated", restore: "reopen" },
+        ],
+        menu: [
+            { entryId: "main", pluginId: "gameDemo", label: "玩法验证", labelKey: "menu.gameDemo.main", launch: { kind: "route", routeId: "gameDemo" } },
         ],
     },
     {
@@ -178,6 +191,7 @@ export const GENERATED_MENU_CONTRIBUTIONS: readonly GeneratedMenuContribution[] 
     { entryId: "duel", pluginId: "arena", label: "决斗", labelKey: "menu.arena.duel", launch: { kind: "gameplay", gameplayId: "arenaDuel" } },
     { entryId: "arenaShop", pluginId: "arenaShop", label: "竞技场商店", labelKey: "menu.arenaShop", launch: { kind: "route", routeId: "arenaShop" } },
     { entryId: "ballMove", pluginId: "builtin", label: "进入战斗", labelKey: "menu.enterBattle", launch: { kind: "gameplay", gameplayId: "ballMove" } },
+    { entryId: "main", pluginId: "gameDemo", label: "玩法验证", labelKey: "menu.gameDemo.main", launch: { kind: "route", routeId: "gameDemo" } },
     { entryId: "heroRecruit", pluginId: "heroRecruit", label: "英雄招募", labelKey: "menu.heroRecruit", launch: { kind: "route", routeId: "heroRecruit" } },
     { entryId: "income", pluginId: "income", label: "铜币收益", labelKey: "menu.income", launch: { kind: "route", routeId: "income" } },
     { entryId: "redeem", pluginId: "redeem", label: "兑换码", labelKey: "menu.redeem", launch: { kind: "route", routeId: "redeem" } },

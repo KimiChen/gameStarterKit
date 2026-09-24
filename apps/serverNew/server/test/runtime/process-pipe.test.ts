@@ -12,7 +12,7 @@ import {
     executeObjectAction,
     lobbyRouteOutcome,
 } from '@arthropoda/game-engine'
-import { UserRpc, type LobbyRpcType } from '../../generated/lobby-contract/native/lobbyRpc/index.generated'
+import { UserRpc, type LobbyRpcType } from '../../generated/lobby-contract/protocol/lobbyRpc'
 import { NativeLobbyProcessRoutes, nativeLobbyProcessRoutes } from '../../src/runtime/lobby/NativeLobbyProcessRoutes'
 import { NativeLobbyRouteRegistry } from '../../src/runtime/lobby/NativeLobbyRouteRegistry'
 import { installForwardedNativeLobbyRoutes } from '../../src/startup/NativeLobbyRuntime'

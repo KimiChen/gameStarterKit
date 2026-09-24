@@ -6,6 +6,8 @@ import { Friend } from '../../src/modules/friend/bean/Friend'
 import { Guild } from '../../src/modules/guild/bean/Guild'
 import { GuildList } from '../../src/modules/guild/bean/GuildList'
 import { HUTask } from '../../src/modules/task/bean/HUTask'
+import { GameDemoBossRoom } from '../../src/modules/gameDemo/bean/GameDemoBossRoom'
+import { GameDemoPlayer } from '../../src/modules/gameDemo/bean/GameDemoPlayer'
 export const modInfos: { [key: string]: GenModInfo } = {
     activity: { type: Activity },
     hServer: { type: HServer },
@@ -37,4 +39,6 @@ export const modInfos: { [key: string]: GenModInfo } = {
     dailyTask: { type: HUTask, subMod: 'dailyTask' },
     weekTask: { type: HUTask, subMod: 'weekTask' },
     guildApply: { type: Guild, subMod: 'guildApply' },
+    gameDemoBossRoom: { type: GameDemoBossRoom },
+    gameDemoPlayer: { type: GameDemoPlayer },
 }

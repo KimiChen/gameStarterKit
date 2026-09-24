@@ -16,7 +16,6 @@
     "scripts": {
         "build": "rm -rf ./dist && tsc",
         "test:contracts": "node ./test/run-contracts.js",
-        "test:atomic": "node -r ts-node/register test/direct/atomicHash.test.ts",
         "test:lobby": "TS_NODE_PROJECT=test/tsconfig.json ts-node test/direct/lobbyServer.test.ts",
         "test:object-action": "TS_NODE_PROJECT=tsconfig.json ts-node test/direct/objectAction.test.ts",
         "编译发布": "node publish.js"

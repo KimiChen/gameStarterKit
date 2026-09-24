@@ -1,0 +1,11 @@
+{
+  "id": "kitSample",
+  "version": "1.0.0",
+  "domain": "kitSample",
+  "module": "kitSample",
+  "files": [
+    "apps/shared/schema/protocols/C2S/kitSample.json",
+    "apps/serverNew/server/src/modules/kitSample/KitSampleModule.ts",
+    "apps/serverNew/server/src/modules/kitSample/action/ActionKitSamplePing.ts"
+  ]
+}

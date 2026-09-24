@@ -1,4 +1,4 @@
-import type { RpcErrCode } from "../shared/native/index";
+import type { RpcErrCode } from "../shared/index";
 
 /** 客户端本地错误码；不属于服务端 shared RPC_ERR_CODES。 */
 export type LocalErrCode = "CONN_LOST" | "TIMEOUT";

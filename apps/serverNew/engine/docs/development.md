@@ -36,13 +36,6 @@ Redis，或自己拼一份增量数据。
 
 ## Change 和持久化
 
-- 跨实体条件提交使用公开 `AtomicHash<T>` / `AtomicHashTransaction.run`：一次提交内校验全部已读字段，再写余额、领域状态和持久业务回执。封装保留既有 hash 标量/JSON 编码；不会隐式变更 Bean 格式。
-- 原子 Hash 与 RootBean 不得共写同一字段，也不得把显式原子提交与稍后 Bean 保存当作一笔事务。只读结果深冻结；写入必须通过事务。成功返回表示提交已完成，之后才能登记 sync 或回复。
-- 事务回调冲突时会重跑，只能访问本事务结构并计算结果；ID、随机种子和普通业务时间在回调外固定。活动截止等需要提交时有效的条件，使用 `await tx.time(hash)` 获取同 Redis 权威毫秒时间，并调用 `tx.validBefore(deadlineMs)`；提交在截止时或之后到达会重跑回调，重新判定资格，不能沿用过期判断。禁止在回调内发送事件、网络请求、修改 Bean 或发布通知。网络错误不自动重试，必须以相同领域操作 ID 恢复已持久化结果。
-- 独占实体使用公开 `AtomicLease` 持久代次与 Redis 时钟；必须在每次受保护写入的同一事务调用 `assert(tx, token)`，不能只在进房时校验。过期续租产生新代次；释放保留代次，迟到旧所有者不能写入或释放新租约。
-- `OwnedRoom` 提供每房独立 FIFO、恢复快照和有界订阅集合；网络发送放在变更队列之外。FIFO 只控制本进程顺序，不能代替事务里的租约校验。跨进程恢复必须从权威结构重建，不能用缓存重置状态。
-- 原子提交限单 Redis 实例、256 个字段、1 MiB；跨 Redis 和无界批量任务必须拆为带持久进度的步骤。当前基于独立 Redis，不声明 Redis Cluster 跨槽事务支持。
-
 - Bean setter、`DiffArray` 和 `DiffMap` 变更由当前上下文收集；不要手工拼接能够由 `toModData` 表达的增量数据。
 - `getNotifyUids()` 决定 Change 接收者；`UserHash` 默认通知自身，跨玩家模块必须明确返回稳定接收者集合。
 - 业务数据默认落 Redis：玩家档由 `Hash` / `UserHash` / `HashJson` 承载，随 Action 提交写回。MySQL 只用于账号映射与运营/配置面，⛔ 不要为玩家业务字段新建表或 typeorm 实体。
@@ -110,9 +103,3 @@ export class ActionGuildResetGift extends ActionGuild {
 - `test/engine/net/client.test.ts` 是依赖真实 center、固定服、测试账号和当前业务协议的联调脚本，不是可脱离环境运行的单元测试，也不依赖 IDE 扩展发现。
 - 网络、Redis、Cron 或日志改动应优先运行对应源码测试，再执行 engine 类型检查和构建；不要把一次性测试步骤写入子目录 README。
 - 修改上述业务契约后运行 `pnpm test:contracts`；它不依赖 Redis、MySQL 或已启动服务。
-
-### 原子结构的维护写入守卫
-
-`AtomicHash`、`AtomicOperation`、`AtomicLease` 可传入异步 write guard。守卫在事务 set/delete 时执行，必须把租约或维护状态纳入相同 AtomicHashTransaction 的读集；仅在请求入口读开关无法阻止已开始事务的旧结果提交。
-守卫抛错或状态竞争时，事务内其它未带守卫的资产修改也不能单独提交。维护权限应由宿主在独立异步上下文中授予。
-`AtomicHash.scan(cursor,count)` 供离线运维游标枚举，返回值仍经过 codec 验证和只读冻结；COUNT 不是严格页容量保证，不能用于宣称网关请求有严格扫描预算。

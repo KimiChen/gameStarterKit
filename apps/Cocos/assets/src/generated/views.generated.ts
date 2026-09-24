@@ -30,6 +30,11 @@ export const GENERATED_VIEW_CATALOG: Readonly<Record<string, ViewMeta>> = {
         fullscreen: true, onlyOne: true, permanent: false, interactive: false,
         load: () => import("../view/EntryGroupView").then((m) => m.EntryGroupView),
     }),
+    GameDemo: defineView({
+        name: "GameDemo", kind: "cocos", layer: "base",
+        fullscreen: true, onlyOne: true, permanent: false, interactive: false,
+        load: () => import("../plugins/gameDemo/view/GameDemoView").then((m) => m.GameDemoView),
+    }),
     HeroRecruitScene: defineView({
         name: "HeroRecruitScene", kind: "cocos", layer: "popup",
         fullscreen: true, onlyOne: true, permanent: false, interactive: true,
@@ -108,6 +113,7 @@ export const VIEW_SOURCE_RECORDS: readonly GeneratedViewSourceRecord[] = [
     { name: "BallMove", owner: "ballMove", kind: "cocos", path: "apps/client/src/view/rooms/ballMove/BallMoveView.ts", logic: "apps/client/src/logic/rooms/ballMove/BallMoveGameplay.ts", sidecar: "apps/client/src/view/rooms/ballMove/BallMoveView.view.json" },
     { name: "Confirm", owner: "builtin", kind: "cocos", path: "apps/client/src/view/ConfirmView.ts", logic: "apps/client/src/logic/page/ConfirmLogic.ts", sidecar: "apps/client/src/view/ConfirmView.view.json" },
     { name: "EntryGroup", owner: "builtin", kind: "cocos", path: "apps/client/src/view/EntryGroupView.ts", logic: "apps/client/src/logic/page/EntryGroupLogic.ts", sidecar: "apps/client/src/view/EntryGroupView.view.json" },
+    { name: "GameDemo", owner: "gameDemo", kind: "cocos", path: "apps/client/src/plugins/gameDemo/view/GameDemoView.ts", logic: "apps/client/src/plugins/gameDemo/logic/GameDemoLogic.ts", sidecar: "apps/client/src/plugins/gameDemo/view/GameDemoView.view.json" },
     { name: "HeroRecruitScene", owner: "heroRecruit", kind: "cocos", path: "apps/client/src/plugins/heroRecruit/view/HeroRecruitSceneView.ts", logic: "apps/client/src/plugins/heroRecruit/logic/HeroRecruitLogic.ts", sidecar: "apps/client/src/plugins/heroRecruit/view/HeroRecruitSceneView.view.json" },
     { name: "Home", owner: "builtin", kind: "fgui", pkg: "View_Home_Home", comp: "Home", path: "apps/client/src/view/HomeView.ts", logic: "apps/client/src/logic/page/HomeLogic.ts", sidecar: "apps/client/src/view/HomeView.view.json" },
     { name: "IncomePopup", owner: "income", kind: "cocos", path: "apps/client/src/plugins/income/view/IncomePopupView.ts", logic: "apps/client/src/plugins/income/logic/IncomeLogic.ts", sidecar: "apps/client/src/plugins/income/view/IncomePopupView.view.json" },
@@ -127,6 +133,7 @@ export const VIEW_SOURCE_DIRS: readonly string[] = [
     "apps/client/src/kits/arena/view",
     "apps/client/src/kits/slg/view",
     "apps/client/src/plugins/arenaShop/view",
+    "apps/client/src/plugins/gameDemo/view",
     "apps/client/src/plugins/heroRecruit/view",
     "apps/client/src/plugins/income/view",
     "apps/client/src/plugins/redeem/view",

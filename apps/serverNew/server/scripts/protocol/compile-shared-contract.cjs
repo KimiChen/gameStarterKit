@@ -17,8 +17,6 @@ const check = process.argv.includes('--check')
 const entries = [
     'protocol/lobbyRpc/index.ts',
     'protocol/lobbyRpc/checks/arenaShop.ts',
-    'native/lobbyRpc/index.generated.ts',
-    'native/kits.generated.ts',
     'generated/webplatform/index.ts',
     'gameplays/snake/cosmetics.ts',
     'gameplays/catalog.generated.ts',

@@ -14,7 +14,7 @@ import {
     LOBBY_RPC_ROUTE_MODES,
     type LobbyRpcIdemType,
     type LobbyRpcType,
-} from '../../../generated/lobby-contract/native/lobbyRpc/index.generated'
+} from '../../../generated/lobby-contract/protocol/lobbyRpc'
 import type { NativeLobbyIdentityResolver } from '../identity/NativeLobbyAuthProvider'
 import { NativeLobbyIdempotency } from './NativeLobbyIdempotency'
 import { NativeLobbyPendingRoutes } from './NativeLobbyPendingRoutes'

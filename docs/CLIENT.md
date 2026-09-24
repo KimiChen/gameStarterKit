@@ -509,8 +509,3 @@ Creator 编辑器预览用于补充验证引擎绑定、资源导入和页面交
 `apps/Cocos/settings/v2/packages/project.json` 显式设置 `script.loose: false`。
 Creator 3.8.8 的宽松编译默认值为 true；在本项目 web-desktop 产物中，它会把 `[...set]` 编译为 `[].concat(set)`，使帧回调集合被当成一个回调对象，并破坏 Map/Set 的其它展开用途。
 不要只用 TypeScript/Node 测试判断该行为：需要运行官方 CLI 构建产物。2026-09-22 已用 headless Chrome 的真实 Cocos 场景复验，关闭宽松模式后帧调度错误消失。此项属于兼容宿主构建配置，不能让普通 kit 修改核心循环来规避。
-
-## serverNew 原生 kit 接入
-
-原生清单位于 `apps/serverNew/kits/<id>/kit.json`，执行 `npm run codegen:native-kits` 生成 `src/native/generated/kits.ts`，再同步客户端镜像。宿主 PluginHost/ViewMgr 合并此目录与既有注册表并检测冲突，旧服 codegen 不扫描或管理原生 kit。
-原生业务通过 `AppPorts.nativeLobbyRpc` 调用 `shared/native` 的请求、响应、错误和推送类型。端口只允许显式 native transport；未选择 native 时调用会拒绝，不自动改用旧服。页面和 Logic 仍分离，Cocos 页面通过动态导入加载。

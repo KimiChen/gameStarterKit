@@ -1,4 +1,3 @@
-import { NATIVE_PLUGINS } from "../native/generated/kits";
 /**
  * plugin 描述符 façade（Non-intrusive §7.1 阶段 6）。
  *
@@ -31,7 +30,7 @@ export type {
 } from "../generated/plugins.generated";
 
 /** 应用装配的全部 plugin 描述符（generated 单源）。 */
-export const APP_PLUGINS: readonly GeneratedPluginDescriptor[] = [...GENERATED_PLUGINS, ...NATIVE_PLUGINS];
+export const APP_PLUGINS: readonly GeneratedPluginDescriptor[] = GENERATED_PLUGINS;
 
 /** 宿主 placement（apps/plugins/host.json 经 codegen:plugins 生成）：默认玩法 + 首屏入口顺序 + 入口分组。 */
 export const APP_HOST: GeneratedHostDescriptor = GENERATED_HOST;

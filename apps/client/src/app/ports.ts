@@ -1,5 +1,3 @@
-import type * as NativeRpc from "../shared/native/lobbyRpc/registry.generated";
-import type { LobbyPushMap } from '../shared/protocol/lobbyRpc';
 /**
  * ports（Non-intrusive §7.2 阶段 5b）：plugin 可见的**最小能力面**。
  *
@@ -53,8 +51,6 @@ export interface NavigationPort {
 }
 
 export interface LobbyRpcPort {
-  /** Optional for older hosts; new kits may require this typed, lifecycle-tracked push capability. */
-  onPush?<K extends keyof LobbyPushMap>(type: K, listener: (data: LobbyPushMap[K]) => void): () => void;
   /** 只读查询：无副作用路由，断线由调用方按可重试失败处理。 */
   query<T extends LobbyRpcType>(
     type: T,
@@ -68,12 +64,6 @@ export interface LobbyRpcPort {
     type: T,
     payload: Omit<RpcReq<T>, "clientReqId">,
   ): Promise<RpcRes<T>>;
-}
-
-export interface NativeLobbyRpcPort {
-  query<T extends NativeRpc.LobbyRpcType>(type:T,payload:NativeRpc.RpcReq<T>):Promise<NativeRpc.RpcRes<T>>;
-  sendIdempotent<T extends NativeRpc.LobbyRpcIdemType>(type:T,payload:Omit<NativeRpc.RpcReq<T>,"clientReqId">):Promise<NativeRpc.RpcRes<T>>;
-  onPush<K extends keyof NativeRpc.LobbyPushMap>(type:K,listener:(data:NativeRpc.LobbyPushMap[K])=>void):()=>void;
 }
 
 export interface SessionReadPort {
@@ -122,7 +112,6 @@ export interface LaunchPort {
 export interface AppPorts {
   readonly navigation: NavigationPort;
   readonly lobbyRpc: LobbyRpcPort;
-  readonly nativeLobbyRpc?: NativeLobbyRpcPort;
   readonly session: SessionReadPort;
   readonly clock: ClockPort;
   readonly ticker: TickerPort;
@@ -161,7 +150,6 @@ export function createAppPorts(deps: AppPortsDeps): AppPorts {
       closeGroup: (group) => deps.navigation.closeGroup(group),
     },
     lobbyRpc: {
-      onPush: (type, listener) => deps.track(lobbyTransportHub.current.onPush(type, listener)),
       query: (type, payload) => lobbyTransportHub.current.rpc(type, payload),
       sendIdempotent: async (type, payload) => {
         const clientReqId =
@@ -178,36 +166,6 @@ export function createAppPorts(deps: AppPortsDeps): AppPorts {
         });
         try {
           const result = await lobbyTransportHub.current.rpcIdem(
-            type,
-            payload,
-            clientReqId,
-          );
-          deps.journal.settle(clientReqId, "applied");
-          return result;
-        } catch (error) {
-          deps.journal.settle(
-            clientReqId,
-            isResultUnknownError(error) ? "unknown" : "failed",
-          );
-          throw error;
-        }
-      },
-    },
-    nativeLobbyRpc: {
-      onPush: (type, listener) => deps.track(lobbyTransportHub.nativeCurrent.onPush(type, listener)),
-      query: (type, payload) => lobbyTransportHub.nativeCurrent.rpc(type, payload),
-      sendIdempotent: async (type, payload) => {
-        const clientReqId = NativeLobbyTransport.newClientReqId();
-        // write-ahead（§7.2 约束 1）：条目先落 inflight，再 send；uid 边界在
-        // 写入点同步校验（约束 4）。
-        deps.journal.begin({
-          uid: getUserId(),
-          clientReqId,
-          route: type,
-          payload,
-        });
-        try {
-          const result = await lobbyTransportHub.nativeCurrent.rpcIdem(
             type,
             payload,
             clientReqId,

@@ -20,6 +20,12 @@ import {
 } from '../../../../src/modules/mail/MailS2S'
 import { ReqSettingTagRefresh } from '../../../../src/runtime/protocol/S2S/settingTag'
 import { ReqUserQuitGuild, ReqUserFieldValUpdate, ReqUserRename } from '../../../../src/modules/user/UserS2S'
+import {
+    ReqGameDemoMailDeliver,
+    ReqGameDemoSeasonScore,
+    ReqGameDemoSeasonTick,
+    ReqGameDemoBossTick,
+} from '../../../../src/modules/gameDemo/GameDemoS2S'
 
 export interface ServiceType {
     api: {
@@ -115,11 +121,27 @@ export interface ServiceType {
             req: ReqUserRename
             res: ResDefault
         }
+        'gameDemo/GameDemoMailDeliver': {
+            req: ReqGameDemoMailDeliver
+            res: ResDefault
+        }
+        'gameDemo/GameDemoSeasonScore': {
+            req: ReqGameDemoSeasonScore
+            res: ResDefault
+        }
+        'gameDemo/GameDemoSeasonTick': {
+            req: ReqGameDemoSeasonTick
+            res: ResDefault
+        }
+        'gameDemo/GameDemoBossTick': {
+            req: ReqGameDemoBossTick
+            res: ResDefault
+        }
     }
     push: {}
 }
 export const serviceProto: ServiceProto = {
-    version: 91,
+    version: 95,
     protocols: [
         {
             name: 'activity/ActivityStageTask',
@@ -233,6 +255,26 @@ export const serviceProto: ServiceProto = {
         },
         {
             name: 'user/UserRename',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo/GameDemoMailDeliver',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo/GameDemoSeasonScore',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo/GameDemoSeasonTick',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo/GameDemoBossTick',
             type: 'api',
             serviceType: 'Base',
         },

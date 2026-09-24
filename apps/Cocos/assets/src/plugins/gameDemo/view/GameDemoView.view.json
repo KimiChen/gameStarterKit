@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "owner": "gameDemo",
+  "kind": "cocos",
+  "layer": "base",
+  "fullscreen": true,
+  "onlyOne": true,
+  "permanent": false,
+  "interactive": false,
+  "logic": "apps/client/src/plugins/gameDemo/logic/GameDemoLogic.ts",
+  "group": "authenticated",
+  "restore": "reopen"
+}

@@ -7,6 +7,7 @@ import type { IPurchaseResult } from "./economy";
 import { validateArenaBoardReq, validateArenaBoardRes, validateArenaCaptureReq, validateArenaCaptureRes, type IArenaBoardReq, type IArenaBoardRes, type IArenaCaptureReq, type IArenaCaptureRes } from "./domains/arena";
 import { validateArenaShopBuyBoostReq, validateArenaShopBuyBoostRes, type IArenaShopBuyBoostReq, type IArenaShopBuyBoostRes } from "./domains/arenaShop";
 import { validateChatMessagePush, validateChatSendReq, validateChatSendRes, type IChatMessagePush, type IChatSendReq, type IChatSendRes } from "./domains/chat";
+import { validateGameDemoAlchemyGetReq, validateGameDemoAlchemyGetRes, validateGameDemoAlchemyStartReq, validateGameDemoAlchemyStartRes, validateGameDemoAssetsReq, validateGameDemoAssetsRes, validateGameDemoBossAttackReq, validateGameDemoBossAttackRes, validateGameDemoBossEnterReq, validateGameDemoBossEnterRes, validateGameDemoBossGetReq, validateGameDemoBossGetRes, validateGameDemoBossLeaveReq, validateGameDemoBossLeaveRes, validateGameDemoBossListReq, validateGameDemoBossListRes, validateGameDemoBuyReq, validateGameDemoBuyRes, validateGameDemoGuildCreateReq, validateGameDemoGuildCreateRes, validateGameDemoGuildGetReq, validateGameDemoGuildGetRes, validateGameDemoGuildInviteReq, validateGameDemoGuildInviteRes, validateGameDemoGuildLeaveReq, validateGameDemoGuildLeaveRes, validateGameDemoGuildRespondReq, validateGameDemoGuildRespondRes, validateGameDemoHeroGetReq, validateGameDemoHeroGetRes, validateGameDemoHeroUpgradeReq, validateGameDemoHeroUpgradeRes, validateGameDemoInitializeReq, validateGameDemoInitializeRes, validateGameDemoMailClaimReq, validateGameDemoMailClaimRes, validateGameDemoMailListReq, validateGameDemoMailListRes, validateGameDemoMailReadReq, validateGameDemoMailReadRes, validateGameDemoSeasonEndReq, validateGameDemoSeasonEndRes, validateGameDemoSeasonGetReq, validateGameDemoSeasonGetRes, validateGameDemoShopReq, validateGameDemoShopRes, type IGameDemoAlchemyStartReq, type IGameDemoAlchemyState, type IGameDemoAssets, type IGameDemoBossAttackReq, type IGameDemoBossEnterReq, type IGameDemoBossGetReq, type IGameDemoBossLeaveReq, type IGameDemoBossList, type IGameDemoBossState, type IGameDemoBuyReq, type IGameDemoEmptyReq, type IGameDemoGuildCreateReq, type IGameDemoGuildInviteReq, type IGameDemoGuildRespondReq, type IGameDemoGuildState, type IGameDemoHeroState, type IGameDemoHeroUpgrade, type IGameDemoHeroUpgradeReq, type IGameDemoMailClaim, type IGameDemoMailClaimReq, type IGameDemoMailReadReq, type IGameDemoMailbox, type IGameDemoSeason, type IGameDemoSeasonEndReq, type IGameDemoShop, type IGameDemoWriteReq } from "./domains/gameDemo";
 import { validateGuildEventPush, validateGuildGetEventsReq, validateGuildGetEventsRes, validateGuildJoinReq, validateGuildJoinRes, validateGuildLeaveReq, validateGuildLeaveRes, type IGuildEventPush, type IGuildGetEventsReq, type IGuildGetEventsRes, type IGuildJoinReq, type IGuildJoinRes, type IGuildLeaveReq, type IGuildLeaveRes } from "./domains/guild";
 import { validateHeroRecruitBuyReq, validateHeroRecruitBuyRes, validateHeroRecruitGetCatalogReq, validateHeroRecruitGetCatalogRes, type IHeroRecruitBuyReq, type IHeroRecruitBuyRes, type IHeroRecruitGetCatalogReq, type IHeroRecruitGetCatalogRes } from "./domains/heroRecruit";
 import { validateIncomeClaimOfflineReq, validateIncomeClaimOfflineRes, validateIncomeGetPendingReq, validateIncomeGetPendingRes, validateIncomeSettleOnlineReq, validateIncomeSettleOnlineRes, type IIncomeClaimOfflineReq, type IIncomeClaimOfflineRes, type IIncomeGetPendingReq, type IIncomeGetPendingRes, type IIncomeSettleOnlineReq, type IIncomeSettleOnlineRes } from "./domains/income";
@@ -25,6 +26,7 @@ export const LOBBY_RPC_DOMAINS: readonly string[] = [
     "arena",
     "arenaShop",
     "chat",
+    "gameDemo",
     "guild",
     "heroRecruit",
     "income",
@@ -45,6 +47,29 @@ export interface LobbyRpcMap {
     "arena.capture": { req: IArenaCaptureReq; res: IArenaCaptureRes };
     "arenaShop.buyBoost": { req: IArenaShopBuyBoostReq; res: IArenaShopBuyBoostRes };
     "chat.send": { req: IChatSendReq; res: IChatSendRes };
+    "gameDemo.assets": { req: IGameDemoEmptyReq; res: IGameDemoAssets };
+    "gameDemo.initialize": { req: IGameDemoWriteReq; res: IGameDemoAssets };
+    "gameDemo.shop": { req: IGameDemoEmptyReq; res: IGameDemoShop };
+    "gameDemo.buy": { req: IGameDemoBuyReq; res: IGameDemoAssets };
+    "gameDemo.mailList": { req: IGameDemoEmptyReq; res: IGameDemoMailbox };
+    "gameDemo.mailRead": { req: IGameDemoMailReadReq; res: IGameDemoMailbox };
+    "gameDemo.mailClaim": { req: IGameDemoMailClaimReq; res: IGameDemoMailClaim };
+    "gameDemo.heroGet": { req: IGameDemoEmptyReq; res: IGameDemoHeroState };
+    "gameDemo.heroUpgrade": { req: IGameDemoHeroUpgradeReq; res: IGameDemoHeroUpgrade };
+    "gameDemo.alchemyGet": { req: IGameDemoEmptyReq; res: IGameDemoAlchemyState };
+    "gameDemo.alchemyStart": { req: IGameDemoAlchemyStartReq; res: IGameDemoAlchemyState };
+    "gameDemo.seasonGet": { req: IGameDemoEmptyReq; res: IGameDemoSeason };
+    "gameDemo.seasonEnd": { req: IGameDemoSeasonEndReq; res: IGameDemoSeason };
+    "gameDemo.guildGet": { req: IGameDemoEmptyReq; res: IGameDemoGuildState };
+    "gameDemo.guildCreate": { req: IGameDemoGuildCreateReq; res: IGameDemoGuildState };
+    "gameDemo.guildInvite": { req: IGameDemoGuildInviteReq; res: IGameDemoGuildState };
+    "gameDemo.guildRespond": { req: IGameDemoGuildRespondReq; res: IGameDemoGuildState };
+    "gameDemo.guildLeave": { req: IGameDemoWriteReq; res: IGameDemoGuildState };
+    "gameDemo.bossList": { req: IGameDemoEmptyReq; res: IGameDemoBossList };
+    "gameDemo.bossGet": { req: IGameDemoBossGetReq; res: IGameDemoBossState };
+    "gameDemo.bossEnter": { req: IGameDemoBossEnterReq; res: IGameDemoBossState };
+    "gameDemo.bossLeave": { req: IGameDemoBossLeaveReq; res: IGameDemoBossList };
+    "gameDemo.bossAttack": { req: IGameDemoBossAttackReq; res: IGameDemoBossState };
     "guild.join": { req: IGuildJoinReq; res: IGuildJoinRes };
     "guild.leave": { req: IGuildLeaveReq; res: IGuildLeaveRes };
     "guild.getEvents": { req: IGuildGetEventsReq; res: IGuildGetEventsRes };
@@ -93,6 +118,19 @@ export type RpcRes<T extends LobbyRpcType> = LobbyRpcMap[T]["res"];
 export type LobbyRpcIdemType =
     | "arena.capture"
     | "arenaShop.buyBoost"
+    | "gameDemo.initialize"
+    | "gameDemo.buy"
+    | "gameDemo.mailClaim"
+    | "gameDemo.heroUpgrade"
+    | "gameDemo.alchemyStart"
+    | "gameDemo.seasonEnd"
+    | "gameDemo.guildCreate"
+    | "gameDemo.guildInvite"
+    | "gameDemo.guildRespond"
+    | "gameDemo.guildLeave"
+    | "gameDemo.bossEnter"
+    | "gameDemo.bossLeave"
+    | "gameDemo.bossAttack"
     | "guild.join"
     | "guild.leave"
     | "heroRecruit.buy"
@@ -116,6 +154,7 @@ export type LobbyRpcIdemType =
 /** natural-write 路由子集（写入天然可安全重复；不进通用幂等层） */
 export type LobbyRpcNaturalWriteType =
     | "chat.send"
+    | "gameDemo.mailRead"
     | "income.settleOnline"
     | "mail.markRead"
     | "slg.mapTiles"
@@ -128,6 +167,29 @@ export const LOBBY_RPC_ROUTE_MODES: { readonly [K in LobbyRpcType]: LobbyRpcRout
     "arena.capture": "idempotent-write",
     "arenaShop.buyBoost": "idempotent-write",
     "chat.send": "natural-write",
+    "gameDemo.assets": "query",
+    "gameDemo.initialize": "idempotent-write",
+    "gameDemo.shop": "query",
+    "gameDemo.buy": "idempotent-write",
+    "gameDemo.mailList": "query",
+    "gameDemo.mailRead": "natural-write",
+    "gameDemo.mailClaim": "idempotent-write",
+    "gameDemo.heroGet": "query",
+    "gameDemo.heroUpgrade": "idempotent-write",
+    "gameDemo.alchemyGet": "query",
+    "gameDemo.alchemyStart": "idempotent-write",
+    "gameDemo.seasonGet": "query",
+    "gameDemo.seasonEnd": "idempotent-write",
+    "gameDemo.guildGet": "query",
+    "gameDemo.guildCreate": "idempotent-write",
+    "gameDemo.guildInvite": "idempotent-write",
+    "gameDemo.guildRespond": "idempotent-write",
+    "gameDemo.guildLeave": "idempotent-write",
+    "gameDemo.bossList": "query",
+    "gameDemo.bossGet": "query",
+    "gameDemo.bossEnter": "idempotent-write",
+    "gameDemo.bossLeave": "idempotent-write",
+    "gameDemo.bossAttack": "idempotent-write",
     "guild.join": "idempotent-write",
     "guild.leave": "idempotent-write",
     "guild.getEvents": "query",
@@ -174,6 +236,29 @@ export const ALL_LOBBY_RPC_TYPES: readonly LobbyRpcType[] = [
     "arena.capture",
     "arenaShop.buyBoost",
     "chat.send",
+    "gameDemo.assets",
+    "gameDemo.initialize",
+    "gameDemo.shop",
+    "gameDemo.buy",
+    "gameDemo.mailList",
+    "gameDemo.mailRead",
+    "gameDemo.mailClaim",
+    "gameDemo.heroGet",
+    "gameDemo.heroUpgrade",
+    "gameDemo.alchemyGet",
+    "gameDemo.alchemyStart",
+    "gameDemo.seasonGet",
+    "gameDemo.seasonEnd",
+    "gameDemo.guildGet",
+    "gameDemo.guildCreate",
+    "gameDemo.guildInvite",
+    "gameDemo.guildRespond",
+    "gameDemo.guildLeave",
+    "gameDemo.bossList",
+    "gameDemo.bossGet",
+    "gameDemo.bossEnter",
+    "gameDemo.bossLeave",
+    "gameDemo.bossAttack",
     "guild.join",
     "guild.leave",
     "guild.getEvents",
@@ -221,6 +306,29 @@ export const LOBBY_RPC_CONTRACT_VERSIONS: { readonly [K in LobbyRpcType]: number
     "arena.capture": 1,
     "arenaShop.buyBoost": 1,
     "chat.send": 1,
+    "gameDemo.assets": 1,
+    "gameDemo.initialize": 1,
+    "gameDemo.shop": 1,
+    "gameDemo.buy": 1,
+    "gameDemo.mailList": 1,
+    "gameDemo.mailRead": 1,
+    "gameDemo.mailClaim": 1,
+    "gameDemo.heroGet": 1,
+    "gameDemo.heroUpgrade": 1,
+    "gameDemo.alchemyGet": 1,
+    "gameDemo.alchemyStart": 1,
+    "gameDemo.seasonGet": 1,
+    "gameDemo.seasonEnd": 1,
+    "gameDemo.guildGet": 1,
+    "gameDemo.guildCreate": 1,
+    "gameDemo.guildInvite": 1,
+    "gameDemo.guildRespond": 1,
+    "gameDemo.guildLeave": 1,
+    "gameDemo.bossList": 1,
+    "gameDemo.bossGet": 1,
+    "gameDemo.bossEnter": 1,
+    "gameDemo.bossLeave": 1,
+    "gameDemo.bossAttack": 1,
     "guild.join": 1,
     "guild.leave": 1,
     "guild.getEvents": 1,
@@ -266,6 +374,7 @@ export const LOBBY_RPC_DOMAIN_CONTRACTS: { readonly [domain: string]: { readonly
     arena: { contractVersion: 5, digest: "aab6f8c8965ef6963420504a6990e5bda3a888d92bdfec06ee6b981d1d7469cb" },
     arenaShop: { contractVersion: 6, digest: "44fd4a3a5aff367dc06a4352bb977c20cf5edacbd1d90217e1bcc1966628bd3f" },
     chat: { contractVersion: 5, digest: "3f171c821824feddb819ae71834150beab752ce95d6436888c435a88e0f65d5f" },
+    gameDemo: { contractVersion: 1, digest: "9c0e0cccedbff5114969579177ad69796beb1cf5062dcb4999a03fb39f5b6356" },
     guild: { contractVersion: 5, digest: "005c6a6195a8c937dbafead7e4d3479391b91d0a6bf1a0641ba48c33cf1886ce" },
     heroRecruit: { contractVersion: 3, digest: "7be638092a43cc2cf87be4edb69c716c4be074111c8d1ce2769239828336cf4f" },
     income: { contractVersion: 7, digest: "b30d2190e3f60c2c321962190c33400ac1aef8c6cf023802b2033e396bbb676b" },
@@ -298,6 +407,29 @@ export const LOBBY_RPC_REQUEST_VALIDATORS: { readonly [K in LobbyRpcType]: Runti
     "arena.capture": guardRpcValidator("payload", validateArenaCaptureReq),
     "arenaShop.buyBoost": guardRpcValidator("payload", validateArenaShopBuyBoostReq),
     "chat.send": guardRpcValidator("payload", validateChatSendReq),
+    "gameDemo.assets": guardRpcValidator("payload", validateGameDemoAssetsReq),
+    "gameDemo.initialize": guardRpcValidator("payload", validateGameDemoInitializeReq),
+    "gameDemo.shop": guardRpcValidator("payload", validateGameDemoShopReq),
+    "gameDemo.buy": guardRpcValidator("payload", validateGameDemoBuyReq),
+    "gameDemo.mailList": guardRpcValidator("payload", validateGameDemoMailListReq),
+    "gameDemo.mailRead": guardRpcValidator("payload", validateGameDemoMailReadReq),
+    "gameDemo.mailClaim": guardRpcValidator("payload", validateGameDemoMailClaimReq),
+    "gameDemo.heroGet": guardRpcValidator("payload", validateGameDemoHeroGetReq),
+    "gameDemo.heroUpgrade": guardRpcValidator("payload", validateGameDemoHeroUpgradeReq),
+    "gameDemo.alchemyGet": guardRpcValidator("payload", validateGameDemoAlchemyGetReq),
+    "gameDemo.alchemyStart": guardRpcValidator("payload", validateGameDemoAlchemyStartReq),
+    "gameDemo.seasonGet": guardRpcValidator("payload", validateGameDemoSeasonGetReq),
+    "gameDemo.seasonEnd": guardRpcValidator("payload", validateGameDemoSeasonEndReq),
+    "gameDemo.guildGet": guardRpcValidator("payload", validateGameDemoGuildGetReq),
+    "gameDemo.guildCreate": guardRpcValidator("payload", validateGameDemoGuildCreateReq),
+    "gameDemo.guildInvite": guardRpcValidator("payload", validateGameDemoGuildInviteReq),
+    "gameDemo.guildRespond": guardRpcValidator("payload", validateGameDemoGuildRespondReq),
+    "gameDemo.guildLeave": guardRpcValidator("payload", validateGameDemoGuildLeaveReq),
+    "gameDemo.bossList": guardRpcValidator("payload", validateGameDemoBossListReq),
+    "gameDemo.bossGet": guardRpcValidator("payload", validateGameDemoBossGetReq),
+    "gameDemo.bossEnter": guardRpcValidator("payload", validateGameDemoBossEnterReq),
+    "gameDemo.bossLeave": guardRpcValidator("payload", validateGameDemoBossLeaveReq),
+    "gameDemo.bossAttack": guardRpcValidator("payload", validateGameDemoBossAttackReq),
     "guild.join": guardRpcValidator("payload", validateGuildJoinReq),
     "guild.leave": guardRpcValidator("payload", validateGuildLeaveReq),
     "guild.getEvents": guardRpcValidator("payload", validateGuildGetEventsReq),
@@ -344,6 +476,29 @@ export const LOBBY_RPC_RESPONSE_VALIDATORS: { readonly [K in LobbyRpcType]: Runt
     "arena.capture": guardRpcValidator("response", validateArenaCaptureRes),
     "arenaShop.buyBoost": guardRpcValidator("response", validateArenaShopBuyBoostRes),
     "chat.send": guardRpcValidator("response", validateChatSendRes),
+    "gameDemo.assets": guardRpcValidator("response", validateGameDemoAssetsRes),
+    "gameDemo.initialize": guardRpcValidator("response", validateGameDemoInitializeRes),
+    "gameDemo.shop": guardRpcValidator("response", validateGameDemoShopRes),
+    "gameDemo.buy": guardRpcValidator("response", validateGameDemoBuyRes),
+    "gameDemo.mailList": guardRpcValidator("response", validateGameDemoMailListRes),
+    "gameDemo.mailRead": guardRpcValidator("response", validateGameDemoMailReadRes),
+    "gameDemo.mailClaim": guardRpcValidator("response", validateGameDemoMailClaimRes),
+    "gameDemo.heroGet": guardRpcValidator("response", validateGameDemoHeroGetRes),
+    "gameDemo.heroUpgrade": guardRpcValidator("response", validateGameDemoHeroUpgradeRes),
+    "gameDemo.alchemyGet": guardRpcValidator("response", validateGameDemoAlchemyGetRes),
+    "gameDemo.alchemyStart": guardRpcValidator("response", validateGameDemoAlchemyStartRes),
+    "gameDemo.seasonGet": guardRpcValidator("response", validateGameDemoSeasonGetRes),
+    "gameDemo.seasonEnd": guardRpcValidator("response", validateGameDemoSeasonEndRes),
+    "gameDemo.guildGet": guardRpcValidator("response", validateGameDemoGuildGetRes),
+    "gameDemo.guildCreate": guardRpcValidator("response", validateGameDemoGuildCreateRes),
+    "gameDemo.guildInvite": guardRpcValidator("response", validateGameDemoGuildInviteRes),
+    "gameDemo.guildRespond": guardRpcValidator("response", validateGameDemoGuildRespondRes),
+    "gameDemo.guildLeave": guardRpcValidator("response", validateGameDemoGuildLeaveRes),
+    "gameDemo.bossList": guardRpcValidator("response", validateGameDemoBossListRes),
+    "gameDemo.bossGet": guardRpcValidator("response", validateGameDemoBossGetRes),
+    "gameDemo.bossEnter": guardRpcValidator("response", validateGameDemoBossEnterRes),
+    "gameDemo.bossLeave": guardRpcValidator("response", validateGameDemoBossLeaveRes),
+    "gameDemo.bossAttack": guardRpcValidator("response", validateGameDemoBossAttackRes),
     "guild.join": guardRpcValidator("response", validateGuildJoinRes),
     "guild.leave": guardRpcValidator("response", validateGuildLeaveRes),
     "guild.getEvents": guardRpcValidator("response", validateGuildGetEventsRes),
@@ -424,6 +579,28 @@ export const RPC_ERR_CODES = [
     "ARENA_SHOP_TILE_NOT_OWNED",
     "CHAT_CHANNEL_FORBIDDEN",
     "CHAT_UNAVAILABLE",
+    "GAME_DEMO_USER_UNAVAILABLE",
+    "GAME_DEMO_SEASON_PENDING",
+    "GAME_DEMO_DEV_DISABLED",
+    "GAME_DEMO_NOT_INITIALIZED",
+    "GAME_DEMO_LIMIT",
+    "GAME_DEMO_INSUFFICIENT_GOLD",
+    "GAME_DEMO_INSUFFICIENT_ITEMS",
+    "GAME_DEMO_MAIL_NOT_FOUND",
+    "GAME_DEMO_MAILBOX_FULL",
+    "GAME_DEMO_HERO_MAX",
+    "GAME_DEMO_SEASON_CHANGED",
+    "GAME_DEMO_GUILD_JOINED",
+    "GAME_DEMO_GUILD_OWNER_ONLY",
+    "GAME_DEMO_TARGET_NOT_READY",
+    "GAME_DEMO_INVITE_FULL",
+    "GAME_DEMO_INVITE_INVALID",
+    "GAME_DEMO_GUILD_FULL",
+    "GAME_DEMO_BOSS_FULL",
+    "GAME_DEMO_BOSS_STALE",
+    "GAME_DEMO_BOSS_ENDED",
+    "GAME_DEMO_BOSS_DEAD",
+    "GAME_DEMO_BOSS_COOLDOWN",
     "HERO_RECRUIT_UNKNOWN",
     "HERO_RECRUIT_ALREADY_OWNED",
     "HERO_RECRUIT_INSUFFICIENT_COPPER",

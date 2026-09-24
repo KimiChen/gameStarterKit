@@ -441,34 +441,11 @@
             "moduleName": "gameDemo",
             "source": "src/modules/gameDemo/GameDemoModule.ts",
             "contribution": {
-              "name": "gameDemo-boss-rooms",
-              "app": "service",
-              "phase": "runtime-ready",
-              "scope": "process",
-              "run": "startGameDemoRooms"
-            }
-          },
-          {
-            "moduleName": "gameDemo",
-            "source": "src/modules/gameDemo/GameDemoModule.ts",
-            "contribution": {
-              "name": "gameDemo-season-scheduler",
+              "name": "gameDemo-ticks",
               "app": "service",
               "phase": "runtime-ready",
               "scope": "server",
-              "run": "startGameDemoSeason"
-            }
-          }
-        ],
-        "nativeLobby": [
-          {
-            "moduleName": "gameDemo",
-            "source": "src/modules/gameDemo/GameDemoModule.ts",
-            "contribution": {
-              "kind": "route",
-              "name": "gameDemo-lobby-routes",
-              "app": "service",
-              "register": "registerGameDemoRoutes"
+              "run": "() => GameDemoTicks.start()"
             }
           }
         ]
@@ -1746,18 +1723,6 @@
         }
       }
     ],
-    "nativeLobby": [
-      {
-        "moduleName": "gameDemo",
-        "source": "src/modules/gameDemo/GameDemoModule.ts",
-        "contribution": {
-          "kind": "route",
-          "name": "gameDemo-lobby-routes",
-          "app": "service",
-          "register": "registerGameDemoRoutes"
-        }
-      }
-    ],
     "nativeLobbyAuth": [
       {
         "moduleName": "user",
@@ -1845,22 +1810,11 @@
         "moduleName": "gameDemo",
         "source": "src/modules/gameDemo/GameDemoModule.ts",
         "contribution": {
-          "name": "gameDemo-boss-rooms",
-          "app": "service",
-          "phase": "runtime-ready",
-          "scope": "process",
-          "run": "startGameDemoRooms"
-        }
-      },
-      {
-        "moduleName": "gameDemo",
-        "source": "src/modules/gameDemo/GameDemoModule.ts",
-        "contribution": {
-          "name": "gameDemo-season-scheduler",
+          "name": "gameDemo-ticks",
           "app": "service",
           "phase": "runtime-ready",
           "scope": "server",
-          "run": "startGameDemoSeason"
+          "run": "() => GameDemoTicks.start()"
         }
       },
       {

@@ -3,10 +3,10 @@
 ## gameDemo：仅 CLI 构建与双客户端回放
 
 `game-demo.mjs` 不依赖已打开的 Creator，不启动编辑器窗口。它启动两个独立 profile 的 headless Chrome，加载官方 CLI 的 web-mobile 产物，通过 CDP 鼠标和键盘驱动真实 Cocos 节点。
-验证购买材料、炼制 5 炉（服务端提交即结算、客户端整批播放 2 秒动画）、升级、活动结束与邮件领取、邀请入盟、三 Boss 切换与同房推送；随后 SIGKILL 自己启动的原生服务，重新登录并校验原局 ID、HP、完整伤害列表、阶段和继续攻击。
+验证购买材料、炼制 5 炉（服务端提交即结算、客户端整批播放 2 秒动画）、升级、活动结束与邮件领取、邀请入盟、三 Boss 切换与同房 sync 刷新；随后 SIGKILL 自己启动的原生服务，重新登录并校验原局 ID、HP、完整伤害列表、阶段和继续攻击。
 它读取公开场景与网络响应作为断言，不从页面直接调用业务逻辑或 RPC。重启段明确使用刷新页面/重新登录，不宣称自动重连成功。
 
-前置：Node 22、Chrome、已安装 gameDemo 的兼容宿主、独立 Redis/MySQL 测试库（新服配置关闭多进程自动建表；先完成建表），旧服 HTTP 所需数据库也已 bootstrap。脚本会提前结束活动并保留测试数据，只用于隔离线路。身份签发使用本地 WebPlatform 契约夹具，玩法和存储均为真实服务。
+前置：Node 22、Chrome、本仓 serverNew（gameDemo 已在仓内，无需另行安装）、独立 Redis/MySQL 测试库（新服配置关闭多进程自动建表；先完成建表），旧服 HTTP 所需数据库也已 bootstrap。脚本会提前结束活动并保留测试数据，只用于隔离线路。身份签发使用本地 WebPlatform 契约夹具，玩法和存储均为真实服务。
 
 ```bash
 # 只运行官方构建 CLI；Creator 3.8.8 成功退出码为 36。
@@ -17,7 +17,7 @@
 # 先显式设置 PROJECT_ID、MYSQL_URL、REDIS_DURABLE_URL、REDIS_CACHE_URL，指向隔离测试栈。
 node tools/creator-preview/game-demo.mjs \
   --build /tmp/gameDemo-cocos-build/web-mobile \
-  --native-root /tmp/gameDemo-clean-host/apps/serverNew/server \
+  --native-root apps/serverNew/server \
   --profile '{"platform":"bearjoy","version":"livemulti","sid":1}' \
   --health-port 28095 --out /tmp/gameDemo-cocos-evidence
 ```
@@ -173,5 +173,5 @@ node tools/creator-preview/native-lobby-stack.mjs --secret <gmSecret> --out /tmp
 `game-demo.mjs` 加载官方 CLI 生成的 web-mobile 构建，以两个隔离 headless Chrome 账号驱动 Cocos 真实按钮。仅启动本地身份契约测试服务和 `serverNew`，不启动或依赖 `apps/server`。不打开 Creator 编辑器。所选 native profile 必须指向隔离数据库；脚本会结束活动、强杀自己启动的 native 进程并验证恢复。
 
 ```bash
-node tools/creator-preview/game-demo.mjs --build /tmp/gameDemo-native-cocos-build/web-mobile --native-root /tmp/gameDemo-native-host/apps/serverNew/server --profile '{"platform":"bearjoy","version":"live","sid":1}' --health-port 28090 --out /tmp/gameDemo-native-ui
+node tools/creator-preview/game-demo.mjs --build /tmp/gameDemo-native-cocos-build/web-mobile --native-root apps/serverNew/server --profile '{"platform":"bearjoy","version":"live","sid":1}' --health-port 28090 --out /tmp/gameDemo-native-ui
 ```

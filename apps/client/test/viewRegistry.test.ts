@@ -1,4 +1,3 @@
-import {NATIVE_VIEWS} from "../src/native/generated/kits";
 /**
  * 页面注册表守门（docs/CLIENT.md §4/§5；Non-intrusive §7.5 阶段 6 manifest 化）——
  * 与服务端 loader 启动校验同哲学，客户端在测试期做：
@@ -82,7 +81,7 @@ test("manifest 逐条 logic 路径存在 + sidecar 文件存在（View↔Logic �
 });
 
 test("稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manifest 页面条目 ⇔ FGUI_CONTRACTS", () => {
-  assert.deepEqual(VIEW_REGISTRY, {...GENERATED_VIEW_CATALOG,...NATIVE_VIEWS},
+  assert.equal(VIEW_REGISTRY, GENERATED_VIEW_CATALOG,
     "viewRegistry 必须是 generated catalog 的稳定 façade（不许出现第二份手写全集）");
   // catalog 收录面 = fgui 条目 ∪ 被 plugin routes 引用的 cocos 条目。「被 routes 引用」
   // 就是「是页面而非玩法表现件」的判别信号——BallMove/SnakeWorld 不在任何 routes 里，
@@ -90,7 +89,7 @@ test("稳定 façade 与 generated 单源：VIEW_REGISTRY ⇔ catalog ⇔ manife
   const routedViews = new Set(GENERATED_PLUGINS.flatMap((plugin) => plugin.routes.map((route) => route.view)));
   const pageNames = VIEW_SOURCE_RECORDS
     .filter((record) => record.kind === "fgui" || routedViews.has(record.name))
-    .map((record) => record.name).concat(Object.keys(NATIVE_VIEWS)).sort();
+    .map((record) => record.name).sort();
   assert.deepEqual(Object.keys(VIEW_REGISTRY).sort(), pageNames,
     "catalog 键必须等于「manifest 的 fgui 条目 ∪ 被 routes 引用的 cocos 条目」");
   const unroutedCocos = VIEW_SOURCE_RECORDS

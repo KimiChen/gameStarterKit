@@ -8,9 +8,6 @@ import { RedisInstance as RealRedisInstance } from '../../../engine/src/database
  * 而 `RedisLock` 用的是真实 `RedisInstance`——两者共用同一个 `centerRedis` 字段，替换它即可同时生效。
  */
 export class FakeCenterRedis {
-    getId(): string {
-        return 'fake-center'
-    }
     private readonly hashes = new Map<string, Map<string, string>>()
     private readonly lists = new Map<string, string[]>()
     private readonly sets = new Map<string, Set<string>>()
@@ -181,11 +178,6 @@ export class FakeCenterRedis {
      * 以及私房 ticket 记录的 `SET … PX`（毫秒级 TTL 没有等价的 `RedisCache` 包装）。
      */
     client(): {
-        hScan: (
-            key: string,
-            cursor: number,
-            options: { COUNT: number },
-        ) => Promise<{ cursor: number; tuples: { field: string; value: string }[] }>
         eval: (script: string, options: { keys: string[]; arguments: string[] }) => Promise<unknown>
         set: (key: string, value: string, options?: { PX?: number }) => Promise<string>
         zRangeByScore: (
@@ -196,14 +188,6 @@ export class FakeCenterRedis {
         ) => Promise<string[]>
     } {
         return {
-            hScan: async (key, cursor, options) => {
-                const entries = [...(this.hash(key) ?? new Map())]
-                const end = Math.min(entries.length, cursor + options.COUNT)
-                return {
-                    cursor: end >= entries.length ? 0 : end,
-                    tuples: entries.slice(cursor, end).map(([field, value]) => ({ field, value })),
-                }
-            },
             eval: (script, options) => Promise.resolve(this.evalScript(script, options)),
             set: (key, value, options) => {
                 this.takeFailure('set')
@@ -303,25 +287,6 @@ export class FakeCenterRedis {
             if (!script.includes(marker)) continue
             this.pendingScriptFailures.delete(marker)
             throw new Error(`FakeCenterRedis: 注入的脚本失败（标记 ${marker}）`)
-        }
-        if (script.includes('-- atomic-hash-time-v1')) return Date.now()
-        if (script.includes('-- atomic-hash-fields-v1')) {
-            const deadline = Number(options.arguments[1] ?? 0)
-            if (deadline > 0 && Date.now() >= deadline) return 0
-            const entries = JSON.parse(options.arguments[0]) as Array<[number, string, string | null, string | null]>
-            for (const key of options.keys) {
-                if (this.strings.has(key) || this.lists.has(key) || this.sets.has(key) || this.zsets.has(key))
-                    throw new Error('WRONGTYPE atomic hash')
-            }
-            for (const [keyIndex, field, before] of entries) {
-                if ((this.hash(options.keys[keyIndex - 1])?.get(field) ?? null) !== before) return 0
-            }
-            for (const [keyIndex, field, before, after] of entries) {
-                if (before === after) continue
-                if (after === null) this.hash(options.keys[keyIndex - 1])?.delete(field)
-                else this.hash(options.keys[keyIndex - 1], true)!.set(field, after)
-            }
-            return 1
         }
         if (script.includes("return {'acquired'}")) return this.idempotencyAcquire(options.keys, options.arguments)
         if (script.includes('done-oversize')) return this.idempotencyComplete(options.keys, options.arguments)

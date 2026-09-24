@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "id": "gameDemo",
+  "version": "1.0.0",
+  "description": "新框架玩法验证：英雄培养、材料商店、炼丹冲榜、奖励邮件、仙盟邀请与多 Boss 房间",
+  "domains": ["gameDemo"],
+  "category": "extra",
+  "docs": ["apps/plugins/gameDemo/README.md"],
+  "resident": false,
+  "entry": "apps/client/src/plugins/gameDemo/index.ts",
+  "viewDirs": ["apps/client/src/plugins/gameDemo/view"],
+  "views": ["apps/client/src/plugins/gameDemo/view/GameDemoView.view.json"],
+  "owners": [
+    {
+      "id": "gameDemo",
+      "logicDir": "apps/client/src/plugins/gameDemo/logic"
+    }
+  ],
+  "routes": [{ "id": "gameDemo", "view": "GameDemo" }],
+  "menu": [
+    {
+      "entryId": "main",
+      "label": "玩法验证",
+      "labelKey": "menu.gameDemo.main",
+      "launch": { "kind": "route", "routeId": "gameDemo" }
+    }
+  ]
+}

@@ -26,6 +26,8 @@ import { Guild } from './guild/Guild'
 import { GuildList } from './guild/GuildList'
 import { TaskTimeLimitItem } from './task/TaskTimeLimitItem'
 import { GuildApply } from './guild/GuildApply'
+import { GameDemoBossRoom } from './gameDemo/GameDemoBossRoom'
+import { GameDemoPlayer } from './gameDemo/GameDemoPlayer'
 export interface Mod {
     versions?: Map<string, int>
 
@@ -59,4 +61,6 @@ export interface Mod {
     dailyTask?: TaskTimeLimitItem
     weekTask?: TaskTimeLimitItem
     guildApply?: Map<int, GuildApply>
+    gameDemoBossRoom?: GameDemoBossRoom
+    gameDemoPlayer?: GameDemoPlayer
 }

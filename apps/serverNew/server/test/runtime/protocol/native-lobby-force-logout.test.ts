@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { ForceLogoutReason } from '../../../generated/lobby-contract/native/lobbyRpc/index.generated'
+import { ForceLogoutReason } from '../../../generated/lobby-contract/protocol/lobbyRpc'
 import { executeInternalAction } from '../../../src/runtime/action/executeInternalAction'
 import {
     OPS_FORCE_LOGOUT_REASON,

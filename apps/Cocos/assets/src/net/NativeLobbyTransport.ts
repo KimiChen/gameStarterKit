@@ -22,7 +22,7 @@ import {
   type RpcReq,
   type RpcRes,
   type ForceLogoutReasonType,
-} from "../shared/native/index";
+} from "../shared/index";
 import { RpcError } from "./LobbyRpcError";
 import { lobbyDataSync } from "./LobbyDataSync";
 

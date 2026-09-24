@@ -1,0 +1,1340 @@
+{
+  "domain": "gameDemo",
+  "contractVersion": 1,
+  "errorCodes": [
+    "GAME_DEMO_USER_UNAVAILABLE",
+    "GAME_DEMO_SEASON_PENDING",
+    "GAME_DEMO_DEV_DISABLED",
+    "GAME_DEMO_NOT_INITIALIZED",
+    "GAME_DEMO_LIMIT",
+    "GAME_DEMO_INSUFFICIENT_GOLD",
+    "GAME_DEMO_INSUFFICIENT_ITEMS",
+    "GAME_DEMO_MAIL_NOT_FOUND",
+    "GAME_DEMO_MAILBOX_FULL",
+    "GAME_DEMO_HERO_MAX",
+    "GAME_DEMO_SEASON_CHANGED",
+    "GAME_DEMO_GUILD_JOINED",
+    "GAME_DEMO_GUILD_OWNER_ONLY",
+    "GAME_DEMO_TARGET_NOT_READY",
+    "GAME_DEMO_INVITE_FULL",
+    "GAME_DEMO_INVITE_INVALID",
+    "GAME_DEMO_GUILD_FULL",
+    "GAME_DEMO_BOSS_FULL",
+    "GAME_DEMO_BOSS_STALE",
+    "GAME_DEMO_BOSS_ENDED",
+    "GAME_DEMO_BOSS_DEAD",
+    "GAME_DEMO_BOSS_COOLDOWN"
+  ],
+  "types": {
+    "IGameDemoEmptyReq": {
+      "kind": "object",
+      "fields": []
+    },
+    "IGameDemoWriteReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      ]
+    },
+    "IGameDemoItems": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "herb",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "dew",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "pill",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "finePill",
+          "kind": "integer",
+          "min": 0
+        }
+      ]
+    },
+    "IGameDemoAssets": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "initialized",
+          "kind": "boolean"
+        },
+        {
+          "name": "gold",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "items",
+          "kind": "ref",
+          "ref": "IGameDemoItems"
+        }
+      ]
+    },
+    "IGameDemoShopPurchased": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "herb",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "dew",
+          "kind": "integer",
+          "min": 0
+        }
+      ]
+    },
+    "IGameDemoShop": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "assets",
+          "kind": "ref",
+          "ref": "IGameDemoAssets"
+        },
+        {
+          "name": "day",
+          "kind": "string",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        {
+          "name": "purchased",
+          "kind": "ref",
+          "ref": "IGameDemoShopPurchased"
+        }
+      ]
+    },
+    "IGameDemoBuyReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "product",
+          "kind": "enum",
+          "members": [
+            "herb",
+            "dew"
+          ],
+          "enumCode": "GAME_DEMO_PRODUCT"
+        },
+        {
+          "name": "count",
+          "kind": "integer",
+          "min": 1,
+          "max": 100
+        }
+      ]
+    },
+    "IGameDemoMail": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "title",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        {
+          "name": "gold",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "createdAt",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "read",
+          "kind": "boolean"
+        },
+        {
+          "name": "claimed",
+          "kind": "boolean"
+        }
+      ]
+    },
+    "IGameDemoMailbox": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "mails",
+          "kind": "array",
+          "items": {
+            "kind": "ref",
+            "ref": "IGameDemoMail"
+          },
+          "maxItems": 100
+        }
+      ]
+    },
+    "IGameDemoMailReadReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "mailId",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoMailClaimReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "mailId",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoMailClaim": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "assets",
+          "kind": "ref",
+          "ref": "IGameDemoAssets"
+        },
+        {
+          "name": "mailbox",
+          "kind": "ref",
+          "ref": "IGameDemoMailbox"
+        }
+      ]
+    },
+    "IGameDemoHero": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "level",
+          "kind": "integer",
+          "min": 1,
+          "max": 100
+        },
+        {
+          "name": "exp",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "attack",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoHeroState": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "assets",
+          "kind": "ref",
+          "ref": "IGameDemoAssets"
+        },
+        {
+          "name": "hero",
+          "kind": "ref",
+          "ref": "IGameDemoHero"
+        }
+      ]
+    },
+    "IGameDemoHeroUpgradeReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "pill",
+          "kind": "enum",
+          "members": [
+            "normal",
+            "fine"
+          ],
+          "enumCode": "GAME_DEMO_PILL"
+        },
+        {
+          "name": "count",
+          "kind": "integer",
+          "check": {
+            "fn": "validateGameDemoUpgradeCount",
+            "from": "../checks/gameDemo"
+          }
+        }
+      ]
+    },
+    "IGameDemoHeroUpgrade": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "assets",
+          "kind": "ref",
+          "ref": "IGameDemoAssets"
+        },
+        {
+          "name": "hero",
+          "kind": "ref",
+          "ref": "IGameDemoHero"
+        },
+        {
+          "name": "consumed",
+          "kind": "integer",
+          "min": 1,
+          "max": 10
+        }
+      ]
+    },
+    "IGameDemoAlchemyBatch": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "count",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "startedAt",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "pill",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "finePill",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "score",
+          "kind": "integer",
+          "min": 0
+        }
+      ]
+    },
+    "IGameDemoAlchemyState": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "assets",
+          "kind": "ref",
+          "ref": "IGameDemoAssets"
+        },
+        {
+          "name": "batch",
+          "kind": "ref",
+          "ref": "IGameDemoAlchemyBatch",
+          "nullable": true
+        }
+      ]
+    },
+    "IGameDemoAlchemyStartReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "count",
+          "kind": "integer",
+          "check": {
+            "fn": "validateGameDemoAlchemyCount",
+            "from": "../checks/gameDemo"
+          }
+        }
+      ]
+    },
+    "IGameDemoRankEntry": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "uid",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "score",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "rank",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoSeason": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "number",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "members": [
+            "running",
+            "settling",
+            "settled"
+          ],
+          "enumCode": "GAME_DEMO_PHASE"
+        },
+        {
+          "name": "startedAt",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "endsAt",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "serverNow",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "top",
+          "kind": "array",
+          "items": {
+            "kind": "ref",
+            "ref": "IGameDemoRankEntry"
+          },
+          "maxItems": 20
+        },
+        {
+          "name": "myScore",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "myRank",
+          "kind": "integer",
+          "min": 1,
+          "nullable": true
+        },
+        {
+          "name": "rewardedCount",
+          "kind": "integer",
+          "min": 0,
+          "max": 3
+        }
+      ]
+    },
+    "IGameDemoSeasonEndReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "number",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoGuild": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        {
+          "name": "owner",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "members",
+          "kind": "array",
+          "items": {
+            "kind": "integer",
+            "min": 1
+          },
+          "maxItems": 3
+        }
+      ]
+    },
+    "IGameDemoGuildInvite": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "id",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "guildId",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "guildName",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        {
+          "name": "inviter",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoGuildState": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "uid",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "guild",
+          "kind": "ref",
+          "ref": "IGameDemoGuild",
+          "nullable": true
+        },
+        {
+          "name": "invitations",
+          "kind": "array",
+          "items": {
+            "kind": "ref",
+            "ref": "IGameDemoGuildInvite"
+          },
+          "maxItems": 20
+        }
+      ]
+    },
+    "IGameDemoGuildCreateReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 16,
+          "pattern": "\\S",
+          "patternCode": "GAME_DEMO_GUILD_NAME"
+        }
+      ]
+    },
+    "IGameDemoGuildInviteReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "targetUid",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoGuildRespondReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "inviteId",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "accept",
+          "kind": "boolean"
+        }
+      ]
+    },
+    "IGameDemoBossDamage": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "uid",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "damage",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "rank",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoBossFighter": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "uid",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "active",
+          "kind": "boolean"
+        },
+        {
+          "name": "hp",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "maxHp",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "autoAttack",
+          "kind": "boolean"
+        },
+        {
+          "name": "nextAttackAt",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "reviveAt",
+          "kind": "integer",
+          "min": 0
+        }
+      ]
+    },
+    "IGameDemoBossEvent": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "sequence",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "at",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "uid",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "kind",
+          "kind": "enum",
+          "members": [
+            "sword",
+            "counter",
+            "revive"
+          ],
+          "enumCode": "GAME_DEMO_BOSS_EVENT"
+        },
+        {
+          "name": "amount",
+          "kind": "integer",
+          "min": 0
+        }
+      ]
+    },
+    "IGameDemoBossRoom": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "bossId",
+          "kind": "enum",
+          "members": [
+            "tiger",
+            "dragon",
+            "phoenix"
+          ],
+          "enumCode": "GAME_DEMO_BOSS_ID"
+        },
+        {
+          "name": "name",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        {
+          "name": "runNumber",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "hp",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "maxHp",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "phase",
+          "kind": "enum",
+          "members": [
+            "running",
+            "settling",
+            "settled"
+          ],
+          "enumCode": "GAME_DEMO_PHASE"
+        },
+        {
+          "name": "revision",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "respawnAt",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "nextCounterAt",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "damage",
+          "kind": "array",
+          "items": {
+            "kind": "ref",
+            "ref": "IGameDemoBossDamage"
+          },
+          "maxItems": 100
+        },
+        {
+          "name": "fighters",
+          "kind": "array",
+          "items": {
+            "kind": "ref",
+            "ref": "IGameDemoBossFighter"
+          },
+          "maxItems": 100
+        },
+        {
+          "name": "events",
+          "kind": "array",
+          "items": {
+            "kind": "ref",
+            "ref": "IGameDemoBossEvent"
+          },
+          "maxItems": 64
+        }
+      ]
+    },
+    "IGameDemoBossList": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "rooms",
+          "kind": "array",
+          "items": {
+            "kind": "ref",
+            "ref": "IGameDemoBossRoom"
+          },
+          "maxItems": 3
+        },
+        {
+          "name": "currentBossId",
+          "kind": "enum",
+          "members": [
+            "tiger",
+            "dragon",
+            "phoenix"
+          ],
+          "enumCode": "GAME_DEMO_BOSS_ID",
+          "nullable": true
+        },
+        {
+          "name": "generation",
+          "kind": "integer",
+          "min": 0
+        }
+      ]
+    },
+    "IGameDemoBossState": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "uid",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "room",
+          "kind": "ref",
+          "ref": "IGameDemoBossRoom"
+        },
+        {
+          "name": "currentBossId",
+          "kind": "enum",
+          "members": [
+            "tiger",
+            "dragon",
+            "phoenix"
+          ],
+          "enumCode": "GAME_DEMO_BOSS_ID",
+          "nullable": true
+        },
+        {
+          "name": "generation",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "serverNow",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "nextAttackAt",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "heroAttack",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "myDamage",
+          "kind": "integer",
+          "min": 0
+        },
+        {
+          "name": "appliedDamage",
+          "kind": "integer",
+          "min": 0
+        }
+      ]
+    },
+    "IGameDemoBossGetReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "bossId",
+          "kind": "enum",
+          "members": [
+            "tiger",
+            "dragon",
+            "phoenix"
+          ],
+          "enumCode": "GAME_DEMO_BOSS_ID"
+        }
+      ]
+    },
+    "IGameDemoBossEnterReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "bossId",
+          "kind": "enum",
+          "members": [
+            "tiger",
+            "dragon",
+            "phoenix"
+          ],
+          "enumCode": "GAME_DEMO_BOSS_ID"
+        }
+      ]
+    },
+    "IGameDemoBossLeaveReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "bossId",
+          "kind": "enum",
+          "members": [
+            "tiger",
+            "dragon",
+            "phoenix"
+          ],
+          "enumCode": "GAME_DEMO_BOSS_ID"
+        },
+        {
+          "name": "generation",
+          "kind": "integer",
+          "min": 1
+        }
+      ]
+    },
+    "IGameDemoBossAttackReq": {
+      "kind": "object",
+      "fields": [
+        {
+          "name": "clientReqId",
+          "kind": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        {
+          "name": "bossId",
+          "kind": "enum",
+          "members": [
+            "tiger",
+            "dragon",
+            "phoenix"
+          ],
+          "enumCode": "GAME_DEMO_BOSS_ID"
+        },
+        {
+          "name": "runNumber",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "generation",
+          "kind": "integer",
+          "min": 1
+        },
+        {
+          "name": "autoAttack",
+          "kind": "boolean",
+          "required": false
+        }
+      ]
+    }
+  },
+  "apis": [
+    {
+      "name": "GameDemoAssets",
+      "route": "gameDemo.assets",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoEmptyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoAssets"
+      }
+    },
+    {
+      "name": "GameDemoInitialize",
+      "route": "gameDemo.initialize",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoWriteReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoAssets"
+      }
+    },
+    {
+      "name": "GameDemoShop",
+      "route": "gameDemo.shop",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoEmptyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoShop"
+      }
+    },
+    {
+      "name": "GameDemoBuy",
+      "route": "gameDemo.buy",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoBuyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoAssets"
+      }
+    },
+    {
+      "name": "GameDemoMailList",
+      "route": "gameDemo.mailList",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoEmptyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoMailbox"
+      }
+    },
+    {
+      "name": "GameDemoMailRead",
+      "route": "gameDemo.mailRead",
+      "serviceType": "Base",
+      "mode": "natural-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoMailReadReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoMailbox"
+      }
+    },
+    {
+      "name": "GameDemoMailClaim",
+      "route": "gameDemo.mailClaim",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoMailClaimReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoMailClaim"
+      }
+    },
+    {
+      "name": "GameDemoHeroGet",
+      "route": "gameDemo.heroGet",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoEmptyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoHeroState"
+      }
+    },
+    {
+      "name": "GameDemoHeroUpgrade",
+      "route": "gameDemo.heroUpgrade",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoHeroUpgradeReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoHeroUpgrade"
+      }
+    },
+    {
+      "name": "GameDemoAlchemyGet",
+      "route": "gameDemo.alchemyGet",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoEmptyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoAlchemyState"
+      }
+    },
+    {
+      "name": "GameDemoAlchemyStart",
+      "route": "gameDemo.alchemyStart",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoAlchemyStartReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoAlchemyState"
+      }
+    },
+    {
+      "name": "GameDemoSeasonGet",
+      "route": "gameDemo.seasonGet",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoEmptyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoSeason"
+      }
+    },
+    {
+      "name": "GameDemoSeasonEnd",
+      "route": "gameDemo.seasonEnd",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoSeasonEndReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoSeason"
+      }
+    },
+    {
+      "name": "GameDemoGuildGet",
+      "route": "gameDemo.guildGet",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoEmptyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoGuildState"
+      }
+    },
+    {
+      "name": "GameDemoGuildCreate",
+      "route": "gameDemo.guildCreate",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoGuildCreateReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoGuildState"
+      }
+    },
+    {
+      "name": "GameDemoGuildInvite",
+      "route": "gameDemo.guildInvite",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoGuildInviteReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoGuildState"
+      }
+    },
+    {
+      "name": "GameDemoGuildRespond",
+      "route": "gameDemo.guildRespond",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoGuildRespondReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoGuildState"
+      }
+    },
+    {
+      "name": "GameDemoGuildLeave",
+      "route": "gameDemo.guildLeave",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoWriteReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoGuildState"
+      }
+    },
+    {
+      "name": "GameDemoBossList",
+      "route": "gameDemo.bossList",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoEmptyReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoBossList"
+      }
+    },
+    {
+      "name": "GameDemoBossGet",
+      "route": "gameDemo.bossGet",
+      "serviceType": "Base",
+      "mode": "query",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoBossGetReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoBossState"
+      }
+    },
+    {
+      "name": "GameDemoBossEnter",
+      "route": "gameDemo.bossEnter",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoBossEnterReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoBossState"
+      }
+    },
+    {
+      "name": "GameDemoBossLeave",
+      "route": "gameDemo.bossLeave",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoBossLeaveReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoBossList"
+      }
+    },
+    {
+      "name": "GameDemoBossAttack",
+      "route": "gameDemo.bossAttack",
+      "serviceType": "Base",
+      "mode": "idempotent-write",
+      "ownerModule": "gameDemo",
+      "request": {
+        "kind": "ref",
+        "ref": "IGameDemoBossAttackReq"
+      },
+      "response": {
+        "kind": "ref",
+        "ref": "IGameDemoBossState"
+      }
+    }
+  ]
+}

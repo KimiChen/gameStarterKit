@@ -73,52 +73,9 @@ function validateErrorRegistry(registryPath, entries) {
     }
 }
 
-function nativeKitStorageContracts(kitsRoot = path.resolve(projectRoot, '../kits')) {
-    const contracts = new Map()
-    if (!fs.existsSync(kitsRoot)) return contracts
-    for (const dir of fs.readdirSync(kitsRoot, { withFileTypes: true })) {
-        if (!dir.isDirectory()) continue
-        const manifestPath = path.join(kitsRoot, dir.name, 'kit.json')
-        if (!fs.existsSync(manifestPath)) continue
-        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
-        if (manifest.serverRuntime !== 'serverNew') continue
-        if (manifest.id !== dir.name) throw new Error(`native kit identity mismatch: ${manifestPath}`)
-        const file = path.join(kitsRoot, dir.name, 'native-data.json')
-        const contract = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null
-        if (
-            fs.existsSync(file) &&
-            (!contract ||
-                typeof contract !== 'object' ||
-                Array.isArray(contract) ||
-                Object.keys(contract).some(
-                    (key) => !['schemaVersion', 'dataVersion', 'minSupported', 'retention', 'keys'].includes(key),
-                ) ||
-                contract.schemaVersion !== 1 ||
-                !Number.isSafeInteger(contract.dataVersion) ||
-                contract.dataVersion < 1 ||
-                !Number.isSafeInteger(contract.minSupported) ||
-                contract.minSupported < 1 ||
-                contract.minSupported > contract.dataVersion ||
-                contract.retention !== 'preserve' ||
-                !Array.isArray(contract.keys) ||
-                contract.keys.some(
-                    (key) => typeof key !== 'string' || !key.startsWith(`kt:${dir.name}:`) || /\s/.test(key),
-                ) ||
-                new Set(contract.keys).size !== contract.keys.length)
-        )
-            throw new Error(`invalid native kit data contract: ${file}`)
-        contracts.set(dir.name, { expected: new Set(contract?.keys ?? []), actual: new Set() })
-    }
-    return contracts
-}
-
 function collectRedisKeys() {
     const entries = []
-    const nativeKits = nativeKitStorageContracts()
     for (const filePath of walkTypeScriptFiles(path.join(projectRoot, 'src'))) {
-        const relative = normalizePath(path.relative(path.join(projectRoot, 'src/modules'), filePath))
-        const kit = nativeKits.get(relative.split('/')[0])
-        const fileEntries = []
         const sourceFile = readSourceFile(filePath)
         visit(sourceFile, (node) => {
             let name
@@ -135,43 +92,12 @@ function collectRedisKeys() {
                 initializer = node.right
             }
             if (!name || !initializer) return
-            // Encapsulated structures own their first constructor argument. These keys must remain
-            // visible to compatibility review even when the property is named "accounts" or "claims".
-            if (
-                ts.isNewExpression(initializer) &&
-                ts.isIdentifier(initializer.expression) &&
-                ['AtomicHash', 'AtomicOperation', 'AtomicLease'].includes(initializer.expression.text)
-            ) {
-                const value = literalValue(initializer.arguments?.[0], sourceFile)
-                if (typeof value === 'string' && value.includes(':')) {
-                    fileEntries.push({
-                        sourceName: normalizeRedisSourceName(declarationSourceName(node, `${name}.key`, sourceFile)),
-                        value,
-                    })
-                }
-                return
-            }
             const sourceOwnsKeys = declarationOwners(node, sourceFile).some((owner) => /Keys$/.test(owner))
             if (!/(?:key|prefix|redis)/i.test(name) && !sourceOwnsKeys) return
             const value = literalValue(initializer, sourceFile)
             if (typeof value !== 'string' || !value.includes(':')) return
-            fileEntries.push({
-                sourceName: normalizeRedisSourceName(declarationSourceName(node, name, sourceFile)),
-                value,
-            })
+            entries.push({ sourceName: normalizeRedisSourceName(declarationSourceName(node, name, sourceFile)), value })
         })
-        if (kit) {
-            for (const entry of fileEntries) kit.actual.add(entry.value)
-        } else entries.push(...fileEntries)
-    }
-    // Installed kits come and go. Their own versioned data contract is checked on both sides;
-    // the host's frozen baseline must not acquire a dependency on an optional package.
-    for (const [id, kit] of nativeKits) {
-        if (JSON.stringify([...kit.actual].sort()) !== JSON.stringify([...kit.expected].sort())) {
-            throw new Error(
-                `native kit ${id} Redis keys differ from apps/serverNew/kits/${id}/native-data.json: actual=${JSON.stringify([...kit.actual].sort())}`,
-            )
-        }
     }
     const unique = new Map(entries.map((entry) => [`${entry.sourceName}\u0000${entry.value}`, entry]))
     return [...unique.values()].sort(
@@ -543,8 +469,6 @@ function normalizePath(value) {
 }
 
 module.exports = {
-    nativeKitStorageContracts,
-    collectRedisKeys,
     captureSourceContracts,
     collectClassLists,
     exportedClassNameMismatch,

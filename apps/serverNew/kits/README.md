@@ -1,5 +1,9 @@
-# 原生 kit
+# serverNew kit
 
-每个子目录包含一个 `serverNew` kit 的清单、说明、能力/数据声明和随包验证。业务源码分别位于原生 modules、shared/kits 和 client/kits；协议域归 shared/native。
+每个子目录是一个可分发的 `serverNew` kit 源包：`kit.json` 列出包所拥有的文件，`files/` 下按仓库相对路径存放这些文件。
+使用 `pnpm -C apps/serverNew/server kit -- pack <source> --out-dir <artifact>`、`install <artifact>`、`check <id>`、`uninstall <id>`；
+kit 只能拥有自己的 C2S schema 与 `src/modules/<id>/`，每个 schema API 必须有对应 Action。完整约束见 [docs/KIT.md](../../../docs/KIT.md)。
 
-使用 `npm run kit:native -- pack/install/check/test/uninstall`，生成用 `npm run codegen:native-kits`。此发现根与旧 `apps/kits/` 分离，不通过旧服工具安装。完整说明见 [原生工具](../tools/kit/README.md)，示例见 [gameDemo](gameDemo/README.md)。
+- `kitSample`：框架工具链的最小样例（单路由 `kitSample.ping`），由 `pnpm verify:kit-clean-host` 在干净宿主中打包、安装、启动与卸载。
+
+仓内玩法（如 gameDemo）直接在宿主模块与 `apps/plugins/<id>/` 开发，不在这里保留第二份源码。

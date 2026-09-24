@@ -435,15 +435,15 @@ try {
   await boss('炎凰');await click({name:'选择Boss'});
   await poll(()=>lastState(1,'phoenix')?.myDamage>0,'phoenix auto damage');await shot('phoenix-scene');
   await boss('蛟龙');await click({name:'选择Boss'});
-  await poll(()=>lastState(1,'dragon')?.room.battle?.players.filter(p=>p.active).length>=2,'real multiplayer avatars');await shot('multiplayer-dragon');
-  await poll(()=>lastState(1,'dragon')?.room.battle?.players.some(p=>p.hp===0),'player death');await shot('death');
-  const fallen=lastState(1,'dragon').room.battle.players.filter(p=>p.hp===0).map(p=>p.uid);
-  await poll(()=>fallen.every(uid=>lastState(1,'dragon')?.room.battle?.players.find(p=>p.uid===uid)?.hp>0),'fallen players revived');await shot('revived');
+  await poll(()=>lastState(1,'dragon')?.room.fighters.filter(p=>p.active).length>=2,'real multiplayer avatars');await shot('multiplayer-dragon');
+  await poll(()=>lastState(1,'dragon')?.room.fighters.some(p=>p.hp===0),'player death');await shot('death');
+  const fallen=lastState(1,'dragon').room.fighters.filter(p=>p.hp===0).map(p=>p.uid);
+  await poll(()=>fallen.every(uid=>lastState(1,'dragon')?.room.fighters.find(p=>p.uid===uid)?.hp>0),'fallen players revived');await shot('revived');
   await click({name:'伤害榜'});await shot('expanded-damage-rank');await click({text:'收起'});
   // Pause each actor before the exact-state crash comparison. Unit tests cover recovery of active/dead fighters.
   await click({name:'选择Boss'});await switchPlayer(2);await click({name:'选择Boss'});
-  await poll(()=>lastState(2,'dragon')?.room.battle?.players.every(p=>!p.active||!p.autoAttack),'all actors paused');
-  await poll(()=>lastState(2,'dragon')?.room.battle?.players.every(p=>!p.active||p.hp>0),'paused players revived');
+  await poll(()=>lastState(2,'dragon')?.room.fighters.every(p=>!p.active||!p.autoAttack),'all actors paused');
+  await poll(()=>lastState(2,'dragon')?.room.fighters.every(p=>!p.active||p.hp>0),'paused players revived');
   const beforeRestart=lastState(2,'dragon').room;
   const collectConsole=async()=>{for(let i=0;i<browsers.length;i++){const logs=await browsers[i].evaluate('(() => {const logs=window.__creatorPreviewLogs??[];window.__creatorPreviewLogs=[];return logs;})()');report.console.push(...logs.map(e=>({...e,player:i+1})));}};
   await collectConsole();
@@ -451,10 +451,10 @@ try {
   native=launchNative();await waitNative(native);await collectConsole();
   await client.send('Page.reload',{ignoreCache:true});await click({name:'btn_login'});await find({text:'灵材商店'});
   await delay(1000);if(selectNodes(await walk(),{text:'离线收益'}).length)await click({text:'确定'});
-  await boss('蛟龙');await poll(()=>lastState(2,'dragon')?.room.ownerEpoch>beforeRestart.ownerEpoch,'new owner');
+  const restartedAt=report.wire.length;await boss('蛟龙');await poll(()=>report.wire.slice(restartedAt).some(f=>f.player===2&&f.reply?.ok&&f.reply?.data?.room?.bossId==='dragon'),'room reloaded from Bean after restart');
   const afterRestart=lastState(2,'dragon').room;
-  for(const key of ['runId','hp','phase','damage'])assert.deepEqual(afterRestart[key],beforeRestart[key],`restored ${key}`);
-  for(const p of beforeRestart.battle.players){const after=afterRestart.battle.players.find(a=>a.uid===p.uid);assert.equal(after.hp,p.hp);assert.equal(after.reviveAt,p.reviveAt);}
+  for(const key of ['runNumber','hp','phase','damage'])assert.deepEqual(afterRestart[key],beforeRestart[key],`restored ${key}`);
+  for(const p of beforeRestart.fighters){const after=afterRestart.fighters.find(a=>a.uid===p.uid);assert.equal(after.hp,p.hp);assert.equal(after.reviveAt,p.reviveAt);}
   report.restart={before:beforeRestart,after:afterRestart};await shot('boss-restored');
   await click({name:'选择Boss'});await poll(()=>lastState(2,'dragon')?.room.hp<afterRestart.hp,'continued after restart');await shot('boss-continued');
   await click({name:'选择Boss'});await click({text:'离开战场'});await find({text:'镇妖秘境'});

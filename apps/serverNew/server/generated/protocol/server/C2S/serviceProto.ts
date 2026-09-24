@@ -24,6 +24,34 @@ import type {
 } from '../../../lobby-contract/protocol/lobbyRpc/domains/arenaShop'
 import type { IChatSendReq, IChatSendRes } from '../../../lobby-contract/protocol/lobbyRpc/domains/chat'
 import type {
+    IGameDemoAlchemyStartReq,
+    IGameDemoAlchemyState,
+    IGameDemoAssets,
+    IGameDemoBossAttackReq,
+    IGameDemoBossEnterReq,
+    IGameDemoBossGetReq,
+    IGameDemoBossLeaveReq,
+    IGameDemoBossList,
+    IGameDemoBossState,
+    IGameDemoBuyReq,
+    IGameDemoEmptyReq,
+    IGameDemoGuildCreateReq,
+    IGameDemoGuildInviteReq,
+    IGameDemoGuildRespondReq,
+    IGameDemoGuildState,
+    IGameDemoHeroState,
+    IGameDemoHeroUpgrade,
+    IGameDemoHeroUpgradeReq,
+    IGameDemoMailClaim,
+    IGameDemoMailClaimReq,
+    IGameDemoMailReadReq,
+    IGameDemoMailbox,
+    IGameDemoSeason,
+    IGameDemoSeasonEndReq,
+    IGameDemoShop,
+    IGameDemoWriteReq,
+} from '../../../lobby-contract/protocol/lobbyRpc/domains/gameDemo'
+import type {
     IGuildGetEventsReq,
     IGuildGetEventsRes,
     IGuildJoinReq,
@@ -137,6 +165,98 @@ export interface ServiceType {
         'chat.send': {
             req: IChatSendReq
             res: IChatSendRes
+        }
+        'gameDemo.alchemyGet': {
+            req: IGameDemoEmptyReq
+            res: IGameDemoAlchemyState
+        }
+        'gameDemo.alchemyStart': {
+            req: IGameDemoAlchemyStartReq
+            res: IGameDemoAlchemyState
+        }
+        'gameDemo.assets': {
+            req: IGameDemoEmptyReq
+            res: IGameDemoAssets
+        }
+        'gameDemo.bossAttack': {
+            req: IGameDemoBossAttackReq
+            res: IGameDemoBossState
+        }
+        'gameDemo.bossEnter': {
+            req: IGameDemoBossEnterReq
+            res: IGameDemoBossState
+        }
+        'gameDemo.bossGet': {
+            req: IGameDemoBossGetReq
+            res: IGameDemoBossState
+        }
+        'gameDemo.bossLeave': {
+            req: IGameDemoBossLeaveReq
+            res: IGameDemoBossList
+        }
+        'gameDemo.bossList': {
+            req: IGameDemoEmptyReq
+            res: IGameDemoBossList
+        }
+        'gameDemo.buy': {
+            req: IGameDemoBuyReq
+            res: IGameDemoAssets
+        }
+        'gameDemo.guildCreate': {
+            req: IGameDemoGuildCreateReq
+            res: IGameDemoGuildState
+        }
+        'gameDemo.guildGet': {
+            req: IGameDemoEmptyReq
+            res: IGameDemoGuildState
+        }
+        'gameDemo.guildInvite': {
+            req: IGameDemoGuildInviteReq
+            res: IGameDemoGuildState
+        }
+        'gameDemo.guildLeave': {
+            req: IGameDemoWriteReq
+            res: IGameDemoGuildState
+        }
+        'gameDemo.guildRespond': {
+            req: IGameDemoGuildRespondReq
+            res: IGameDemoGuildState
+        }
+        'gameDemo.heroGet': {
+            req: IGameDemoEmptyReq
+            res: IGameDemoHeroState
+        }
+        'gameDemo.heroUpgrade': {
+            req: IGameDemoHeroUpgradeReq
+            res: IGameDemoHeroUpgrade
+        }
+        'gameDemo.initialize': {
+            req: IGameDemoWriteReq
+            res: IGameDemoAssets
+        }
+        'gameDemo.mailClaim': {
+            req: IGameDemoMailClaimReq
+            res: IGameDemoMailClaim
+        }
+        'gameDemo.mailList': {
+            req: IGameDemoEmptyReq
+            res: IGameDemoMailbox
+        }
+        'gameDemo.mailRead': {
+            req: IGameDemoMailReadReq
+            res: IGameDemoMailbox
+        }
+        'gameDemo.seasonEnd': {
+            req: IGameDemoSeasonEndReq
+            res: IGameDemoSeason
+        }
+        'gameDemo.seasonGet': {
+            req: IGameDemoEmptyReq
+            res: IGameDemoSeason
+        }
+        'gameDemo.shop': {
+            req: IGameDemoEmptyReq
+            res: IGameDemoShop
         }
         'guild.getEvents': {
             req: IGuildGetEventsReq
@@ -330,6 +450,121 @@ export const serviceProto: ServiceProto = {
         },
         {
             name: 'chat.send',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.alchemyGet',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.alchemyStart',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.assets',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.bossAttack',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.bossEnter',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.bossGet',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.bossLeave',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.bossList',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.buy',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.guildCreate',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.guildGet',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.guildInvite',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.guildLeave',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.guildRespond',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.heroGet',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.heroUpgrade',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.initialize',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.mailClaim',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.mailList',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.mailRead',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.seasonEnd',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.seasonGet',
+            type: 'api',
+            serviceType: 'Base',
+        },
+        {
+            name: 'gameDemo.shop',
             type: 'api',
             serviceType: 'Base',
         },
