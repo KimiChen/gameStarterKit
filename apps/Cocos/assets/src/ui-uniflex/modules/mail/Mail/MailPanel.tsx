@@ -3,9 +3,12 @@ import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ActionButton } from '../../../components/button/ActionButton';
 import { yellowButton } from '../../../components/button/buttonSkins';
+import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { MailTabs, type MailTabId } from './MailTabs';
 import { MailInbox, mailInboxCounts } from './MailInbox';
 import { MailReports, mailReportCount } from './MailReports';
+
+const emptyIcon = imageRef('ui/mail/popup-empty');
 
 export interface MailPanelProps {
     readonly visible?: boolean;
@@ -30,9 +33,8 @@ export const MailPanel = defineComponent<MailPanelProps>((p) => {
         <MailInbox visible={tab === 'alliance'} alliance={true} onAction={p.onAction} />
         <MailReports visible={tab === 'report'} onAction={p.onAction} />
         <view name="Mail/Empty" visible={personal} style={{ position: 'absolute', left: 0, top: 0, width: 750, height: 1200 }}>
-            <image source={imageRef('ui/mail/popup-empty')} style={{ position: 'absolute', left: 321, top: 677, width: 108, height: 116 }} />
-            <text value="暂无邮件" style={{ position: 'absolute', left: 250, top: 822, width: 250, height: 58,
-                font: fontRef('fonts/regular', 700), bold: true, fontSize: 40, color: '#837A91', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            <EmptyState icon={emptyIcon} left={321} top={677} label="暂无邮件"
+                labelLeft={250} labelTop={822} labelWidth={250} labelHeight={58} color="#837A91" />
         </view>
         <image name="Mail/Info" source={imageRef('ui/mail/popup-info')}
             style={{ position: 'absolute', left: 262, top: infoTop, width: 226, height: 40 }} />

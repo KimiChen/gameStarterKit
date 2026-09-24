@@ -1,5 +1,8 @@
 import { defineComponent, useEffect, useMemo, useState, VirtualList } from '@uniflex/compiler';
 import { ArrayVirtualListDataSource, fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { NotificationBadge } from '../../../components/badge/NotificationBadge';
+
+const unreadDot = imageRef('ui/mail/unread-dot');
 
 interface ReportRow {
     readonly id: string;
@@ -65,7 +68,7 @@ export const MailReportItem = defineComponent<{ readonly row: ReportRow; readonl
             <text value="野怪报告" style={{ position: 'absolute', left: 145, top: 65, width: 480, height: 28, font: fontRef('fonts/regular', 700), bold: true, fontSize: 24, color: '#837A91' }} />
             <text value="2026-9-8 11:14" style={{ position: 'absolute', left: 145, top: 89, width: 480, height: 28, font: fontRef('fonts/regular', 700), bold: true, fontSize: 24, color: '#3F3254' }} />
             <text value="UTC2026-11-7 11:14过期" style={{ position: 'absolute', left: 145, top: 113, width: 480, height: 28, font: fontRef('fonts/regular', 700), bold: true, fontSize: 24, color: '#837A91' }} />
-            <image source={imageRef('ui/mail/unread-dot')} visible={!row.read} style={{ position: 'absolute', left: 660, top: 9, width: 24, height: 24 }} />
+            <NotificationBadge mode="dot" source={unreadDot} visible={!row.read} left={660} top={9} width={24} height={24} />
             <image source={imageRef('ui/mail/read-stamp')} visible={row.read} style={{ position: 'absolute', left: 515, top: 77, width: 125, height: 78 }} />
             <image source={imageRef('ui/mail/read-overlay')} visible={row.read} style={{ position: 'absolute', width: 690, height: 163, sizeMode: 'sliced' }} />
         </view>

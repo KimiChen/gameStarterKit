@@ -1,5 +1,8 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { ActionButton } from '../../../components/button/ActionButton';
+
+const infoIcon = imageRef('ui/mail-report-detail/info');
 
 /** Coordinates within a 673px content viewport; preserves the source card corners. */
 export const ReportDetailCard = defineComponent<{ readonly height: number; readonly top?: number }>((p) => {
@@ -25,9 +28,9 @@ export const ReportDetailSectionHeading = defineComponent<{
         <text value={p.title} style={{ position: 'absolute', left: 155, top: 0, width: 340, height: 54,
             font: fontRef('fonts/regular', 700), bold: true, fontSize: 32, color: '#FFFFFF',
             outlineColor: '#15151B', outlineWidth: 2, horizontalAlign: 'center', verticalAlign: 'center' }} />
-        <view name="ReportDetail/Info" visible={p.info === true} interaction="press" onClick={p.onInfo}
+        <view name="ReportDetail/Info" visible={p.info === true}
             style={{ position: 'absolute', left: 600, top: 5, width: 44, height: 45 }}>
-            <image source={imageRef('ui/mail-report-detail/info')} style={{ width: 44, height: 45 }} />
+            <ActionButton source={infoIcon} left={0} top={0} width={44} height={45} onClick={p.onInfo} />
         </view>
     </view>
 ));
