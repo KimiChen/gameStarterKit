@@ -64,6 +64,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 | 数量加减 / 滑条 | `QuantityControl` |
 | 进度条 | `ProgressBar` |
 | 横向滚动公告 | `Marquee`（`text` + 视口尺寸；可设 `speed` / `gap` / `paused` / 精确 `textWidth`） |
+| 倒计时 | `Countdown`：传 `target`（`Date`、Unix 毫秒、10/13 位时间戳字符串、ISO 日期时间，或本地 `YYYY-MM-DD HH:mm:ss` / `YYYY/MM/DD HH:mm:ss`）或 `durationSeconds`；`format` 可用 `D/DD` 天、`H/HH` 时、`m/mm` 分、`s/ss` 秒，如 `D天 HH:mm:ss`、`HH:mm:ss`、`mm:ss`、`D天HH时mm分ss秒`。无天位时小时累计，无小时位时分钟累计；到零后触发一次 `onComplete`。无时区日期字符串按本地时间解释 |
 | 飘字 / 图标＋文本提示 | `FloatingHint` 播放单条；多条用 `FloatingHintQueue` 按触发时间起飘（同时触发时默认最少错开 120 ms，允许动画重叠），`onComplete` 从 `items` 移除已结束项。传 `idleText` 可在队列空闲时循环展示一条；目录示例按钮按实际点击时间入队 |
 | 星级 | `StarRow` |
 | 输入框 | `InputText` |

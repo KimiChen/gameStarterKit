@@ -15,6 +15,7 @@ import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { Marquee } from '../../../components/marquee/Marquee';
+import { Countdown } from '../../../components/countdown/Countdown';
 import { FloatingHintQueue, type FloatingHintQueueItem } from '../../../components/hint/FloatingHint';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
@@ -30,7 +31,7 @@ const PAGE_WIDTH = 750;
 const PAGE_HEIGHT = 1424;
 const HEADER_HEIGHT = 188;
 const SCROLL_HEIGHT = PAGE_HEIGHT - HEADER_HEIGHT;
-const CONTENT_HEIGHT = 4600;
+const CONTENT_HEIGHT = 5020;
 const SECTION_WIDTH = 710;
 const INNER_WIDTH = 674;
 const HINT_WIDTH = 300;
@@ -72,6 +73,7 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
     const [iconHints, setIconHints] = useState<readonly FloatingHintQueueItem[]>([]);
     const nextTextHintId = useRef(0);
     const nextIconHintId = useRef(0);
+    const countdownTarget = useRef(new Date(Date.now() + (2 * 86400 + 3 * 3600 + 4 * 60 + 5) * 1000).toISOString());
     const addTextHint = () => {
         nextTextHintId.current += 1;
         const id = nextTextHintId.current;
@@ -382,6 +384,36 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                             <Marquee text="联盟活动即将开始，请各位成员做好准备！" left={0} top={0}
                                 width={INNER_WIDTH} height={56} font={font} fontSize={26}
                                 color={pageText} backgroundColor={pageSurfaceAlt} />
+                        </view>
+                    </view>
+                    <view name="CountdownSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="倒计时" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view style={{ position: 'relative', width: INNER_WIDTH, height: 56 }}>
+                            <Countdown target={countdownTarget.current}
+                                format="D天 HH:mm:ss" left={0} top={0} width={INNER_WIDTH} height={56}
+                                font={font} fontSize={28} color={pageText} backgroundColor={pageSurfaceAlt} />
+                        </view>
+                        <view style={{ position: 'relative', width: INNER_WIDTH, height: 56 }}>
+                            <Countdown durationSeconds={3 * 3600 + 4 * 60 + 5}
+                                left={0} top={0} width={INNER_WIDTH} height={56}
+                                font={font} fontSize={28} color={pageText} backgroundColor={pageSurfaceAlt} />
+                        </view>
+                        <view style={{ position: 'relative', width: INNER_WIDTH, height: 56 }}>
+                            <Countdown durationSeconds={5 * 60 + 30} format="mm:ss"
+                                left={0} top={0} width={INNER_WIDTH} height={56}
+                                font={font} fontSize={28} color={pageText} backgroundColor={pageSurfaceAlt} />
+                        </view>
+                        <view style={{ position: 'relative', width: INNER_WIDTH, height: 56 }}>
+                            <Countdown durationSeconds={86400 + 2 * 3600 + 3 * 60 + 4}
+                                format="D天HH时mm分ss秒" left={0} top={0} width={INNER_WIDTH} height={56}
+                                font={font} fontSize={28} color={pageText} backgroundColor={pageSurfaceAlt} />
                         </view>
                     </view>
                     <view name="FloatingHintSection" style={{

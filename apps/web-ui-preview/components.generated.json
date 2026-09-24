@@ -188,6 +188,11 @@
       "source": "apps/client/src/ui-uniflex/components/checkbox/CheckBox.tsx"
     },
     {
+      "key": "Countdown",
+      "rootName": "Countdown",
+      "source": "apps/client/src/ui-uniflex/components/countdown/Countdown.tsx"
+    },
+    {
       "key": "Dropdown",
       "rootName": "Dropdown",
       "source": "apps/client/src/ui-uniflex/components/dropdown/Dropdown.tsx"

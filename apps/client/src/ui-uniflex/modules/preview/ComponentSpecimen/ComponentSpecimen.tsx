@@ -17,6 +17,7 @@ import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { characterTab, heroDetailTab, heroListTab, mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { Marquee } from '../../../components/marquee/Marquee';
+import { Countdown } from '../../../components/countdown/Countdown';
 import { FloatingHintQueue, type FloatingHintQueueItem } from '../../../components/hint/FloatingHint';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
@@ -83,6 +84,7 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const [navigation, setNavigation] = useState<MainNavSlot>('hero');
     const [hints, setHints] = useState<readonly FloatingHintQueueItem[]>([]);
     const nextHintId = useRef(0);
+    const countdownTarget = useRef(new Date(Date.now() + (2 * 86400 + 3 * 3600 + 4 * 60 + 5) * 1000).toISOString());
     const completeHint = (id: number) => setHints((current) => current.filter((item) => item.id !== id));
     const checkedLabel = checked ? '已勾选' : '未勾选';
     const radioA = radio === 'a';
@@ -185,6 +187,10 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showDropdown = part === 'cmp-dropdown';
     const showProgress = part === 'cmp-progress';
     const showMarquee = part === 'cmp-marquee';
+    const showCountdownDays = part === 'cmp-countdown-days';
+    const showCountdownHours = part === 'cmp-countdown-hours';
+    const showCountdownMinutes = part === 'cmp-countdown-minutes';
+    const showCountdownChinese = part === 'cmp-countdown-chinese';
     const showFloatingText = part === 'cmp-floating-text';
     const showFloatingIconText = part === 'cmp-floating-icon-text';
     const hintWidth = Math.min(300, Math.max(1, width - 170));
@@ -269,6 +275,26 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
             <Marquee text="联盟活动即将开始，请各位成员做好准备！" left={0} top={0}
                 width={width} height={height} font={font} fontSize={26}
                 color={pageText} backgroundColor={pageSurfaceAlt} paused={!showMarquee} />
+        </view>
+        <view visible={showCountdownDays} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <Countdown target={countdownTarget.current}
+                format="D天 HH:mm:ss" left={0} top={0} width={width} height={height}
+                font={font} fontSize={28} color={pageText} backgroundColor={pageSurfaceAlt} />
+        </view>
+        <view visible={showCountdownHours} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <Countdown durationSeconds={3 * 3600 + 4 * 60 + 5}
+                left={0} top={0} width={width} height={height}
+                font={font} fontSize={28} color={pageText} backgroundColor={pageSurfaceAlt} />
+        </view>
+        <view visible={showCountdownMinutes} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <Countdown durationSeconds={5 * 60 + 30} format="mm:ss"
+                left={0} top={0} width={width} height={height}
+                font={font} fontSize={28} color={pageText} backgroundColor={pageSurfaceAlt} />
+        </view>
+        <view visible={showCountdownChinese} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <Countdown durationSeconds={86400 + 2 * 3600 + 3 * 60 + 4}
+                format="D天HH时mm分ss秒" left={0} top={0} width={width} height={height}
+                font={font} fontSize={28} color={pageText} backgroundColor={pageSurfaceAlt} />
         </view>
         <view visible={showFloatingText} style={{ position: 'absolute', left: 0, top: 0,
             width: width, height: height, backgroundColor: pageSurfaceAlt }}>
