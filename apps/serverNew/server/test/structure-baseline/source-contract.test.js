@@ -59,7 +59,7 @@ try {
     fs.rmSync(temporary, { recursive: true, force: true })
 }
 const hostKeys = collectRedisKeys()
-assert.ok(hostKeys.some((entry) => entry.value === 'nativeLobby:shop:wallet-receipts:v1'))
+assert.ok(hostKeys.some((entry) => entry.value === 'nativeLobby:identity:v1'))
 assert.ok(hostKeys.every((entry) => !entry.value.startsWith('kt:gameDemo:')))
 const descriptorPath = path.resolve(__dirname, '../../../../kits/gameDemo/native-data.json')
 if (fs.existsSync(descriptorPath)) {

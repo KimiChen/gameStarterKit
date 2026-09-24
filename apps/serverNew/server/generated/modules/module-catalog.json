@@ -577,7 +577,7 @@
               "kind": "initializer",
               "name": "register-income-session-actions",
               "app": "service",
-              "handler": "() => {\n            LocalActionRegistry.register({ 'income.parkOffline': ActionIncomeParkOffline })\n        }"
+              "handler": "() => IncomeNativeLobbyAuth.registerActions()"
             }
           }
         ],
@@ -942,7 +942,7 @@
               "kind": "initializer",
               "name": "register-user-session-actions",
               "app": "service",
-              "handler": "() => {\n                LocalActionRegistry.register({ 'user.lobbyEnter': ActionUserLobbyEnter, 'user.lobbyLeave': ActionUserLobbyLeave })\n            }"
+              "handler": "() => NativeLobbyUserEnter.registerActions()"
             }
           }
         ],
@@ -1134,7 +1134,7 @@
           "kind": "initializer",
           "name": "register-income-session-actions",
           "app": "service",
-          "handler": "() => {\n            LocalActionRegistry.register({ 'income.parkOffline': ActionIncomeParkOffline })\n        }"
+          "handler": "() => IncomeNativeLobbyAuth.registerActions()"
         }
       },
       {
@@ -1144,7 +1144,7 @@
           "kind": "initializer",
           "name": "register-user-session-actions",
           "app": "service",
-          "handler": "() => {\n                LocalActionRegistry.register({ 'user.lobbyEnter': ActionUserLobbyEnter, 'user.lobbyLeave': ActionUserLobbyLeave })\n            }"
+          "handler": "() => NativeLobbyUserEnter.registerActions()"
         }
       }
     ],

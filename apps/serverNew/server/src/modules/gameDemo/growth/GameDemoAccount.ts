@@ -15,8 +15,13 @@ interface AccountRevision {
 }
 const accountCodec = atomicJsonCodec<AccountRevision>((value): value is AccountRevision => {
     const account = value as AccountRevision | null
-    return !!account && account.schemaVersion === 1 && Number.isSafeInteger(account.revision) && account.revision >= 1
-        && (account.starterPillsGranted === undefined || typeof account.starterPillsGranted === 'boolean')
+    return (
+        !!account &&
+        account.schemaVersion === 1 &&
+        Number.isSafeInteger(account.revision) &&
+        account.revision >= 1 &&
+        (account.starterPillsGranted === undefined || typeof account.starterPillsGranted === 'boolean')
+    )
 })
 
 export class GameDemoAccount {
@@ -51,10 +56,17 @@ export class GameDemoAccount {
                 // Legacy accounts omit this optional field and receive the pills once without more gold.
                 if (!existing?.starterPillsGranted) {
                     for (const kind of ['pill', 'finePill'] as const)
-                        await NativeLobbyAssets.changeItem(tx, uid, sId,
-                            GAME_DEMO_CONFIG.itemIds[kind], GAME_DEMO_CONFIG.initialPills[kind])
+                        await NativeLobbyAssets.changeItem(
+                            tx,
+                            uid,
+                            sId,
+                            GAME_DEMO_CONFIG.itemIds[kind],
+                            GAME_DEMO_CONFIG.initialPills[kind],
+                        )
                     await tx.set(this.accounts, owner, {
-                        schemaVersion: 1, revision: (existing?.revision ?? 0) + 1, starterPillsGranted: true,
+                        schemaVersion: 1,
+                        revision: (existing?.revision ?? 0) + 1,
+                        starterPillsGranted: true,
                     })
                 }
                 await new GameDemoMailbox().deliver(

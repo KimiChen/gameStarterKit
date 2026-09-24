@@ -257,7 +257,8 @@ describe('native Lobby owned route contract', () => {
         const savedLeave = UserSessionLifecycle.leave
         userBean.load = async (id: number) => {
             loaded.push(id)
-            return { id, sId: SID }
+            // 离线保存经玩家 Owner 的 Action 执行：未到过天时间，避免 dayInit 访问 MySQL。
+            return { id, sId: SID, nextDayTime: Number.MAX_SAFE_INTEGER }
         }
         UserSessionLifecycle.leave = async (user) => {
             cleaned.push(user.id)

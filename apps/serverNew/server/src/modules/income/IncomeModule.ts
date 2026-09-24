@@ -11,7 +11,13 @@ import { IncomeNativeLobbyAuth } from './lobby/IncomeNativeLobbyAuth'
 export const IncomeModule = defineGameModule({
     name: 'income',
     configuration: {
-        initializers: [{ name: 'register-income-session-actions', app: 'service', handler: () => IncomeNativeLobbyAuth.registerActions() }],
+        initializers: [
+            {
+                name: 'register-income-session-actions',
+                app: 'service',
+                handler: () => IncomeNativeLobbyAuth.registerActions(),
+            },
+        ],
     },
     nativeLobbyAuth: {
         handlers: [

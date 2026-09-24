@@ -15311,6 +15311,26 @@
                     "sourceName": "ActionDefault"
                 },
                 {
+                    "route": "C2S:heroRecruit.buy",
+                    "sourceName": "ActionHeroRecruitBuy"
+                },
+                {
+                    "route": "C2S:heroRecruit.getCatalog",
+                    "sourceName": "ActionHeroRecruitGetCatalog"
+                },
+                {
+                    "route": "C2S:income.claimOffline",
+                    "sourceName": "ActionIncomeClaimOffline"
+                },
+                {
+                    "route": "C2S:income.getPending",
+                    "sourceName": "ActionIncomeGetPending"
+                },
+                {
+                    "route": "C2S:income.settleOnline",
+                    "sourceName": "ActionIncomeSettleOnline"
+                },
+                {
                     "route": "S2S:activity/ActivityClose",
                     "sourceName": "ActionActivityClose"
                 },

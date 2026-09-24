@@ -30,7 +30,15 @@ describe('gameDemo asset authority', () => {
                 new GameDemoAccount().initialize('existing', 1, `init-${index}`, true),
             ),
         )
-        assert.ok(results.every((result) => result.gold === 5123 && result.initialized && result.items.pill === 100 && result.items.finePill === 100))
+        assert.ok(
+            results.every(
+                (result) =>
+                    result.gold === 5123 &&
+                    result.initialized &&
+                    result.items.pill === 100 &&
+                    result.items.finePill === 100,
+            ),
+        )
         assert.equal(await redis.hGet('nativeLobby:shop:balance:v1', '1:existing'), '5123')
         await AtomicHashTransaction.run((tx) => NativeLobbyAssets.changeGold(tx, 'existing', 1, -100))
         const restarted = new GameDemoAccount()
@@ -46,8 +54,9 @@ describe('gameDemo asset authority', () => {
             await NativeLobbyAssets.changeGold(tx, 'legacy', 1, 321)
             await NativeLobbyAssets.changeItem(tx, 'legacy', 1, 900003, 7)
         })
-        await Promise.all(Array.from({ length: 12 }, (_, i) =>
-            new GameDemoAccount().initialize('legacy', 1, `backfill-${i}`, true)))
+        await Promise.all(
+            Array.from({ length: 12 }, (_, i) => new GameDemoAccount().initialize('legacy', 1, `backfill-${i}`, true)),
+        )
         const granted = await new GameDemoAccount().read('legacy', 1)
         assert.equal(granted.gold, 321)
         assert.deepEqual(granted.items, { herb: 0, dew: 0, pill: 107, finePill: 100 })

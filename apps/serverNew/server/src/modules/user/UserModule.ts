@@ -9,8 +9,13 @@ import { NativeLobbyUserEnter } from './lobby/NativeLobbyUserEnter'
 export const UserModule = defineGameModule({
     name: 'user',
     configuration: {
-        initializers: [{ name: 'initialize-user-config', app: 'all', after: ['attr'], handler: initializeUserConfig },
-            { name: 'register-user-session-actions', app: 'service', handler: () => NativeLobbyUserEnter.registerActions() },
+        initializers: [
+            { name: 'initialize-user-config', app: 'all', after: ['attr'], handler: initializeUserConfig },
+            {
+                name: 'register-user-session-actions',
+                app: 'service',
+                handler: () => NativeLobbyUserEnter.registerActions(),
+            },
         ],
     },
     events: {

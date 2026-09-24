@@ -19,7 +19,10 @@ import { ActionUserLobbyLeave } from '../action/ActionUserLobbyLeave'
  */
 export class NativeLobbyUserEnter {
     static registerActions(): void {
-        LocalActionRegistry.register({ 'user.lobbyEnter': ActionUserLobbyEnter, 'user.lobbyLeave': ActionUserLobbyLeave })
+        LocalActionRegistry.register({
+            'user.lobbyEnter': ActionUserLobbyEnter,
+            'user.lobbyLeave': ActionUserLobbyLeave,
+        })
     }
 
     static async enter(internalUid: number, sId: number): Promise<void> {
@@ -52,7 +55,10 @@ export class NativeLobbyUserEnter {
 
     static async leave(internalUid: number, sId: number): Promise<void> {
         const result = await MessageHelper.syncDoAction(
-            internalUid, sId, new Call('user.lobbyLeave', {}), ActionUserLobbyLeave,
+            internalUid,
+            sId,
+            new Call('user.lobbyLeave', {}),
+            ActionUserLobbyLeave,
         )
         if (!result.isSucc) throw result.res ?? new Error(result.errMsg)
     }
