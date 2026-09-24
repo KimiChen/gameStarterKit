@@ -50,6 +50,14 @@
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"
     },
     {
+      "id": "mail-popup",
+      "aliases": ["mail-popup", "mailPopup"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Mail",
+      "rootName": "Mail",
+      "source": "apps/client/src/ui-uniflex/modules/mail/Mail/Mail.tsx"
+    },
+    {
       "id": "mail",
       "aliases": ["mail"],
       "canvas": { "width": 750, "height": 1334 },

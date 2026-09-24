@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/mail/popup-tab-on",
+      "kind": "image",
+      "file": "assets/mail_popup_tab_on.png",
+      "width": 151,
+      "height": 91,
+      "sha256": "627cde2d43c0c597ff00ae830a5fb79f88807eeb5f8caad9e54c4185c7d6875a"
+    },
+    {
+      "id": "ui/mail/popup-tab-off",
+      "kind": "image",
+      "file": "assets/mail_popup_tab_off.png",
+      "width": 151,
+      "height": 91,
+      "sha256": "062ef0e996a8967c3f0d72b4ca5d7fb6d95ec06bb91cd89bda3e892e961888e4"
+    },
+    {
+      "id": "ui/mail/popup-delete",
+      "kind": "image",
+      "file": "assets/mail_popup_delete.png",
+      "width": 82,
+      "height": 75,
+      "sha256": "3ba832291a1fd8814d436762cca974151a883872dae34b0b2c6a1ad5f5b05741",
+      "nineSlice": [
+        26,
+        32,
+        52,
+        39
+      ]
+    },
+    {
+      "id": "ui/mail/popup-info",
+      "kind": "image",
+      "file": "assets/mail_popup_info.png",
+      "width": 226,
+      "height": 40,
+      "sha256": "79b2303f0af9d114523008fb5893e6252b968cf6992d3c3dcb4a4fbbfe6b8b5c"
+    },
+    {
+      "id": "ui/mail/popup-list",
+      "kind": "image",
+      "file": "assets/mail_popup_list.png",
+      "width": 683,
+      "height": 866,
+      "sha256": "b88588ca288264d13a1a25ca42e1d539f01aeaa90f83cb1650a9e32e30a3b803"
+    },
+    {
+      "id": "ui/mail/popup-battle-card",
+      "kind": "image",
+      "file": "assets/mail_popup_battle_card.png",
+      "width": 677,
+      "height": 122,
+      "sha256": "e0302763305321385123fa1af4dc2a4af3e4c8a02c3adaabe88990ca97869d9f"
+    },
+    {
+      "id": "ui/mail/popup-battle-line",
+      "kind": "image",
+      "file": "assets/mail_popup_battle_line.png",
+      "width": 665,
+      "height": 2,
+      "sha256": "e2489be4491f22651e7fcd120563ac916960bee305fa2050146e996c86f41c76"
+    },
+    {
+      "id": "ui/mail/popup-mail-card",
+      "kind": "image",
+      "file": "assets/mail_popup_mail_card.png",
+      "width": 661,
+      "height": 159,
+      "sha256": "db22517706c2b96f7301790ac91bee4800415d7c56b2080fb651718c64dba239"
+    },
+    {
+      "id": "ui/mail/popup-envelope",
+      "kind": "image",
+      "file": "assets/mail_popup_envelope.png",
+      "width": 112,
+      "height": 96,
+      "sha256": "d67d31612ee4d3b0df6a623d444d1d688a9b4f469f9355c6890e3908265ae2c3"
+    },
+    {
+      "id": "ui/mail/popup-gift",
+      "kind": "image",
+      "file": "assets/mail_popup_gift.png",
+      "width": 87,
+      "height": 78,
+      "sha256": "a5dbe44d7d2f3d6b300d8cc8e0076a96e02234657a843f2e3ea50d5a76b004a0"
+    },
+    {
+      "id": "ui/mail/popup-alliance",
+      "kind": "image",
+      "file": "assets/mail_popup_alliance.png",
+      "width": 108,
+      "height": 98,
+      "sha256": "d68e914b855c6b1a28c6cded05865bcb3243127ce92a423c6ecbb5715c9d303c"
+    },
+    {
+      "id": "ui/mail/popup-empty",
+      "kind": "image",
+      "file": "assets/mail_popup_empty.png",
+      "width": 108,
+      "height": 116,
+      "sha256": "48dc051f3501e511373f6f563aed96de216193c2cbe131e47fbc9f438514487c"
+    },
+    {
+      "id": "ui/mail/popup-row",
+      "kind": "image",
+      "file": "assets/mail_popup_row.png",
+      "width": 690,
+      "height": 163,
+      "sha256": "48450a89ffec0bdf2eb117b462d3a9ea9fcdf8b5f8b93a4007597885dc3e5662"
+    },
+    {
+      "id": "ui/mail/popup-icon-well",
+      "kind": "image",
+      "file": "assets/mail_popup_icon_well.png",
+      "width": 120,
+      "height": 120,
+      "sha256": "34539cf1203005f97a8ba2c6f47410172099901814fade6631c91c8ccf7f1b74"
+    }
+  ]
+}

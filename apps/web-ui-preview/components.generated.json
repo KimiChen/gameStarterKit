@@ -288,6 +288,36 @@
       "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleReport/MailBattleRow.tsx"
     },
     {
+      "key": "MailInbox",
+      "rootName": "MailInbox",
+      "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailInbox.tsx"
+    },
+    {
+      "key": "MailInboxCard",
+      "rootName": "MailInboxCard",
+      "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailInbox.tsx"
+    },
+    {
+      "key": "MailPanel",
+      "rootName": "MailPanel",
+      "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailPanel.tsx"
+    },
+    {
+      "key": "MailReportItem",
+      "rootName": "MailReportItem",
+      "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailReports.tsx"
+    },
+    {
+      "key": "MailReports",
+      "rootName": "MailReports",
+      "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailReports.tsx"
+    },
+    {
+      "key": "MailTabs",
+      "rootName": "MailTabs",
+      "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailTabs.tsx"
+    },
+    {
       "key": "MainNav",
       "rootName": "MainNav",
       "source": "apps/client/src/ui-uniflex/gamecomponents/navigation/MainNav.tsx"

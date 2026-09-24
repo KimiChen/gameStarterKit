@@ -47,6 +47,7 @@ import {
     HeroScreenRestored,
     HeroStarUpgrade,
     HeroStarUpgradeRestored,
+    Mail,
     MailBattleReport,
     MailBattleReportRestored,
     PreviewHome,
@@ -97,6 +98,7 @@ const HEIGHT_1334 = new Set([
 ]);
 
 const PREVIEW_ALIASES: Record<string, string> = {
+    mailpopup: "mail-popup",
     home: "preview-home",
     restored: "restored-home",
     restore: "restored-home",
@@ -233,6 +235,13 @@ async function startPreviewScreen(
             await runtime.start(Backpack, { onAction });
             return;
         }
+        case "mail-popup":
+            await runtime.start(Mail, {
+                onClose: back,
+                onAction: (action) => console.info("[UniFlex Mail] action", action),
+                onSelectTab: (tab) => console.info("[UniFlex Mail] tab", tab),
+            });
+            return;
         case "mail": {
             const mailParams: MailBattleReportParams = {
                 onBack: back,

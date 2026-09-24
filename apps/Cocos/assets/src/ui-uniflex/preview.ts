@@ -1,3 +1,4 @@
+import { createPreviewScreen } from "./previewCatalog";
 import { Node, UITransform, view } from "cc";
 import { UniFlexCocosRuntime } from "../kits/uniflex/api/cocos/index";
 import { Alliance, AllianceAnnounce, AllianceBoard, AllianceCreate, AllianceGift, AllianceHelp, AllianceInvite, AllianceJoin, AllianceMarchBoost, AllianceMemberSettings, AllianceTech, AllianceTerritory, AllianceWar, Backpack, CharacterManage, ComponentGallery, Confirm, HeroDetail, HeroScreen, HeroStarUpgrade, MailBattleReport, Defeat, RewardObtain, Settings, Shop, ShopGetItem, Victory, loadGameUI } from "./generated/ui";
@@ -831,3 +832,8 @@ export {
     resolvePreviewScreenId,
 } from "./previewCatalog";
 
+/** Standalone 邮件 popup preview; the catalog owns its 750×1624 canvas and callbacks. */
+export function createMailPreview(parent: Node) {
+    const preview = createPreviewScreen(parent, "mail-popup", { query: null, navigate: () => preview.dispose() });
+    return preview;
+}
