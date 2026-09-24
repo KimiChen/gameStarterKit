@@ -308,6 +308,21 @@
       "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleReport/MailBattleRow.tsx"
     },
     {
+      "key": "MailContentPanel",
+      "rootName": "MailContentPanel",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailContent/MailContentPanel.tsx"
+    },
+    {
+      "key": "MailContentParagraph",
+      "rootName": "MailContent/Paragraph",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailContent/MailContentParagraph.tsx"
+    },
+    {
+      "key": "MailContentReward",
+      "rootName": "MailContent/Rewards",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailContent/MailContentReward.tsx"
+    },
+    {
       "key": "MailInbox",
       "rootName": "MailInbox",
       "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailInbox.tsx"

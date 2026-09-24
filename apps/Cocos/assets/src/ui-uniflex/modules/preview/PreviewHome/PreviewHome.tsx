@@ -10,6 +10,7 @@ export type PreviewHomeTarget =
     | 'mail-popup'
     | 'mail-report-detail'
     | 'mail-battle-log'
+    | 'mail-content'
     | 'mail-share'
     | 'mail-soldier-details'
     | 'mail-troop-details'
@@ -65,6 +66,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('mail-battle-log')} style={{ width: 300, height: 102, backgroundColor: '#72558f', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="战斗日志" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('mail-content')} style={{ width: 300, height: 102, backgroundColor: '#72558f', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="邮件内容" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <view interaction="press" onClick={() => go('mail-share')} style={{ width: 300, height: 102, backgroundColor: '#72558f', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="分享" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />

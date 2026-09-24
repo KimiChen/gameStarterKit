@@ -19,3 +19,5 @@
 Web 的启动登记在 `apps/web-ui-preview/preview-screen.ts`，Cocos 在 `previewCatalog.ts`（`UniFlexPreview` 的委托目录）；`preview.ts` 另提供 `createMailPreview`。
 
 本地验收：`build:uniflex-ui` → `sync:client` → `typecheck:uniflex-ui`，从预览首页打开，检查四页签、文件夹折叠/展开与滚动、操作回调、关闭及再次进入。普通切图页不要求服务端测试或全量门禁。
+
+联盟邮件「成功加入联盟」打开 `MailContentPanel`（邮件内容），关闭保留页签及列表；与 `MailReportDetailPanel` 互斥显示。

@@ -867,3 +867,9 @@ export function createMailSharePreview(parent: Node): { dispose(): void } {
     const preview = createPreviewScreen(parent, "mail-share", { query: null, navigate: () => preview.dispose() });
     return preview;
 }
+
+/** Mail message body and attached reward. */
+export function createMailContentPreview(parent: Node): { dispose(): void } {
+    const preview = createPreviewScreen(parent, "mail-content", { query: null, navigate: () => preview.dispose() });
+    return preview;
+}

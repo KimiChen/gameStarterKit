@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/mail-content/reward",
+      "kind": "image",
+      "file": "assets/mail_report4_reward.png",
+      "width": 673,
+      "height": 168,
+      "sha256": "c9c712286bff32fe189c2eef1d7ab6d74ec5475e8d86bb67955d6bb5b5ae1888"
+    },
+    {
+      "id": "ui/mail-content/item",
+      "kind": "image",
+      "file": "assets/mail_report4_item.png",
+      "width": 93,
+      "height": 95,
+      "sha256": "5a627e8487f88ee4a75deb6a0f774cf1d945bdddc5d8c49dd9ea03818982091a"
+    },
+    {
+      "id": "ui/mail-content/lang",
+      "kind": "image",
+      "file": "assets/mail_report4_lang.png",
+      "width": 32,
+      "height": 32,
+      "sha256": "91b5d22a1c51b1b3ad0df0f64cd814e3f156afd8838e39d97149a11aed86a740"
+    },
+    {
+      "id": "ui/mail-content/lang-plate",
+      "kind": "image",
+      "file": "assets/mail_report4_lang_plate.png",
+      "width": 38,
+      "height": 38,
+      "sha256": "2a1ee1f7a3013275a72b8043539bef96ff3cdc35fc64f5fc3cfd486e9ec11004"
+    },
+    {
+      "id": "ui/mail-content/claim",
+      "kind": "image",
+      "file": "assets/button_yellow.png",
+      "width": 82,
+      "height": 75,
+      "sha256": "47b5d310b4ff230d18e3dbc3ebeaf3c32187ab8c2d43900bab73ae8427c97ce3",
+      "nineSlice": [
+        26,
+        32,
+        52,
+        39
+      ]
+    }
+  ]
+}

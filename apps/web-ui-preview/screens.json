@@ -50,6 +50,14 @@
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"
     },
     {
+      "id": "mail-content",
+      "aliases": ["mail-content", "mailContent"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "MailContent",
+      "rootName": "MailContent",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailContent/MailContent.tsx"
+    },
+    {
       "id": "mail-share",
       "aliases": ["mail-share", "mailShare"],
       "canvas": { "width": 750, "height": 1624 },
