@@ -56,6 +56,7 @@ import {
     SettingsRestored,
     RewardObtain,
     Victory,
+    Defeat,
     Shop,
     ShopGetItem,
     ShopGetItemRestored,
@@ -121,6 +122,8 @@ const PREVIEW_ALIASES: Record<string, string> = {
     congrats: "reward-obtain",
     victory: "victory",
     "battle-victory": "victory",
+    defeat: "defeat",
+    "battle-defeat": "defeat",
     components: "component-gallery",
     "ui-components": "component-gallery",
     previewhomerestored: "preview-home-restored",
@@ -405,6 +408,15 @@ async function startPreviewScreen(
                     console.info("[UniFlex Victory] close");
                     back();
                 },
+            });
+            return;
+        case "defeat":
+            await runtime.start(Defeat, {
+                onClose: () => {
+                    console.info("[UniFlex Defeat] close");
+                    back();
+                },
+                onWay: (id) => console.info("[UniFlex Defeat] way", id),
             });
             return;
         case "confirm-restored":

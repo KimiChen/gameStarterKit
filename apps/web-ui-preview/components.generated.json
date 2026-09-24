@@ -193,6 +193,11 @@
       "source": "apps/client/src/ui-uniflex/components/countdown/Countdown.tsx"
     },
     {
+      "key": "DefeatPanel",
+      "rootName": "Defeat",
+      "source": "apps/client/src/ui-uniflex/modules/reward/Defeat/DefeatPanel.tsx"
+    },
+    {
       "key": "Dropdown",
       "rootName": "Dropdown",
       "source": "apps/client/src/ui-uniflex/components/dropdown/Dropdown.tsx"

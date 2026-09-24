@@ -250,6 +250,14 @@
       "source": "apps/client/src/ui-uniflex/modules/reward/Victory/Victory.tsx"
     },
     {
+      "id": "defeat",
+      "aliases": ["defeat", "battle-defeat", "lose"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Defeat",
+      "rootName": "DefeatPage",
+      "source": "apps/client/src/ui-uniflex/modules/reward/Defeat/Defeat.tsx"
+    },
+    {
       "id": "confirm-restored",
       "aliases": ["confirm-restored", "confirmRestored"],
       "canvas": { "width": 750, "height": 1624 },

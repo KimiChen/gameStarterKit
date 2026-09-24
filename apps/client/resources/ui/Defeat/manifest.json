@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/defeat/title",
+      "kind": "image",
+      "file": "assets/defeat_title.png",
+      "width": 400,
+      "height": 111,
+      "sha256": "520a4f384e4087758d11a5c1e813e4f90e43b6c31f33fa04583fd1b9b911c4ec"
+    },
+    {
+      "id": "ui/defeat/sunset",
+      "kind": "image",
+      "file": "assets/defeat_sunset.png",
+      "width": 750,
+      "height": 579,
+      "sha256": "f99009d4ef1ca4e8b0bbcbd5d2608308a87aef8a1cb19fdffa632161b3daecd4"
+    },
+    {
+      "id": "ui/defeat/emblem",
+      "kind": "image",
+      "file": "assets/defeat_emblem.png",
+      "width": 407,
+      "height": 303,
+      "sha256": "2107f2146bc5aeb0a8df77f8f84bb9e5b17d8812e6c63668aefb4f6aae8822b2"
+    },
+    {
+      "id": "ui/defeat/ribbon",
+      "kind": "image",
+      "file": "assets/defeat_ribbon.png",
+      "width": 536,
+      "height": 118,
+      "sha256": "80fb168a8e5a5c6ab8a26e630386770050757d53d4c30933cc89beb20364c98a"
+    },
+    {
+      "id": "ui/defeat/vs",
+      "kind": "image",
+      "file": "assets/defeat_vs.png",
+      "width": 117,
+      "height": 106,
+      "sha256": "92b536352174a70b13f41a00ad5006a8577557cba725ac4700bf36b9bde38cc1"
+    },
+    {
+      "id": "ui/defeat/way-circle",
+      "kind": "image",
+      "file": "assets/defeat_way_circle.png",
+      "width": 126,
+      "height": 126,
+      "sha256": "e472d9165238b3dbecd2f37a89363ea93a7c8f42388053a8472051455877429f"
+    },
+    {
+      "id": "ui/defeat/icon-skill",
+      "kind": "image",
+      "file": "assets/defeat_icon_skill.png",
+      "width": 70,
+      "height": 86,
+      "sha256": "1eb1f52270563cd71d72213eaa7b2b9dc1fe4436c592949c5dcc9fcc9edd7471"
+    },
+    {
+      "id": "ui/defeat/icon-train",
+      "kind": "image",
+      "file": "assets/defeat_icon_train.png",
+      "width": 84,
+      "height": 83,
+      "sha256": "d95d9cb08565649870e9ccf64b5025938ebecd80698697090277552fac95941e"
+    },
+    {
+      "id": "ui/defeat/icon-forge",
+      "kind": "image",
+      "file": "assets/defeat_icon_forge.png",
+      "width": 81,
+      "height": 81,
+      "sha256": "3b14d8c95d8ad409ebc9be3d79251c7065cd82f63b9eb71a6f5632e3d0cea906"
+    },
+    {
+      "id": "ui/defeat/icon-recruit",
+      "kind": "image",
+      "file": "assets/defeat_icon_recruit.png",
+      "width": 107,
+      "height": 86,
+      "sha256": "d1f9f5009fa70a70cf8b4baff401fa98af0e6ce2e1ff5c09f0521d9006efa4a4"
+    }
+  ]
+}
