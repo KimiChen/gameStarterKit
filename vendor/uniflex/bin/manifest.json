@@ -6,6 +6,9 @@
   "binaries": {
     "darwin-arm64/uniflex-compiler": {
       "sha256": "5384ec097008a795bd36184026511a5ac65c17195d24d480839e076bde8f25cd"
+    },
+    "darwin-x64/uniflex-compiler": {
+      "sha256": "d5e8c5bb1092c47dac69cf301003171265ae9350975fa6dcf7e352b9d51f9f62"
     }
   }
 }

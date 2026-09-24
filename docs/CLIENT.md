@@ -93,7 +93,9 @@ apps/Cocos/
   `src/ui-uniflex/components/` 与 `gamecomponents/`。按切图实现新页时先读 [UNIFLEX-UI.md](UNIFLEX-UI.md)。`generated/` 子目录及
   `apps/Cocos/assets/resources/uniflex/` 由 `npm run build:uniflex-ui` 生成，不手改、不入库。
   编译器默认使用项目内 `tools/uniflex-compiler.mjs` 调用
-  `vendor/uniflex/bin/<platform>-<arch>/`；显式设置 `UNIFLEX_COMPILER` 可覆盖项目内制品。
+  `vendor/uniflex/bin/<platform>-<arch>/`（macOS 已包含 `darwin-arm64` 与 Intel `darwin-x64`）；
+  显式设置 `UNIFLEX_COMPILER` 可覆盖项目内制品。选择依据是当前 Node 的 `process.arch`，
+  Apple Silicon 上用 x64 Node（Rosetta）会选择 x64 制品。
   运行时以
   `src/lib/uniflex/` 入库副本为准，`vendor/uniflex/` 的 npm 制品只作为 AOT 与
   `fetch:uniflex` 的输入。生成后运行 `sync:client`，`check:uniflex-ui` 只读检查新鲜度。
