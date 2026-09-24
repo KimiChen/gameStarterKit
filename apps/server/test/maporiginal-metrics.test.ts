@@ -3,6 +3,35 @@ import { test } from "node:test";
 import vm from "node:vm";
 // @ts-expect-error The preview tool is ESM without declarations.
 import { distribution, installMapOriginalMetrics } from "../../../tools/creator-preview/maporiginal-metrics.mjs";
+// @ts-expect-error The preview tool is ESM without declarations.
+import { judgeMapOriginalMinimapLayout, readMapOriginalMinimapEvidence } from "../../../tools/creator-preview/maporiginal.mjs";
+
+test("mapOriginal minimap evidence: actual CSS ratios, half-height art and complete viewport edges", () => {
+    const root = "scene/Canvas/MapOriginalWorldView/mapo-minimap";
+    const node = (name: string, path: string, x: number, y: number, width: number, height: number) =>
+        ({ name, path, center: { x, y, width, height } });
+    const walk = { canvas: { width: 375, height: 800 }, visible: { width: 750, height: 1600 }, nodes: [
+        node("mapo-minimap", root, 300, 700, 180, 180),
+        node("mapo-minimap-image", `${root}/mapo-minimap-image`, 300, 700, 180, 90),
+        node("edge-0", `${root}/viewport/edge-0`, 300, 695, 20, 2),
+        node("edge-1", `${root}/viewport/edge-1`, 300, 705, 20, 2),
+        node("edge-2", `${root}/viewport/edge-2`, 295, 700, 2, 20),
+        node("edge-3", `${root}/viewport/edge-3`, 305, 700, 2, 20),
+    ] };
+    const value = readMapOriginalMinimapEvidence(walk);
+    assert.deepEqual(value.image, { x: 255, y: 677.5, w: 90, h: 45 });
+    assert.equal(judgeMapOriginalMinimapLayout(value), null);
+    assert.match(judgeMapOriginalMinimapLayout({ ...value, image: { ...value.image, h: 90 } }), /半高/u);
+    assert.match(judgeMapOriginalMinimapLayout({ ...value, image: { ...value.image, y: 680 } }), /半高/u);
+    assert.match(judgeMapOriginalMinimapLayout({ ...value, edges: value.edges.slice(1) }), /四条/u);
+    assert.match(judgeMapOriginalMinimapLayout({ ...value, edges: value.edges.map((e: object) => ({ ...e, x: 200, w: 200 })) }), /超出/u);
+    assert.equal(readMapOriginalMinimapEvidence({ ...walk, visible: { width: 0, height: 0 } }), null);
+    const wide = readMapOriginalMinimapEvidence({ ...walk, canvas: { width: 1624, height: 750 },
+        visible: { width: 750, height: 346.366995 }, nodes: walk.nodes.map(n =>
+            n.name === "edge-3" ? { ...n, center: { ...n.center, x: 300 + 90 * 1624 / 750 } } : n) });
+    assert.ok(wide.strokeHalfWidth.x > 2);
+    assert.equal(judgeMapOriginalMinimapLayout(wide), null, "横版边框半线宽必须按实际 CSS 比例计算");
+});
 
 test("mapOriginal metrics: no samples is unknown, percentile preserves long frames", () => {
     assert.equal(distribution([]).p99, null);

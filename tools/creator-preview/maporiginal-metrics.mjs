@@ -163,8 +163,7 @@ function inputIdentity() {
     }
     const compiledDir = path.join(ROOT, "apps/Cocos/temp/programming/packer-driver/targets/preview");
     const imports = JSON.parse(fs.readFileSync(path.join(compiledDir, "import-map.json"), "utf8")).imports;
-    const compiledReaders = ["Terrain", "Bands", "Regions", "Roads", "Cities", "Tops", "Rivers", "Blocks"].map(name => {
-        const relative = `kits/mapOriginal/logic/mapo${name}.ts`;
+    const checkCompiled = relative => {
         const source = fs.readFileSync(path.join(ROOT, "apps/client/src", relative), "utf8");
         const mirror = path.join(ROOT, "apps/Cocos/assets/src", relative), compiled = imports[pathToFileURL(mirror).href];
         if (fs.readFileSync(mirror, "utf8") !== source || !compiled
@@ -172,8 +171,12 @@ function inputIdentity() {
             throw new Error(`Stale mirror or Creator compilation: ${relative}`);
         }
         return { source: relative, compiled, sha256: createHash("sha256").update(source).digest("hex") };
-    });
-    return { head: execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim(), compiledReaders,
+    };
+    const compiledReaders = ["Terrain", "Bands", "Regions", "Roads", "Cities", "Tops", "Rivers", "Blocks"]
+        .map(name => checkCompiled(`kits/mapOriginal/logic/mapo${name}.ts`));
+    const compiledRendering = ["logic/mapoMesh", "logic/mapoScene", "logic/mapoStaticScene", "logic/mapoFar", "view/MapoMinimap"]
+        .map(name => checkCompiled(`kits/mapOriginal/${name}.ts`));
+    return { head: execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim(), compiledReaders, compiledRendering,
         inputHash: createHash("sha256").update(JSON.stringify(hashes)).digest("hex"), files: hashes };
 }
 

@@ -77,6 +77,13 @@ node tools/creator-preview/capture-uniflex-golden.mjs --screen backpack --out /t
 
 SLG 的地图打开与各 LOD 截图在标题到位后继续等待：至少观察 2.4 秒，且 chunk 集合与地图位置持续 1.2 秒稳定；遇到可见限流重试提示会重新计时，失败提示直接失败。报告记录 `settling.elapsedMs/stableMs/chunkCount`，避免缩放刚结束时把尚未补齐的地图网格当作最终画面。此项只观察公开引擎节点，不读取内部请求队列。
 
+mapOriginal 的 O2 小地图回归在关闭重开后的 1.28× 近景执行：普通鼠标点击中心、菱形四端和上下留白，
+再点击地图中心读取格坐标，最后回到中心。图片必须使用完整的 512×256 纹理 UV，在正方导航框中居中半高显示；
+四条视口边线必须留在内容带内（含 2 设计像素线宽的半边）。节点尺寸按实际 CSS / visible 比例换算，
+鼠标点击取最近 CSS 像素；小图量化和相机边界收紧允许落点距目标不超过 30 格。
+`maporiginal-metrics.json` 同时核对八个数据 reader 及五个裁边/渲染模块的 Creator 编译源码与真源一致。
+默认尊重网页选择的竖版；`MAPO_PREVIEW_ORIENTATION=landscape` 临时执行横版回归，并在结束或失败时恢复原尺寸、重新挂载地图。
+
 中央拖动的每段移动、每次滚轮和 LOD 稳定后，还通过 `SettingsView/panel/viewport` 的公开 `ScrollView.getScrollOffset()` 检查后台偏移。偏移变化超过 0.1 或组件不可观测均失败，结果写入步骤的 `settingsScroll`；这样可识别后台滚动容器先吞掉地图输入的回归。
 
 贴图检查读取已渲染 MeshRenderer 的共享材质 `mainTexture` 与绘卷 Sprite 的纹理尺寸，不主动加载图片。地标预期坐标由总览公开节点位置换算，点击标签后与局部详情坐标比对。总览显示期间局部世界处于隐藏状态，因此绘卷的「位置不变」在关闭面板后通过公开世界节点位置、LOD 与选格共同验证。2026-09-10 的美术接入样本为 23 步、19 张截图，见 docs/evidence/creator-2026-09-10/slg-art/。

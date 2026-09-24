@@ -131,6 +131,83 @@ export function mapOriginalGestureArea(walk) {
     return { x: anchor.x, y: anchor.y, width: canvas.width * 0.7, height: half * 2 };
 }
 
+/** O2 小地图验收只读公开节点；尺寸先从设计单位换成实际页面像素。 */
+export function readMapOriginalMinimapEvidence(walk) {
+    const nodes = walk?.nodes?.filter(inView) ?? [];
+    const mini = nodes.find(n => n.name === "mapo-minimap");
+    const image = nodes.find(n => n.path === `${mini?.path}/mapo-minimap-image`);
+    const sx = walk?.canvas?.width / walk?.visible?.width;
+    const sy = walk?.canvas?.height / walk?.visible?.height;
+    if (!mini?.center || !image?.center || ![sx, sy].every(v => Number.isFinite(v) && v > 0)) return null;
+    const rect = n => ({ x: n.center.x - n.center.width * sx / 2,
+        y: n.center.y - n.center.height * sy / 2, w: n.center.width * sx, h: n.center.height * sy });
+    return { navigation: rect(mini), image: rect(image), strokeHalfWidth: { x: sx, y: sy }, edges: nodes.filter(n =>
+        n.path.startsWith(`${mini.path}/viewport/edge-`) && n.center).map(n => rect(n)) };
+}
+
+export function judgeMapOriginalMinimapLayout(value) {
+    if (!value || value.edges.length !== 4) return "小地图图片或四条视口边缺失";
+    const { navigation: n, image: p, edges, strokeHalfWidth: stroke } = value;
+    if (Math.abs(p.x - n.x) > 1 || Math.abs(p.y - n.y - n.h / 4) > 1
+        || Math.abs(p.w - n.w) > 1 || Math.abs(p.h - n.h / 2) > 1) return "小地图未居中半高显示";
+    // 2 设计像素线宽的半边可以伸出内容；横版的 1 设计像素可能大于 1 CSS px。
+    if (edges.some(e => e.x < p.x - stroke.x - .01 || e.x + e.w > p.x + p.w + stroke.x + .01
+        || e.y < p.y - stroke.y - .01 || e.y + e.h > p.y + p.h + stroke.y + .01)) return "小地图视口框超出内容带";
+    return null;
+}
+
+/** 固定 s1 的中心与菱形四端，不用被测映射函数计算自己的预期。 */
+export const MAPO_MINIMAP_CHECKS = [
+    { name: "center", u: .5, v: .5, row: 750, col: 750 },
+    { name: "left", u: .01, v: .5, row: 0, col: 1499 },
+    { name: "right", u: .99, v: .5, row: 1499, col: 0 },
+    { name: "top", u: .5, v: .25, row: 0, col: 0 },
+    { name: "bottom", u: .5, v: .75, row: 1499, col: 1499 },
+    { name: "blank-top", u: .5, v: .1, row: 0, col: 0 },
+    { name: "blank-bottom", u: .5, v: .9, row: 1499, col: 1499 },
+    { name: "center-restored", u: .5, v: .5, row: 750, col: 750 },
+];
+
+export async function replayMapOriginalMinimap(runner) {
+    return runner.step("O2 小地图：中心、四端、上下留白与视口框", async () => {
+        const texture = await runner.client.evaluate(`(() => {
+            const nodes = [], visit = n => { nodes.push(n); n.children.forEach(visit); };
+            visit(cc.director.getScene());
+            const frame = nodes.find(n => n.name === "mapo-minimap-image")?.getComponent("cc.Sprite")?.spriteFrame;
+            return frame ? { width: frame.texture.width, height: frame.texture.height, uv: Array.from(frame.uv) } : null;
+        })()`);
+        if (texture?.width !== 512 || texture.height !== 256 || texture.uv.length !== 8
+            || texture.uv.some(v => v !== 0 && v !== 1)
+            || new Set(Array.from({ length: 4 }, (_, i) => texture.uv.slice(i * 2, i * 2 + 2).join(","))).size !== 4) {
+            throw new Error(`小地图未使用完整的 512×256 纹理：${JSON.stringify(texture)}`);
+        }
+        const cases = [];
+        for (const target of MAPO_MINIMAP_CHECKS) {
+            const walk = await runner.walk(), layout = readMapOriginalMinimapEvidence(walk);
+            const problem = judgeMapOriginalMinimapLayout(layout);
+            if (problem) throw new Error(`${problem}: ${JSON.stringify(layout)}`);
+            if (readMapOriginalEvidence(walk)?.scale < 1) throw new Error("小地图四端验收需在重开后的近景执行，避免远档相机钳位干扰");
+            // Chrome 鼠标事件会量化 CSS 坐标；先取最近像素，避免默认向下截断令小图偏十余格。
+            const n = layout.navigation, at = { x: Math.round(n.x + target.u * n.w), y: Math.round(n.y + target.v * n.h) };
+            await runner.client.click(at.x, at.y);
+            await sleep(300);
+            const area = mapOriginalGestureArea(await runner.walk());
+            await runner.client.click(area.x, area.y);
+            // 小地图的一个 CSS 像素可跨十余格；另有合法的相机边界收紧，固定允许 30 格。
+            const landed = await runner.waitFor(`小地图 ${target.name} 落点`, w => {
+                const got = readMapOriginalEvidence(w), tile = got?.tile;
+                return tile && Math.abs(tile.row - target.row) <= 30 && Math.abs(tile.col - target.col) <= 30 ? got : null;
+            }, 8_000);
+            const after = readMapOriginalMinimapEvidence(await runner.walk());
+            const failure = judgeMapOriginalMinimapLayout(after);
+            if (failure) throw new Error(`${target.name}: ${failure}: ${JSON.stringify(after)}`);
+            cases.push({ target, at, landed: landed.tile, layout: after,
+                shot: await runner.shot(`maporiginal-minimap-${target.name}`) });
+        }
+        return { texture, cases };
+    });
+}
+
 /** 选中框必须落在**点击处**——这是「点击→格」坐标换算的直接判据。 */
 export function judgeSelectionUnderCursor(evidence, canvas, clickAt, toleranceTiles = 2) {
     const at = evidence?.selectionAt;
@@ -537,5 +614,6 @@ async function replayMapOriginalWithMetrics(runner, metrics) {
         }, 60_000);
         return { ...value, metrics: await metrics.sample("reopened", value), shot: await runner.shot("maporiginal-reopened") };
     });
-    return { opened, selected, decorAndLabels, noSandboxRow, medium, far, global, jumped, back, city, biomes, qualities, closed, reopened };
+    const minimap = await replayMapOriginalMinimap(runner);
+    return { opened, selected, decorAndLabels, noSandboxRow, medium, far, global, jumped, back, city, biomes, qualities, closed, reopened, minimap };
 }
