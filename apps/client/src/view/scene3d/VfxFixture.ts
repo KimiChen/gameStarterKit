@@ -17,12 +17,13 @@ export class VfxFixture {
         signal.addEventListener("abort", this.cancel, { once: true });
         if (signal.aborted) this.close();
     }
-    setEnabled(enabled: boolean): void {
+    setEnabled(enabled: boolean, stress = true): void {
         this.clear(); if (!enabled || this.disposed) return;
         this.error = "";
         this.target = new Node("Stage3dVfx.FollowTarget"); this.parent.addChild(this.target); this.target.setPosition(-12, 1, 8);
         this.pool = createCocosVfx(this.catalog, this.parent, {
-            quality: { ...this.quality, maxEffects: 50 }, signal: this.signal, onError: (error) => { this.error = String(error); },
+            quality: stress ? { ...this.quality, maxEffects: 50 } : this.quality,
+            signal: this.signal, onError: (error) => { this.clear(); this.error = String(error); },
         });
         for (let i = 0; i < 50; i++) {
             const effect = this.pool.play("sparks", i === 0 ? { follow: () => this.target && isValid(this.target, true)

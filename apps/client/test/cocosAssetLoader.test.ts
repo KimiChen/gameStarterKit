@@ -120,3 +120,24 @@ test("CocosAssetLoader: missing bundle, missing asset and synchronous transport 
         });
     }
 });
+
+test("CocosAssetLoader: cache transport failure drains a partial remote batch, late assets and retry without touching another owner", async () => {
+    const h = bundleHarness(), assets = [new FakeAsset(), new FakeAsset(), new FakeAsset()];
+    transport = { getBundle: () => h.bundle, loadBundle: () => assert.fail("shared remote bundle already present") };
+    const { assetLease } = await loadSubject();
+    const otherPending = assetLease.acquire([request("kit-fixture", "3d/unit")]);
+    complete(h.calls[0].callback, assets[0]); const other = await otherPending;
+    const requests = [request("kit-fixture", "3d/unit"), request("kit-fixture", "3d/texture"), request("kit-fixture", "3d/effect")];
+    const failed = assetLease.acquire(requests);
+    const cause = new Error("copyFile:fail the maximum size of the file storage limit is exceeded");
+    const rejected = assert.rejects(failed, (error: unknown) => error instanceof AssetLoadError
+        && error.request?.path === "3d/texture" && error.cause === cause && error.retryable);
+    complete(h.calls[1].callback, assets[0]); assert.equal(assets[0].refs, 4);
+    h.calls[2].callback(cause); await rejected;
+    assert.equal(assets[0].refs, 3, "only the failed batch returns its hold");
+    complete(h.calls[3].callback, assets[2]); assert.equal(assets[2].refs, 2, "late completion cannot publish half-ready content");
+    const retry = assetLease.acquire(requests);
+    for (let i = 0; i < 3; i++) complete(h.calls[i + 4].callback, assets[i]);
+    const restored = await retry; assert.deepEqual(assets.map(asset => asset.refs), [4, 3, 3]);
+    restored.release(); other.release(); assert.deepEqual(assets.map(asset => asset.refs), [2, 2, 2]);
+});

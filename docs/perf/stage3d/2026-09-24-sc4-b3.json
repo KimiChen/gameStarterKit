@@ -1,0 +1,1904 @@
+{
+  "schemaVersion": 1,
+  "batch": "SC4-B3",
+  "date": "2026-09-24",
+  "status": "desktop-complete-pending-real-device",
+  "stageExit": false,
+  "batchComplete": false,
+  "realWeChatEvidence": false,
+  "baseCommit": "8330dbf86f3af8d1632680b8547c10a06ccd6c06",
+  "reviewedHeadBeforeCommit": "2df65fc4a1b3aa7276728907f7a4aca7878e52a0",
+  "implementation": [
+    "Low capability/budget policy preserves available float/RGBA8 baked skinning; explicit unavailable or measured-over-budget recovery caps direct realtime units and uses consumer far billboards.",
+    "No instancing caps baked units at 25; no ASTC selects actual PNG. Low normal caps are 50 units and 8 Vfx; fixed budget table unchanged.",
+    "SkinnedMeshRenderer-owned MaterialInstances retire after queues drain and before borrowed materials/assets. Original measured realtime leak was 16,800 buffer bytes/cycle; 20 cycles accumulated 336,000 bytes. Final 20-cycle runs have zero growth.",
+    "Failed fixture activation cancels partial nodes/assets; required fixture failures close the whole developer stage. AssetLease partial batch failure, late completion and fresh retry preserve other owners.",
+    "Real WeChat six-step cache procedure and blank evidence template delivered; device tests are pending."
+  ],
+  "visualReview": {
+    "reviewedScreenshots": [
+      "final-baked/near.png",
+      "final-rgba8/near.png",
+      "final-no-instancing/near.png",
+      "final-realtime-retry/near.png",
+      "final-realtime-retry/far.png"
+    ],
+    "result": "Expected 50 or 25 two-bone greyboxes; float and RGBA8 match visually; realtime far scene has 25 checker billboards and no Vfx. Fixed greybox ground remains; no screenshot substitutes for queue/animation assertions."
+  },
+  "validation": [
+    {
+      "command": "node tools/art3d/billboard-fixture.mjs --check",
+      "log": {
+        "path": ".cache/sc4-b3/billboard-check.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "exitCode": 0,
+      "testGroups": [],
+      "totalTests": 0
+    },
+    {
+      "command": "npm run sync:client",
+      "log": {
+        "path": ".cache/sc4-b3/sync-client.log",
+        "sha256": "4a1d5c778b93247167cb2a726d3aff14038e5b0c68f6e6ce44b8c71b54cde4c0"
+      },
+      "exitCode": 0,
+      "testGroups": [],
+      "totalTests": 0
+    },
+    {
+      "command": "node --import tsx --test (eight targeted regression files)",
+      "log": {
+        "path": ".cache/sc4-b3/targeted-reviewed.log",
+        "sha256": "8b5d003e7c0c945d6a3ca004f0332c42f660e03e73fd85c5947ba1b34ea3709f"
+      },
+      "exitCode": 0,
+      "testGroups": [
+        38
+      ],
+      "totalTests": 38
+    },
+    {
+      "command": "npm run verify:all",
+      "log": {
+        "path": ".cache/sc4-b3/verify-all-final.log",
+        "sha256": "4e967c992cde85b43cd1f2bbe92697eefcc05d847239b4b20763d96da4a3d4c7"
+      },
+      "exitCode": 0,
+      "testGroups": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1345,
+        80,
+        1392
+      ],
+      "totalTests": 3033
+    },
+    {
+      "command": "npm run verify:inventory after final documentation update",
+      "log": {
+        "path": ".cache/sc4-b3/final-inventory.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      },
+      "exitCode": 0,
+      "testGroups": [],
+      "totalTests": 0
+    },
+    {
+      "command": "Creator 3.8.8 real cc.d.ts compile",
+      "diagnostics": 0,
+      "report": {
+        "path": ".cache/sc4-b3/real-engine-types.json",
+        "sha256": "8b46f085282a3fccadfae88bc55b0ca6454271d00ad9169455664e315a1a935c"
+      }
+    },
+    {
+      "command": "WebGL2 high 100 skinned regression: cross-atlas, realtime mode/socket, 20 cycles",
+      "passed": true,
+      "report": {
+        "path": ".cache/sc4-b3/high-regression/report.json",
+        "sha256": "f0731d331624ef1c9efbaa02017b8cdb3d985b3ca52be58b2ae5b826c377329b"
+      },
+      "summary": {
+        "path": ".cache/sc4-b3/high-regression-summary.json",
+        "sha256": "b12b5df5d25204093c73d10ff251810cfc0a8a1a657d188028623069da6b01ce"
+      }
+    }
+  ],
+  "earlierValidationAttempts": [
+    {
+      "command": "npm run verify:all",
+      "exitCode": 1,
+      "reason": "New documentation links were checked before the referenced summary existed; generated the summary and reran the full suite.",
+      "log": {
+        "path": ".cache/sc4-b3/verify-all.log",
+        "sha256": "4439fdc7cb4eb29a47580e7f5a3326f934e9b125844874f7b38e37247b9a7dae"
+      }
+    },
+    {
+      "command": "initial failed-fixture mutation",
+      "reason": "Object assertion formatting did not produce a useful failure diagnostic. Changed the regression to a boolean lifecycle assertion and added unconditional test cleanup; final mutation fails at the intended assertion.",
+      "log": {
+        "path": ".cache/sc4-b3/mutations/failed-fixture.log",
+        "sha256": "7e5e728c1ef18f8702cceebfddc5b366434a84a7560e85bf03d8e8bb6297c63b"
+      }
+    }
+  ],
+  "mutations": [
+    {
+      "name": "baseline",
+      "source": null,
+      "exitCode": 0,
+      "expectedFailure": false,
+      "log": ".cache/sc4-b3/mutations-final/baseline.log",
+      "sha256": "ac432bc1a39ddd9e3be79b9b0820cd3065ebd92dd591c69c64adec00b2687d29"
+    },
+    {
+      "name": "realtime-instancing",
+      "source": "cocosSkinnedUnits.ts",
+      "exitCode": 1,
+      "expectedFailure": true,
+      "log": ".cache/sc4-b3/mutations-final/realtime-instancing.log",
+      "sha256": "34299577756aaf37f4b9822f096622e726c26fab91af8a0b9a428f8c0caf522b"
+    },
+    {
+      "name": "material-retirement",
+      "source": "cocosSkinnedUnits.ts",
+      "exitCode": 1,
+      "expectedFailure": true,
+      "log": ".cache/sc4-b3/mutations-final/material-retirement.log",
+      "sha256": "59ec4b416330c5dc4cdd06cce344ff91582548736bca6638f2edc56e097fb85d"
+    },
+    {
+      "name": "failed-fixture",
+      "source": "SkinnedUnitsFixture.ts",
+      "exitCode": 1,
+      "expectedFailure": true,
+      "log": ".cache/sc4-b3/mutations-final/failed-fixture.log",
+      "sha256": "b2b05b1ca5561e20e8b34425d47637d49ee5ec7080f891a9169a3409c8c7fe88"
+    },
+    {
+      "name": "cache-batch-cleanup",
+      "source": "AssetLease.ts",
+      "exitCode": 1,
+      "expectedFailure": true,
+      "log": ".cache/sc4-b3/mutations-final/cache-batch-cleanup.log",
+      "sha256": "86080a414e31af8a113238c53aa809235f020be10a962218a08bf84062d60ac5"
+    }
+  ],
+  "engineReferences": [
+    {
+      "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/cocos/3d/skinned-mesh-renderer/skinned-mesh-renderer.ts",
+      "sha256": "739aab2aa1e1e67f0289a1bac3432840603c36311c533fb353e6fdb477cf7693"
+    },
+    {
+      "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/cocos/3d/framework/mesh-renderer.ts",
+      "sha256": "0e90b504656e167fc545db4fdea35e84726173800f03e633e14a7608570a4810"
+    },
+    {
+      "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/cocos/render-scene/core/material-instance.ts",
+      "sha256": "2baf215c4f5161bb8b68a39d7389ca932198af304aca8e64ef9ac5d4fa683ea3"
+    },
+    {
+      "path": "/Applications/Cocos/Creator/3.8.8/CocosCreator.app/Contents/Resources/resources/3d/engine/platforms/minigame/common/engine/cache-manager.js",
+      "sha256": "305fbc32856507f16998f93c93101d76b4343e24c6d648d536f963a3c5c22439"
+    }
+  ],
+  "runs": [
+    {
+      "case": "baked",
+      "passed": true,
+      "startedAt": "2026-09-24T00:15:15.009Z",
+      "finishedAt": "2026-09-24T00:16:00.942Z",
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "previewDevice": "WebpageFullScreen",
+        "viewport": {
+          "cssWidth": 375,
+          "cssHeight": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624,
+          "dpr": 2
+        }
+      },
+      "report": {
+        "path": ".cache/sc4-b3/final-baked/report.json",
+        "sha256": "156a11570ec1cacacfb8a3bdd9b26eccada85adbf38819ec6878077579be6a88"
+      },
+      "screenshots": [
+        {
+          "path": ".cache/sc4-b3/final-baked/near.png",
+          "sha256": "0f53a81951ccfc04cfcd90ab634e031e4b7a5c8a42b84cd2e257f781c1d0d403"
+        },
+        {
+          "path": ".cache/sc4-b3/final-baked/far.png",
+          "sha256": "62a2c648dd5e86e218553d532729978119ce12b9a8b349f564945a3d55b7dcd8"
+        }
+      ],
+      "injection": {
+        "preBoot": true,
+        "queries": [
+          {
+            "name": "WEBGL_compressed_texture_astc",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBKIT_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "MOZ_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "WEBGL_compressed_texture_astc",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBKIT_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "MOZ_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          }
+        ],
+        "floatFault": null
+      },
+      "quality": {
+        "details": false,
+        "shadows": "off",
+        "maxEffects": 8,
+        "maxUnits": 50,
+        "maxUnitsWithoutInstancing": 25,
+        "textureStepDown": 1,
+        "minTextureSize": 256,
+        "tier": "low",
+        "detectedTier": "low",
+        "overridden": false,
+        "instancing": true,
+        "jointTexture": "float",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "png",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl1",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": true,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": false
+          }
+        }
+      },
+      "policy": {
+        "reason": "baked",
+        "degraded": false,
+        "mode": "baked",
+        "maxUnits": 50
+      },
+      "near": {
+        "population": {
+          "admitted": 50,
+          "active": 50,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "effects": 8,
+        "gfx": {
+          "drawCalls": 13,
+          "triangles": 5474,
+          "instances": 290,
+          "bufferBytes": 122564,
+          "textureBytes": 8409220
+        },
+        "png": "assets/resources/native/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65.png"
+      },
+      "far": {
+        "population": {
+          "admitted": 50,
+          "active": 50,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "effects": 0,
+        "gfx": {
+          "drawCalls": 5,
+          "triangles": 4994,
+          "instances": 50,
+          "bufferBytes": 101156,
+          "textureBytes": 8409220
+        },
+        "billboards": 0
+      },
+      "performance": {
+        "unit": {
+          "frame": "ms",
+          "gfxMemory": "bytes",
+          "drawCalls": "calls/frame",
+          "triangles": "triangles/frame",
+          "instances": "instances/frame"
+        },
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "sampleIndex": "independent seq; not root.frameCount",
+        "activation": {
+          "intervals": {
+            "count": 120,
+            "p50Ms": 16.799999997019768,
+            "p95Ms": 32.400000005960464,
+            "maxMs": 34.5,
+            "meanMs": 18.060833333370585
+          },
+          "peak": {
+            "drawCalls": 13,
+            "triangles": 5490,
+            "instances": 298,
+            "bufferBytes": 122564,
+            "textureBytes": 8409220,
+            "totalBytes": 8531784
+          },
+          "firstActiveSeq": 6,
+          "peakActive": 50
+        },
+        "steady": {
+          "intervals": {
+            "count": 240,
+            "p50Ms": 16.700000002980232,
+            "p95Ms": 32.600000001490116,
+            "maxMs": 33.5,
+            "meanMs": 17.640833333320916
+          },
+          "drawCalls": {
+            "p50": 13,
+            "p95": 13,
+            "max": 13,
+            "last": 13
+          },
+          "triangles": {
+            "p50": 5482,
+            "p95": 5482,
+            "max": 5490,
+            "last": 5474
+          },
+          "instances": {
+            "p50": 294,
+            "p95": 294,
+            "max": 298,
+            "last": 290
+          },
+          "finalMemory": {
+            "bufferBytes": 122564,
+            "textureBytes": 8409220
+          }
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      "meanFps": 56.686664462225174,
+      "closedSceneNodes": 10,
+      "closedBusinessReferences": 0,
+      "console": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 1,
+          "actualWebgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790208915641.7,
+          "bootCompletedAtEpochMs": 1790208919712
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790208919712,
+        "expectedBootDiagnostics": [],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "sources": [
+        {
+          "file": "logic/scene3d/skinningPolicy.ts",
+          "compiled": "./chunks/8b/8b6dde90391c63541405f177a92e94eec659d6f0.js",
+          "sha256": "0ab28a696cc01f888cd79f1c8d9011c037f211521788e17f05b58fd4acbcdf4a"
+        },
+        {
+          "file": "view/scene3d/SkinnedUnits.ts",
+          "compiled": "./chunks/e7/e79424fe2ed44e9342911eda63c024c83f57c97f.js",
+          "sha256": "952d3e10b39db22462c16da4abd19d73db3d405a9ae808e9ec5321a265137609"
+        },
+        {
+          "file": "view/scene3d/cocosSkinnedUnits.ts",
+          "compiled": "./chunks/81/818498fd07630b5b3f82110bfbc2391e0f9ac240.js",
+          "sha256": "56696942cd19ac7cefa606fb3cbb77b8f8992d02a4392daceece54263af84c94"
+        },
+        {
+          "file": "view/scene3d/cocosEntityPool.ts",
+          "compiled": "./chunks/4f/4f34f9df94050cee07f6e7d33212457539e89c53.js",
+          "sha256": "3cbfbb72171bf1c29f4b07809a2bd91bc19b3224ecab24bc113850e318e10f5b"
+        },
+        {
+          "file": "view/scene3d/SkinnedUnitsFixture.ts",
+          "compiled": "./chunks/59/5929ae1b26a84dc56a4e7c637bbc693bed35da46.js",
+          "sha256": "7c56224d460e5b0b141dd55b9e8340e8e8fbc23b7af0a8d931d8b1a644b67138"
+        },
+        {
+          "file": "view/scene3d/VfxFixture.ts",
+          "compiled": "./chunks/42/42293dc91d702af372162a308e4d58755937f5ab.js",
+          "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621"
+        },
+        {
+          "file": "view/scene3d/ownedRendering.ts",
+          "compiled": "./chunks/03/037c5959eb4082a2c24198fcf8968469c1c6b4a3.js",
+          "sha256": "030665cadb5c2da2ab7fa2d12e0c9ef3e5ee1b927ad5b0edbeb58884e099d1ab"
+        },
+        {
+          "file": "view/scene3d/Stage3dDevScene.ts",
+          "compiled": "./chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js",
+          "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962"
+        }
+      ]
+    },
+    {
+      "case": "rgba8",
+      "passed": true,
+      "startedAt": "2026-09-24T00:16:22.988Z",
+      "finishedAt": "2026-09-24T00:17:06.270Z",
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "previewDevice": "WebpageFullScreen",
+        "viewport": {
+          "cssWidth": 375,
+          "cssHeight": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624,
+          "dpr": 2
+        }
+      },
+      "report": {
+        "path": ".cache/sc4-b3/final-rgba8/report.json",
+        "sha256": "8a4de8d2e7c7305005aa1ef77c960250a3045c5925fe38c95e555bc56a71fd08"
+      },
+      "screenshots": [
+        {
+          "path": ".cache/sc4-b3/final-rgba8/near.png",
+          "sha256": "f53af721ec7c4c134b656e9ad4b19d5edadd6079c1c5b5252fe7fdc6d8d9c0ec"
+        },
+        {
+          "path": ".cache/sc4-b3/final-rgba8/far.png",
+          "sha256": "f3803cc386a5522dabcfedbdc3b4b32030ead825a1181e2b130a4bac48959940"
+        }
+      ],
+      "injection": {
+        "preBoot": true,
+        "queries": [
+          {
+            "name": "WEBGL_compressed_texture_astc",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBKIT_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "MOZ_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "WEBGL_compressed_texture_astc",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBKIT_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "MOZ_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          }
+        ],
+        "floatFault": {
+          "kind": "WebGL1 float-capability fault injection",
+          "installedAtMs": 57.399999998509884,
+          "installedBeforeCocos": true,
+          "installed": true,
+          "maskActive": true,
+          "contextId": 1,
+          "nativeSupportedExtensions": [
+            "ANGLE_instanced_arrays",
+            "EXT_blend_minmax",
+            "EXT_clip_control",
+            "EXT_color_buffer_half_float",
+            "EXT_depth_clamp",
+            "EXT_disjoint_timer_query",
+            "EXT_float_blend",
+            "EXT_frag_depth",
+            "EXT_polygon_offset_clamp",
+            "EXT_shader_texture_lod",
+            "EXT_texture_compression_bptc",
+            "EXT_texture_compression_rgtc",
+            "EXT_texture_filter_anisotropic",
+            "EXT_texture_mirror_clamp_to_edge",
+            "EXT_sRGB",
+            "KHR_parallel_shader_compile",
+            "OES_element_index_uint",
+            "OES_fbo_render_mipmap",
+            "OES_standard_derivatives",
+            "OES_texture_float",
+            "OES_texture_float_linear",
+            "OES_texture_half_float",
+            "OES_texture_half_float_linear",
+            "OES_vertex_array_object",
+            "WEBGL_blend_func_extended",
+            "WEBGL_color_buffer_float",
+            "WEBGL_compressed_texture_etc",
+            "WEBGL_compressed_texture_etc1",
+            "WEBGL_compressed_texture_pvrtc",
+            "WEBGL_compressed_texture_s3tc",
+            "WEBGL_compressed_texture_s3tc_srgb",
+            "WEBGL_debug_renderer_info",
+            "WEBGL_debug_shaders",
+            "WEBGL_depth_texture",
+            "WEBGL_draw_buffers",
+            "WEBGL_lose_context",
+            "WEBGL_multi_draw",
+            "WEBGL_polygon_mode"
+          ],
+          "effectiveSupportedExtensions": [
+            "ANGLE_instanced_arrays",
+            "EXT_blend_minmax",
+            "EXT_clip_control",
+            "EXT_color_buffer_half_float",
+            "EXT_depth_clamp",
+            "EXT_disjoint_timer_query",
+            "EXT_float_blend",
+            "EXT_frag_depth",
+            "EXT_polygon_offset_clamp",
+            "EXT_shader_texture_lod",
+            "EXT_texture_compression_bptc",
+            "EXT_texture_compression_rgtc",
+            "EXT_texture_filter_anisotropic",
+            "EXT_texture_mirror_clamp_to_edge",
+            "EXT_sRGB",
+            "KHR_parallel_shader_compile",
+            "OES_element_index_uint",
+            "OES_fbo_render_mipmap",
+            "OES_standard_derivatives",
+            "OES_texture_half_float",
+            "OES_texture_half_float_linear",
+            "OES_vertex_array_object",
+            "WEBGL_blend_func_extended",
+            "WEBGL_compressed_texture_etc",
+            "WEBGL_compressed_texture_etc1",
+            "WEBGL_compressed_texture_pvrtc",
+            "WEBGL_compressed_texture_s3tc",
+            "WEBGL_compressed_texture_s3tc_srgb",
+            "WEBGL_debug_renderer_info",
+            "WEBGL_debug_shaders",
+            "WEBGL_depth_texture",
+            "WEBGL_draw_buffers",
+            "WEBGL_lose_context",
+            "WEBGL_multi_draw",
+            "WEBGL_polygon_mode"
+          ],
+          "nativeFloatSupported": true,
+          "nativeFloatLinearSupported": true,
+          "nativeFloatRenderTargetSupported": true,
+          "effectiveFloatSupported": false,
+          "effectiveFloatRenderTargetSupported": false,
+          "extensionQueries": [
+            {
+              "atMs": 367.29999999701977,
+              "contextId": 1,
+              "method": "getSupportedExtensions",
+              "removed": [
+                "OES_texture_float",
+                "OES_texture_float_linear",
+                "WEBGL_color_buffer_float"
+              ]
+            },
+            {
+              "atMs": 368.29999999701977,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "WEBGL_color_buffer_float",
+              "returned": null
+            },
+            {
+              "atMs": 368.29999999701977,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "WEBKIT_WEBGL_color_buffer_float",
+              "returned": null
+            },
+            {
+              "atMs": 368.29999999701977,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "MOZ_WEBGL_color_buffer_float",
+              "returned": null
+            },
+            {
+              "atMs": 370.5,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "OES_texture_float",
+              "returned": null
+            },
+            {
+              "atMs": 370.5,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "WEBKIT_OES_texture_float",
+              "returned": null
+            },
+            {
+              "atMs": 370.5,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "MOZ_OES_texture_float",
+              "returned": null
+            },
+            {
+              "atMs": 370.5,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "OES_texture_float_linear",
+              "returned": null
+            },
+            {
+              "atMs": 370.5,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "WEBKIT_OES_texture_float_linear",
+              "returned": null
+            },
+            {
+              "atMs": 370.5,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "MOZ_OES_texture_float_linear",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "WEBGL_color_buffer_float",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "WEBKIT_WEBGL_color_buffer_float",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "MOZ_WEBGL_color_buffer_float",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "OES_texture_float",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "WEBKIT_OES_texture_float",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "MOZ_OES_texture_float",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "OES_texture_float_linear",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "WEBKIT_OES_texture_float_linear",
+              "returned": null
+            },
+            {
+              "atMs": 372.19999999552965,
+              "contextId": 1,
+              "method": "getExtension",
+              "name": "MOZ_OES_texture_float_linear",
+              "returned": null
+            },
+            {
+              "atMs": 2065.5,
+              "contextId": 1,
+              "method": "getSupportedExtensions",
+              "removed": [
+                "OES_texture_float",
+                "OES_texture_float_linear",
+                "WEBGL_color_buffer_float"
+              ]
+            }
+          ],
+          "originals": {
+            "getExtension": "saved in private hook closure",
+            "getSupportedExtensions": "native function used for support-list evidence"
+          },
+          "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+          "webgl": 1,
+          "sceneUuid": "a38c7586-d661-493c-872f-9feaab7ad770",
+          "page": {
+            "url": "http://127.0.0.1:7456/?scene=a38c7586-d661-493c-872f-9feaab7ad770&quality=low&shadows=0",
+            "visible": true
+          },
+          "bootStartedAtEpochMs": 1790208983538.1,
+          "engine": {
+            "device": "WebGLDevice",
+            "rgba32fFormat": 44,
+            "rgba32fFeatures": 16,
+            "rgba32fSampled": false,
+            "rgba32fRenderTarget": false,
+            "pipelineFloatTextureMacro": 0,
+            "pipelineFloatTextureMacroLine": "#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0",
+            "pipelineFloatTextureMacroSource": "Creator 3.8.8 WebPipeline.constantMacros (read only)",
+            "rgba8Format": 35,
+            "rgba8Features": 7,
+            "rgba8Sampled": true
+          },
+          "alreadyLoadedFixturePrefabs": []
+        }
+      },
+      "quality": {
+        "details": false,
+        "shadows": "off",
+        "maxEffects": 8,
+        "maxUnits": 50,
+        "maxUnitsWithoutInstancing": 25,
+        "textureStepDown": 1,
+        "minTextureSize": 256,
+        "tier": "low",
+        "detectedTier": "low",
+        "overridden": false,
+        "instancing": true,
+        "jointTexture": "rgba8",
+        "bakedSkinningInstancing": true,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "png",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl1",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": false,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": false
+          }
+        }
+      },
+      "policy": {
+        "reason": "baked",
+        "degraded": false,
+        "mode": "baked",
+        "maxUnits": 50
+      },
+      "near": {
+        "population": {
+          "admitted": 50,
+          "active": 50,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "effects": 8,
+        "gfx": {
+          "drawCalls": 13,
+          "triangles": 5482,
+          "instances": 294,
+          "bufferBytes": 122564,
+          "textureBytes": 8409220
+        },
+        "png": "assets/resources/native/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65.png"
+      },
+      "far": {
+        "population": {
+          "admitted": 50,
+          "active": 50,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "effects": 0,
+        "gfx": {
+          "drawCalls": 5,
+          "triangles": 4994,
+          "instances": 50,
+          "bufferBytes": 101156,
+          "textureBytes": 8409220
+        },
+        "billboards": 0
+      },
+      "performance": {
+        "unit": {
+          "frame": "ms",
+          "gfxMemory": "bytes",
+          "drawCalls": "calls/frame",
+          "triangles": "triangles/frame",
+          "instances": "instances/frame"
+        },
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "sampleIndex": "independent seq; not root.frameCount",
+        "activation": {
+          "intervals": {
+            "count": 120,
+            "p50Ms": 16.899999998509884,
+            "p95Ms": 33,
+            "maxMs": 46.20000000298023,
+            "meanMs": 18.609166666616996
+          },
+          "peak": {
+            "drawCalls": 13,
+            "triangles": 5490,
+            "instances": 298,
+            "bufferBytes": 122564,
+            "textureBytes": 8409220,
+            "totalBytes": 8531784
+          },
+          "firstActiveSeq": 6,
+          "peakActive": 50
+        },
+        "steady": {
+          "intervals": {
+            "count": 240,
+            "p50Ms": 16.69999999552965,
+            "p95Ms": 17.5,
+            "maxMs": 32.70000000298023,
+            "meanMs": 16.873749999981374
+          },
+          "drawCalls": {
+            "p50": 13,
+            "p95": 13,
+            "max": 13,
+            "last": 13
+          },
+          "triangles": {
+            "p50": 5474,
+            "p95": 5490,
+            "max": 5490,
+            "last": 5474
+          },
+          "instances": {
+            "p50": 290,
+            "p95": 298,
+            "max": 298,
+            "last": 290
+          },
+          "finalMemory": {
+            "bufferBytes": 122564,
+            "textureBytes": 8409220
+          }
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      "meanFps": 59.26364915926239,
+      "closedSceneNodes": 10,
+      "closedBusinessReferences": 0,
+      "console": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 1,
+          "actualWebgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790208983538.1,
+          "bootCompletedAtEpochMs": 1790208985602
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790208985602,
+        "expectedBootDiagnostics": [],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "sources": [
+        {
+          "file": "logic/scene3d/skinningPolicy.ts",
+          "compiled": "./chunks/8b/8b6dde90391c63541405f177a92e94eec659d6f0.js",
+          "sha256": "0ab28a696cc01f888cd79f1c8d9011c037f211521788e17f05b58fd4acbcdf4a"
+        },
+        {
+          "file": "view/scene3d/SkinnedUnits.ts",
+          "compiled": "./chunks/e7/e79424fe2ed44e9342911eda63c024c83f57c97f.js",
+          "sha256": "952d3e10b39db22462c16da4abd19d73db3d405a9ae808e9ec5321a265137609"
+        },
+        {
+          "file": "view/scene3d/cocosSkinnedUnits.ts",
+          "compiled": "./chunks/81/818498fd07630b5b3f82110bfbc2391e0f9ac240.js",
+          "sha256": "56696942cd19ac7cefa606fb3cbb77b8f8992d02a4392daceece54263af84c94"
+        },
+        {
+          "file": "view/scene3d/cocosEntityPool.ts",
+          "compiled": "./chunks/4f/4f34f9df94050cee07f6e7d33212457539e89c53.js",
+          "sha256": "3cbfbb72171bf1c29f4b07809a2bd91bc19b3224ecab24bc113850e318e10f5b"
+        },
+        {
+          "file": "view/scene3d/SkinnedUnitsFixture.ts",
+          "compiled": "./chunks/59/5929ae1b26a84dc56a4e7c637bbc693bed35da46.js",
+          "sha256": "7c56224d460e5b0b141dd55b9e8340e8e8fbc23b7af0a8d931d8b1a644b67138"
+        },
+        {
+          "file": "view/scene3d/VfxFixture.ts",
+          "compiled": "./chunks/42/42293dc91d702af372162a308e4d58755937f5ab.js",
+          "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621"
+        },
+        {
+          "file": "view/scene3d/ownedRendering.ts",
+          "compiled": "./chunks/03/037c5959eb4082a2c24198fcf8968469c1c6b4a3.js",
+          "sha256": "030665cadb5c2da2ab7fa2d12e0c9ef3e5ee1b927ad5b0edbeb58884e099d1ab"
+        },
+        {
+          "file": "view/scene3d/Stage3dDevScene.ts",
+          "compiled": "./chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js",
+          "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962"
+        }
+      ]
+    },
+    {
+      "case": "no-instancing",
+      "passed": true,
+      "startedAt": "2026-09-24T00:17:06.472Z",
+      "finishedAt": "2026-09-24T00:17:48.892Z",
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "previewDevice": "WebpageFullScreen",
+        "viewport": {
+          "cssWidth": 375,
+          "cssHeight": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624,
+          "dpr": 2
+        }
+      },
+      "report": {
+        "path": ".cache/sc4-b3/final-no-instancing/report.json",
+        "sha256": "283d28a7646c2938608fe2d8c5f5cb1caf3e76c1627b98d6b4be4131b153f174"
+      },
+      "screenshots": [
+        {
+          "path": ".cache/sc4-b3/final-no-instancing/near.png",
+          "sha256": "705fd51e7d4c97384a8b19c2c523a7d86e29493e57e668e693c687f6f5e6a156"
+        },
+        {
+          "path": ".cache/sc4-b3/final-no-instancing/far.png",
+          "sha256": "c41a32457061d91793945ff13d34a1d34a52def7333ef6231eb86390d5a157f1"
+        }
+      ],
+      "injection": {
+        "preBoot": true,
+        "queries": [
+          {
+            "name": "ANGLE_instanced_arrays",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBGL_compressed_texture_astc",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBKIT_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "MOZ_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "ANGLE_instanced_arrays",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBGL_compressed_texture_astc",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBKIT_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "MOZ_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          }
+        ],
+        "floatFault": null
+      },
+      "quality": {
+        "details": false,
+        "shadows": "off",
+        "maxEffects": 8,
+        "maxUnits": 25,
+        "maxUnitsWithoutInstancing": 25,
+        "textureStepDown": 1,
+        "minTextureSize": 256,
+        "tier": "low",
+        "detectedTier": "low",
+        "overridden": false,
+        "instancing": false,
+        "jointTexture": "float",
+        "bakedSkinningInstancing": false,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "png",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl1",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": false,
+            "floatJointTexture": true,
+            "rgba8JointTexture": true,
+            "shadowMap": true,
+            "astc": false
+          }
+        }
+      },
+      "policy": {
+        "reason": "baked",
+        "degraded": false,
+        "mode": "baked",
+        "maxUnits": 25
+      },
+      "near": {
+        "population": {
+          "admitted": 25,
+          "active": 25,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "effects": 8,
+        "gfx": {
+          "drawCalls": 36,
+          "triangles": 3074,
+          "instances": 0,
+          "bufferBytes": 174916,
+          "textureBytes": 8409220
+        },
+        "png": "assets/resources/native/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65.png"
+      },
+      "far": {
+        "population": {
+          "admitted": 25,
+          "active": 25,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "effects": 0,
+        "gfx": {
+          "drawCalls": 28,
+          "triangles": 2594,
+          "instances": 0,
+          "bufferBytes": 83588,
+          "textureBytes": 8409220
+        },
+        "billboards": 0
+      },
+      "performance": {
+        "unit": {
+          "frame": "ms",
+          "gfxMemory": "bytes",
+          "drawCalls": "calls/frame",
+          "triangles": "triangles/frame",
+          "instances": "instances/frame"
+        },
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "sampleIndex": "independent seq; not root.frameCount",
+        "activation": {
+          "intervals": {
+            "count": 120,
+            "p50Ms": 16.700000002980232,
+            "p95Ms": 32.80000000447035,
+            "maxMs": 52.899999998509884,
+            "meanMs": 18.18249999998758
+          },
+          "peak": {
+            "drawCalls": 36,
+            "triangles": 3090,
+            "instances": 0,
+            "bufferBytes": 174916,
+            "textureBytes": 8409220,
+            "totalBytes": 8584136
+          },
+          "firstActiveSeq": 5,
+          "peakActive": 25
+        },
+        "steady": {
+          "intervals": {
+            "count": 240,
+            "p50Ms": 16.700000002980232,
+            "p95Ms": 17.69999999552965,
+            "maxMs": 33.70000000298023,
+            "meanMs": 17.360833333339542
+          },
+          "drawCalls": {
+            "p50": 36,
+            "p95": 36,
+            "max": 36,
+            "last": 36
+          },
+          "triangles": {
+            "p50": 3082,
+            "p95": 3090,
+            "max": 3090,
+            "last": 3074
+          },
+          "instances": {
+            "p50": 0,
+            "p95": 0,
+            "max": 0,
+            "last": 0
+          },
+          "finalMemory": {
+            "bufferBytes": 174916,
+            "textureBytes": 8409220
+          }
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42500,
+            "textureBytes": 8409220
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      "meanFps": 57.60092161472524,
+      "closedSceneNodes": 10,
+      "closedBusinessReferences": 0,
+      "console": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 1,
+          "actualWebgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790209026834.9,
+          "bootCompletedAtEpochMs": 1790209028854
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790209028854,
+        "expectedBootDiagnostics": [],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "sources": [
+        {
+          "file": "logic/scene3d/skinningPolicy.ts",
+          "compiled": "./chunks/8b/8b6dde90391c63541405f177a92e94eec659d6f0.js",
+          "sha256": "0ab28a696cc01f888cd79f1c8d9011c037f211521788e17f05b58fd4acbcdf4a"
+        },
+        {
+          "file": "view/scene3d/SkinnedUnits.ts",
+          "compiled": "./chunks/e7/e79424fe2ed44e9342911eda63c024c83f57c97f.js",
+          "sha256": "952d3e10b39db22462c16da4abd19d73db3d405a9ae808e9ec5321a265137609"
+        },
+        {
+          "file": "view/scene3d/cocosSkinnedUnits.ts",
+          "compiled": "./chunks/81/818498fd07630b5b3f82110bfbc2391e0f9ac240.js",
+          "sha256": "56696942cd19ac7cefa606fb3cbb77b8f8992d02a4392daceece54263af84c94"
+        },
+        {
+          "file": "view/scene3d/cocosEntityPool.ts",
+          "compiled": "./chunks/4f/4f34f9df94050cee07f6e7d33212457539e89c53.js",
+          "sha256": "3cbfbb72171bf1c29f4b07809a2bd91bc19b3224ecab24bc113850e318e10f5b"
+        },
+        {
+          "file": "view/scene3d/SkinnedUnitsFixture.ts",
+          "compiled": "./chunks/59/5929ae1b26a84dc56a4e7c637bbc693bed35da46.js",
+          "sha256": "7c56224d460e5b0b141dd55b9e8340e8e8fbc23b7af0a8d931d8b1a644b67138"
+        },
+        {
+          "file": "view/scene3d/VfxFixture.ts",
+          "compiled": "./chunks/42/42293dc91d702af372162a308e4d58755937f5ab.js",
+          "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621"
+        },
+        {
+          "file": "view/scene3d/ownedRendering.ts",
+          "compiled": "./chunks/03/037c5959eb4082a2c24198fcf8968469c1c6b4a3.js",
+          "sha256": "030665cadb5c2da2ab7fa2d12e0c9ef3e5ee1b927ad5b0edbeb58884e099d1ab"
+        },
+        {
+          "file": "view/scene3d/Stage3dDevScene.ts",
+          "compiled": "./chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js",
+          "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962"
+        }
+      ]
+    },
+    {
+      "case": "realtime",
+      "passed": true,
+      "startedAt": "2026-09-24T00:20:27.790Z",
+      "finishedAt": "2026-09-24T00:21:15.542Z",
+      "environment": {
+        "webgl": 1,
+        "glVersion": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+        "device": "WebGLDevice",
+        "pipeline": "WebPipeline",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+        "previewDevice": "WebpageFullScreen",
+        "viewport": {
+          "cssWidth": 375,
+          "cssHeight": 812,
+          "backingWidth": 750,
+          "backingHeight": 1624,
+          "dpr": 2
+        }
+      },
+      "report": {
+        "path": ".cache/sc4-b3/final-realtime-retry/report.json",
+        "sha256": "d09f1dbe6d3efbc05308b1f273efebbebbf23467eb1b13c9151f7a41e8280d18"
+      },
+      "screenshots": [
+        {
+          "path": ".cache/sc4-b3/final-realtime-retry/near.png",
+          "sha256": "c615b8df2e76494727752bf80b8a5b42b525909b0b00f9945126453bef5b1c95"
+        },
+        {
+          "path": ".cache/sc4-b3/final-realtime-retry/far.png",
+          "sha256": "6e11cd98f5f6b2e81768ec17ccdf7b70a937e939140c9d96682edf82ef224974"
+        }
+      ],
+      "injection": {
+        "preBoot": true,
+        "queries": [
+          {
+            "name": "MAX_VERTEX_TEXTURE_IMAGE_UNITS",
+            "native": 16,
+            "effective": 0
+          },
+          {
+            "name": "WEBGL_compressed_texture_astc",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBKIT_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "MOZ_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "WEBGL_compressed_texture_astc",
+            "native": true,
+            "effective": false
+          },
+          {
+            "name": "WEBKIT_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          },
+          {
+            "name": "MOZ_WEBGL_compressed_texture_astc",
+            "native": false,
+            "effective": false
+          }
+        ],
+        "floatFault": null
+      },
+      "quality": {
+        "details": false,
+        "shadows": "off",
+        "maxEffects": 8,
+        "maxUnits": 25,
+        "maxUnitsWithoutInstancing": 25,
+        "textureStepDown": 1,
+        "minTextureSize": 256,
+        "tier": "low",
+        "detectedTier": "low",
+        "overridden": false,
+        "instancing": true,
+        "jointTexture": "unavailable",
+        "bakedSkinningInstancing": false,
+        "realtimeSkinningInstancing": false,
+        "textureFormat": "png",
+        "device": {
+          "platform": "desktop",
+          "api": "webgl1",
+          "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+          "capabilities": {
+            "instancing": true,
+            "floatJointTexture": false,
+            "rgba8JointTexture": false,
+            "shadowMap": true,
+            "astc": false
+          }
+        }
+      },
+      "policy": {
+        "reason": "joint-texture-unavailable",
+        "degraded": true,
+        "mode": "realtime",
+        "maxUnits": 25
+      },
+      "near": {
+        "population": {
+          "admitted": 25,
+          "active": 25,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "effects": 8,
+        "gfx": {
+          "drawCalls": 36,
+          "triangles": 3074,
+          "instances": 240,
+          "bufferBytes": 443940,
+          "textureBytes": 4556932
+        },
+        "png": "assets/resources/native/3a/3a28cd1f-e7bd-404b-b799-ae399cc4df65.png"
+      },
+      "far": {
+        "population": {
+          "admitted": 25,
+          "active": 25,
+          "pending": 0,
+          "hidden": 0,
+          "failed": 0
+        },
+        "effects": 0,
+        "gfx": {
+          "drawCalls": 28,
+          "triangles": 244,
+          "instances": 0,
+          "bufferBytes": 104960,
+          "textureBytes": 4578776
+        },
+        "billboards": 25
+      },
+      "performance": {
+        "unit": {
+          "frame": "ms",
+          "gfxMemory": "bytes",
+          "drawCalls": "calls/frame",
+          "triangles": "triangles/frame",
+          "instances": "instances/frame"
+        },
+        "clock": "performance.now",
+        "frameEvent": "Director.EVENT_AFTER_DRAW",
+        "sampleIndex": "independent seq; not root.frameCount",
+        "activation": {
+          "intervals": {
+            "count": 120,
+            "p50Ms": 16.700000002980232,
+            "p95Ms": 33.399999998509884,
+            "maxMs": 45.20000000298023,
+            "meanMs": 17.934166666616996
+          },
+          "peak": {
+            "drawCalls": 36,
+            "triangles": 3090,
+            "instances": 248,
+            "bufferBytes": 443940,
+            "textureBytes": 4556932,
+            "totalBytes": 5000872
+          },
+          "firstActiveSeq": 6,
+          "peakActive": 25
+        },
+        "steady": {
+          "intervals": {
+            "count": 240,
+            "p50Ms": 16.799999997019768,
+            "p95Ms": 32.600000001490116,
+            "maxMs": 33.600000001490116,
+            "meanMs": 17.777083333333334
+          },
+          "drawCalls": {
+            "p50": 36,
+            "p95": 36,
+            "max": 36,
+            "last": 36
+          },
+          "triangles": {
+            "p50": 3074,
+            "p95": 3090,
+            "max": 3090,
+            "last": 3082
+          },
+          "instances": {
+            "p50": 240,
+            "p95": 248,
+            "max": 248,
+            "last": 244
+          },
+          "finalMemory": {
+            "bufferBytes": 443940,
+            "textureBytes": 4556932
+          }
+        },
+        "memory": {
+          "prewarmedClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42484,
+            "textureBytes": 4556932
+          },
+          "finalClosed": {
+            "drawCalls": 3,
+            "triangles": 194,
+            "instances": 0,
+            "bufferBytes": 42484,
+            "textureBytes": 4556932
+          },
+          "cycles": 20,
+          "stable": true
+        }
+      },
+      "meanFps": 56.25219735145904,
+      "closedSceneNodes": 10,
+      "closedBusinessReferences": 0,
+      "console": {
+        "ruleId": "creator-3.8.8-controlled-webgl2-to-webgl1-boot-fallback",
+        "context": {
+          "expectedWebgl": 1,
+          "actualWebgl": 1,
+          "device": "WebGLDevice",
+          "pipeline": "WebPipeline",
+          "coldBoot": true,
+          "bootStartedAtEpochMs": 1790209228321.7,
+          "bootCompletedAtEpochMs": 1790209232358
+        },
+        "windowValid": true,
+        "bootDiagnosticCutoffAtEpochMs": 1790209232358,
+        "expectedBootDiagnostics": [],
+        "unexpectedErrors": [],
+        "nonErrorCount": 0
+      },
+      "sources": [
+        {
+          "file": "logic/scene3d/skinningPolicy.ts",
+          "compiled": "./chunks/8b/8b6dde90391c63541405f177a92e94eec659d6f0.js",
+          "sha256": "0ab28a696cc01f888cd79f1c8d9011c037f211521788e17f05b58fd4acbcdf4a"
+        },
+        {
+          "file": "view/scene3d/SkinnedUnits.ts",
+          "compiled": "./chunks/e7/e79424fe2ed44e9342911eda63c024c83f57c97f.js",
+          "sha256": "952d3e10b39db22462c16da4abd19d73db3d405a9ae808e9ec5321a265137609"
+        },
+        {
+          "file": "view/scene3d/cocosSkinnedUnits.ts",
+          "compiled": "./chunks/81/818498fd07630b5b3f82110bfbc2391e0f9ac240.js",
+          "sha256": "56696942cd19ac7cefa606fb3cbb77b8f8992d02a4392daceece54263af84c94"
+        },
+        {
+          "file": "view/scene3d/cocosEntityPool.ts",
+          "compiled": "./chunks/4f/4f34f9df94050cee07f6e7d33212457539e89c53.js",
+          "sha256": "3cbfbb72171bf1c29f4b07809a2bd91bc19b3224ecab24bc113850e318e10f5b"
+        },
+        {
+          "file": "view/scene3d/SkinnedUnitsFixture.ts",
+          "compiled": "./chunks/59/5929ae1b26a84dc56a4e7c637bbc693bed35da46.js",
+          "sha256": "7c56224d460e5b0b141dd55b9e8340e8e8fbc23b7af0a8d931d8b1a644b67138"
+        },
+        {
+          "file": "view/scene3d/VfxFixture.ts",
+          "compiled": "./chunks/42/42293dc91d702af372162a308e4d58755937f5ab.js",
+          "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621"
+        },
+        {
+          "file": "view/scene3d/ownedRendering.ts",
+          "compiled": "./chunks/03/037c5959eb4082a2c24198fcf8968469c1c6b4a3.js",
+          "sha256": "030665cadb5c2da2ab7fa2d12e0c9ef3e5ee1b927ad5b0edbeb58884e099d1ab"
+        },
+        {
+          "file": "view/scene3d/Stage3dDevScene.ts",
+          "compiled": "./chunks/40/4022ebaceaebc52ef1ac96164e2b44699bd7b44c.js",
+          "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Billboard.prefab",
+      "sha256": "bbab41ac906ce607d349c8557ce9435c5b1a331ae3ace935a105e49b0dda0491"
+    },
+    {
+      "path": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Billboard.prefab.meta",
+      "sha256": "93cca876dc7bc9d4cb8ccb9c82c5eab14e37bb4630ebcbaf2a8d7d59dd80bb0e"
+    },
+    {
+      "path": "apps/Cocos/assets/src/logic/scene3d/skinningPolicy.ts",
+      "sha256": "0ab28a696cc01f888cd79f1c8d9011c037f211521788e17f05b58fd4acbcdf4a"
+    },
+    {
+      "path": "apps/Cocos/assets/src/logic/scene3d/skinningPolicy.ts.meta",
+      "sha256": "75018d8ab6ca1060f737edb649c3066f6023bf673256441b4c96009e3c155958"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/SkinnedUnits.ts",
+      "sha256": "952d3e10b39db22462c16da4abd19d73db3d405a9ae808e9ec5321a265137609"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/SkinnedUnitsFixture.ts",
+      "sha256": "7c56224d460e5b0b141dd55b9e8340e8e8fbc23b7af0a8d931d8b1a644b67138"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/Stage3dDevScene.ts",
+      "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/VfxFixture.ts",
+      "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/cocosEntityPool.ts",
+      "sha256": "3cbfbb72171bf1c29f4b07809a2bd91bc19b3224ecab24bc113850e318e10f5b"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/cocosSkinnedUnits.ts",
+      "sha256": "56696942cd19ac7cefa606fb3cbb77b8f8992d02a4392daceece54263af84c94"
+    },
+    {
+      "path": "apps/Cocos/assets/src/view/scene3d/ownedRendering.ts",
+      "sha256": "030665cadb5c2da2ab7fa2d12e0c9ef3e5ee1b927ad5b0edbeb58884e099d1ab"
+    },
+    {
+      "path": "apps/client/cc-stub.d.ts",
+      "sha256": "6a199f1dcf54b29a3563122539c71999787fe135f2d4e15a6039a15b61972c8e"
+    },
+    {
+      "path": "apps/client/client-test-stubs.d.ts",
+      "sha256": "0ece8471800e625e2269e17d6f729f5a1ab02f2bfb3ac44a99b6c14a5cbbadfa"
+    },
+    {
+      "path": "apps/client/src/logic/scene3d/skinningPolicy.ts",
+      "sha256": "0ab28a696cc01f888cd79f1c8d9011c037f211521788e17f05b58fd4acbcdf4a"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/SkinnedUnits.ts",
+      "sha256": "952d3e10b39db22462c16da4abd19d73db3d405a9ae808e9ec5321a265137609"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/SkinnedUnitsFixture.ts",
+      "sha256": "7c56224d460e5b0b141dd55b9e8340e8e8fbc23b7af0a8d931d8b1a644b67138"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+      "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/VfxFixture.ts",
+      "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/cocosEntityPool.ts",
+      "sha256": "3cbfbb72171bf1c29f4b07809a2bd91bc19b3224ecab24bc113850e318e10f5b"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/cocosSkinnedUnits.ts",
+      "sha256": "56696942cd19ac7cefa606fb3cbb77b8f8992d02a4392daceece54263af84c94"
+    },
+    {
+      "path": "apps/client/src/view/scene3d/ownedRendering.ts",
+      "sha256": "030665cadb5c2da2ab7fa2d12e0c9ef3e5ee1b927ad5b0edbeb58884e099d1ab"
+    },
+    {
+      "path": "apps/client/test/cocosAssetLoader.test.ts",
+      "sha256": "4e81cb270efb4761345240de1549602be258dc6e18e8f9d4af447c8302e5495e"
+    },
+    {
+      "path": "apps/client/test/cocosSkinnedUnits.test.ts",
+      "sha256": "fafbbfd5a82c6e640bd793adc35d968c0ba8944c235230f623087e7728eb913e"
+    },
+    {
+      "path": "apps/client/test/skinnedFixtureFailure.test.ts",
+      "sha256": "ab9a76ce760eeb3c114bc59144375ebf48dddbf61472422ee532acf4eb739cc1"
+    },
+    {
+      "path": "apps/client/test/skinningFallback.test.ts",
+      "sha256": "4515ed6df7edc241718976c37d74c1c83365f2f4770b8761802c373709a731d7"
+    },
+    {
+      "path": "apps/client/test/stage3dDevFailure.test.ts",
+      "sha256": "aff7fa16f00ab6f746ccdf5994767902c6d5fdbd57ca2971f62931510066c18a"
+    },
+    {
+      "path": "apps/server/test/low-preview.test.ts",
+      "sha256": "23f5019da1e222787d0a838d4058b1d4d34130ec1817b23c3f720f0dff1f80f8"
+    },
+    {
+      "path": "tools/art3d/billboard-fixture.mjs",
+      "sha256": "c86c49151716401a447ad2e2eb057dc614d59ec1b70ba17a495f55caf7388891"
+    },
+    {
+      "path": "tools/creator-preview/README.md",
+      "sha256": "4ae9f5989a5634382c3c18b39ad851a899b89c5de8ebab61281c368fc1674292"
+    },
+    {
+      "path": "tools/creator-preview/low-perf.mjs",
+      "sha256": "a5bb4c961b7bd1d037aa20ca7691029e427a5283e13d6446699ea7ac0ada3d43"
+    },
+    {
+      "path": "tools/creator-preview/run.mjs",
+      "sha256": "5caf7b15db2a457bce5f63d654d919b10dbeefd6d07ce0cb8c76813566f81657"
+    },
+    {
+      "path": "tools/creator-preview/skinned-perf.mjs",
+      "sha256": "b96090c35f2e47e4075e0778f5dac128a1e51d639c389c77fb0706f60d012f38"
+    },
+    {
+      "path": "tools/creator-preview/wechat-cache-template.json",
+      "sha256": "f50533280e9a8281823053b7337e498bdeded0b5d4c1ce3fff1052286f563b92"
+    }
+  ],
+  "earlierAttempts": [
+    {
+      "directory": "accepted-baked",
+      "ok": true,
+      "error": null,
+      "report": {
+        "path": ".cache/sc4-b3/accepted-baked/report.json",
+        "sha256": "9ef182fe6ebc4a2677c23cb43d7a2fc893209bbb27f9b80ee5b4884e7020edd2"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "accepted-no-instancing",
+      "ok": true,
+      "error": null,
+      "report": {
+        "path": ".cache/sc4-b3/accepted-no-instancing/report.json",
+        "sha256": "065fa4333967cd49eb4b58333d06f9f4c22a0f074c3280adb972a94afa999d0a"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "accepted-realtime",
+      "ok": true,
+      "error": null,
+      "report": {
+        "path": ".cache/sc4-b3/accepted-realtime/report.json",
+        "sha256": "1856e9c7cd856af2cd56e1a474ffb32464d51a9388cc3e6b5ad235f2b48bf4b0"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "accepted-rgba8",
+      "ok": true,
+      "error": null,
+      "report": {
+        "path": ".cache/sc4-b3/accepted-rgba8/report.json",
+        "sha256": "1a658fdc1405b4725a1bb99413754cd43c2dfd68c59631697c477b1e60feb2c0"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "baked-attempt1",
+      "ok": false,
+      "error": "Actual image did not load PNG",
+      "report": {
+        "path": ".cache/sc4-b3/baked-attempt1/report.json",
+        "sha256": "35b69109f75f252c0b1808d5de2b30aca1ed0bb70188935487ced4513cd0d851"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "baked-attempt2",
+      "ok": true,
+      "error": null,
+      "report": {
+        "path": ".cache/sc4-b3/baked-attempt2/report.json",
+        "sha256": "e96887990fea387284fe12552f051ebeb5ddcd3c919c36608504eeaa988d5467"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "buffer-diagnostic",
+      "ok": false,
+      "error": "20 post-prewarm memory cycles required",
+      "report": {
+        "path": ".cache/sc4-b3/buffer-diagnostic/report.json",
+        "sha256": "57570366b9d40249524f2cd8372c4470ddae0f2b2c86d6cb385cb06bb093b460"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "final-realtime",
+      "ok": false,
+      "error": "Actual WebGL1 / native preview viewport required",
+      "report": {
+        "path": ".cache/sc4-b3/final-realtime/report.json",
+        "sha256": "2796f4f8ae066f469238d3e995bf07d42c688c2e0eb9ca45445ddec2f645d013"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "realtime-attempt1",
+      "ok": false,
+      "error": "Far fallback must submit real billboards",
+      "report": {
+        "path": ".cache/sc4-b3/realtime-attempt1/report.json",
+        "sha256": "1d9dc2a1e90705b49d6b053826400a6a6b26b044dcb82c422f423d20c71fcb3b"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "realtime-attempt2",
+      "ok": false,
+      "error": "Cycle 1: GFX memory exceeds prewarmed closed baseline",
+      "report": {
+        "path": ".cache/sc4-b3/realtime-attempt2/report.json",
+        "sha256": "ccc6a81ff804e5cb256cf36e0677697c20dfa18472fd68fb089c6b2611635049"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "realtime-attempt3",
+      "ok": false,
+      "error": "Stale compiled source: view/scene3d/cocosSkinnedUnits.ts",
+      "report": {
+        "path": ".cache/sc4-b3/realtime-attempt3/report.json",
+        "sha256": "e22bc3cb5d049c105d4727c2000f1cdf3b9494807f88f607e57640a3ac3c0f45"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    },
+    {
+      "directory": "realtime-attempt4",
+      "ok": true,
+      "error": null,
+      "report": {
+        "path": ".cache/sc4-b3/realtime-attempt4/report.json",
+        "sha256": "8d6e27930ed1491694874203304fe45ed342f853bae21da87afeee156e729892"
+      },
+      "use": "diagnostic only; superseded by final source runs"
+    }
+  ],
+  "limitations": [
+    "No physical WeChat device/build/cache evidence was supplied. Cold download, actual filesystem cache write failure, LRU, retry, revisit and process restart remain required. B3 and SC4 are not exited; lvr A3 remains gated.",
+    "Desktop Apple M4 WebGL1 low/PNG uses an owned fresh page that refuses WebGL2 before boot. ASTC is masked in all cases; float/dependent extensions, instancing or vertex sampling are explicitly fault-injected per case. This is not mobile hardware measurement.",
+    "Two-bone self-authored greyboxes with default particle systems; sustained 60fps SC4 stage criterion remains open. Raw slow intervals are retained; earlier faster attempts are not substituted.",
+    "Measured-budget selection has deterministic regression coverage; this run exercises hardware capability fallback and does not claim measured-budget device evidence.",
+    "Raw reports, screenshots and logs remain in ignored .cache; tracked review pins hashes."
+  ],
+  "synchronization": {
+    "time": "2026-09-24T00:34:00.906358+00:00",
+    "command": "git pull --rebase --autostash",
+    "exitCode": 0,
+    "before": "2df65fc4a1b3aa7276728907f7a4aca7878e52a0",
+    "after": "2df65fc4a1b3aa7276728907f7a4aca7878e52a0",
+    "remote": "2df65fc4a1b3aa7276728907f7a4aca7878e52a0",
+    "protectedFiles": 47,
+    "changedFromBackup": [],
+    "unrelatedWork": "The other task independently committed docs/MAPORIGINAL-2D-OPTIMIZATION.md as 2df65fc4. It is excluded from this commit.",
+    "log": ".cache/sc4-b3/pull-rebase-final.log",
+    "pushed": false,
+    "earlierSync": {
+      "time": "2026-09-24T00:21:08.190666+00:00",
+      "command": "git pull --rebase --autostash",
+      "exitCode": 0,
+      "before": "8330dbf86f3af8d1632680b8547c10a06ccd6c06",
+      "after": "8330dbf86f3af8d1632680b8547c10a06ccd6c06",
+      "remote": "8330dbf86f3af8d1632680b8547c10a06ccd6c06",
+      "protectedFiles": 37,
+      "changedFromBackup": [],
+      "unrelatedPreserved": [
+        "docs/MAPORIGINAL-2D-OPTIMIZATION.md"
+      ],
+      "log": ".cache/sc4-b3/pull-rebase.log",
+      "pushed": false
+    }
+  },
+  "concurrentWork": "Subsequent uncommitted mapOriginal source/tool edits belong to another task. They are excluded from the source manifest and this commit; full verification is recorded at its run time, and SC4 runtime bytes remain identical to the verified ones."
+}

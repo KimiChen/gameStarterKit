@@ -1236,6 +1236,12 @@ async function scenarioMmoHold(runner) {
 
 async function main() {
   if (process.argv[2] === "stage3d") {
+    if (process.argv.includes("--low-case")) {
+      const { runLowPerf, parseLowPerfArgs } = await import("./low-perf.mjs");
+      const options = parseLowPerfArgs(process.argv.slice(3));
+      if (options.help) { console.log("stage3d --perf --low-case baked|rgba8|no-instancing|realtime --expect-webgl 1 --force-webgl1 --new-window"); return 0; }
+      const result = await runLowPerf(options); console.log(JSON.stringify(result)); return result.ok ? 0 : 1;
+    }
     if (process.argv.includes("--vfx")) {
       const { runVfxPerf, parseVfxPerfArgs } = await import("./vfx-perf.mjs");
       const options = parseVfxPerfArgs(process.argv.slice(3));

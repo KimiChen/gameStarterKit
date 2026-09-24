@@ -141,6 +141,7 @@ declare module "cc" {
       priority: number;
       sharedMaterials: (Material | null)[];
       setMaterial(material: Material | null, index: number): void;
+      getRenderMaterial(index: number): Material | null;
       mesh: Mesh | null; material: Material | null;
       /** ⚠ 每次 mesh.updateSubMesh 之后必须调用：它才会把新的顶点/索引数同步进 InputAssembler。 */
       onGeometryChanged(): void;

@@ -83,6 +83,11 @@ export class Stage3dDevScene extends Component {
     onDestroy(): void { this.close(); }
 
     update(): void {
+        const failure = this.skinned?.status === "failed" ? this.skinned.error : this.vfx?.error;
+        if (failure) {
+            this.error = failure; this.close(); this.status = "failed";
+            return;
+        }
         if (this.entityPool && this.entitiesEnabled !== this.appliedEntities) this.setEntitiesEnabled(this.entitiesEnabled);
         if (this.skinned && this.skinnedEnabled !== this.appliedSkinned) this.setSkinnedEnabled(this.skinnedEnabled);
         if (this.vfx && this.vfxEnabled !== this.appliedVfx) this.setVfxEnabled(this.vfxEnabled);

@@ -3,6 +3,7 @@ import type { AnimationClip } from "cc";
 import type { AssetCatalogData } from "../../logic/scene3d/assetCatalog";
 import { AssetRetainer } from "./AssetLease";
 import { assetLease } from "./cocosAssetLoader";
+import { createCocosEntityPoolEngine } from "./cocosEntityPool";
 import { OwnedRenderingRetirement } from "./ownedRendering";
 import { SkinnedUnits } from "./SkinnedUnits";
 import type { SkinnedUnitsOptions, SkinningMode } from "./SkinnedUnits";
@@ -42,7 +43,9 @@ export function createCocosSkinnedUnits(catalog: AssetCatalogData, parent: Node,
     let nextId = 0;
     const identity = (object: object) => { let id = ids.get(object); if (id === undefined) { id = ++nextId; ids.set(object, id); } return id; };
     let units: SkinnedUnits<Node>;
+    const billboardEngine = createCocosEntityPoolEngine(parent, () => units.close());
     units = new SkinnedUnits(catalog, {
+        loadBillboard: (address, _instancing, signal) => billboardEngine.load(address, false, signal),
         subscribeFrames: (step) => {
             let frame = 0;
             const update = () => { if (!isValid(parent, true)) units.close(); else step(++frame); };
@@ -118,7 +121,20 @@ export function createCocosSkinnedUnits(catalog: AssetCatalogData, parent: Node,
                 if (state) { state.active = false; state.animation.stop(); }
                 node.active = false; node.removeFromParent();
             };
-            const retire = (node: Node) => { retirement.capture(node); hide(node); nodes.delete(node); node.destroy(); };
+            const retire = (node: Node) => {
+                // 3.8.8 SkinnedMeshRenderer.setSharedMaterial creates a per-renderer MaterialInstance
+                // in realtime mode; MeshRenderer.onDestroy does not destroy that instance's passes.
+                // Read without getMaterialInstance (which would allocate), and own only instances
+                // whose owner AND parent identify this renderer and one of this pool's copies.
+                const instances = new Set<Material>();
+                for (const { renderer } of nodes.get(node)?.bindings ?? []) renderer.sharedMaterials.forEach((source, slot) => {
+                    const actual = renderer.getRenderMaterial(slot) as (Material & { owner?: MeshRenderer; parent?: Material }) | null;
+                    if (actual && actual !== source && actual.owner === renderer && actual.parent === source
+                        && [...groups.values()].some((group) => group.material === source)) instances.add(actual);
+                });
+                if (instances.size) retirement.defer(() => { for (const material of instances) material.destroy(); });
+                retirement.capture(node); hide(node); nodes.delete(node); node.destroy();
+            };
             return {
                 create() {
                     if (released) throw new Error("SkinnedUnits template released");
@@ -137,7 +153,10 @@ export function createCocosSkinnedUnits(catalog: AssetCatalogData, parent: Node,
                         const state: SkinNode = { animation, renderers, bindings, realtimeStates: new Set(), sockets: new Map(), active: false };
                         nodes.set(node, state);
                         const visit = (child: Node) => { child.layer = parent.layer; for (const c of child.children) visit(c); }; visit(node);
-                        setSafeMaterials(state); animation.playOnLoad = false; animation.useBakedAnimation = true;
+                        setSafeMaterials(state); animation.playOnLoad = false;
+                        // Select before onLoad: a device without vertex texture sampling must never initialize a baked state.
+                        animation.useBakedAnimation = options.quality.jointTexture !== "unavailable"
+                            && units.policy.mode === "baked";
                         // Set clips before onLoad creates/initializes states; only this instance is changed.
                         const clips = animation.clips.filter((clip): clip is AnimationClip => clip !== null);
                         for (const clip of options.clips ?? []) {

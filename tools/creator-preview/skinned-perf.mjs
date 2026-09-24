@@ -23,6 +23,7 @@ export function parseSkinnedPerfArgs(argv) {
 function readScene(readQueues) {
   const scene = typeof cc === "undefined" ? null : cc.director.getScene();
   const component = scene?.getComponentsInChildren("Stage3dDevScene")?.[0], fixture = component?.skinned;
+  if (component?.status === "failed") return { status: "failed", error: component.error };
   if (!component || !fixture) return { status: "missing" };
   const device = cc.director.root.device, gl = device.gl, glVersion = gl.getParameter(gl.VERSION);
   const canvas = document.getElementById("GameCanvas"), rect = canvas.getBoundingClientRect();
@@ -51,7 +52,14 @@ function readScene(readQueues) {
     if (Object.hasOwn(population, entity.state)) population[entity.state]++;
     const node = entity.node;
     if (!node) return { state: entity.state };
-    const animation = node.getComponentsInChildren("cc.SkeletalAnimation")[0], animationState = animation.getState(entity.clip);
+    const animation = node.getComponentsInChildren("cc.SkeletalAnimation")[0];
+    if (!animation) return { id: id(node), state: entity.state, presentation: entity.presentation,
+      billboards: node.getComponentsInChildren("cc.Billboard").map((billboard) => ({ enabled: billboard.enabledInHierarchy,
+        width: billboard.width, height: billboard.height, texture: billboard.texture?.image?.nativeUrl,
+        scheduled: modelPhases.has(billboard._model),
+        passes: billboard._model?.subModels.flatMap((sub) => sub.passes.flatMap((pass, index) => modelPhases.get(billboard._model)?.has(pass.phaseID)
+          ? [{ phase: pass.phaseID, instancing: pass.batchingScheme === 1, direct: direct.has(`${id(sub)}:${index}`) }] : [])) })) };
+    const animationState = animation.getState(entity.clip);
     return { id: id(node), state: entity.state, clip: entity.clip, mode: entity.mode, baked: animation.useBakedAnimation,
       playing: animationState.isPlaying, time: animationState.time,
       sockets: animation.sockets.map((socket) => ({ id: id(socket.target), path: socket.path,

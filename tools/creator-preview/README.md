@@ -311,3 +311,61 @@ LOD2 拒播 / 回收以及返回近档不重播。稳态窗口的每一帧须同
 返回可 `stop()` 的独立句柄。坐标为世界坐标，寿命从实际激活开始，跟随回调返回 `undefined` 即结束。
 远档、内容 `hideAtLod`、降档超额都会结束旧播放；回到近档需内容重新发起。停止清粒子并入空闲池，
 `evict()` 销毁空闲节点，舞台释放关闭全部池。Cocos 默认粒子材质随节点销毁后在 AFTER_DRAW 回收。
+
+## SC4-B3 low 退化与真实微信缓存
+
+桌面退化复跑（同一 Creator 3.8.8 工程，原生预览仍选 WebpageFullScreen / Rotate off）：
+
+```bash
+node tools/creator-preview/run.mjs stage3d --perf --low-case baked --expect-webgl 1 --force-webgl1 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --low-case rgba8 --expect-webgl 1 --force-webgl1 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --low-case no-instancing --expect-webgl 1 --force-webgl1 --new-window
+node tools/creator-preview/run.mjs stage3d --perf --low-case realtime --expect-webgl 1 --force-webgl1 --new-window
+```
+
+均为 **桌面故障注入**：新页在引擎启动前禁止 WebGL2，并屏蔽 ASTC；rgba8 另屏蔽浮点纹理及其依赖扩展，
+no-instancing 屏蔽 ANGLE_instanced_arrays，realtime 将 MAX_VERTEX_TEXTURE_IMAGE_UNITS 查询限制为 0。
+记录原生能力及实际查询，不修改 GFX 表或源资产。float / RGBA8 仍为 50 个烘焙单位 + 8 个特效；
+无 instancing 时保留烘焙、减至 25 单位；关节纹理不可用时是 25 个非 instancing 实时单位，LOD2 换成
+25 个独立公告板，特效结束，返回近档重建最新 clip。PNG 检查读取实际 ImageAsset 的 nativeUrl。
+每条路径保存首载 120 帧、60 帧预热 + 240 帧稳态、近远截图与 20 次开关的节点 / 引用 / GFX 值；
+编译 source map 必须与真源相同。原始报告在 `.cache/sc4-b3/<case>/report.json`，失败报告保留。
+这些报告的 `realWeChatEvidence` 固定为 false。
+
+正式接入沿用 `createCocosSkinnedUnits`，显式设置 `allowRealtime: true` 和
+`fallback: { billboards: { <poolId>: { bundle, path } }, measuredBakedBudget? }`。
+公告板 Prefab 由消费方提供，框架灰盒可用 `P_Stage3d_Billboard`（出处 `tools/art3d/billboard-fixture.mjs`）。
+所有权、details / hideAtLod 门和逐帧预算继续由 EntityPool 执行。可用 RGBA8 不触发退化；
+`measuredBakedBudget` 只接实际观测的 `observedP95Ms` 与消费方明确的 `budgetP95Ms`，前者超过后者才退化，
+不从 GPU 名称推断超预算。策略在该池生存期固定；`setQuality` 若改变是否退化，须关闭并按新策略重开。
+公告板没有骨骼 socket，切 LOD 后旧节点 / socket 不再有效。直接请求 baked 不能越过已选退化策略。
+锁定引擎在实时蒙皮的 `setSharedMaterial` 内会自行创建 MaterialInstance，`MeshRenderer.onDestroy`
+不释放其 Pass buffer。框架通过只读 `getRenderMaterial` 捕获当前 renderer 独占、parent 属于本池的实例，
+在节点退休及队列清空后的 AFTER_DRAW 先销毁实例，再归还共享材质 / 资产，避免重复打开逐轮增长。
+
+真实设备证据使用 [wechat-cache-template.json](wechat-cache-template.json)，复制到本次设备证据目录填写；
+空值、模拟器或桌面报告均不能用于勾选 B3。每个 artifact 记录相对路径、SHA256、采集时间与说明。
+`artifacts` 引用原始日志、屏幕录像 / 截图、网络请求和缓存清单；六步使用同一构建 SHA 与资源版本。
+机型、OS、微信 / 基础库版本、实际 GL 能力与 low 档、存储容量 / 限制及测量方法都要填写；未暴露的指标
+标注不可取得及原因，并附观测到的失败边界，不能填推测的微信统一容量。`wx.getStorageInfo` 的 KV 配额
+不等于文件缓存空间，不能拿它替代 USER_DATA_PATH 文件系统的实测。
+
+1. 在明确用于验收的测试小游戏数据中清空本轮缓存，记录 `cacheManager.getCache/getTemp` 与文件清单为空，
+   打开远程 bundle，保存首下载请求、实际版本 URL、可见模型 / PNG 与加载完成后的缓存清单。
+2. 保持相同构建，在该测试项目自身目录按有记录的大小 / 次数写入可删除填充文件，直到真实 `copyFile`、
+   下载落盘或 `unzip` 返回存储写入失败；记录 API、原始错误、目标路径、实际写入字节和操作步骤。
+   不改变引擎 capacity 数字、不伪造失败回调；只是“接近满”不算覆盖。不要占满设备公共存储。
+3. 观察 Creator 的实际 LRU 分支，保存淘汰前后 URL / lastTime / 本地路径与删除结果。未进入 LRU 或
+   清理异常必须保留为失败。失败资源不得留下半就绪内容；关闭后所有本轮业务引用回零。
+4. 移除本轮填充文件，按正常加载入口重试；记录临时路径加载是否成功、LRU 后的重试动作、队列状态与
+   最终可见资产。临时加载成功不证明持久写入成功，二者分别登记。
+5. 再次访问同版本资源：未淘汰的 URL 应命中；已淘汰的 URL 可重下，分别保存请求与缓存命中证据。
+6. 实际退出小游戏进程再进入，记录进程退出 / 重启证据。同版本未淘汰资源须命中；已淘汰或版本更换可重下。
+   意外加载失败、悬挂或同一未淘汰 URL 无恢复地重复下载不通过。完成后只清理本轮生成的填充文件。
+
+锁定引擎的 `platforms/minigame/common/engine/cache-manager.js` 使用 `cacheEnabled`、`autoClear`、
+`outOfStorage`、`cacheQueue` 和 `cachedFiles`；没有这里假定的可配置容量开关。普通文件下载可能先从临时
+路径成功返回，持久缓存随后异步失败；zip 的解压失败会清理目标目录并返回错误。
+LRU 按 lastTime 淘汰旧条目，已装载 bundle 的 zip 有保护；队列在清理后如何恢复必须实测，不能只看到
+`outOfStorage=false` 就认定重试完成。开发观测可记录真实 API 的入参 / 回调，但须调用原方法并保持原结果，
+设备输出避免会话 token 与带签名 URL。上面是本机锁定版本的验收步骤，真机行为仍以原始证据为准。

@@ -5,6 +5,7 @@ import type { AnimationClip, Node } from "cc";
 import { DEFAULT_QUALITY_TABLE, resolveQuality, UNKNOWN_QUALITY_DEVICE } from "../src/logic/scene3d/qualityTiers";
 
 const frames = new Set<() => void>(), draws: (() => void)[] = [], materials: FakeMaterial[] = [];
+const instances: FakeInstance[] = [];
 let onEnable: (() => void) | undefined;
 class FakeAsset {
     refs = 0; isValid = true;
@@ -17,6 +18,9 @@ class FakeMaterial extends FakeAsset {
     destroy() { assert.equal(this.destroyed, false); this.destroyed = true; }
 }
 class FakeClip extends FakeAsset { constructor(readonly name: string, readonly texture: object) { super(); } }
+class FakeInstance extends FakeMaterial {
+    constructor(readonly owner: FakeRenderer, readonly parent: FakeMaterial) { super(); instances.push(this); }
+}
 const atlasA = {}, atlasB = {}, idle = new FakeClip("idle", atlasA), walk = new FakeClip("walk", atlasA), other = new FakeClip("other", atlasB);
 class FakeRenderer {
     model = { type: 2, _jointsMedium: { texture: { handle: { texture: atlasA } } }, subModels: [{
@@ -24,13 +28,17 @@ class FakeRenderer {
         instancedAttributeBlock: { buffer: new Uint8Array(), attributes: [] as { name: string; format: number; isNormalized: boolean; location: number }[] },
     }] };
     sharedMaterials: FakeMaterial[];
+    instance: FakeInstance | undefined;
     constructor(readonly mesh: object, readonly layout: number, source: FakeMaterial) { this.sharedMaterials = [source]; }
     setMaterial(material: FakeMaterial, _slot: number) {
         if (this.model.type === 1) assert.equal(material.instancing, false, "no realtime model can receive an instanced material");
+        if (this.instance && this.instance.parent !== material) { this.instance.destroy(); this.instance = undefined; }
+        if (this.model.type === 1 && !this.instance) this.instance = new FakeInstance(this, material);
         this.sharedMaterials[0] = material;
         this.model.subModels[0].instancedAttributeBlock = { buffer: new Uint8Array(material.instancing ? 64 : 0),
             attributes: material.instancing ? [{ name: "a_jointAnimInfo", format: this.layout, isNormalized: false, location: 3 }] : [] };
     }
+    getRenderMaterial(slot: number) { return this.instance ?? this.sharedMaterials[slot]; }
 }
 class FakeSkinnedRenderer extends FakeRenderer {
     skeleton = {}; skinningRoot!: FakeNode;
@@ -97,7 +105,7 @@ const draw = () => { for (const fn of draws.splice(0)) fn(); };
 const asFake = (node: Node) => node as unknown as FakeNode;
 function setup(instancing = true) {
     onEnable = undefined;
-    assert.equal(frames.size, 0); assert.equal(draws.length, 0); prefab = new FakePrefab(); alternate = new FakePrefab(); materials.length = 0;
+    assert.equal(frames.size, 0); assert.equal(draws.length, 0); prefab = new FakePrefab(); alternate = new FakePrefab(); materials.length = 0; instances.length = 0;
     const address = { bundle: "resources", path: "stage3d/main" }, parent = new FakeNode(), errors: unknown[] = [];
     const pool = create({ quality: DEFAULT_QUALITY_TABLE,
         pool: { version: 1, maxActivationsPerFrame: { low: 4, medium: 8, high: 16 }, entries: [
@@ -108,7 +116,8 @@ function setup(instancing = true) {
         capabilities: { ...UNKNOWN_QUALITY_DEVICE.capabilities, instancing, rgba8JointTexture: true } }, true, { quality: "high" }),
         allowRealtime: true, clips: [other as unknown as AnimationClip], onError: (error) => errors.push(error) });
     const close = () => { pool.close(); draw(); assert.equal(prefab.refs, 0); assert.equal(alternate.refs, 0); assert.equal(other.refs, 0);
-        assert.ok(materials.every((material) => material.destroyed)); assert.equal(prefab.source.destroyed, false); assert.deepEqual(errors, []); };
+        assert.ok(materials.every((material) => material.destroyed)); assert.ok(instances.every(instance => instance.destroyed));
+        assert.equal(prefab.source.destroyed, false); assert.deepEqual(errors, []); };
     return { pool, parent, close, errors };
 }
 
@@ -153,6 +162,17 @@ test("CocosSkinnedUnits: non-instanced capability keeps baked RGBA8 and cleanup 
     assert.equal(asFake(a.node!).animation!.useBakedAnimation, true); assert.ok(materials.every((material) => !material.instancing));
     a.despawn(); h.pool.evict(); assert.ok(materials.some((material) => !material.destroyed)); assert.equal(other.refs, 1);
     draw(); assert.equal(other.refs, 0); h.close();
+});
+
+test("CocosSkinnedUnits: retiring realtime releases renderer-owned material instances after draw, before their shared parents", async () => {
+    const h = setup(), unit = h.pool.spawn("units", "idle", undefined, "realtime")!;
+    await settle(); frame(); h.pool.play(unit, "walk", "realtime");
+    const renderer = asFake(unit.node!).renderer!, instance = renderer.instance!;
+    assert.ok(instance); assert.equal(instance.destroyed, false); assert.equal(instance.parent.destroyed, false);
+    const destroy = instance.destroy.bind(instance);
+    instance.destroy = () => { assert.equal(instance.parent.destroyed, false); destroy(); };
+    unit.despawn(); h.pool.evict(); assert.equal(instance.destroyed, false, "wait until the retired node stops drawing");
+    draw(); assert.equal(instance.destroyed, true); assert.equal(instance.parent.destroyed, true); h.close();
 });
 
 test("CocosSkinnedUnits: recycled realtime node becomes baked with latest clip, invalid clip is atomic", async () => {

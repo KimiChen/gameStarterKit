@@ -129,6 +129,7 @@ export function captureOwnedInstancing(world: Node): () => OwnedInstancingCleanu
  */
 export class OwnedRenderingRetirement {
     private readonly pending = new Set<() => OwnedInstancingCleanup>();
+    private readonly cleanup = new Set<() => void>();
     private scheduled = false;
     private finished = false;
     private done: (() => void) | undefined;
@@ -137,6 +138,14 @@ export class OwnedRenderingRetirement {
         if (this.finished) throw new Error("Rendering retirement already finished");
         this.pending.add(captureOwnedInstancing(root));
         this.schedule();
+    }
+
+    /** Renderer-owned allocations retire before the template's shared materials/assets,
+     * even when a model switch already scheduled this same frame's callback.
+     */
+    defer(cleanup: () => void): void {
+        if (this.finished) throw new Error("Rendering retirement already finished");
+        this.cleanup.add(cleanup); this.schedule();
     }
 
     finish(done: () => void): void {
@@ -155,6 +164,7 @@ export class OwnedRenderingRetirement {
                 if (release().pendingItems === 0) this.pending.delete(release);
             }
             if (this.pending.size) { this.schedule(); return; }
+            for (const cleanup of [...this.cleanup]) { this.cleanup.delete(cleanup); cleanup(); }
             if (this.done) {
                 const done = this.done;
                 this.done = undefined;

@@ -10,12 +10,18 @@ import { captureOwnedBillboard, OwnedRenderingRetirement } from "./ownedRenderin
  * Source Prefabs/materials are borrowed; only pool-owned copies and leases are retired.
  */
 export function createCocosEntityPool(catalog: AssetCatalogData, parent: Node, options: EntityPoolOptions): EntityPool<Node> {
-    const materials = new Map<Material, Map<boolean, { material: Material; users: number }>>();
     let pool: EntityPool<Node>;
+    pool = new EntityPool(catalog, createCocosEntityPoolEngine(parent, () => pool.close()), options);
+    return pool;
+}
+
+/** Also used by SkinnedUnits for explicit far-LOD billboard Prefabs. Same retirement boundary. */
+export function createCocosEntityPoolEngine(parent: Node, onParentDestroyed: () => void): EntityPoolEngine<Node> {
+    const materials = new Map<Material, Map<boolean, { material: Material; users: number }>>();
     const engine: EntityPoolEngine<Node> = {
         subscribeFrames: (step) => {
             let frame = 0;
-            const update = () => { if (!isValid(parent, true)) pool.close(); else step(++frame); };
+            const update = () => { if (!isValid(parent, true)) onParentDestroyed(); else step(++frame); };
             director.on(Director.EVENT_AFTER_UPDATE, update);
             return () => director.off(Director.EVENT_AFTER_UPDATE, update);
         },
@@ -96,6 +102,5 @@ export function createCocosEntityPool(catalog: AssetCatalogData, parent: Node, o
             };
         },
     };
-    pool = new EntityPool(catalog, engine, options);
-    return pool;
+    return engine;
 }

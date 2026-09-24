@@ -183,6 +183,8 @@ Stage3D 租约 root
 
 SC1-B8 的数据契约与示例见 [tools/art3d/quality.md](../tools/art3d/quality.md)：`quality.json` 为框架默认政策真源，`pool.json` 描述逐帧激活预算与各档容量，`detail-layers.json` 明确 base / details 归属及 quality × LOD 纹理地址。实际加载、细节层门控和激活队列由 SC3 消费；本批仅交付契约、校验及画质判定。
 
+SC4-B3 桌面交付（2026-09-24）：low 的浮点 / RGBA8 预烘焙为 50 单位 + 8 特效；instancing 不可用时保留烘焙、执行 25 单位上限；关节纹理无法采样或消费方提供的实际帧时超过明确预算时，显式允许后使用 25 单位非 instancing 实时蒙皮，LOD2 换消费方公告板，沿用原 hideAtLod / details 门。所有四条桌面路径验证 PNG 实际加载、近远切换与 20 次回收，摘要见 [B3 进展](perf/stage3d/2026-09-24-sc4-b3.json)；故障注入不等同于微信或手机测量。真实设备六步缓存验收仍待证据，§12 的退出条件不变。
+
 ## 12. 加载、缓存与释放
 
 | 项 | 规则 |

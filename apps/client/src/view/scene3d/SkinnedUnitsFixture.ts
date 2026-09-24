@@ -2,6 +2,8 @@ import { director, Director, Node, Prefab, SkeletalAnimation, SkinnedMeshRendere
 import type { AnimationClip } from "cc";
 import type { AssetCatalogData } from "../../logic/scene3d/assetCatalog";
 import type { Stage3DQuality } from "../../logic/scene3d/qualityTiers";
+import { resolveSkinningPolicy } from "../../logic/scene3d/skinningPolicy";
+import type { BakedFrameBudget } from "../../logic/scene3d/skinningPolicy";
 import { assetLease } from "./cocosAssetLoader";
 import { createCocosSkinnedUnits } from "./cocosSkinnedUnits";
 import { registerJointTextureLayouts } from "./jointTextureLayouts";
@@ -16,6 +18,7 @@ export class SkinnedUnitsFixture {
     mainClips: readonly string[] = [];
     alternateClips: readonly string[] = [];
     socketPath = "";
+    measuredBakedBudget: BakedFrameBudget | undefined;
     private abort: AbortController | undefined;
     private assets: { release(): void } | undefined;
     private disposed = false;
@@ -44,14 +47,20 @@ export class SkinnedUnitsFixture {
             const skeleton = (main!.data as Node).getComponentsInChildren(SkinnedMeshRenderer)[0]!.skeleton!;
             const alternateSkeleton = (alternate!.data as Node).getComponentsInChildren(SkinnedMeshRenderer)[0]!.skeleton!;
             if (mainClips.length !== 2 || alternateClips.length !== 2 || skeleton.hash !== alternateSkeleton.hash) throw new Error("Invalid two-atlas fixture assets");
-            registerJointTextureLayouts([mainClips, alternateClips].map((clips) => ({ textureLength: 72,
+            const policy = resolveSkinningPolicy(this.quality, this.measuredBakedBudget);
+            if (!policy.degraded) registerJointTextureLayouts([mainClips, alternateClips].map((clips) => ({ textureLength: 72,
                 contents: [{ skeleton: skeleton.hash, clips: clips.map((clip) => clip.hash) }] })));
             this.mainClips = mainClips.map((clip) => clip.name); this.alternateClips = alternateClips.map((clip) => clip.name);
             this.socketPath = skeleton.joints[skeleton.joints.length - 1]!;
             this.pool = createCocosSkinnedUnits(this.catalog, this.parent, { quality: this.quality, signal: owner.signal,
-                allowRealtime: true, clips: alternateClips, onError: (error) => { this.error = String(error); this.status = "failed"; } });
-            for (let i = 0; i < 100; i++) {
-                const entity = this.pool.spawn("bipeds", i === 99 ? this.alternateClips[0]! : this.mainClips[i % 2]!, (node) => {
+                allowRealtime: true, clips: alternateClips,
+                fallback: { billboards: { bipeds: { bundle: "resources", path: "stage3d/P_Stage3d_Billboard" } },
+                    measuredBakedBudget: this.measuredBakedBudget },
+                onError: (error) => { if (this.abort === owner && !owner.signal.aborted) {
+                    this.clear(); this.error = String(error); this.status = "failed";
+                } } });
+            for (let i = 0; i < policy.maxUnits; i++) {
+                const entity = this.pool.spawn("bipeds", i === policy.maxUnits - 1 ? this.alternateClips[0]! : this.mainClips[i % 2]!, (node) => {
                     node.name = `Stage3dSkinned.Unit.${i}`;
                     node.setPosition((i % 10 - 4.5) * 2.5, 0, (Math.floor(i / 10) - 4.5) * 2.5);
                 });
