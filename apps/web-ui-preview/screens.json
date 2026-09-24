@@ -50,6 +50,14 @@
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"
     },
     {
+      "id": "mail-soldier-details",
+      "aliases": ["mail-soldier-details", "mailSoldierDetails"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "MailSoldierDetails",
+      "rootName": "MailSoldierDetails",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailSoldierDetails/MailSoldierDetails.tsx"
+    },
+    {
       "id": "mail-troop-details",
       "aliases": ["mail-troop-details", "mailTroopDetails"],
       "canvas": { "width": 750, "height": 1624 },

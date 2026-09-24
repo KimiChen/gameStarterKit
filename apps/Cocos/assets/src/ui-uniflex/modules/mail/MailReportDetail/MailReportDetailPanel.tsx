@@ -9,6 +9,7 @@ import { ReportDetailEquipment } from './ReportDetailEquipment';
 import { ReportDetailSoldiers } from './ReportDetailSoldiers';
 import { ReportDetailAttributes } from './ReportDetailAttributes';
 import { MailBattleLogPanel } from '../MailBattleLog/MailBattleLogPanel';
+import { MailSoldierDetailsPanel } from '../MailSoldierDetails/MailSoldierDetailsPanel';
 import { MailTroopDetailsPanel } from '../MailTroopDetails/MailTroopDetailsPanel';
 
 export interface MailReportDetailPanelProps {
@@ -31,10 +32,11 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
     const source = useMemo(() => new ArrayVirtualListDataSource(sections), []);
     const list = useRef<VirtualCollectionController | null>(null);
     const [showLinks, setShowLinks] = useState(false);
-    const [linkedPage, setLinkedPage] = useState<'battle-log' | 'troop-details' | null>(null);
+    const [linkedPage, setLinkedPage] = useState<'battle-log' | 'troop-details' | 'soldier-details' | null>(null);
     useEffect(() => { if (p.visible === false) setLinkedPage(null); }, [p.visible]);
     const openLinkedPage = (action: string) => {
         if (action === 'battle-log' || action === 'troop-details') setLinkedPage(action);
+        if (action === 'soldier-info' || action === 'soldier:player' || action === 'soldier:enemy') setLinkedPage('soldier-details');
         p.onAction?.(action);
     };
     useEffect(() => () => source.dispose(), [source]);
@@ -56,7 +58,7 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
         <image source={imageRef('ui/mail-report-detail/panel')} style={{ position: 'absolute', left: 40, top: 303, width: 673, height: 928 }} />
         <VirtualList source={source} key="id" sizeKey="height" direction="vertical" controller={list} inertia elastic overscan={1}
             style={{ position: 'absolute', left: 40, top: 307, width: 673, height: 924 }}>
-            {(section) => <ReportDetailSectionItem section={section} onAction={p.onAction} />}
+            {(section) => <ReportDetailSectionItem section={section} onAction={openLinkedPage} />}
         </VirtualList>
         <ReportDetailLinks visible={showLinks} onAction={openLinkedPage} />
         <ActionButton source={detailDelete} label="删除" outlineColor="#6A2A28"
@@ -64,6 +66,7 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
         <ActionButton source={detailShare} label="分享" outlineColor="#276275"
             left={419} top={1278} width={255} height={102} onClick={() => p.onAction?.('share')} />
         <MailBattleLogPanel visible={linkedPage === 'battle-log' && p.visible !== false} onClose={() => setLinkedPage(null)} onAction={p.onAction} />
+        <MailSoldierDetailsPanel visible={linkedPage === 'soldier-details' && p.visible !== false} onClose={() => setLinkedPage(null)} onAction={p.onAction} />
         <MailTroopDetailsPanel visible={linkedPage === 'troop-details' && p.visible !== false} onClose={() => setLinkedPage(null)} onAction={p.onAction} />
     </view>;
 });

@@ -47,7 +47,7 @@ import {
     HeroScreenRestored,
     HeroStarUpgrade,
     HeroStarUpgradeRestored,
-    Mail, MailTroopDetails, MailBattleLog, MailReportDetail,
+    Mail, MailSoldierDetails, MailTroopDetails, MailBattleLog, MailReportDetail,
     MailBattleReport,
     MailBattleReportRestored,
     PreviewHome,
@@ -98,6 +98,7 @@ const HEIGHT_1334 = new Set([
 ]);
 
 const PREVIEW_ALIASES: Record<string, string> = {
+    mailsoldierdetails: "mail-soldier-details",
     mailtroopdetails: "mail-troop-details",
     mailbattlelog: "mail-battle-log",
     mailreportdetail: "mail-report-detail",
@@ -238,6 +239,12 @@ async function startPreviewScreen(
             await runtime.start(Backpack, { onAction });
             return;
         }
+        case "mail-soldier-details":
+            await runtime.start(MailSoldierDetails, {
+                onClose: back,
+                onAction: (action) => console.info("[UniFlex MailSoldierDetails] action", action),
+            });
+            return;
         case "mail-troop-details":
             await runtime.start(MailTroopDetails, {
                 onClose: back,

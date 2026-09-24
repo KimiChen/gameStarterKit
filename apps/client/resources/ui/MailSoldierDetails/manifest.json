@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/mail-soldier-details/list",
+      "kind": "image",
+      "file": "assets/mail_soldier_list.png",
+      "width": 638,
+      "height": 186,
+      "sha256": "817cb75127c882faabf9d9d4e00a1181c2ecbadf42a2bfe0597f51266f9a6336"
+    }
+  ]
+}

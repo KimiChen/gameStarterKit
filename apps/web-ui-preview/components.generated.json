@@ -338,6 +338,11 @@
       "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailReports.tsx"
     },
     {
+      "key": "MailSoldierDetailsPanel",
+      "rootName": "MailSoldierDetailsPanel",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailSoldierDetails/MailSoldierDetailsPanel.tsx"
+    },
+    {
       "key": "MailTabs",
       "rootName": "MailTabs",
       "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailTabs.tsx"
@@ -481,6 +486,11 @@
       "key": "ShopPanel",
       "rootName": "Shop",
       "source": "apps/client/src/ui-uniflex/modules/shop/Shop/ShopPanel.tsx"
+    },
+    {
+      "key": "SoldierDetailRow",
+      "rootName": "SoldierDetails/Row",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailSoldierDetails/SoldierDetailRow.tsx"
     },
     {
       "key": "SoldierPortrait",

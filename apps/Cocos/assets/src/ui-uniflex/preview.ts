@@ -855,3 +855,9 @@ export function createMailTroopDetailsPreview(parent: Node): { dispose(): void }
     const preview = createPreviewScreen(parent, "mail-troop-details", { query: null, navigate: () => preview.dispose() });
     return preview;
 }
+
+/** Soldier casualty details grouped by player. */
+export function createMailSoldierDetailsPreview(parent: Node): { dispose(): void } {
+    const preview = createPreviewScreen(parent, "mail-soldier-details", { query: null, navigate: () => preview.dispose() });
+    return preview;
+}

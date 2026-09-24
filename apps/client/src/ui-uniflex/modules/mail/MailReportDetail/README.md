@@ -16,3 +16,5 @@
 Web 登记：`screens.json`、`catalog.ts`、`preview-screen.ts`；Cocos 登记：`previewCatalog.ts`，`preview.ts` 提供 `createMailReportDetailPreview`；原稿首页可直接打开。
 
 验收：`build:uniflex-ui` → `sync:client` → `typecheck:uniflex-ui`，从原稿首页进入，滚动检查各段、头像及末尾入口，检查操作回调、关闭/重开和邮件结果卡打开/返回。
+
+「士兵对比」信息按钮与双方头像打开 `MailSoldierDetailsPanel`（士兵详情），与其他子页互斥；关闭保留战报详情滚动位置。
