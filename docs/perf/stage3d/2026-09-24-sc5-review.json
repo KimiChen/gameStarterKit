@@ -1,0 +1,1381 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-24",
+  "stage": "SC5",
+  "batch": "SC5-B2",
+  "status": "exited",
+  "stageExit": true,
+  "tag": "stage3d-v1-frozen",
+  "commit": "Resolve refs/tags/stage3d-v1-frozen after the SC5-B2 commit.",
+  "verificationBase": "5c135e62cf99ed2280dfe3dc56a6c73ff6cafeb8",
+  "scope": "Documentation integration, exact-source API baseline and SC0-SC5 evidence review; no runtime, asset, dependency, budget or protected-path lock change.",
+  "worktree": "/Users/kimi/.codex/worktrees/sc5-b2-freeze/kitVersion",
+  "priorStageTags": {
+    "sc0-exit": "327183eea03b394a8949897f0287299394b64c57",
+    "sc1-exit": "0e5a19e3a14d75398afae161e21e3210472e58ad",
+    "sc2-exit": "e8c65c40d3b6984d898bf683db79946f70052f86",
+    "sc3-exit": "7786292f3e10f025cfb360b29a5861532bb551b8",
+    "sc4-exit": "e58c96cd5761dc866c3f1730dc8fa0f26b06dd40"
+  },
+  "evidenceAudit": {
+    "method": {
+      "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/audit-evidence.py",
+      "sha256": "0bc6e938eac5b43e2a040c8828844ff913ee98db0cbb46db0eb017bda798dce7"
+    },
+    "record": {
+      "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/evidence-audit.json",
+      "sha256": "52ec4608ccca2c6046edc687e13de5658c1b1f0d11efeb9cc4995b0b96cb9730"
+    },
+    "summaryCount": 39,
+    "referenceCount": 918,
+    "uniquePaths": 752,
+    "counts": {
+      "archived": 569,
+      "identical": 292,
+      "historical": 57
+    },
+    "allReferencesResolved": true,
+    "methodScope": "Explicit path/file/log/source/report/summary plus sha256 pairs in all 39 prior stage reports. Relative Creator paths resolved against installed 3.8.8; relative B7 artifacts against its evidenceRoot. Historical tracked versions match git bytes and list subsequent commits. Original local files may live in prior isolated checkouts.",
+    "historicalPaths": [
+      "apps/Cocos/assets/resources/stage3d/data/detail-layers.json",
+      "apps/Cocos/assets/resources/stage3d/data/pool.json",
+      "apps/Cocos/assets/src/view/scene3d/SkinnedUnits.ts",
+      "apps/Cocos/assets/src/view/scene3d/SkinnedUnitsFixture.ts",
+      "apps/Cocos/assets/src/view/scene3d/Stage3dDevScene.ts",
+      "apps/Cocos/assets/src/view/scene3d/VfxFixture.ts",
+      "apps/Cocos/assets/src/view/scene3d/cocosSkinnedUnits.ts",
+      "apps/client/cc-stub.d.ts",
+      "apps/client/client-test-stubs.d.ts",
+      "apps/client/src/logic/scene3d/assetPlan.ts",
+      "apps/client/src/logic/scene3d/qualityData.ts",
+      "apps/client/src/view/Stage3dFixtureView.ts",
+      "apps/client/src/view/scene3d/AssetLease.ts",
+      "apps/client/src/view/scene3d/SkinnedUnits.ts",
+      "apps/client/src/view/scene3d/SkinnedUnitsFixture.ts",
+      "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+      "apps/client/src/view/scene3d/VfxFixture.ts",
+      "apps/client/src/view/scene3d/cocosAssetLoader.ts",
+      "apps/client/src/view/scene3d/cocosEntityPool.ts",
+      "apps/client/src/view/scene3d/cocosSkinnedUnits.ts",
+      "apps/client/src/view/scene3d/ownedRendering.ts",
+      "apps/client/test/cocosEntityPool.test.ts",
+      "apps/client/test/cocosSkinnedUnits.test.ts",
+      "apps/client/test/slg-input.test.ts",
+      "apps/server/test/plugin-bundles.test.ts",
+      "apps/server/test/vfx-preview.test.ts",
+      "apps/server/tools/plugin/assetReferences.ts",
+      "docs/SC0-HANDOFF.md",
+      "docs/inventory.json",
+      "package.json",
+      "scripts/assets3d.config.json",
+      "scripts/uniflex-art.test.mjs",
+      "scripts/uniflex-import-contract.test.mjs",
+      "scripts/verify-assets3d.test.mjs",
+      "tools/art3d/sc0-engine-findings.json",
+      "tools/creator-preview/README.md",
+      "tools/creator-preview/probe-stage3d.mjs",
+      "tools/creator-preview/run.mjs",
+      "tools/creator-preview/skinned-perf.mjs",
+      "tools/creator-preview/vfx-perf.mjs"
+    ]
+  },
+  "criticalGateReview": {
+    "method": {
+      "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/review-contracts.py",
+      "sha256": "2bb3168268b1eb4ffa974fbd5a0d50c88b8533c762861a22a4980ea81d4441b7"
+    },
+    "record": {
+      "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/contract-review.json",
+      "sha256": "d0b7e4a9340921b4d361b8029b58a998fedca994c3c39b1f0a7dd61fda793cb4"
+    },
+    "bakedContexts": [
+      {
+        "webgl": 2,
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl2-final/report.json",
+          "sha256": "97830f4a3ff1bd54d02a5a12817e57181d604f1f951896dae68baf0eb12ebf8d",
+          "bytes": 1402978
+        },
+        "cycles": 20,
+        "steadyFrames": 240,
+        "recomputedFps": 59.94305409753547,
+        "sourcePendingRetained": [
+          "Review the authored/reference and independent-runtime screenshots for preserved baked lighting and shadow appearance.",
+          "The other WebGL context requires its own fresh run; this report only requests WebGL 2."
+        ],
+        "resolvedBy": "SC0-B5 two-context and visual review; rechecked by SC1/SC3 formal loading evidence."
+      },
+      {
+        "webgl": 1,
+        "raw": {
+          "file": "docs/evidence/creator-2026-09-22/stage3d-baked-webgl1-final/report.json",
+          "sha256": "fdc0a8178a71ced9e014fd39aa64aae39b8a3d43b086053220a929fb405e0746",
+          "bytes": 1404359
+        },
+        "cycles": 20,
+        "steadyFrames": 240,
+        "recomputedFps": 60.00150003785858,
+        "sourcePendingRetained": [
+          "Review the authored/reference and independent-runtime screenshots for preserved baked lighting and shadow appearance.",
+          "The other WebGL context requires its own fresh run; this report only requests WebGL 1."
+        ],
+        "resolvedBy": "SC0-B5 two-context and visual review; rechecked by SC1/SC3 formal loading evidence."
+      }
+    ],
+    "offlineLodContexts": [
+      {
+        "api": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "raw": {
+          "path": ".cache/sc5-b1/creator-webgl2-presented/report.json",
+          "sha256": "08ef215cc4f8200229cf1a42249ab2a31e9857103c4ea024ef6e01480404ccdd"
+        },
+        "sequence": [
+          0,
+          1,
+          2,
+          0
+        ],
+        "trianglesPerModel": [
+          1200,
+          297,
+          118,
+          1200
+        ],
+        "cycles": 20,
+        "warmClosed": {
+          "nodes": 4,
+          "gfx": {
+            "bufferSize": 38992,
+            "textureSize": 4027184
+          },
+          "refs": [
+            {
+              "uuid": "fef19005-b6af-4f59-9efc-bf9435e7d712@1bc2a",
+              "refs": 0
+            },
+            {
+              "uuid": "25e126db-1dde-4489-a706-8b3463935c37@f0843",
+              "refs": 0
+            },
+            {
+              "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@53b6b",
+              "refs": 0
+            },
+            {
+              "uuid": "ac5db5cc-34e2-40cd-b3f2-bee64b876569@e152c",
+              "refs": 0
+            },
+            {
+              "uuid": "de012a98-449b-4238-9129-cd83f0a6ae92@f0843",
+              "refs": 0
+            },
+            {
+              "uuid": "c3acebd0-d231-4ff4-9c48-9101f03c3ab1@53b6b",
+              "refs": 0
+            }
+          ]
+        },
+        "diagnostics": 0,
+        "visualReview": "Inherited B1 review; all eight screenshot hashes verified; not re-reviewed or recaptured in B2."
+      },
+      {
+        "api": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "raw": {
+          "path": ".cache/sc5-b1/creator-webgl1-presented/report.json",
+          "sha256": "d2b7928130c1835b0c17d37f9b94debc9beccc7b820a354e61cfb22c7f991ecc"
+        },
+        "sequence": [
+          0,
+          1,
+          2,
+          0
+        ],
+        "trianglesPerModel": [
+          1200,
+          297,
+          118,
+          1200
+        ],
+        "cycles": 20,
+        "warmClosed": {
+          "nodes": 4,
+          "gfx": {
+            "bufferSize": 38992,
+            "textureSize": 4027184
+          },
+          "refs": [
+            {
+              "uuid": "fef19005-b6af-4f59-9efc-bf9435e7d712@1bc2a",
+              "refs": 0
+            },
+            {
+              "uuid": "25e126db-1dde-4489-a706-8b3463935c37@f0843",
+              "refs": 0
+            },
+            {
+              "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@53b6b",
+              "refs": 0
+            },
+            {
+              "uuid": "ac5db5cc-34e2-40cd-b3f2-bee64b876569@e152c",
+              "refs": 0
+            },
+            {
+              "uuid": "de012a98-449b-4238-9129-cd83f0a6ae92@f0843",
+              "refs": 0
+            },
+            {
+              "uuid": "c3acebd0-d231-4ff4-9c48-9101f03c3ab1@53b6b",
+              "refs": 0
+            }
+          ]
+        },
+        "diagnostics": 0,
+        "visualReview": "Inherited B1 review; all eight screenshot hashes verified; not re-reviewed or recaptured in B2."
+      }
+    ],
+    "rawLifecycleCyclesRechecked": 80,
+    "bakedSampleFramesRecomputed": 480,
+    "independentBakedPrefab": "SC0-B5 lightmap:end + apply + independent Prefab loaded in fresh main scenes; missing PNG recovery and visual review completed. Formal AssetLease migration covered by SC1/SC3.",
+    "qualityGlobalsOverlayBundle": "SC1-B8/B9/B4/B7/B5 and SC3-B4 summaries plus referenced originals match their respective accepted revisions."
+  },
+  "apiFreeze": {
+    "definition": "Tag identifies exact source declarations and established semantics; this index is not a second editable interface schema. Framework internals/probes remain internal.",
+    "entryBindings": [
+      "PluginInstallContext.ports.stage3d",
+      "GameplayServicesContext.stage3d",
+      "CocosView.subscribeRawInput",
+      "GameplayPresentationHost.rawInput"
+    ],
+    "publicModules": [
+      {
+        "path": "apps/client/src/view/scene3d/Stage3D.ts",
+        "sha256": "1bf763b5695a6f745d50d2a6a3cb2eb93bdc9a292aa620d4cfaff0d1b6059e5a",
+        "consumerSymbols": [
+          "Stage3DPort",
+          "Stage3DOwner",
+          "Stage3DLease",
+          "Stage3DGlobalsLease",
+          "Stage3DBusy",
+          "Stage3DInactive",
+          "Stage3DApplyError"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/stage3dGlobals.ts",
+        "sha256": "f779dcaf7e32e8f27708868470ee5765e25df05a4796e06fe024987897622f62",
+        "consumerSymbols": [
+          "Stage3DGlobalsPatch"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosAssetLoader.ts",
+        "sha256": "505e1e051b37d74fdc34e781bcc0dd2d79f262462cc0f992739173878735490f",
+        "consumerSymbols": [
+          "assetLease"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/AssetLease.ts",
+        "sha256": "deb0ab2416eb57edbea355b066f5c13a6a7d0ee82cf7dd49d6e830a6bfc9c852",
+        "consumerSymbols": [
+          "AssetLease",
+          "AssetLoadError",
+          "AssetReleaseError"
+        ]
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/cameraRig.ts",
+        "sha256": "fd2723a1c8dcb90bbeb8cded88813594337fb4583398d22acbc7a80e8e8c8d1a",
+        "consumerSymbols": [
+          "CameraRig"
+        ]
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/chunkStreamer.ts",
+        "sha256": "06768c0942c7471bafd581d33727317e9eb88b44b5cf13a1389244ac715c8df6",
+        "consumerSymbols": [
+          "ChunkStreamer"
+        ]
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/pickMath.ts",
+        "sha256": "5940a213492e223e7182cdc6b470d1889851c173a258a8707bc2d9965c4dc4f3",
+        "consumerSymbols": [
+          "rayPlane",
+          "rayAabb",
+          "unprojectDesignPx"
+        ]
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/assetPlan.ts",
+        "sha256": "75354fd1f46fcd653642b13559c78e91461968d8ff6dcd0dba4ec7c319b753fa",
+        "consumerSymbols": [
+          "AssetPlan"
+        ]
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/assetCatalog.ts",
+        "sha256": "e0ace71337be52b3c7b4929e0f80792e38270f63960a669fd8c6d622ff558afb",
+        "consumerSymbols": [
+          "AssetCatalog",
+          "AssetCatalogData"
+        ]
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/qualityData.ts",
+        "sha256": "6cdff63bff5e61729651b793f0b9811513dff0402a74359c45426d7a77186903",
+        "consumerSymbols": [
+          "parseQualityTable",
+          "parsePoolTable",
+          "parseDetailLayersTable"
+        ]
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/qualityTiers.ts",
+        "sha256": "23473dac648be3001235f1859b7bac61edb5f120c71cb5e3cb0ec50a5cd3b9cd",
+        "consumerSymbols": [
+          "Stage3DQuality",
+          "resolveQuality"
+        ]
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/skinningPolicy.ts",
+        "sha256": "0ab28a696cc01f888cd79f1c8d9011c037f211521788e17f05b58fd4acbcdf4a",
+        "consumerSymbols": [
+          "resolveSkinningPolicy"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/EntityPool.ts",
+        "sha256": "e9e12e0a15bf5ee25625a05e7a5201ffe8641ba335675870b47406d96f8895fa",
+        "consumerSymbols": [
+          "EntityPool"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosEntityPool.ts",
+        "sha256": "3cbfbb72171bf1c29f4b07809a2bd91bc19b3224ecab24bc113850e318e10f5b",
+        "consumerSymbols": [
+          "createCocosEntityPool"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/SkinnedUnits.ts",
+        "sha256": "952d3e10b39db22462c16da4abd19d73db3d405a9ae808e9ec5321a265137609",
+        "consumerSymbols": [
+          "SkinnedUnits"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosSkinnedUnits.ts",
+        "sha256": "56696942cd19ac7cefa606fb3cbb77b8f8992d02a4392daceece54263af84c94",
+        "consumerSymbols": [
+          "createCocosSkinnedUnits"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/jointTextureLayouts.ts",
+        "sha256": "ed37425fc080f9f341740bf8c962b33c748523b7ddb9f198204b7a6bcdac89d6",
+        "consumerSymbols": [
+          "registerJointTextureLayouts"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/Vfx.ts",
+        "sha256": "50e358c11ab72eb94a7fc9686805d918bd152e6f1be1d405209bfabfc676a76f",
+        "consumerSymbols": [
+          "Vfx"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosVfx.ts",
+        "sha256": "a3b48296c064aa4ee7681321cc697b7a7bb1c194f9b3dc753e195ba529e7ac1a",
+        "consumerSymbols": [
+          "createCocosVfx"
+        ]
+      },
+      {
+        "path": "apps/client/src/view/input/RawInput.ts",
+        "sha256": "71fd78254d0818d6a395f509b300082d1ac2b4589ca78d571ac09a683b2d0214",
+        "consumerSymbols": [
+          "RawInputPort"
+        ]
+      },
+      {
+        "path": "apps/shared/src/logic/lodBands.ts",
+        "sha256": "abafc3e8ebb22d37451e4970ca2d7a9d9e3af888f9ec1618f7f9a9726cb528ad",
+        "consumerSymbols": [
+          "lodForValue",
+          "lodForValueStable"
+        ]
+      }
+    ],
+    "sourceSnapshot": [
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/FX_Stage3d_Sparks.prefab",
+        "sha256": "8182e2569aef9c27a92523d7120e57c0609dba2c81b01fd0b5cb952b9cd55147",
+        "lastChange": "8330dbf86f3af8d1632680b8547c10a06ccd6c06"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/FX_Stage3d_Sparks.prefab.meta",
+        "sha256": "d4817d7a15bb2b1792ff6925373fe52961ffda197df1c9d99cd9e649c29efb92",
+        "lastChange": "8330dbf86f3af8d1632680b8547c10a06ccd6c06"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Baked.prefab",
+        "sha256": "fdfc33f7838f10720fa74a9ac86fa1852f6b852e59c1f0d16b7d980602063bf8",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Baked.prefab.meta",
+        "sha256": "ec4c1bcb04ac909be59ad9d992246b67944e60bf8de954a528822e942999ec08",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Billboard.prefab",
+        "sha256": "bbab41ac906ce607d349c8557ce9435c5b1a331ae3ace935a105e49b0dda0491",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/P_Stage3d_Billboard.prefab.meta",
+        "sha256": "93cca876dc7bc9d4cb8ccb9c82c5eab14e37bb4630ebcbaf2a8d7d59dd80bb0e",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/T_Greybox_Checker_BC.png",
+        "sha256": "b3651b49a622ce516b0bd5c58686ad5500435b1c3f9f4a811dbed517a26d1498",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/T_Greybox_Checker_BC.png.meta",
+        "sha256": "769a8fab9d3addeff639b2c72b3c8f526c22fc8e0427553dd1d8362ab0080299",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data.meta",
+        "sha256": "d8e701e556142fce49e5ac770ab8c9b090689e77f045743462ee5ca5bc961e29",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data/detail-layers.json",
+        "sha256": "8839f5355eac96a962bc13905871e6953345129e654460165aeba15ab0d359b5",
+        "lastChange": "8330dbf86f3af8d1632680b8547c10a06ccd6c06"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data/detail-layers.json.meta",
+        "sha256": "3d804d1cff7cbcc6def6f8d18a2cf5bcb4597c1937ebf1fdf6d927530939c18e",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data/pool.json",
+        "sha256": "97c1802c44ddbe0905986eeb6695b1a091963f20a1983e087333176d8755c88d",
+        "lastChange": "8330dbf86f3af8d1632680b8547c10a06ccd6c06"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data/pool.json.meta",
+        "sha256": "d8bf8d50ac9d4613c2be0d966d8987dfc28c03e2f5aa21399f37886df85daed8",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data/quality.json",
+        "sha256": "a1ef38bc6c6807b3e8853a3102695a44b18aaa40eb9f86c9efdd3c9eedaab2ba",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/data/quality.json.meta",
+        "sha256": "5d02c4625b2a1642bea2e2f873e3c5af0650094c45074295ddc505f0aba1626f",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-biped-atlas-b.glb",
+        "sha256": "4781ace968432cc6b3014352a81ddee32878174bf9472f991798940f0cf4fadd",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-biped-atlas-b.glb.meta",
+        "sha256": "095694c24fd9a74e245a2b52b5e8b8f1806f487ff73e725e0ddbd06c90a6533c",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-biped.glb",
+        "sha256": "e209df67d53c5d6a1208e15b7a3e69c5253f6faba6717feafae8c06958f98dd3",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-biped.glb.meta",
+        "sha256": "1895cbe5b8ed4080df71d250bdbae64b370b3c527f44e87889e2bd9327a1e53b",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-cube.glb",
+        "sha256": "fb18dd6d72b687954a20a185998db277effad50d43f98ed0b7e24d1cb5238f73",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-cube.glb.meta",
+        "sha256": "b3d69508943965fe3dc008247902eb577726d221fcfbf35aa088fce9814e3c3c",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-plane.glb",
+        "sha256": "a3b9222791457b56bb89d6f418e8aa3df9227c089f45ce99df973e8734670de2",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/greybox-plane.glb.meta",
+        "sha256": "987868d39d3ae3d0ec761fe2da4a2c0e6eb4694227d881665fcadf5af0cf34a8",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/lightmaps.meta",
+        "sha256": "a556d55faabd9b4444301afdbb948df340242a99d8b2dc89e9c57145b3875366",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX.meta",
+        "sha256": "700dd3c56bc6647a3f98d915447d843c0a62b8569aece24e740d50c82f6b663b",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output.meta",
+        "sha256": "0bd6394134aab7844b3b6ec0a83ca858f189940fe2c9c905e21ee0dfc13b6309",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png",
+        "sha256": "a78228133b71946b2b44ef1011a49c7afb95f710fccc6eee629547be03fbd309",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/lightmaps/LightFX/output/LFX_Mesh_0000.png.meta",
+        "sha256": "9cebb5f031f311d7a074cf5f592d776a9591d40f610b8dd2ad6ea962834f7a68",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline.meta",
+        "sha256": "d4018e616239d368033a46e75b79b2c54c0bd98dc895072cb7c1c917fb576c7d",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn.meta",
+        "sha256": "1a74cc86bccb0fd95cce4b5ffae748fd06a97612429f174b1a792ec690f10867",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/SK_OfflineColumn.glb",
+        "sha256": "fd9148f5edc4dbf61423a5b87321461b53f53d1c1a507b00380fe352a524a568",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/SK_OfflineColumn.glb.meta",
+        "sha256": "0eb7ff8215e226da539bacbb313821c81489472330e1aed16f22f2a6f5bf1911",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/T_SK_OfflineColumn_0_BC.png",
+        "sha256": "8d3e961cbc871dffd35d25fe3a9a1caf32be6773d783ab44f61ad1bb8b714865",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/T_SK_OfflineColumn_0_BC.png.meta",
+        "sha256": "74d2da342c6fd4a7252892161f1d41bb88d50075625baa15d77acf2534763f1c",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_1.glb",
+        "sha256": "3080c16ff29a23a8aa60593ce0cefce092bd82cdbc05c29cd984e2d201f98185",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_1.glb.meta",
+        "sha256": "b9e012e97c55e5aab7e27ba787b24fc274e901f62383a2f8e556eea1f2c453bd",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_2.glb",
+        "sha256": "d388c373659a35ea45b87786850da95d13728ff66c62c9f3909026f47ae06dfd",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_2.glb.meta",
+        "sha256": "e552d1c0c5374cc48be4697d6a884b8d2cc06ae0ae5dae131e5a0f28c5cb1fe5",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn.meta",
+        "sha256": "b2b7aa124df6934a85a3805d33c59a3136a7df2010af6972d5c1b4fd075630d2",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/SM_OfflineColumn.glb",
+        "sha256": "bb863ce7388ab77375e5f654d65cf728169ed743deb8083cef523e19d18d28de",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/SM_OfflineColumn.glb.meta",
+        "sha256": "3ccf2d688bc98b8dae9608c28619aef8f8723cf5e70708db3b5781f10944516c",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/T_SM_OfflineColumn_0_BC.png",
+        "sha256": "8d3e961cbc871dffd35d25fe3a9a1caf32be6773d783ab44f61ad1bb8b714865",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/T_SM_OfflineColumn_0_BC.png.meta",
+        "sha256": "4a91bbd2763a7581b17bd9d8d9f9982bd1d43e7fb78d5bc4581f9f35e7cfc053",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_1.glb",
+        "sha256": "2dac07d8ace91bdc2f17ada8da09867d4ad0382f401a3e9341ce4291bf08cc2d",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_1.glb.meta",
+        "sha256": "6223d380547175a15ec0274f44dd8f504927e4fbc8280397ea74ba6e438aa300",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_2.glb",
+        "sha256": "e8ac84e9af3c1aae8ee08fa2279b7d5b52cf925a24bcfaf11aac017a616a67dd",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_2.glb.meta",
+        "sha256": "060727545d2a315a10ad087fb3fcc86cf0f44fb11c3b2ad836e3be9e0ac08912",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "apps/Cocos/extensions/stage3d-build/builder.js",
+        "sha256": "4a3760d4b219373352e39ffc3074c2e899c1268f5438c3c970a469436e4d99ce",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/extensions/stage3d-build/hooks.js",
+        "sha256": "b353ac0fbbf27924a6cf78697908215133b7355639bb1d5f565405dca44b9dc0",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/extensions/stage3d-build/package.json",
+        "sha256": "a1606795a6a7a1432cc33ae0d562a9a465c8d91aac3cfa60e48afa8f96993746",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "apps/Cocos/settings/logo-diy.png",
+        "sha256": "e920accaae45bfa9400b1404fec7952876359860630524259bbbe5765e4ecf51",
+        "lastChange": "9d6f52b6e902a2d538102fd3e2fabaf38d1d7a3b"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/builder.json",
+        "sha256": "67dd2b7c6321c08ce9bd46ce08ebb2ff5d020b12b56bc8da7a3683343eae037e",
+        "lastChange": "285ce1d208ae87f88f3fb1d3a6c674517dc9f2dd"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/cocos-service.json",
+        "sha256": "5df58deed9d53eb3b5ba6fa4a55e9700f467b2f9570ab21be7b2b5c8834744c2",
+        "lastChange": "5369660aea80983bfe55e121cac5f0ad2492bc12"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/device.json",
+        "sha256": "93af91e0b90038cedc84d08651f845e1c2e2ae460321c19f083c27a178e451f8",
+        "lastChange": "5369660aea80983bfe55e121cac5f0ad2492bc12"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/engine.json",
+        "sha256": "e6b5edee8927d258680d6db258857d2ef085bdafcf5e750ceb4dacfb8c067653",
+        "lastChange": "441b475ef0d37ba6e12c8dfbf2ef068691bfeaa6"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/information.json",
+        "sha256": "e174f00b2a5e0fd710adfa14595484d91960df24f269dbcc0cc4daf17db1560b",
+        "lastChange": "eb75f66525696b60b44be72664f22a900b379f13"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/preview.json",
+        "sha256": "ed3bdf5d4de6bbb2177aa86956de6b48acbc557815a03b7423ea1db24a678031",
+        "lastChange": "681b223528f52d06135cfb5ff9f6cbe8ef1d7761"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/program.json",
+        "sha256": "d914f9f19ffe02724337936d8c7907798c8666566902b78243eb1aa8da0baedd",
+        "lastChange": "5369660aea80983bfe55e121cac5f0ad2492bc12"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/project.json",
+        "sha256": "6d8cca434b57d544bbe872c90df20e1b654c4cb82e067e5b88d7c5e6a6dff341",
+        "lastChange": "441b475ef0d37ba6e12c8dfbf2ef068691bfeaa6"
+      },
+      {
+        "path": "apps/Cocos/settings/v2/packages/wechatgame.json",
+        "sha256": "d914f9f19ffe02724337936d8c7907798c8666566902b78243eb1aa8da0baedd",
+        "lastChange": "441b475ef0d37ba6e12c8dfbf2ef068691bfeaa6"
+      },
+      {
+        "path": "apps/client/src/app/AppRuntime.ts",
+        "sha256": "ee48a32237fb04f46c63380384f166657e2e07fe4aa2b0c12a42d85c05c89645",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/app/ports.ts",
+        "sha256": "3c5a3169b5d2f53b7d2f6d3da45addaf6d188783c8e5274153fc4124d271498d",
+        "lastChange": "720ca11b9033c8d6c1e8936578c36c893aa58c77",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/gameplay/services.ts",
+        "sha256": "27d01ab386344db2fc48b6945ada3d78acafa9806550ec7ecaf85ac88e91f73b",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/input/PointerOwnership.ts",
+        "sha256": "534b0648e4f65f59beb1fa90ffce4297c1cbe9d5388b48ed4fb1a793bf8309a6",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/assetCatalog.ts",
+        "sha256": "e0ace71337be52b3c7b4929e0f80792e38270f63960a669fd8c6d622ff558afb",
+        "lastChange": "71ca02cbfc30139a92bdd8bb05648087db95003d",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/assetPlan.ts",
+        "sha256": "75354fd1f46fcd653642b13559c78e91461968d8ff6dcd0dba4ec7c319b753fa",
+        "lastChange": "71ca02cbfc30139a92bdd8bb05648087db95003d",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/cameraRig.ts",
+        "sha256": "fd2723a1c8dcb90bbeb8cded88813594337fb4583398d22acbc7a80e8e8c8d1a",
+        "lastChange": "e4ec3d56392ec6e7bb21085eafc75d440d335eff",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/chunkStreamer.ts",
+        "sha256": "06768c0942c7471bafd581d33727317e9eb88b44b5cf13a1389244ac715c8df6",
+        "lastChange": "0b54468c783742667c9bfb5424d601ae2782adf3",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/pickMath.ts",
+        "sha256": "5940a213492e223e7182cdc6b470d1889851c173a258a8707bc2d9965c4dc4f3",
+        "lastChange": "e5cadeeb8efdbcc67db8d57049325806aae279d7",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/qualityData.ts",
+        "sha256": "6cdff63bff5e61729651b793f0b9811513dff0402a74359c45426d7a77186903",
+        "lastChange": "71ca02cbfc30139a92bdd8bb05648087db95003d",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/qualityDefaults.generated.ts",
+        "sha256": "673bcab99b8e3d1c98629021385ad00a651654987d9af02d0961d63191a7ec6b",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/qualityTiers.ts",
+        "sha256": "23473dac648be3001235f1859b7bac61edb5f120c71cb5e3cb0ec50a5cd3b9cd",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/skinningPolicy.ts",
+        "sha256": "0ab28a696cc01f888cd79f1c8d9011c037f211521788e17f05b58fd4acbcdf4a",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/logic/scene3d/viewport.ts",
+        "sha256": "4b6cc6f7cb39b4017d4c31720064084f36b9e9f1a4ff05eec59152c6bb6cd84d",
+        "lastChange": "c2f8592d48b5bf5f852772179f808ca205615baa",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/CocosView.ts",
+        "sha256": "22946e614603715b227a6654cee18aaae32e1108bdd3e0148f57078d664105d2",
+        "lastChange": "ee416dcdbaaf89f15c46310c5451ebcf9229afa1",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/ViewMgr.ts",
+        "sha256": "9dca0a71ed87cb2a0b39ab9b55103b8a053a4852c9586389e083e4f346961115",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/defineView.ts",
+        "sha256": "2ac151fe4f7aa9fe8e6d71bb69d28de52c378b75e6130a285be2540096dab164",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/input/CocosRawInput.ts",
+        "sha256": "d5973c14de05bff76faa3f875a71411305e6a76ad30c28c19a2fc9e64e7b2d75",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/input/FguiRawInput.ts",
+        "sha256": "2774c7da4dca8e3e5c6ab05b6e3643f1d3f5dc14525be52074024f356b8889ed",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/input/RawInput.ts",
+        "sha256": "71fd78254d0818d6a395f509b300082d1ac2b4589ca78d571ac09a683b2d0214",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/AssetLease.ts",
+        "sha256": "deb0ab2416eb57edbea355b066f5c13a6a7d0ee82cf7dd49d6e830a6bfc9c852",
+        "lastChange": "19265da10661b282e7a723ee8bc8ba505338e6b6",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/EntityPool.ts",
+        "sha256": "e9e12e0a15bf5ee25625a05e7a5201ffe8641ba335675870b47406d96f8895fa",
+        "lastChange": "71ca02cbfc30139a92bdd8bb05648087db95003d",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/SkinnedUnits.ts",
+        "sha256": "952d3e10b39db22462c16da4abd19d73db3d405a9ae808e9ec5321a265137609",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/SkinnedUnitsFixture.ts",
+        "sha256": "7c56224d460e5b0b141dd55b9e8340e8e8fbc23b7af0a8d931d8b1a644b67138",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/Stage3D.ts",
+        "sha256": "1bf763b5695a6f745d50d2a6a3cb2eb93bdc9a292aa620d4cfaff0d1b6059e5a",
+        "lastChange": "44413fed4f8a24b8db5c3a8f68b9b65238dbaeae",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/Stage3dDevScene.ts",
+        "sha256": "38df98f2fce9561176277dcaa5f4861ae424705bc540aefde6710145c3778962",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/Vfx.ts",
+        "sha256": "50e358c11ab72eb94a7fc9686805d918bd152e6f1be1d405209bfabfc676a76f",
+        "lastChange": "8330dbf86f3af8d1632680b8547c10a06ccd6c06",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/VfxFixture.ts",
+        "sha256": "ec80e5bc43a018b11b273876ee1aee06f5dc1a4574281f71a3d37179ecd08621",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosAssetLoader.ts",
+        "sha256": "505e1e051b37d74fdc34e781bcc0dd2d79f262462cc0f992739173878735490f",
+        "lastChange": "44413fed4f8a24b8db5c3a8f68b9b65238dbaeae",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosEntityPool.ts",
+        "sha256": "3cbfbb72171bf1c29f4b07809a2bd91bc19b3224ecab24bc113850e318e10f5b",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosSkinnedUnits.ts",
+        "sha256": "56696942cd19ac7cefa606fb3cbb77b8f8992d02a4392daceece54263af84c94",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosStage3DEngine.ts",
+        "sha256": "b910ace69a6faf7cc9a21f730eee57d1e4606e06f22b089311f5d6c3a4532fb7",
+        "lastChange": "44413fed4f8a24b8db5c3a8f68b9b65238dbaeae",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/cocosVfx.ts",
+        "sha256": "a3b48296c064aa4ee7681321cc697b7a7bb1c194f9b3dc753e195ba529e7ac1a",
+        "lastChange": "8330dbf86f3af8d1632680b8547c10a06ccd6c06",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/fixtureSession.ts",
+        "sha256": "8dba2f3588673a278da8b10634c399772d07774ab182bca111114cafda03124b",
+        "lastChange": "ee416dcdbaaf89f15c46310c5451ebcf9229afa1",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/jointTextureLayouts.ts",
+        "sha256": "ed37425fc080f9f341740bf8c962b33c748523b7ddb9f198204b7a6bcdac89d6",
+        "lastChange": "04bb5e60eaf16942018e334cde61cafba536f099",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/ownedRendering.ts",
+        "sha256": "030665cadb5c2da2ab7fa2d12e0c9ef3e5ee1b927ad5b0edbeb58884e099d1ab",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/quality.ts",
+        "sha256": "9a117504c7f34006302d64b7aae7d88b619bc3ba04bbee0f55e9a77fa417a566",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/spikeSkinning.ts",
+        "sha256": "24be747531d3ccc6ad8b52ac3dbff51ed66f422eacd1daec32d67cc53a2f5167",
+        "lastChange": "c40fdce10af1fcc4341824d9f7071bbde3663ef4",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/stage3dGlobals.ts",
+        "sha256": "f779dcaf7e32e8f27708868470ee5765e25df05a4796e06fe024987897622f62",
+        "lastChange": "44413fed4f8a24b8db5c3a8f68b9b65238dbaeae",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/client/src/view/scene3d/stage3dLayers.ts",
+        "sha256": "ae2b4dec1fc899e4a38116158736b8fa9abadee59ec9ab3f19788f3d3ae40963",
+        "lastChange": "c2f8592d48b5bf5f852772179f808ca205615baa",
+        "cocosMirrorMatches": true
+      },
+      {
+        "path": "apps/shared/src/logic/lodBands.ts",
+        "sha256": "abafc3e8ebb22d37451e4970ca2d7a9d9e3af888f9ec1618f7f9a9726cb528ad",
+        "lastChange": "15980f0e0df69e8bbd73a2d524dfc321d28587f4"
+      },
+      {
+        "path": "scripts/assets3d.config.json",
+        "sha256": "c1db6e6a16544e05ba17e2f18c64c507bfb0926d0aa21db3728a14e38a045f79",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "scripts/protected-paths.json",
+        "sha256": "5aff7ef12e7a76bb6e22fff0c9777d8a3fde37afb19e6b1a6e3c210a1328c8d3",
+        "lastChange": "8bc01131990b774ffb395f6e86bfeb01e45051e2"
+      },
+      {
+        "path": "scripts/protected-paths.lock",
+        "sha256": "c1625ffd258e15016fe5d9742610153ee157f2da58527d80effe71bdf4a08b7a",
+        "lastChange": "44413fed4f8a24b8db5c3a8f68b9b65238dbaeae"
+      },
+      {
+        "path": "scripts/verify-assets3d.mjs",
+        "sha256": "41b355eaf61336c64212ae540cbe4244e5bab620448d091a6d73cfcef916cde0",
+        "lastChange": "4ae2908c2f3f2d7943a19f97af95f929176ff300"
+      },
+      {
+        "path": "tools/art3d/billboard-fixture.mjs",
+        "sha256": "c86c49151716401a447ad2e2eb057dc614d59ec1b70ba17a495f55caf7388891",
+        "lastChange": "5855bc3f160bca38a7a729009f18eff8bea91504"
+      },
+      {
+        "path": "tools/art3d/bundle-fixture.ts",
+        "sha256": "a9244ecfadb35ae419776da87d16cbd4fe259c4279ad51e1187456a2c371bb56",
+        "lastChange": "285ce1d208ae87f88f3fb1d3a6c674517dc9f2dd"
+      },
+      {
+        "path": "tools/art3d/bundle-probe/main.js",
+        "sha256": "c5b0a694d6c5b4e81eb31cf9459d1b9000e28196e7e798c4c3bbcfc1e5e9efd3",
+        "lastChange": "285ce1d208ae87f88f3fb1d3a6c674517dc9f2dd"
+      },
+      {
+        "path": "tools/art3d/bundle-probe/package.json",
+        "sha256": "0f7fb3595de2e10844de89f58cfee6355e25f62d2459137e8a76bf65c9cf6495",
+        "lastChange": "285ce1d208ae87f88f3fb1d3a6c674517dc9f2dd"
+      },
+      {
+        "path": "tools/art3d/bundle-probe/scene.js",
+        "sha256": "b53e73ccda16a616aa54b2f162ba003e4a60ca65987e77f925c94b3631f1f1d6",
+        "lastChange": "285ce1d208ae87f88f3fb1d3a6c674517dc9f2dd"
+      },
+      {
+        "path": "tools/art3d/conversion.schema.json",
+        "sha256": "88a6a142258588247a81687c3a0f24f0ba0cda5e0ed4e7536da3bf9bb40d5c22",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/convert.py",
+        "sha256": "3813b85a34384df5543dc391847b4c1361e99f6dd3329691044276a78ab19d8d",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/creator-import-report.json",
+        "sha256": "5a871ba24774f5edb0ed0c1c61beb76b6b7f57421ad70e6dd824c925795dfc08",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "tools/art3d/editor-probe/local-config.example.json",
+        "sha256": "c85c77f9e3ea35f809b5122670a60ddb3c10c6c3a88e76f317447c976b6289d5",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "tools/art3d/editor-probe/main.js",
+        "sha256": "31643f97db8d92b32f754909af70125f514bfe8db4fdd0e95bf337a00f3a6763",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "tools/art3d/editor-probe/package.json",
+        "sha256": "b406cc3bd7016098cbaa380dd706fb5dff89bb564bd68936adaff03947584ed9",
+        "lastChange": "5a71f10ae9fe5f227f8eae14f7c3d6a05c3e8756"
+      },
+      {
+        "path": "tools/art3d/editor-probe/scene.js",
+        "sha256": "19b3f6008280f517cf79c6ad446e2e8720e5a3acb5de6922bc8d0f53d8ee955b",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "tools/art3d/extract.py",
+        "sha256": "f2262f2a09613362ef524aa787ddfa42f2970a8500826ed272013476c3cd70bc",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/fixtures/skinned.conversion.json",
+        "sha256": "606cac9a68621584f5156e45f4c53e4731fbfc5ab3c80d591b91a259c5ba0e43",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/fixtures/static.conversion.json",
+        "sha256": "3404fd8fb3efab0eb5762673ac318d05e7068c1194e317cf2eeec2123f8ce1ed",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/greybox-manifest.json",
+        "sha256": "67e943f61247ee96e24ec82b7299a1752851373f9e5e022ab7c4a044e95ca97d",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "tools/art3d/greybox.py",
+        "sha256": "84781bd7b6fa6e73aa516d9d6ce77fda778734904595b73ff4f762d22ffa93ea",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "tools/art3d/lod.py",
+        "sha256": "66aa6af6ae9cf9cdefe8c6c445553400e48518788ff855435a4765afbbbfc94f",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/material-map.py",
+        "sha256": "27636623f4afa269a5133c538e35ceb0c2f4736446a09108ced48af066dea0a1",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/materials.py",
+        "sha256": "8bd25f0c35de14e7ef9d8c758b1c76fe8979c0df20e83c0a3998e566b431b6a4",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/meshopt-run.mjs",
+        "sha256": "bca34823c3251cad71bb44d110db6f4948ca4cefc1dbd02efb433ef4d3225ac8",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/meshoptimizer.lock.json",
+        "sha256": "06cfc64ca91cd329b923b44126217c37258c88af141a6467f212424105e21008",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/pipeline.py",
+        "sha256": "a07b023d2fbf3d8ca4cf416d047ed58578f0d5ff7f79b16b940761fdc953f15d",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/quality-assets.mjs",
+        "sha256": "cea542823e9d66eb651395c0302278da7dd2a9b6a842be434c27dffb451d4fa9",
+        "lastChange": "4ae2908c2f3f2d7943a19f97af95f929176ff300"
+      },
+      {
+        "path": "tools/art3d/requirements.txt",
+        "sha256": "ea4232f369c4cfb695115518be5809b6a13cf5271c3a2f01537116aecb36569b",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/roundtrip.py",
+        "sha256": "683ef47da5a03c40d027daa3304557a9748984a1027383a71dca492190db9a28",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/sc0-asset-exceptions.json",
+        "sha256": "befeccce2baf8d6492e981437f1820b98eaf63263a3a9bbadfeb18a795b994b0",
+        "lastChange": "4ae2908c2f3f2d7943a19f97af95f929176ff300"
+      },
+      {
+        "path": "tools/art3d/sc0-engine-findings.json",
+        "sha256": "119d4fd395d19f374d058d953bc5c83df3491e8b1a2e70c700725782e16b85fc",
+        "lastChange": "ee416dcdbaaf89f15c46310c5451ebcf9229afa1"
+      },
+      {
+        "path": "tools/art3d/setup-meshoptimizer.py",
+        "sha256": "84cc4ec6febc550df875b4967cda7873b61063217e46873529c5ea58dc68cef6",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/sync-quality-defaults.mjs",
+        "sha256": "e18ffd25fa0d82a3a22220029bc7781f2e9a59f8b13f9cbf0fc8b410414c166b",
+        "lastChange": "1b46cb522dfd644e1e7ed8036746c7c6e814a97b"
+      },
+      {
+        "path": "tools/art3d/test_greybox.py",
+        "sha256": "1671da3357e83d49033ab5ef043e01719054c0d98dcf6dd25192a1c399b4d887",
+        "lastChange": "1120ffbf7ea6a109cfdca13fc60a254115ffe801"
+      },
+      {
+        "path": "tools/art3d/test_pipeline.py",
+        "sha256": "7c8dcdf7131c711a092203c7e51250d8c44a249ad885233cfe5508d69222c10d",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/textures.py",
+        "sha256": "f837cc6ac7776935dcc02d51bce31073cec0b446e3630f47742a72cdda91b7ae",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/to-gltf.py",
+        "sha256": "11e7ee27423c6e77088970bc6e77d1604dc020503e2c3bc7a2ff2079cdaa6414",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/unity-fixture.py",
+        "sha256": "6f4abce53d8e05be9113bf50fa552bccdb4cf3f0a9a3f218825c042dc058b6ef",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/unity_extract.py",
+        "sha256": "efa165c84799ceccba7e88f1e48159b3159740344a3f55f4344d7d652ea89560",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/art3d/verify-roundtrip.py",
+        "sha256": "d803169ab7275b6e35e117ba5a3996a1b05a40851d6a715b8680e92f3bd5fc5b",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      },
+      {
+        "path": "tools/creator-preview/probe-offline-lod.mjs",
+        "sha256": "77db30ee6a8d38ecfaf23ef2bd31e381f1a0ddcd16363c21cf8e21457199142c",
+        "lastChange": "2a42e3f879684ebafba0cf3876c5a4fc39030c2e"
+      }
+    ],
+    "sourceSnapshotCount": 143,
+    "runtimeAndAssetsUnchanged": true,
+    "dataVersions": {
+      "quality": 1,
+      "pool": 1,
+      "detailLayers": 1,
+      "conversionSchema": 1
+    },
+    "toolLocks": [
+      {
+        "path": "tools/art3d/requirements.txt",
+        "sha256": "ea4232f369c4cfb695115518be5809b6a13cf5271c3a2f01537116aecb36569b"
+      },
+      {
+        "path": "tools/art3d/meshoptimizer.lock.json",
+        "sha256": "06cfc64ca91cd329b923b44126217c37258c88af141a6467f212424105e21008"
+      }
+    ],
+    "compatibility": "Subsequent changes require a framework change with compatibility or explicit migration and relevant regression evidence; no new package-visible retainer/engine-private API."
+  },
+  "inheritedMutations": {
+    "newRun": false,
+    "basis": "B2 changes documentation only; original mutation failure logs and tested tool/runtime source versions verified.",
+    "offlineLod": [
+      {
+        "mutation": "missing-lod",
+        "test": "test_missing_lod_fails",
+        "exitCode": 1,
+        "killed": true,
+        "log": {
+          "path": ".cache/sc5-b1/mutations/missing-lod.log",
+          "sha256": "b7d7c146e73468aaae1c74a4ccfe67b853802aff3f5f5cd69507444ff9616120"
+        }
+      },
+      {
+        "mutation": "no-reduction",
+        "test": "test_no_triangle_reduction_fails",
+        "exitCode": 1,
+        "killed": true,
+        "log": {
+          "path": ".cache/sc5-b1/mutations/no-reduction.log",
+          "sha256": "c71d83dbdb9edd7e5fbe8e0577a986713fa31bd27dd53cfdc83bdb5768fbf4d9"
+        }
+      },
+      {
+        "mutation": "material-slot",
+        "test": "test_wrong_material_slot_fails",
+        "exitCode": 1,
+        "killed": true,
+        "log": {
+          "path": ".cache/sc5-b1/mutations/material-slot.log",
+          "sha256": "2901dfe0ef083a046a52bbf3ec07d39eedb9326ee7cde17f57db648af4583503"
+        }
+      },
+      {
+        "mutation": "lost-animation",
+        "test": "test_lost_animation_fails",
+        "exitCode": 1,
+        "killed": true,
+        "log": {
+          "path": ".cache/sc5-b1/mutations/lost-animation.log",
+          "sha256": "2b3ab289abb3e6f0766af850139acf7acc784e616a8a45e1c0d468c657c19cb4"
+        }
+      }
+    ],
+    "sc4": {
+      "detected": 8,
+      "batches": {
+        "B1": 3,
+        "B2": 1,
+        "B3": 4
+      },
+      "basis": "Original failure logs were hash-verified; no production behavior changed in B4, so mutations were not repeated."
+    }
+  },
+  "performanceScope": {
+    "status": "passed-under-explicit-fixture-configuration",
+    "basis": "3d.md section 6.2 requires actual desktop WebGL2 100-unit + 50-effect 60fps evidence and does not prescribe a requested engine frame-rate ceiling. 3D-ASSETS.md section 15.2 already defines approximately 60fps as measured throughput (raw interval total), explicitly not a per-frame 16.67ms deadline; subsequent stages inherit that definition. The 120 ceiling is an explicit benchmark configuration, while acceptance uses only unmodified wall-clock output: 59.97fps in the standard window and 60.00fps across 3600 consecutive frames. No requirement, load or frozen budget is reduced.",
+    "scope": "Measured desktop fixture capacity; not a default-configuration 60fps guarantee. The default 60-ceiling pacing issue remains a documented limitation for consumer verification.",
+    "default60Fixed": false,
+    "productionConfigurationChanged": false
+  },
+  "limitations": [
+    "Default frame-rate ceiling 60 still shows engine scheduling skips; the approximately-60Hz SC4 capacity evidence uses explicit ceiling 120 and does not change production settings.",
+    "Automatic skinned LOD requires identical joints/weights inside each material primitive; four-bone/four-weight fixtures do not qualify arbitrary characters or 30/80-bone capacity. Unsupported sources require reviewed manual variants.",
+    "SC5-B1 input is an original typed-tree SerializedFile, not an arbitrary Unity Editor AssetBundle compatibility claim.",
+    "Real WebGL1 contexts were desktop captures, with named capability fault injections for low fallback; no mobile capacity, complete platform build or channel delivery claim.",
+    "Original baked lightmap has a precise fixed-camera sampler exception; continuous zoom/mip/padding requires content-specific verification.",
+    "Old raw pending/failure/stageExit fields retain capture-time meaning; later acceptance is separate and does not rewrite originals.",
+    "Large raw captures and caches are local-only with hashes and recorded archive roots, not bundled with the frozen source."
+  ],
+  "consumerState": {
+    "lvr": "A0-A5 remain unimplemented; framework prerequisites available, content and WebGL1 acceptance still required.",
+    "mmo": "Frozen 2D baseline unchanged; optional 3D integration not selected.",
+    "slg": "Existing SC2 mathematics and SC3 asset/global migrations retained; no new SLG content in this batch."
+  },
+  "validation": {
+    "verifyAll": {
+      "status": "passed",
+      "command": "npm run verify:all",
+      "exitCode": 0,
+      "finishedAt": "2026-09-24T04:47:20.713112+00:00",
+      "base": "5c135e62cf99ed2280dfe3dc56a6c73ff6cafeb8",
+      "log": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/verify-all.log",
+        "sha256": "f5d0845b892a5733c013d6bd646839b50a50459927660886073dae71cd58177f"
+      },
+      "completion": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/verify-all.exit.json",
+        "sha256": "97b0c3a3c4b7eabf52c315e07f7e41791ba14a7a641229950bf2293805936244"
+      },
+      "suiteTestCounts": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1348,
+        82,
+        1396
+      ],
+      "total": 3042
+    },
+    "inventory": {
+      "status": "passed",
+      "command": "npm run verify:inventory",
+      "exitCode": 0,
+      "finishedAt": "2026-09-24T04:40:07.822707+00:00",
+      "base": "5c135e62cf99ed2280dfe3dc56a6c73ff6cafeb8",
+      "log": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/inventory.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      },
+      "completion": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/inventory.exit.json",
+        "sha256": "8e601e866d8f1da91dd78842b6dde8fbee75128291255b6629dae63cf1ac2fe7"
+      }
+    },
+    "setup": [
+      {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/npm-ci.log",
+        "sha256": "78df52d54f54eb335c79c74bf8382b10fb0dfdf42112f17e30921670548ad2a9"
+      },
+      {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/build-uniflex.log",
+        "sha256": "03bbb12d1c97287146a7ba494ccb238ae8cd46481bf72d2b6b329dc0debf8fcd"
+      },
+      {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/sync-client.log",
+        "sha256": "0f191271a3c1cddad1d061e233b2ab595543c7953ab64387fde7248d27f07904"
+      }
+    ],
+    "node": "v26.5.0",
+    "postDocumentation": {
+      "status": "passed",
+      "record": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/post-documentation.json",
+        "sha256": "f39523d8fd14f82af9d0c6496290e6e7f7e3bd73aba495eb7ff6b357edd66f72"
+      },
+      "inventoryLog": {
+        "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/inventory-final.log",
+        "sha256": "e2fe0b31e3506a115cc45f5892a619702c3d9de3869b18464d6494082d367644"
+      },
+      "scope": "Only test totals and completion metadata filled after verify:all; local links, guide parity, inventory and diff rechecked."
+    }
+  },
+  "synchronization": {
+    "initial": {
+      "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/git-pull-initial.json",
+      "sha256": "522e5255c21e970de003f0900af4e1a2cafc8aa68e7eae4474ec32610db510e5"
+    },
+    "method": "Repository-local SSH identity; git pull --rebase. Owned documents moved to isolated worktree when concurrent map edits appeared.",
+    "final": {
+      "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/git-pull-final.json",
+      "sha256": "9c5f0c119321e7071dced682fa876a2f3600eb8fb834a752eb1102dddaae2768"
+    }
+  },
+  "priorFullVerification": {
+    "base": "66d503adcf59cb223d2021e4678a6d90a55b84be",
+    "exitCode": 0,
+    "total": 3042,
+    "log": {
+      "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/verify-all-before-upstream.log",
+      "sha256": "4ea9e8f9b0c5675acbb36bf5c8a4876407a688daabbac042ecd5469d97a25da6"
+    },
+    "completion": {
+      "path": "/Volumes/KimData/unlockTheWorld/kitVersion/.cache/sc5-b2/verify-all-before-upstream.exit.json",
+      "sha256": "06cb2b8f8b230fcb63a77d93f865233bde5f2392655e3574297aa2ac9ebab72b"
+    },
+    "reasonForRerun": "Final pull brought upstream UniFlex Countdown commit 5c135e62; rebuild ignored outputs and verify combined candidate."
+  },
+  "documentationFiles": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "docs/3D-ASSETS.md",
+    "docs/3D-PLAN.md",
+    "docs/3d.md",
+    "docs/CLIENT.md",
+    "docs/KIT.md",
+    "docs/Non-intrusive.md",
+    "docs/inventory.json",
+    "docs/perf/stage3d/2026-09-24-sc5-review.json",
+    "lvr-3d.md",
+    "tools/art3d/README.md",
+    "tools/art3d/assets3d.md",
+    "tools/art3d/quality.md",
+    "tools/creator-preview/README.md"
+  ]
+}

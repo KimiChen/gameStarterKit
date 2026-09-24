@@ -9,7 +9,9 @@ node scripts/verify-assets3d.mjs --root /path/to/repository --json
 ```
 
 规范仍以 [3D-ASSETS.md](../../docs/3D-ASSETS.md) 为准。检查器不创建 `.meta`、修改设置、
-导入资源或读取 Library；Creator 目检、资源释放、帧时与微信缓存证据继续由相应施工批次验收。
+导入资源或读取 Library；Creator 目检、资源释放与帧时由真实预览验收。
+SC0–SC5 的证据与实际覆盖范围见 [冻结索引](../../docs/3d.md#101-v1-冻结面与证据索引)，
+工具 PASS 不替代消费方内容的预览与性能验收。
 
 ## 扫描与配置
 
@@ -83,9 +85,11 @@ bufferView / accessor 边界、三角 / 顶点、UV2、骨架以及对应导入�
 关闭 CPU 访问，蒙皮必须保留。FBX 只在精确文件例外下接受，并检查 FBX 特有导入设置。
 
 保留 CPU 数据的模型登记 `cpuDataBudgetBytes`，以源 BIN 数据量检查其分配；混合静态 / 蒙皮和
-工具用途的静态模型还需 `cpuReason`。当前两份灰盒各登记 32 KiB 的源数据分配，源 BIN 各 16,244 B，
+工具用途的静态模型还需 `cpuReason`。SC0 两份蒙皮灰盒各登记 32 KiB 的源数据分配，源 BIN 各 16,244 B，
 已导入 mesh native buffer 各 15,936 B。源 BIN 包括动画等数据，不等同于 mesh 的 native 数据；
-两者都不代表实测总 CPU 内存，报告字段 `retainedSourceBinBytes` 仅记录前者，未替代 SC3 资源验收。
+两者都不代表实测总 CPU 内存，报告字段 `retainedSourceBinBytes` 仅记录前者，不能替代资源验收。
+SC5 的 `SK_OfflineColumn` 主模型与两档 LOD 分别登记 CPU 分配，不能沿用 SC0 的数字；
+静态 `SM_OfflineColumn` 三档关闭 CPU 访问。当前逐文件数据以框架配置与检查报告为准。
 
 ## 精确例外与引用边界
 

@@ -39,6 +39,7 @@ PLUGIN.md §1 的核心判据「插件只能消费不能定义」不变；kit �
 | 给插件用的 API | `apps/{shared,server,client}/src/kits/<id>/api/<surface>/index.ts` | §4 |
 | FGUI 包、资源、配表 | `apps/art/fairygui/assets/<Pkg>/`、`resources/kits/<id>/`、配表 `<id>_*` | 与插件同一形态：插件是 `resources/plugins/<id>/`（2026-09-06 起；此前是与宿主目录平级的 `resources/<modeId>/`，见 PLUGIN.md §5.5.3）。⚠ kit 的 mode 资源也归 `resources/kits/<kitId>/`，⛔ 不另给 `resources/<modeId>/` |
 | 3D 重资产（SC1-B7） | `apps/Cocos/assets/bundles/kit-<id>[-<map>]/3d/**` 与各级 `.meta` | 精确包名或合法地图后缀，不能用裸前缀认领；`resources/kits/<id>/3d/data/` 留小数据。根 `isBundle:true`、`bundleName` 缺省或等于目录名、`bundleConfigID:"package3d"`；小游戏远程 / Web、native 本地由宿主 builder.json 决定 |
+| 3D 作者输入与配置（SC5） | `apps/kits/<id>/art/3d/` | 自有 / 已授权源素材、转换作业、`art3d.config.json` 与 `LICENSES.md`；主 GLB、各 LOD、独立 PNG 的来源逐份登记。工作缓存和工具依赖不装入运行时，转换与导入步骤见 [CLIENT §6](CLIENT.md#6-设计分辨率与资源导出) |
 
 bundle 随 pack / install / 锁 / check / changed / uninstall 全链归属；子资产 UUID 与 Prefab、材质、
 动画图等序列化依赖必须在同包闭合（允许同包多 bundle）。对方 kit / plugin 内部资产不因 API 依赖而开放。
@@ -65,7 +66,9 @@ Creator 3.8.8 的精确内置例外由框架单列，详见 [PLUGIN.md §5.2](PL
 
 kit 保有模型、贴图、材质 / EffectAsset、内容表和授权台账，消费框架舞台、画质与输入端口。
 不得自建资源计数、改框架类型桩，或在包内 `declare module "cc"`。SC1 已交付的同步 retainer 仅供框架内部，
-完整异步 AssetLease / 资源型全局 patch 留 SC3；既有 slg 两处全局写入也在 SC3-B4 迁移，不构成新代码例外。
+SC3 已交付完整异步 AssetLease / 资源型全局 patch，既有 slg 两处全局写入已迁移。
+SC4 的 SkinnedUnits / Vfx 与 SC5 离线转换工具同属框架，kit 只提供内容、布局与配置。
+冻结消费面和已验证范围见 [3d.md §10.1](3d.md#101-v1-冻结面与证据索引)；框架冻结不代表 kit 的内容接入已验收。
 当前消费步骤见 [CLIENT.md §3](CLIENT.md#3-view-与-logic-分层)；包仍须通过 B7 的引用闭合检查和
 `verify:assets3d` 的格式、导入、预算与逐资产授权检查，配置见 [资产闸说明](../tools/art3d/assets3d.md)。
 

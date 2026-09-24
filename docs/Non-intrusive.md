@@ -2183,6 +2183,26 @@ gameplay generation」双守卫并写清两者失效的先后；`dispatchInput` 
    module 的阶段 9），⛔ 不另起第二套 `EVENT_HIDE` / `EVENT_SHOW` 监听。
 
 
+### 7.9 3D 消费接缝（SC0–SC5 v1）
+
+框架 3D 接缝以 [3d.md §10.1](3d.md#101-v1-冻结面与证据索引) 的 `stage3d-v1-frozen` 为基线。
+kit / plugin 页面从 `PluginInstallContext.ports.stage3d` 取舞台，gameplay 从
+`GameplayServicesContext.stage3d` 取同一实例；owner 使用当前世代的 `signal / isActive()`。
+相机、层位、场景 globals 与资源引用由框架管理，普通内容不新建 Camera、直写 globals 或裸调 addRef / decRef。
+
+| 消费方新增 | 框架提供的入口 |
+| --- | --- |
+| 世界 View / presentation、相机手感与阈值 | Stage3D 租约、CameraRig、shared LOD 滞回、ChunkStreamer、拾取数学 |
+| FGUI HUD 与世界操作 | HUD 声明 `inputMode:"overlay"`，世界声明 passive；页面 `subscribeRawInput` 或 presentation `rawInput` 接收已归属的 pointer / wheel / cancel，不绕过框架监听全局输入 |
+| 模型、动画、特效与内容表 | AssetLease、AssetPlan、EntityPool、SkinnedUnits、Vfx；质量选择 / 激活预算 / 退休回收由框架执行 |
+| 作者输入、材质映射、LOD 和授权 | `tools/art3d` 离线链、Creator 导入、`verify:assets3d`；重资产走本包 bundle，小数据留 resources，UUID / 图片 URI 在本包闭合 |
+
+关闭时先停输入与业务动作，撤下实体并完成渲染退休，再归还资产与最后一份舞台租约。
+成功 AssetLease 不因 signal 自动提前释放；页面负责归还其持有，池负责自身内部持有。
+详见 [CLIENT §3 / §6](CLIENT.md#3-view-与-logic-分层) 与 [KIT §2](KIT.md#2-kit-能定义什么不能定义什么划线)。
+通用机械件与工具属于框架维护范围；本说明不扩充 `protected-paths.json` 的字节保护集合。
+改变上述生命周期、能力降级、全局字段或资产预算须作为框架变更补齐契约与验收，不能在包内复制实现。
+
 ## 8. 一次性侵入范围
 
 下面是实施本方案时预期需要修改的既有文件。它们是为了消除今后的重复侵入，而不是每个 plugin 都要修改。

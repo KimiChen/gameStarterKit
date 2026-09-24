@@ -376,4 +376,15 @@ node tools/creator-preview/probe-offline-lod.mjs --webgl 1 --out .cache/sc5-b1/w
 WebGL1 通过启动前拒绝 WebGL2 context 实现，并验证实际设备；不屏蔽纹理能力。
 报告保留原始诊断、各档截图、实际 UUID、源 / meta 哈希及回收快照；截图人工复核写入批次摘要，
 不覆写报告的 pending 字段。该工具不进 `verify:all`，也不宣布性能容量或 SC5 阶段退出。
+
+## SC5-B2 冻结复核
+
+`stage3d-v1-frozen` 的框架消费面与阶段证据统一登记在 [3d.md §10.1](../../docs/3d.md#101-v1-冻结面与证据索引)。
+B2 复核 SC0–SC4 退出摘要及 SC5-B1 的文件哈希、源码沿革、烘焙预制和三档 LOD 原始报告；
+本批只更新文档，不重新录制引擎场景，也不改写旧报告的 pending / 失败 / 阶段未退出字段。
+这些字段保留拍摄时点含义，后续人工目检和阶段结论由对应汇总承接。
+
+复用证据不等于对新内容免验。新模型、材质、动画或配置仍按上方命令运行相应场景，
+并保留实际 WebGL 上下文、画质、原始帧时、预热后的回收基线和截图。
+默认 60 帧上限的跳帧、离线蒙皮 LOD 的权重限制与桌面证据范围见 [SC5 汇总](../../docs/perf/stage3d/2026-09-24-sc5-review.json)。
 支持范围、复跑命令与限制见 [art3d README](../art3d/README.md#sc5-转换链)。

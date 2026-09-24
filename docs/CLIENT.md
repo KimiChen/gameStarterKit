@@ -287,7 +287,7 @@ reconcile；新增玩法只新增 `modes/<id>/` 模块文件与自己的 logic/r
 
 业务判定、排序、时间规则、错误分支和网络编排不进入 View。
 
-### 3D 舞台、资源与画质（SC1 / SC3）
+### 3D 舞台、资源与画质（v1 冻结）
 
 3D 页面仍用 `kind:"cocos"`，其 UI 根只承载页面；3D 内容挂在框架舞台的 `lease.root` 下。
 kit / 插件从 `PluginInstallContext.ports.stage3d` 注入端口，在本次打开的 setup / `onOpen` 中调用
@@ -338,14 +338,15 @@ SLG 的八件套包装逐件取得租约、收齐结果后统一校验，保留�
 微信、WebGL1 / GLES2、未知平台或 GPU 默认 low；消费 `details`、`shadows`、`maxUnits`、`maxEffects`、
 纹理及蒙皮能力字段，不自行重新判档。开发预览可用 `?quality=low|medium|high&shadows=0`；生产忽略覆写，
 开发覆写也不能开启硬件缺失的能力。SC1 已交付判档、数据表校验和压缩预设，SC3 已交付 `AssetPlan` / `EntityPool`
-的细节层加载门控与逐帧激活预算；蒙皮容量与退化验收归 SC4。数据表和保守回退政策见 [画质说明](../tools/art3d/quality.md)。
+的细节层加载门控与逐帧激活预算；SC4 已完成蒙皮 / 特效容量与桌面 WebGL1 low 退化验收。
+数据表和保守回退政策见 [画质说明](../tools/art3d/quality.md)，实际负载与默认限帧限制见 §8.2。
 
 正式先例为 `Stage3dFixtureView` 与独立 `stage3d-dev.scene`（后者不进构建）；资产路径使用
 `{ bundle, path }`，GLB 取已登记的 Prefab 子路径，不能按 GLB 根路径加载 Prefab。
 包的 3D 重资产归 `bundles/<kit|plugin>-<id>[-<map>]/3d/`，小数据归
 `resources/{kits,plugins}/<id>/3d/data/`。`verify:assets3d` 已进 `verify:core / verify:all`，守格式、
 导入、压缩、预算、授权和 UUID 依赖闭合；配置见 [资产闸说明](../tools/art3d/assets3d.md)，
-设计边界与阶段证据见 [3d.md](3d.md) 及 [SC1 汇总](perf/stage3d/2026-09-23-sc1-review.json)。
+设计边界与冻结 API 见 [3d.md §10.1](3d.md#101-v1-冻结面与证据索引)，资源作者动线见 §6。
 
 #### 纯色矩形一律走 `view/uiPlate.ts`，⛔ 不要用 `Graphics`
 
@@ -510,7 +511,7 @@ re-export façade）。跨包组件依赖通过 sidecar 的 `sharedPkgs` 声明�
 现有测试会核对代码常量、Main 策略和 FairyGUI 设置，但尚未读取 Cocos `project.json`；四处当前一致，
 仍可能在以后发生未被测试发现的漂移，收口项登记在 [EXTRAS.md §5.2](EXTRAS.md#52-未实现的开放项登记2026-09-06-自-plan-系列归并) G3。
 
-资源动线：
+FairyGUI 资源动线：
 
 ```text
 apps/art/fairygui 中修改设计源
@@ -519,6 +520,35 @@ apps/art/fairygui 中修改设计源
   → 打开 Cocos 生成或复用 .meta
   → 运行 codegen 和本地契约测试
 ```
+
+3D 资源动线（SC5）：
+
+```text
+apps/{kits,plugins}/<id>/art/3d/：作者输入、转换作业、art3d.config.json、LICENSES.md
+  → tools/art3d：extract → material-map → to-gltf → textures → lod → verify-roundtrip
+  → 主 GLB + lod_1.glb / lod_2.glb + 同目录独立 PNG
+  → apps/Cocos/assets/bundles/<kit|plugin>-<id>[-<map>]/3d/ 内导入，Creator 生成 / 复用 .meta
+  → 登记模型、图片、预算、逐资产来源与授权，检查同包 UUID / 子资产 / URI 依赖闭合
+  → verify:assets3d / verify:all + Creator WebGL2 / 实际 WebGL1 预览与生命周期验收
+```
+
+转换作业按 [conversion.schema.json](../tools/art3d/conversion.schema.json) 书写，路径相对作业 JSON；
+`art3d.config.json` 是[入库检查配置](../tools/art3d/assets3d.md)，其中路径相对仓库根，两者不能混用。
+源文件只读，临时抽取物、报告、venv 与 meshoptimizer 留忽略目录；Python / WASM 不进客户端。
+手工 DCC 导出同样提交主模型、两档变体与独立图片，并完成变体 / 动画审核和资产闸，不能把未支持输入的失败改成通过。
+自动蒙皮 LOD 当前只支持每个材质 primitive 内一致的 joints / weights；不同顶点权重须走审核的手工变体。
+完整命令与支持边界见 [tools/art3d](../tools/art3d/README.md)。
+
+包的小数据只放 `resources/{kits,plugins}/<id>/3d/data/`；框架自制灰盒继续用 `resources/stage3d/`。
+图片外提、各档 LOD、动画与 lightmap 均独立登记来源；所有 `.meta` 由 Creator 导入后按规范配置，
+包括法线 / 切线 / UV2、CPU 数据保留理由和纹理压缩预设。运行时地址为 `{ bundle, path }`，
+GLB 必须从真实 `.meta` 取得 `gltf-scene` 的 Prefab 子路径。把这些地址填入 pool / detail-layers /
+`prefabLods`，纹理按 quality × LOD 显式给齐；切档不推导文件名，也不临时简化网格。
+
+静态烘焙按 [SC0-B5 作者流程](../tools/art3d/editor-probe/README.md) 执行 LightFX → apply → 独立 Prefab；
+在主场景中重新加载 Prefab，核对 lightmap、材质与引用释放，不读取烘焙工位场景的节点或全局数组。
+真实预览同时检查三档显示、图片 / 材质、动画 / 挂点及开关回收；默认 60 帧配置的已知跳帧与
+离线转换的支持范围都保留在 [冻结记录](perf/stage3d/2026-09-24-sc5-review.json)。
 
 “导出”在本文中只指把设计源转换为本地开发资源。
 

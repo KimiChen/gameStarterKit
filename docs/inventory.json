@@ -466,7 +466,12 @@
       ],
       "docs": [
         "docs/3D-ASSETS.md",
-        "tools/art3d/assets3d.md"
+        "docs/3d.md",
+        "docs/CLIENT.md",
+        "tools/art3d/assets3d.md",
+        "tools/art3d/README.md",
+        "tools/art3d/quality.md",
+        "tools/creator-preview/README.md"
       ]
     }
   ],
