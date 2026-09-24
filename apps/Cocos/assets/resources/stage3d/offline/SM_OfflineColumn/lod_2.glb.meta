@@ -1,0 +1,153 @@
+{
+  "ver": "2.3.14",
+  "importer": "gltf",
+  "imported": true,
+  "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb",
+  "files": [],
+  "subMetas": {
+    "11cb2": {
+      "importer": "gltf-mesh",
+      "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@11cb2",
+      "displayName": "",
+      "id": "11cb2",
+      "name": "MESH_OfflineColumn.mesh",
+      "userData": {
+        "gltfIndex": 0,
+        "triangleCount": 118
+      },
+      "ver": "1.1.1",
+      "imported": true,
+      "files": [
+        ".bin",
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "e39f7": {
+      "importer": "texture",
+      "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@e39f7",
+      "displayName": "",
+      "id": "e39f7",
+      "name": "UnnamedTexture.texture",
+      "userData": {
+        "wrapModeS": "repeat",
+        "wrapModeT": "repeat",
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "linear",
+        "anisotropy": 0,
+        "isUuid": false,
+        "imageUuidOrDatabaseUri": "db://assets/resources/stage3d/offline/SM_OfflineColumn/T_SM_OfflineColumn_0_BC.png"
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "2919b": {
+      "importer": "gltf-material",
+      "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@2919b",
+      "displayName": "",
+      "id": "2919b",
+      "name": "M_Offline_A.material",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "546ef": {
+      "importer": "gltf-material",
+      "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@546ef",
+      "displayName": "",
+      "id": "546ef",
+      "name": "M_Offline_B.material",
+      "userData": {
+        "gltfIndex": 1
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "53b6b": {
+      "importer": "gltf-scene",
+      "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@53b6b",
+      "displayName": "",
+      "id": "53b6b",
+      "name": "lod_2.prefab",
+      "userData": {
+        "gltfIndex": 0
+      },
+      "ver": "1.0.14",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "imageMetas": [
+      {
+        "name": "OfflineChecker",
+        "uri": "db://assets/resources/stage3d/offline/SM_OfflineColumn/T_SM_OfflineColumn_0_BC.png"
+      }
+    ],
+    "animationImportSettings": [],
+    "lods": {
+      "enable": false,
+      "hasBuiltinLOD": false,
+      "options": [
+        {
+          "screenRatio": 0.25,
+          "faceCount": 1
+        },
+        {
+          "screenRatio": 0.125,
+          "faceCount": 0.25
+        },
+        {
+          "screenRatio": 0.01,
+          "faceCount": 0.1
+        }
+      ]
+    },
+    "assetFinder": {
+      "meshes": [
+        "828d4861-3bb7-4096-a3a5-9c20f65b12cb@11cb2"
+      ],
+      "skeletons": [],
+      "textures": [
+        "828d4861-3bb7-4096-a3a5-9c20f65b12cb@e39f7"
+      ],
+      "materials": [
+        "828d4861-3bb7-4096-a3a5-9c20f65b12cb@2919b",
+        "828d4861-3bb7-4096-a3a5-9c20f65b12cb@546ef"
+      ],
+      "scenes": [
+        "828d4861-3bb7-4096-a3a5-9c20f65b12cb@53b6b"
+      ]
+    },
+    "allowMeshDataAccess": false,
+    "normals": 2,
+    "tangents": 2,
+    "generateLightmapUVNode": false,
+    "mountAllAnimationsOnPrefab": true,
+    "meshOptimize": {
+      "enable": false
+    },
+    "meshSimplify": {
+      "enable": false
+    },
+    "addVertexColor": false
+  }
+}

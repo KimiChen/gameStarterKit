@@ -112,7 +112,11 @@ function addSkinned(f) {
 test('real repository assets satisfy migrated SC0 exceptions and actual source budgets', () => {
   const result = verifyAssets3d(REPO);
   assert.equal(result.creatorVersion, '3.8.8'); assert.equal(result.exceptions.length, 6);
-  assert.equal(result.owners.find(owner => owner.owner === 'framework').models.filter(model => model.skinned).length, 2);
+  const skinned = result.owners.find(owner => owner.owner === 'framework').models.filter(model => model.skinned);
+  assert.deepEqual(skinned.map(model => model.path).sort(), [
+    `${FRAME}/greybox-biped.glb`, `${FRAME}/greybox-biped-atlas-b.glb`,
+    ...['SK_OfflineColumn', 'lod_1', 'lod_2'].map(stem => `${FRAME}/offline/SK_OfflineColumn/${stem}.glb`),
+  ].sort());
 });
 for (const cls of ['kit', 'plugin']) test(`${cls}: multi-bundle GLB/material/PNG, HDR nested faces and animation closure pass`, () => withFixture(f => {
   const result = verifyAssets3d(f.root);

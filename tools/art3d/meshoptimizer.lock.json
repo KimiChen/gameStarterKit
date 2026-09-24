@@ -1,0 +1,13 @@
+{
+  "version": "0.25.0",
+  "url": "https://registry.npmjs.org/meshoptimizer/-/meshoptimizer-0.25.0.tgz",
+  "integrity": "sha512-ewwuAo3ujPZ7T3Y2oTkEoLlXvNOqnr0cjyAxfv5djXJqwD9QlxDDO0qGtsqB4Z9QUVvhruKXg9q/xfK9I5S1xQ==",
+  "upstream": "https://github.com/zeux/meshoptimizer/tree/v0.25",
+  "license": "MIT",
+  "scope": "Offline authoring only; never copied into client assets or package.json.",
+  "files": {
+    "meshopt_simplifier.module.js": "c1d23d1a1ead1251def1f98fa427b6e61d9e6f53ff32e69aaf7159d502cd77ca",
+    "package.json": "ef19c7e7e0833a9adbdab0a276aec9d6946f7fcd2021c49bb091dd55926b723b",
+    "LICENSE.md": "e4a26033e3551fb2722888949fbb41e77aee628e8e8f04dcffeee301aa7e5634"
+  }
+}

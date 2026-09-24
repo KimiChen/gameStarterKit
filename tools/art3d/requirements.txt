@@ -1,12 +1,29 @@
-# SC0 greybox authoring only. Tested with CPython 3.14.6 on macOS arm64.
-# Keep this environment outside the repository; no client/runtime dependencies.
+# Offline SC0/SC5 authoring only; CPython 3.14.6 / macOS arm64.
+# Direct and transitive versions pinned; install into an ignored or external venv.
+archspec==0.2.6
+astc_encoder_py==0.1.12
+attrs==26.1.0
+brotli==1.2.0
 dataclasses-json==0.6.7
 Deprecated==1.3.1
+etcpak==0.9.15
+fmod_toolkit==0.1.3
+fsspec==2026.9.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+lz4==4.4.5
 marshmallow==3.26.2
 mypy_extensions==1.1.0
 numpy==2.5.3
 packaging==26.3
+pillow==12.3.0
+pyfmodex==0.7.2
 pygltflib==1.16.5
+referencing==0.37.0
+rpds-py==2026.6.3
+texture2ddecoder==1.0.6
+tpk_ar==0.2.4
 typing-inspect==0.9.0
 typing_extensions==4.16.0
+UnityPy==1.25.3
 wrapt==2.4.1

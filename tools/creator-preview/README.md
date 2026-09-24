@@ -358,3 +358,22 @@ no-instancing 屏蔽 ANGLE_instanced_arrays，realtime 将 MAX_VERTEX_TEXTURE_IM
 锁定引擎在实时蒙皮的 `setSharedMaterial` 内会自行创建 MaterialInstance，`MeshRenderer.onDestroy`
 不释放其 Pass buffer。框架通过只读 `getRenderMaterial` 捕获当前 renderer 独占、parent 属于本池的实例，
 在节点退休及队列清空后的 AFTER_DRAW 先销毁实例，再归还共享材质 / 资产，避免重复打开逐轮增长。
+
+## SC5-B1 离线 LOD 往返
+
+`probe-offline-lod.mjs` 只使用 `tools/art3d` 自制转换样例；先完成六份 GLB / 两张 PNG 的 Creator 导入。
+它在已有 Chrome 9222 新开自己的标签，读取实际 Prefab 子路径，以正式 EntityPool / SkinnedUnits
+切三档，校验网格、材质、图片、四骨两动画和 20 次回收；完成后关闭标签。
+运行时材质因子须与当前 GLB 一致，避免 Creator 旧缓存假绿；切档后等待 30 个渲染帧并核对
+实际提交，再截图人工检查三列模型均可见。
+
+```bash
+node tools/creator-preview/probe-offline-lod.mjs --webgl 2 --out .cache/sc5-b1/webgl2
+node tools/creator-preview/probe-offline-lod.mjs --webgl 1 --out .cache/sc5-b1/webgl1
+```
+
+参数 `--preview` / `--devtools` 仅接受 loopback；预览 PID 必须对应当前仓库的 Cocos 工程。
+WebGL1 通过启动前拒绝 WebGL2 context 实现，并验证实际设备；不屏蔽纹理能力。
+报告保留原始诊断、各档截图、实际 UUID、源 / meta 哈希及回收快照；截图人工复核写入批次摘要，
+不覆写报告的 pending 字段。该工具不进 `verify:all`，也不宣布性能容量或 SC5 阶段退出。
+支持范围、复跑命令与限制见 [art3d README](../art3d/README.md#sc5-转换链)。

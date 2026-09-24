@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "path": "../../../.cache/art3d/fixtures/offline.assets",
+    "rootGameObject": 100,
+    "animationClips": [
+      300,
+      301
+    ]
+  },
+  "workDir": "../../../.cache/art3d/skinned",
+  "outputDir": "../../../apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn",
+  "model": "SK_OfflineColumn",
+  "textureMaxSize": 512,
+  "materials": {
+    "M_Offline_A": {
+      "shader": "Standard",
+      "target": "pbr-metallic-roughness"
+    },
+    "M_Offline_B": {
+      "shader": "Standard",
+      "target": "pbr-metallic-roughness"
+    }
+  },
+  "lod": {
+    "ratios": [
+      0.25,
+      0.1
+    ],
+    "maxError": 0.01,
+    "boundsTolerance": 0.02,
+    "ratioTolerance": 0.1
+  }
+}

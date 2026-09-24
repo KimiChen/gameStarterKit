@@ -28,6 +28,16 @@
         "usage": "lightmap",
         "sampling": "atlas",
         "colorSpace": "linear"
+      },
+      "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/T_SK_OfflineColumn_0_BC.png": {
+        "usage": "surface",
+        "sampling": "tiling",
+        "colorSpace": "srgb"
+      },
+      "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/T_SM_OfflineColumn_0_BC.png": {
+        "usage": "surface",
+        "sampling": "tiling",
+        "colorSpace": "srgb"
       }
     },
     "models": {
@@ -46,6 +56,30 @@
         "category": "world",
         "cpuDataBudgetBytes": 32768,
         "cpuReason": "Creator 3.8.8 first baked pose reads JOINTS/WEIGHTS/POSITION. Source BIN bound only; imported mesh native buffer is 15936 bytes; total CPU memory is not measured."
+      },
+      "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_1.glb": {
+        "category": "world",
+        "cpuDataBudgetBytes": 160000,
+        "cpuReason": "SC5 four-bone fixture: Creator baked skinning reads retained geometry. Source BIN upper allocation only, not measured total CPU memory."
+      },
+      "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/SK_OfflineColumn.glb": {
+        "category": "world",
+        "cpuDataBudgetBytes": 160000,
+        "cpuReason": "SC5 four-bone fixture: Creator baked skinning reads retained geometry. Source BIN upper allocation only, not measured total CPU memory."
+      },
+      "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_2.glb": {
+        "category": "world",
+        "cpuDataBudgetBytes": 160000,
+        "cpuReason": "SC5 four-bone fixture: Creator baked skinning reads retained geometry. Source BIN upper allocation only, not measured total CPU memory."
+      },
+      "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_1.glb": {
+        "category": "world"
+      },
+      "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/SM_OfflineColumn.glb": {
+        "category": "world"
+      },
+      "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_2.glb": {
+        "category": "world"
       }
     },
     "exceptions": [

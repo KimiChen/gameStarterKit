@@ -1,9 +1,104 @@
-# tools/art3d — SC0 合成灰盒
+# tools/art3d — 离线 3D 作者工具
 
-当前交付 `greybox.py` 与隔离 Creator 作者态探针模板 `editor-probe/`；
-SC5 的 Unity 抽取、素材转换与离线 LOD 尚未实现。
-灰盒模型、动画和棋盘 PNG 由代码合成，B5 lightmap 由 Creator LightFX 烘焙，不读取外部素材。生成器不写 `.meta`，不调用 Creator，
-结构检查通过不表示 SC0-B2 的真实导入与 Prefab 加载已经通过。
+SC0 合成灰盒、SC5-B1 Unity 抽取 / GLB / 独立 PNG / 两档 LOD / 往返校验已交付。
+工具只在作者机运行，依赖不进入客户端。规范以 [3D-ASSETS.md](../../docs/3D-ASSETS.md) 为准；
+批次状态与证据见 [3D-PLAN §8](../../docs/3D-PLAN.md#8-批次状态只在本文回写阶段级完成回写-3dmd-10)。
+SC5-B2 文档汇总和 API 冻结仍待完成。
+
+## SC5 转换链
+
+使用 CPython 3.14.6、Node 22+；Python 直接 / 传递依赖逐项固定，meshoptimizer **0.25.0** 的
+官方 npm 制品以 SHA512 锁定，解包后的模块 / package / MIT LICENSE 再以 SHA256 校验。
+获取脚本只写忽略目录 `.cache/art3d/meshoptimizer-0.25.0`，每次简化重新核对锁与文件哈希；
+不执行 npm 安装脚本，不更改根依赖，也不向 Creator 复制 WASM。
+上游：[UnityPy](https://github.com/K0lb3/UnityPy)、[meshoptimizer v0.25](https://github.com/zeux/meshoptimizer/tree/v0.25)。
+
+```bash
+python3 -m venv .cache/art3d/venv
+.cache/art3d/venv/bin/python -m pip install -r tools/art3d/requirements.txt
+.cache/art3d/venv/bin/python tools/art3d/setup-meshoptimizer.py
+.cache/art3d/venv/bin/python tools/art3d/unity-fixture.py --out .cache/art3d/fixtures/offline.assets
+
+# 对 static / skinned 分别运行。每一步非零退出即停止；最后一步重新读取 Unity 真源。
+for model in static skinned; do
+  for step in extract material-map to-gltf textures lod verify-roundtrip; do
+    .cache/art3d/venv/bin/python tools/art3d/$step.py --config tools/art3d/fixtures/$model.conversion.json || exit 1
+  done
+done
+.cache/art3d/venv/bin/python -m unittest discover -s tools/art3d -p 'test_*.py' -v
+npm run verify:assets3d
+```
+
+自制输入是按 Unity 2019.4.40f1 类型树生成的真实 SerializedFile v17，包含 Mesh、Renderer、
+Transform、Texture2D、Material、Shader 和独立 legacy AnimationClip。它由代码原创，
+**不是 Unity Editor 导出的 AssetBundle，也不证明任意 Unity 版本 / 商业游戏资产都可转换**。
+输入二进制与中间 JSON 留 `.cache`；入库的是生成器、自制 GLB / PNG、Creator 元数据和验收摘要。
+所有样例内容继承本仓许可，没有借用 Cyberpunk 或其它游戏素材。
+
+| 工具 | 输入 → 输出 / 检查 |
+| --- | --- |
+| `extract.py` | UnityPy 只读选中 GameObject 层级，解 Mesh / 子网格、局部 TRS、bind pose、明确列出的 clip、PBR 参数和图片；写 `workDir/extracted.json` 与临时 PNG |
+| `material-map.py` | 每个材质必须精确登记 shader 与目标；当前映射 opaque Unity Standard：`_Color` RGB 从 sRGB 转线性 factor（alpha 不变）、metallic、1−smoothness → roughness；BC PNG 保持 sRGB |
+| `to-gltf.py` | 左手米制 → 右手 Y-up：反射 Z、反转三角绕序、UV 的 V 翻转、四元数 / 逆绑定矩阵转换；保留两套 UV / 法线 / 切线、骨骼和无加权 Hermite TRS 曲线（glTF CUBICSPLINE） |
+| `textures.py` | 解 PNG / JPEG / TGA / WebP、GLB bufferView 或 PNG/JPEG data URI；去元数据并转独立 RGBA8 PNG；按 `textureMaxSize` 下采样、保留 POT 与最低 256；重写同目录 URI、移除内嵌图片与废弃 BIN 数据 |
+| `lod.py` | 每个材质 primitive 分别 meshopt `simplifyWithAttributes`，法线与 UV 参与误差；仅重排 / 压紧已有顶点，不移动或重算属性，输出 `lod_1.glb` / `lod_2.glb` |
+| `verify-roundtrip.py` | 重读 Unity 真源并核对中间记录；主模型逐顶点 / 绕序 / TRS / 材质 / 像素 / 绑定 / 关键帧往返，LOD 检查面数、每槽包围盒、双向顶点及三角重心到表面的误差、保留顶点属性、骨架和全部动画数据；最后复读输出文件 |
+
+`conversion.schema.json` 是**转换作业**的 schema，与 [资产闸配置](assets3d.md) 中的
+`art3d.config.json` 分工不同。路径相对作业 JSON；`source.path` 必须在工作与输出目录之外。
+`source.rootGameObject` 是唯一 GameObject path ID，`animationClips` 是明确选择的独立 clip ID；
+同一个 bundle 中 path ID 不能歧义。包作者把 `outputDir` 指向自身 `bundles/<class>-<id>/3d/models/<model>/`，
+图片与三档模型同目录，另在包的资产闸配置 / LICENSES 登记全部产物。工具不触碰输入、不删除未知文件，
+不生成 `.meta`；先让 Creator 导入，再按规范设置保留 CPU 数据、法线 / 切线、UV2 和压缩预设。
+样例配置指向已入库的框架目录；只重建原样例时才使用它们。
+
+颜色转换依据 [UnityGLTF 的 Standard 导出路径](https://github.com/KhronosGroup/UnityGLTF/blob/main/Runtime/Scripts/SceneExporter/ExporterMaterials.cs)
+与 [glTF 2.0 metallic-roughness 规范](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metallic-roughness-material)。
+独立测试固定 `0.5 sRGB → 0.21404114048223255 linear`，直接透传 gamma factor 会令往返校验失败。
+
+### 支持范围与失败条件
+
+当前自动链支持单一自包含 Unity 序列化文件内的静态三角网格，和明确节点绑定的蒙皮网格。
+支持 legacy、非压缩、无加权切线的 TRS 曲线；拒绝 Mecanim、Euler、事件、属性动画、外部 PPtr / stream、
+blendshape、未映射 shader / texture 通道、alpha 模式、脚本 / 约束 / 粒子组件、缺失 UV2 或不合法权重。
+这些失败需要 DCC / 人工作品，工具不会补默认动画或静默丢弃通道。
+
+**自动蒙皮 LOD 只接收每个 primitive 内相同的 joints / weights（可含四个非零权重）**。
+这使该 primitive 的蒙皮矩阵一致；任意随顶点变化的权重会明确要求审核手工变体，
+不以“骨骼数量没变”冒充变形保真。样例是四骨四权重的机械验证，不是完整角色或复杂骨架容量证据。
+对手工作品的美术审核不能由本自动链的 PASS 替代。
+
+两档目标按 primitive 为主档的 1/4、1/10，容差不超过 10%（最少一个三角的整数舍入余量），
+严格递减。包围盒容差按源 primitive 对角线计，配置最多 5%；误差阈值最多 10%。
+浮点简化留下的近零面积三角会被过滤，随后仍执行目标与双向表面误差检查；原始顶点属性不变。
+这是离线结构与采样保真检查，不是连续曲面误差的数学证明。
+源骨架、bind pose、动画轨 / 时间 / 切线逐项比较；缺档、面数不降、错槽位、丢动画均失败。
+
+### Creator 验收
+
+本批静态 / 蒙皮均为 **1200 → 297 → 118** 面、两个材质槽、512² 独立 BC PNG；蒙皮四骨、
+每点四个非零权重、两段各 1 秒动画。六份 GLB 的真实 `gltf-scene` 子 UUID / 子路径从 Creator
+`.meta` 读取，不能把 GLB 父路径作为 Prefab 加载。
+
+```bash
+# 先让当前 Creator 3.8.8 导入 offline/，使用已有 Chrome 9222。
+node tools/creator-preview/probe-offline-lod.mjs --webgl 2 --out .cache/sc5-b1/webgl2
+node tools/creator-preview/probe-offline-lod.mjs --webgl 1 --out .cache/sc5-b1/webgl1
+```
+
+探针新开并最终关闭自己的标签页，断言预览端口归属本工程。复用正式 Stage3D、EntityPool 与
+SkinnedUnits，显式登记三档地址，切 `0 → 1 → 2 → 0`；核对实际 Mesh UUID / 面数、两个材质槽、
+512² 图片、当前 GLB 的实际材质因子、两段动画、四骨关节纹理、socket 推进与各 20 次开关。
+切档后再等 30 个渲染帧并核对实际提交，避免首帧 / 旧缓存截图冒充完整画面。实体先退休并完成 AFTER_DRAW，
+再关闭最后一台舞台相机；不让无相机的缓存队列冒充已完成清理。WebGL1 在页面启动前拒绝
+WebGL2 context，并断言实际 `WebGLDevice`，不改引擎能力或全局设置。
+截图仍需人工复核；探针保留 `visualReview: pending`，人工结论记录在批次摘要。此负载不做帧时容量承诺。
+完整证据与限制：[SC5-B1 摘要](../../docs/perf/stage3d/2026-09-24-sc5-b1.json)。
+
+## SC0 合成灰盒（保留的独立生成器）
+
+`greybox.py` 与隔离 Creator 作者态探针模板 `editor-probe/` 保持原动线；B5 lightmap 由 Creator
+LightFX 烘焙。生成器不写 `.meta`、不调用 Creator，结构自检不替代真实导入与 Prefab 加载。
 
 ## 隔离依赖与运行
 
@@ -104,7 +199,7 @@ inverse bind、骨骼权重和动画。测试含反向三角、丢 bind 平移�
 ## SC1-B8 画质资料
 
 [quality.md](quality.md) 登记画质端口、JSON 契约、默认值生成、压缩预设与独立验收场景。
-本批不实现 SC3 的加载计划 / 池，也不提前交付 SC5 离线变体工具。
+该记录描述 SC1-B8 时点；当前 SC3 / SC5-B1 实施状态见 3D-PLAN §8。
 
 ## SC1-B7 bundle 验证
 

@@ -1,0 +1,867 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-24",
+  "stage": "SC5",
+  "batch": "SC5-B1",
+  "status": "completed",
+  "stageExit": false,
+  "nextBatch": "SC5-B2",
+  "verificationBase": "557d473d74827b3f369bd8a78210ae756beb5e63",
+  "scope": "Offline authoring tools, original synthetic Unity fixtures, source GLB/PNG and real Creator metadata, explicit asset registration, focused asset test and real-engine LOD probe. No client runtime changes or stage freeze.",
+  "environment": {
+    "python": "3.14.6",
+    "node": "26.5.0",
+    "npm": "11.17.0",
+    "creator": "3.8.8",
+    "platform": "macOS arm64 / Apple M4 / desktop Chrome ANGLE Metal",
+    "dependencies": {
+      "path": "tools/art3d/requirements.txt",
+      "sha256": "ea4232f369c4cfb695115518be5809b6a13cf5271c3a2f01537116aecb36569b"
+    },
+    "meshoptimizerLock": {
+      "path": "tools/art3d/meshoptimizer.lock.json",
+      "sha256": "06cfc64ca91cd329b923b44126217c37258c88af141a6467f212424105e21008"
+    },
+    "meshoptimizerSetup": {
+      "path": ".cache/sc5-b1/meshoptimizer-setup.json",
+      "sha256": "545745f4a607a5f806ac059de500a17eb2c5bd17e100f00ec71e4106e6675da5"
+    },
+    "runtimeDependencyChange": false
+  },
+  "source": {
+    "generator": {
+      "path": "tools/art3d/unity-fixture.py",
+      "sha256": "6f4abce53d8e05be9113bf50fa552bccdb4cf3f0a9a3f218825c042dc058b6ef"
+    },
+    "input": {
+      "path": ".cache/art3d/fixtures/offline.assets",
+      "sha256": "8ce1ffe59e1d98fe612c4d4cb02427ebce0088bcfc6acdadc43356323e3fa323"
+    },
+    "format": "Unity SerializedFile v17, 2019.4.40f1 type trees generated with UnityPy Tpk; self-authored binary, not a Unity Editor-exported AssetBundle",
+    "thirdPartyContent": false,
+    "readOnlyExternalConversion": {
+      "path": ".cache/sc5-b1/external-source-report.json",
+      "sha256": "db111f9a3199fee9b1fe6ed1d20360572bebbdfd7bc38349ddd92c7e30e4f0b0"
+    },
+    "externalConversionMethod": {
+      "path": ".cache/sc5-b1/external-source.py",
+      "sha256": "2190d2bd3046e94ebf0bd138e3b3916199f291c858c5ea04e25ba9f1e98a6e08"
+    },
+    "inputUnchanged": true
+  },
+  "pipeline": {
+    "stages": [
+      "extract.py",
+      "material-map.py",
+      "to-gltf.py",
+      "textures.py",
+      "lod.py",
+      "verify-roundtrip.py"
+    ],
+    "checks": [
+      "Re-extract read-only Unity source and reject altered intermediate records",
+      "Right-handed Y-up meters, reversed triangle winding, V flip, preserved normals/tangents/UV2",
+      "Explicit Standard PBR mapping, sRGB-to-linear baseColorFactor with alpha preserved",
+      "Independent RGBA8 PNG; no image bufferView or data URI remains; relative URI closure and exact normalized pixels",
+      "Per-material primitive 1/4 and 1/10 triangle targets; strict decrease, configured bounds and bidirectional sampled surface error",
+      "Retained vertex tuples exactly preserve positions, normals, tangents, UV0/UV1, joints/weights",
+      "Same hierarchy, inverse bind matrices, clip channels, durations, interpolation and keyframe values/slopes"
+    ],
+    "roundtrips": {
+      "static": {
+        "path": ".cache/sc5-b1/static-verify-roundtrip-final.json",
+        "sha256": "3951a0821e648413e12391d6effd6d6fca1ac6a1b1ecf6435aa103fd84a2f139"
+      },
+      "skinned": {
+        "path": ".cache/sc5-b1/skinned-verify-roundtrip-final.json",
+        "sha256": "1b95b7547832c54d860cb9300b69ec17deec4079fb6b301cf85ed7ad47c62b5c"
+      }
+    }
+  },
+  "models": [
+    {
+      "kind": "static",
+      "config": {
+        "path": "tools/art3d/fixtures/static.conversion.json",
+        "sha256": "3404fd8fb3efab0eb5762673ac318d05e7068c1194e317cf2eeec2123f8ce1ed"
+      },
+      "triangles": [
+        1200,
+        297,
+        118
+      ],
+      "materialSlots": 2,
+      "textureSize": [
+        512,
+        512
+      ],
+      "bones": [],
+      "animations": [],
+      "files": [
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/T_SM_OfflineColumn_0_BC.png",
+          "sha256": "8d3e961cbc871dffd35d25fe3a9a1caf32be6773d783ab44f61ad1bb8b714865",
+          "bytes": 2183,
+          "meta": {
+            "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/T_SM_OfflineColumn_0_BC.png.meta",
+            "sha256": "4a91bbd2763a7581b17bd9d8d9f9982bd1d43e7fb78d5bc4581f9f35e7cfc053"
+          }
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_1.glb",
+          "sha256": "2dac07d8ace91bdc2f17ada8da09867d4ad0382f401a3e9341ce4291bf08cc2d",
+          "bytes": 15892,
+          "meta": {
+            "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_1.glb.meta",
+            "sha256": "6223d380547175a15ec0274f44dd8f504927e4fbc8280397ea74ba6e438aa300"
+          }
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_2.glb",
+          "sha256": "e8ac84e9af3c1aae8ee08fa2279b7d5b52cf925a24bcfaf11aac017a616a67dd",
+          "bytes": 8472,
+          "meta": {
+            "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/lod_2.glb.meta",
+            "sha256": "060727545d2a315a10ad087fb3fcc86cf0f44fb11c3b2ad836e3be9e0ac08912"
+          }
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/SM_OfflineColumn.glb",
+          "sha256": "bb863ce7388ab77375e5f654d65cf728169ed743deb8083cef523e19d18d28de",
+          "bytes": 50624,
+          "meta": {
+            "path": "apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn/SM_OfflineColumn.glb.meta",
+            "sha256": "3ccf2d688bc98b8dae9608c28619aef8f8723cf5e70708db3b5781f10944516c"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "skinned",
+      "config": {
+        "path": "tools/art3d/fixtures/skinned.conversion.json",
+        "sha256": "606cac9a68621584f5156e45f4c53e4731fbfc5ab3c80d591b91a259c5ba0e43"
+      },
+      "triangles": [
+        1200,
+        297,
+        118
+      ],
+      "materialSlots": 2,
+      "textureSize": [
+        512,
+        512
+      ],
+      "bones": [
+        4
+      ],
+      "animations": [
+        {
+          "name": "ANIM_Offline_Sway",
+          "target": {
+            "node": 4,
+            "path": "rotation"
+          },
+          "start": 0.0,
+          "duration": 1.0
+        },
+        {
+          "name": "ANIM_Offline_Lift",
+          "target": {
+            "node": 4,
+            "path": "translation"
+          },
+          "start": 0.0,
+          "duration": 1.0
+        }
+      ],
+      "files": [
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/T_SK_OfflineColumn_0_BC.png",
+          "sha256": "8d3e961cbc871dffd35d25fe3a9a1caf32be6773d783ab44f61ad1bb8b714865",
+          "bytes": 2183,
+          "meta": {
+            "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/T_SK_OfflineColumn_0_BC.png.meta",
+            "sha256": "74d2da342c6fd4a7252892161f1d41bb88d50075625baa15d77acf2534763f1c"
+          }
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_1.glb",
+          "sha256": "3080c16ff29a23a8aa60593ce0cefce092bd82cdbc05c29cd984e2d201f98185",
+          "bytes": 23272,
+          "meta": {
+            "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_1.glb.meta",
+            "sha256": "b9e012e97c55e5aab7e27ba787b24fc274e901f62383a2f8e556eea1f2c453bd"
+          }
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_2.glb",
+          "sha256": "d388c373659a35ea45b87786850da95d13728ff66c62c9f3909026f47ae06dfd",
+          "bytes": 13124,
+          "meta": {
+            "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/lod_2.glb.meta",
+            "sha256": "e552d1c0c5374cc48be4697d6a884b8d2cc06ae0ae5dae131e5a0f28c5cb1fe5"
+          }
+        },
+        {
+          "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/SK_OfflineColumn.glb",
+          "sha256": "fd9148f5edc4dbf61423a5b87321461b53f53d1c1a507b00380fe352a524a568",
+          "bytes": 70556,
+          "meta": {
+            "path": "apps/Cocos/assets/resources/stage3d/offline/SK_OfflineColumn/SK_OfflineColumn.glb.meta",
+            "sha256": "0eb7ff8215e226da539bacbb313821c81489472330e1aed16f22f2a6f5bf1911"
+          }
+        }
+      ]
+    }
+  ],
+  "creator": {
+    "probe": {
+      "path": "tools/creator-preview/probe-offline-lod.mjs",
+      "sha256": "77db30ee6a8d38ecfaf23ef2bd31e381f1a0ddcd16363c21cf8e21457199142c"
+    },
+    "importRefresh": {
+      "path": ".cache/stage3d/sc1-b8/editor-probe/result-sc5-b1-color-003.json",
+      "sha256": "8a5a337043fedebd4fa158526724e97591af80627ac4e4ca591124a62f2413ee"
+    },
+    "probeExtensionRestoredDisabled": true,
+    "viewportNote": "Inherited Apple iPhone 14 Pro preview preset; desktop browser, CSS 900x650 and actual canvas 393x612. Not mobile hardware evidence.",
+    "webgl1Method": "Deny webgl2 getContext before engine boot; assert real WebGLDevice. high is explicit probe override, not low acceptance.",
+    "runs": [
+      {
+        "api": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "report": {
+          "path": ".cache/sc5-b1/creator-webgl2-presented/report.json",
+          "sha256": "08ef215cc4f8200229cf1a42249ab2a31e9857103c4ea024ef6e01480404ccdd"
+        },
+        "environment": {
+          "viewport": {
+            "css": {
+              "width": 900,
+              "height": 650
+            },
+            "canvas": {
+              "width": 393,
+              "height": 612
+            }
+          },
+          "device": "WebGL2Device",
+          "webgl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "quality": {
+            "details": true,
+            "shadows": "off",
+            "maxEffects": 48,
+            "maxUnits": 100,
+            "maxUnitsWithoutInstancing": 50,
+            "textureStepDown": 0,
+            "minTextureSize": 256,
+            "tier": "high",
+            "detectedTier": "high",
+            "overridden": true,
+            "instancing": true,
+            "jointTexture": "float",
+            "bakedSkinningInstancing": true,
+            "realtimeSkinningInstancing": false,
+            "textureFormat": "astc",
+            "device": {
+              "platform": "desktop",
+              "api": "webgl2",
+              "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+              "capabilities": {
+                "instancing": true,
+                "floatJointTexture": true,
+                "rgba8JointTexture": true,
+                "shadowMap": true,
+                "astc": true
+              }
+            }
+          },
+          "baseline": {
+            "nodes": 4,
+            "gfx": {
+              "bufferSize": 38976,
+              "textureSize": 340784
+            },
+            "refs": [
+              {
+                "uuid": "fef19005-b6af-4f59-9efc-bf9435e7d712@1bc2a",
+                "refs": 0
+              },
+              {
+                "uuid": "25e126db-1dde-4489-a706-8b3463935c37@f0843",
+                "refs": 0
+              },
+              {
+                "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@53b6b",
+                "refs": 0
+              },
+              {
+                "uuid": "ac5db5cc-34e2-40cd-b3f2-bee64b876569@e152c",
+                "refs": 0
+              },
+              {
+                "uuid": "de012a98-449b-4238-9129-cd83f0a6ae92@f0843",
+                "refs": 0
+              },
+              {
+                "uuid": "c3acebd0-d231-4ff4-9c48-9101f03c3ab1@53b6b",
+                "refs": 0
+              }
+            ]
+          }
+        },
+        "lodSequence": [
+          0,
+          1,
+          2,
+          0
+        ],
+        "trianglesPerModel": [
+          1200,
+          297,
+          118,
+          1200
+        ],
+        "staticInstances": 1,
+        "skinnedInstances": 2,
+        "clips": [
+          "ANIM_Offline_Sway",
+          "ANIM_Offline_Lift"
+        ],
+        "runtimeMaterialFactorsMatchCurrentGlb": true,
+        "socketMatrixAdvances": true,
+        "renderedDrawCalls": 5,
+        "renderedInstances": 6,
+        "cycles": 20,
+        "warmClosed": {
+          "nodes": 4,
+          "gfx": {
+            "bufferSize": 38992,
+            "textureSize": 4027184
+          },
+          "refs": [
+            {
+              "uuid": "fef19005-b6af-4f59-9efc-bf9435e7d712@1bc2a",
+              "refs": 0
+            },
+            {
+              "uuid": "25e126db-1dde-4489-a706-8b3463935c37@f0843",
+              "refs": 0
+            },
+            {
+              "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@53b6b",
+              "refs": 0
+            },
+            {
+              "uuid": "ac5db5cc-34e2-40cd-b3f2-bee64b876569@e152c",
+              "refs": 0
+            },
+            {
+              "uuid": "de012a98-449b-4238-9129-cd83f0a6ae92@f0843",
+              "refs": 0
+            },
+            {
+              "uuid": "c3acebd0-d231-4ff4-9c48-9101f03c3ab1@53b6b",
+              "refs": 0
+            }
+          ]
+        },
+        "allCyclesEqualWarmClosed": true,
+        "diagnostics": 0,
+        "screenshots": [
+          {
+            "path": ".cache/sc5-b1/creator-webgl2-presented/lod-0-1.png",
+            "sha256": "9c2f1895807cbab4c9ac9898913f06bb9985b4bf7c1babfb7b19bd6fb23ff01c"
+          },
+          {
+            "path": ".cache/sc5-b1/creator-webgl2-presented/lod-1-2.png",
+            "sha256": "c00f4dccae60ff8bc3064358d67ef0a2dce8d71d836eda41abb2d5bc59a81f0e"
+          },
+          {
+            "path": ".cache/sc5-b1/creator-webgl2-presented/lod-2-3.png",
+            "sha256": "440613115f3bf4db54bc7c940813e2161cc7da050b0888f29c634a7270db21a8"
+          },
+          {
+            "path": ".cache/sc5-b1/creator-webgl2-presented/lod-0-4.png",
+            "sha256": "35b1d499d92f55b7306ac8002493c6ef16f4004ae15382462690128a91ffa6f9"
+          }
+        ],
+        "visualReview": {
+          "status": "passed",
+          "reviewer": "Codex image inspection",
+          "observed": "All three columns fully present at every LOD and after return. Checker orientation/corner marks and both material tones remain visible; no blank/missing model or gross silhouette change. Animation verified by independent socket matrices.",
+          "limits": "One camera and original box-shaped fixture; not arbitrary character deformation or continuous-camera art approval. Profiler overlay can lag; imported mesh and presented-frame counters are authoritative."
+        }
+      },
+      {
+        "api": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+        "report": {
+          "path": ".cache/sc5-b1/creator-webgl1-presented/report.json",
+          "sha256": "d2b7928130c1835b0c17d37f9b94debc9beccc7b820a354e61cfb22c7f991ecc"
+        },
+        "environment": {
+          "viewport": {
+            "css": {
+              "width": 900,
+              "height": 650
+            },
+            "canvas": {
+              "width": 393,
+              "height": 612
+            }
+          },
+          "device": "WebGLDevice",
+          "webgl": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+          "quality": {
+            "details": true,
+            "shadows": "off",
+            "maxEffects": 48,
+            "maxUnits": 100,
+            "maxUnitsWithoutInstancing": 50,
+            "textureStepDown": 0,
+            "minTextureSize": 256,
+            "tier": "high",
+            "detectedTier": "low",
+            "overridden": true,
+            "instancing": true,
+            "jointTexture": "float",
+            "bakedSkinningInstancing": true,
+            "realtimeSkinningInstancing": false,
+            "textureFormat": "astc",
+            "device": {
+              "platform": "desktop",
+              "api": "webgl1",
+              "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+              "capabilities": {
+                "instancing": true,
+                "floatJointTexture": true,
+                "rgba8JointTexture": true,
+                "shadowMap": true,
+                "astc": true
+              }
+            }
+          },
+          "baseline": {
+            "nodes": 4,
+            "gfx": {
+              "bufferSize": 38976,
+              "textureSize": 340784
+            },
+            "refs": [
+              {
+                "uuid": "fef19005-b6af-4f59-9efc-bf9435e7d712@1bc2a",
+                "refs": 0
+              },
+              {
+                "uuid": "25e126db-1dde-4489-a706-8b3463935c37@f0843",
+                "refs": 0
+              },
+              {
+                "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@53b6b",
+                "refs": 0
+              },
+              {
+                "uuid": "ac5db5cc-34e2-40cd-b3f2-bee64b876569@e152c",
+                "refs": 0
+              },
+              {
+                "uuid": "de012a98-449b-4238-9129-cd83f0a6ae92@f0843",
+                "refs": 0
+              },
+              {
+                "uuid": "c3acebd0-d231-4ff4-9c48-9101f03c3ab1@53b6b",
+                "refs": 0
+              }
+            ]
+          }
+        },
+        "lodSequence": [
+          0,
+          1,
+          2,
+          0
+        ],
+        "trianglesPerModel": [
+          1200,
+          297,
+          118,
+          1200
+        ],
+        "staticInstances": 1,
+        "skinnedInstances": 2,
+        "clips": [
+          "ANIM_Offline_Sway",
+          "ANIM_Offline_Lift"
+        ],
+        "runtimeMaterialFactorsMatchCurrentGlb": true,
+        "socketMatrixAdvances": true,
+        "renderedDrawCalls": 5,
+        "renderedInstances": 6,
+        "cycles": 20,
+        "warmClosed": {
+          "nodes": 4,
+          "gfx": {
+            "bufferSize": 38992,
+            "textureSize": 4027184
+          },
+          "refs": [
+            {
+              "uuid": "fef19005-b6af-4f59-9efc-bf9435e7d712@1bc2a",
+              "refs": 0
+            },
+            {
+              "uuid": "25e126db-1dde-4489-a706-8b3463935c37@f0843",
+              "refs": 0
+            },
+            {
+              "uuid": "828d4861-3bb7-4096-a3a5-9c20f65b12cb@53b6b",
+              "refs": 0
+            },
+            {
+              "uuid": "ac5db5cc-34e2-40cd-b3f2-bee64b876569@e152c",
+              "refs": 0
+            },
+            {
+              "uuid": "de012a98-449b-4238-9129-cd83f0a6ae92@f0843",
+              "refs": 0
+            },
+            {
+              "uuid": "c3acebd0-d231-4ff4-9c48-9101f03c3ab1@53b6b",
+              "refs": 0
+            }
+          ]
+        },
+        "allCyclesEqualWarmClosed": true,
+        "diagnostics": 0,
+        "screenshots": [
+          {
+            "path": ".cache/sc5-b1/creator-webgl1-presented/lod-0-1.png",
+            "sha256": "4b5a883823156bada769b16b370befccdbb92cfceeefc1ae710abc7354f8f9e2"
+          },
+          {
+            "path": ".cache/sc5-b1/creator-webgl1-presented/lod-1-2.png",
+            "sha256": "9b2d388d9f974ad833dfdaa1f8dcbe4bbdb0242cb9bb31170dd24426ca79e29e"
+          },
+          {
+            "path": ".cache/sc5-b1/creator-webgl1-presented/lod-2-3.png",
+            "sha256": "149681ff6da5aad949585c7df3cfba7407847697c8226d04999a25a209ece9ff"
+          },
+          {
+            "path": ".cache/sc5-b1/creator-webgl1-presented/lod-0-4.png",
+            "sha256": "3b55fd5646c686a961f84aa424974214b6dd3ef38090fc1d334d77df31c77be4"
+          }
+        ],
+        "visualReview": {
+          "status": "passed",
+          "reviewer": "Codex image inspection",
+          "observed": "All three columns fully present at every LOD and after return. Checker orientation/corner marks and both material tones remain visible; no blank/missing model or gross silhouette change. Animation verified by independent socket matrices.",
+          "limits": "One camera and original box-shaped fixture; not arbitrary character deformation or continuous-camera art approval. Profiler overlay can lag; imported mesh and presented-frame counters are authoritative."
+        }
+      }
+    ],
+    "lifecycleScope": "Closed warm baseline, not cold-start reclamation: engine caches retain 16 extra buffer bytes and 3,686,400 texture bytes after first use. Pools close and retire over AFTER_DRAW before final stage camera disposal; all 20 subsequent cycles exactly match warm nodes/GFX/refs."
+  },
+  "tests": {
+    "python": {
+      "command": ".cache/sc5-b1/venv/bin/python -m unittest discover -s tools/art3d -p 'test_*.py' -v",
+      "count": 56,
+      "passed": 56,
+      "log": {
+        "path": ".cache/sc5-b1/python-tests-final.log",
+        "sha256": "d16628c3a64596e5a7926f80592befbd604d786580d4cec9ec3bf3678b260d8e"
+      }
+    },
+    "assets": {
+      "command": "node --test scripts/verify-assets3d.test.mjs",
+      "count": 95,
+      "passed": 95,
+      "log": {
+        "path": ".cache/sc5-b1/assets3d-tests.log",
+        "sha256": "29329115fb52d9c923ce926f994404bde176a547dcf9b0d9aa7e7f5f900055b0"
+      }
+    },
+    "guardMutations": {
+      "method": {
+        "path": ".cache/sc5-b1/run-mutations.py",
+        "sha256": "0a66d2fdfd46f987c7b31342d0c969b0d0d47cf19e2e350b46e9bf5b1fc21834"
+      },
+      "report": {
+        "path": ".cache/sc5-b1/mutations/report.json",
+        "sha256": "c8e6a2c5dba964108e84390a3a603150bf4aefb43d68a179ca931e963306c913"
+      },
+      "cases": [
+        {
+          "mutation": "missing-lod",
+          "test": "test_missing_lod_fails",
+          "exitCode": 1,
+          "killed": true,
+          "log": {
+            "path": ".cache/sc5-b1/mutations/missing-lod.log",
+            "sha256": "b7d7c146e73468aaae1c74a4ccfe67b853802aff3f5f5cd69507444ff9616120"
+          }
+        },
+        {
+          "mutation": "no-reduction",
+          "test": "test_no_triangle_reduction_fails",
+          "exitCode": 1,
+          "killed": true,
+          "log": {
+            "path": ".cache/sc5-b1/mutations/no-reduction.log",
+            "sha256": "c71d83dbdb9edd7e5fbe8e0577a986713fa31bd27dd53cfdc83bdb5768fbf4d9"
+          }
+        },
+        {
+          "mutation": "material-slot",
+          "test": "test_wrong_material_slot_fails",
+          "exitCode": 1,
+          "killed": true,
+          "log": {
+            "path": ".cache/sc5-b1/mutations/material-slot.log",
+            "sha256": "2901dfe0ef083a046a52bbf3ec07d39eedb9326ee7cde17f57db648af4583503"
+          }
+        },
+        {
+          "mutation": "lost-animation",
+          "test": "test_lost_animation_fails",
+          "exitCode": 1,
+          "killed": true,
+          "log": {
+            "path": ".cache/sc5-b1/mutations/lost-animation.log",
+            "sha256": "2b3ab289abb3e6f0766af850139acf7acc784e616a8a45e1c0d468c657c19cb4"
+          }
+        }
+      ]
+    },
+    "verifyAll": {
+      "status": "passed",
+      "command": "npm run verify:all",
+      "checkout": "/Users/kimi/.codex/worktrees/sc5-b1-verification/kitVersion",
+      "base": "557d473d74827b3f369bd8a78210ae756beb5e63",
+      "preparation": [
+        "npm ci",
+        "npm run build:uniflex-ui",
+        "npm run sync:client"
+      ],
+      "exitCode": 0,
+      "suiteTestCounts": [
+        66,
+        116,
+        3,
+        2,
+        5,
+        21,
+        3,
+        1348,
+        80,
+        1396
+      ],
+      "total": 3040,
+      "log": {
+        "path": ".cache/sc5-b1/verify-all-final.log",
+        "sha256": "49900af5bbddbaa140b56c7ecbdc1186c6132cfa5bd9e3b8d58f9085d80873d8"
+      },
+      "completion": {
+        "path": ".cache/sc5-b1/verify-all-final.exit.json",
+        "sha256": "a8cd8e5fcc25d4f9fa8205289c284511a3b35bbe9a3f7062be48e09c5f3f3f9d"
+      }
+    },
+    "isolatedPython": {
+      "count": 56,
+      "passed": 56,
+      "base": "557d473d74827b3f369bd8a78210ae756beb5e63",
+      "log": {
+        "path": ".cache/sc5-b1/isolated-python-tests.log",
+        "sha256": "0be4ef622e7f2a2a18703016b5fdeb362d0ebb4ac696300377f4e530b33dec52"
+      },
+      "meshoptimizerSetup": {
+        "path": ".cache/sc5-b1/isolated-meshoptimizer-setup.json",
+        "sha256": "545745f4a607a5f806ac059de500a17eb2c5bd17e100f00ec71e4106e6675da5"
+      }
+    }
+  },
+  "priorFullVerification": {
+    "base": "be5d1043",
+    "exitCode": 0,
+    "tests": 3039,
+    "log": {
+      "path": ".cache/sc5-b1/verify-all-sc5-only.log",
+      "sha256": "ee1b6fe96103989bf7c648be174fcd4f8bccd9604394aee7d4c30dac849040f0"
+    },
+    "completion": {
+      "path": ".cache/sc5-b1/verify-all-sc5-only.exit.json",
+      "sha256": "81a5f04ab416a3d5a73840cce1e2a1eb8dbe6af07e610ec4837db7a256fcf49e"
+    },
+    "note": "SC5 changes passed before parallel map O1 commit; final combined verification rebases onto that commit."
+  },
+  "sync": {
+    "path": ".cache/sc5-b1/git-sync-combined.json",
+    "sha256": "fdf1ce2cdb08ca413729a805f0f1f36a9a8fd464d24cbcc89c7c956c70bf449f"
+  },
+  "rejectedOrSuperseded": [
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/verify-all-initial.log",
+        "sha256": "fb93153c443456eafc5835b4f9c9196cfa9ccfb9d89b58f58980e8b757e892a4"
+      },
+      "reason": "Fresh checkout lacked ignored UniFlex build outputs; run documented build + sync before validation."
+    },
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/verify-all.log",
+        "sha256": "5c54b373938b19c51dbd6c021c0cdf6c1c7ee8633d928ad4439c6c11afc679c9"
+      },
+      "reason": "Old real-asset test assumed exactly two skinned GLBs; updated explicit list to cover previous fixtures plus all three new variants; full chain rerun."
+    },
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/creator-webgl2-attempt1/report.json",
+        "sha256": "3900442373e64afdb184de1e376e3a64b67fe946980575c4622ada5c1ebf971d"
+      },
+      "reason": "Last camera closed before retired models left renderer queue; reorder probe teardown. Initial camera also cropped right column."
+    },
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/creator-webgl2-attempt2/report.json",
+        "sha256": "b173748487bca9ee1cea88a16c369d2a98360af6d48a994eff8be7670c049477"
+      },
+      "reason": "Pre-color-conversion evidence superseded by corrected Standard factor and final probe."
+    },
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/creator-webgl1/report.json",
+        "sha256": "dc75b8821c243d5a56e00e76226a7cc2bc6e9e79f1e38e0e89827aa56d095d60"
+      },
+      "reason": "Pre-color-conversion evidence superseded by corrected Standard factor and final probe."
+    },
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/creator-webgl2-final/report.json",
+        "sha256": "24cd6d736b6eeaca8eddae306f84e8948385ef9992ad0c80220019d7f5eac386"
+      },
+      "reason": "Source file changed but Creator imported old material; reimport and compare live factors to GLB before accepting."
+    },
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/creator-webgl1-final/report.json",
+        "sha256": "a4e6a62bc36e2afd43626eba71d73da27cebcb4106ebdee6a16570e67f5e3318"
+      },
+      "reason": "Source file changed but Creator imported old material; reimport and compare live factors to GLB before accepting."
+    },
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/creator-webgl1-color/report.json",
+        "sha256": "3de43720d9e819031e4084be9e6fef85003ec0cbdf22b6b3a315eebaab86461b"
+      },
+      "reason": "First screenshot had only two columns despite mesh/counter checks; add presentation wait and re-inspect before capturing."
+    },
+    {
+      "evidence": {
+        "path": ".cache/sc5-b1/creator-webgl2-color/report.json",
+        "sha256": "aa0b248a8362d0961a25f40eafda322510ddf1fde4db319d4b15573f9a6fc68a"
+      },
+      "reason": "Passed color/runtime checks; superseded by the same final presentation-aware probe used for both APIs."
+    }
+  ],
+  "limits": [
+    "Single self-contained serialized Unity hierarchy; not proof of arbitrary Unity Editor exports or commercial assets.",
+    "Only opaque Standard BC/metallic/smoothness and explicitly selected uncompressed legacy unweighted TRS animation curves. Unsupported shaders, channels, scripts, external PPtrs/streams, morphs and animation forms fail explicitly.",
+    "Automatic skinned LOD requires identical joint indices/weights within each material primitive; varying weights require reviewed manual variants. Four-bone greybox is not a complex character test.",
+    "Source geometry is a subdivided box; sampled fidelity is not a continuous-surface mathematical guarantee.",
+    "Desktop WebGL1/2 mechanism and warm lifecycle checks only; not frame-time, low-tier/mobile or capacity acceptance.",
+    "SC5-B2 documentation integration and API freeze remain pending; no stage exit tag."
+  ],
+  "sourceFiles": [
+    {
+      "path": "tools/art3d/billboard-fixture.mjs",
+      "sha256": "c86c49151716401a447ad2e2eb057dc614d59ec1b70ba17a495f55caf7388891"
+    },
+    {
+      "path": "tools/art3d/conversion.schema.json",
+      "sha256": "88a6a142258588247a81687c3a0f24f0ba0cda5e0ed4e7536da3bf9bb40d5c22"
+    },
+    {
+      "path": "tools/art3d/convert.py",
+      "sha256": "3813b85a34384df5543dc391847b4c1361e99f6dd3329691044276a78ab19d8d"
+    },
+    {
+      "path": "tools/art3d/extract.py",
+      "sha256": "f2262f2a09613362ef524aa787ddfa42f2970a8500826ed272013476c3cd70bc"
+    },
+    {
+      "path": "tools/art3d/lod.py",
+      "sha256": "66aa6af6ae9cf9cdefe8c6c445553400e48518788ff855435a4765afbbbfc94f"
+    },
+    {
+      "path": "tools/art3d/material-map.py",
+      "sha256": "27636623f4afa269a5133c538e35ceb0c2f4736446a09108ced48af066dea0a1"
+    },
+    {
+      "path": "tools/art3d/materials.py",
+      "sha256": "8bd25f0c35de14e7ef9d8c758b1c76fe8979c0df20e83c0a3998e566b431b6a4"
+    },
+    {
+      "path": "tools/art3d/meshopt-run.mjs",
+      "sha256": "bca34823c3251cad71bb44d110db6f4948ca4cefc1dbd02efb433ef4d3225ac8"
+    },
+    {
+      "path": "tools/art3d/meshoptimizer.lock.json",
+      "sha256": "06cfc64ca91cd329b923b44126217c37258c88af141a6467f212424105e21008"
+    },
+    {
+      "path": "tools/art3d/pipeline.py",
+      "sha256": "a07b023d2fbf3d8ca4cf416d047ed58578f0d5ff7f79b16b940761fdc953f15d"
+    },
+    {
+      "path": "tools/art3d/quality-assets.mjs",
+      "sha256": "cea542823e9d66eb651395c0302278da7dd2a9b6a842be434c27dffb451d4fa9"
+    },
+    {
+      "path": "tools/art3d/roundtrip.py",
+      "sha256": "683ef47da5a03c40d027daa3304557a9748984a1027383a71dca492190db9a28"
+    },
+    {
+      "path": "tools/art3d/sc0-engine-findings.json",
+      "sha256": "119d4fd395d19f374d058d953bc5c83df3491e8b1a2e70c700725782e16b85fc"
+    },
+    {
+      "path": "tools/art3d/setup-meshoptimizer.py",
+      "sha256": "84cc4ec6febc550df875b4967cda7873b61063217e46873529c5ea58dc68cef6"
+    },
+    {
+      "path": "tools/art3d/sync-quality-defaults.mjs",
+      "sha256": "e18ffd25fa0d82a3a22220029bc7781f2e9a59f8b13f9cbf0fc8b410414c166b"
+    },
+    {
+      "path": "tools/art3d/test_pipeline.py",
+      "sha256": "7c8dcdf7131c711a092203c7e51250d8c44a249ad885233cfe5508d69222c10d"
+    },
+    {
+      "path": "tools/art3d/textures.py",
+      "sha256": "f837cc6ac7776935dcc02d51bce31073cec0b446e3630f47742a72cdda91b7ae"
+    },
+    {
+      "path": "tools/art3d/to-gltf.py",
+      "sha256": "11e7ee27423c6e77088970bc6e77d1604dc020503e2c3bc7a2ff2079cdaa6414"
+    },
+    {
+      "path": "tools/art3d/unity-fixture.py",
+      "sha256": "6f4abce53d8e05be9113bf50fa552bccdb4cf3f0a9a3f218825c042dc058b6ef"
+    },
+    {
+      "path": "tools/art3d/unity_extract.py",
+      "sha256": "efa165c84799ceccba7e88f1e48159b3159740344a3f55f4344d7d652ea89560"
+    },
+    {
+      "path": "tools/art3d/verify-roundtrip.py",
+      "sha256": "d803169ab7275b6e35e117ba5a3996a1b05a40851d6a715b8680e92f3bd5fc5b"
+    },
+    {
+      "path": "scripts/assets3d.config.json",
+      "sha256": "c1db6e6a16544e05ba17e2f18c64c507bfb0926d0aa21db3728a14e38a045f79"
+    },
+    {
+      "path": "scripts/verify-assets3d.test.mjs",
+      "sha256": "5d1187529a7d11151e989ee6a24d9d48f47bdfa7e8779251171d6a3a2838ae6b"
+    }
+  ]
+}

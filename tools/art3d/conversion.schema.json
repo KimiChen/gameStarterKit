@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gono:art3d-conversion-v1",
+  "title": "Offline conversion job (separate from the repository asset-gate config)",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "source", "workDir", "outputDir", "model", "materials", "lod"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "rootGameObject", "animationClips"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "rootGameObject": {"type": "integer", "minimum": 1},
+        "animationClips": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 1}}
+      }
+    },
+    "workDir": {"type": "string", "minLength": 1},
+    "outputDir": {"type": "string", "minLength": 1},
+    "model": {"type": "string", "pattern": "^(SM|SK)_[A-Za-z0-9_]+$"},
+    "textureMaxSize": {"enum": [256, 512, 1024]},
+    "materials": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false,
+        "required": ["shader", "target"],
+        "properties": {"shader": {"const": "Standard"}, "target": {"const": "pbr-metallic-roughness"}}
+      }
+    },
+    "lod": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ratios", "maxError", "boundsTolerance", "ratioTolerance"],
+      "properties": {
+        "ratios": {"const": [0.25, 0.1]},
+        "maxError": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.1},
+        "boundsTolerance": {"type": "number", "minimum": 0, "maximum": 0.05},
+        "ratioTolerance": {"type": "number", "minimum": 0, "maximum": 0.1}
+      }
+    }
+  }
+}

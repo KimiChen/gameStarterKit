@@ -274,8 +274,10 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 - [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [x] SC2-B5
 - [x] SC3-B1 [x] SC3-B2 [x] SC3-B3 [x] SC3-B4 [x] SC3-B5 [x] SC3-B6
 - [x] SC4-B1（04bb5e60） [x] SC4-B2（8330dbf8） [x] SC4-B3（5855bc3f；按本日调整后范围验收） [x] SC4-B4（本行所在提交）
-- [ ] SC5-B1 [ ] SC5-B2
+- [x] SC5-B1（本行所在提交） [ ] SC5-B2
 - 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [x] slg 资源 / 全局设置（SC3）
+
+- **2026-09-24 SC5-B1 完成（本行所在提交）**：`tools/art3d` 交付固定 Python 依赖、meshoptimizer 0.25.0 制品 / 模块双层完整性校验、转换作业 schema，以及 Unity 抽取 → PBR 映射 → GLB → 独立 PNG → 两档离线 LOD → 源文件往返校验。原创 Unity SerializedFile 灰盒的静态 / 蒙皮模型均为 **1200 → 297 → 118 面**、两个材质 primitive、512² BC；蒙皮保留四骨四权重及两段 1 秒动画。主模型检查坐标 / 绕序 / UV / 切线 / bind pose / 关键帧与 sRGB→线性材质因子，LOD 检查逐槽目标 / 包围盒 / 双向采样表面误差及原顶点属性；不支持的蒙皮权重变化、压缩 / Mecanim 动画、shader 通道明确拒绝。56 项 Python 测试与缺档 / 面数不降 / 错槽 / 丢动画四项隔离变异通过，仓外只读原创样本输入哈希不变。Creator 3.8.8 的真实 WebGL2 / WebGL1 各完成 `0→1→2→0`、PNG / 实际材质因子 / 关节纹理 / socket 推进与 20 次开关；闭场节点回 4、六份 Prefab 引用归零、GFX 回预热基线，八张最终截图已目检。WebGL1 是桌面禁建 WebGL2 后的真实上下文，high 为探针覆写；不视为 low / 手机或容量验收。最终组合版本 `verify:all` **3,040 项全过**（客户端 1,348 / UniFlex 80 / 服务端 1,396，含其他门禁），旧缓存 / 首帧截图候选和全部哈希见 [B1 验收摘要](perf/stage3d/2026-09-24-sc5-b1.json)，复跑与支持边界见 [工具说明](../tools/art3d/README.md)。输入由原创类型树生成而非 Unity Editor 导出；自动蒙皮 LOD 只支持 primitive 内一致的骨骼权重，复杂角色须审核手工变体。SC5 尚未退出，下一批 **SC5-B2 文档回写与 API 冻结**。
 
 - **2026-09-24 SC4 蒙皮与特效退出（SC4-B4，本行所在提交；tag `sc4-exit`）**：正式 `SkinnedUnits` / `Vfx`、WebGL1 low四条退化路径与加载 / 激活失败恢复均已交付。B1–B3的210项哈希引用已核对，27项旧引用与原提交一致且有后续批次承接；9份报告的3,798条原始帧记录、180次回收重算通过。按3D-ASSETS §15.2既定的实际吞吐口径，桌面M4 / WebGL2、high / shadows=0、100两骨单位+50特效，在显式 `--frame-rate 120` 下标准窗口为 **59.97fps / p95 18.3ms / max 19.0ms**，另连续3,600帧约60秒为 **60.00fps / p95 18.9ms / max 21.7ms**；每帧保持100+50、55次绘制提交。20次联合开关后场景节点回10、业务引用归零、GFX增量0。默认60上限的 **49.83fps / p95 33.7ms** 报告与空场景对照保留；引擎帧调度跳帧登记为已知限制，未改生产配置，测试结束及失败均恢复原60上限，不宣称默认配置或每帧≤16.67ms。本批 `verify:all` **3,034项全过**（客户端1,345 / UniFlex80 / 服务端1,393，含其他门禁及两套客户端类型检查）。采样参数 / 失败窗口 / 8项既有变异 / 全量验证见 [SC4汇总](perf/stage3d/2026-09-24-sc4-review.json)，[B3 low证据](perf/stage3d/2026-09-24-sc4-b3.json)继续有效。lvr A3的框架前置齐备；内容接入与消费方验收未完成，mmo未选择3D增量、不改已退出批次。下一批SC5-B1。
 

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "source": {"path": "../../../.cache/art3d/fixtures/offline.assets", "rootGameObject": 1, "animationClips": []},
+  "workDir": "../../../.cache/art3d/static",
+  "outputDir": "../../../apps/Cocos/assets/resources/stage3d/offline/SM_OfflineColumn",
+  "model": "SM_OfflineColumn",
+  "textureMaxSize": 512,
+  "materials": {
+    "M_Offline_A": {"shader": "Standard", "target": "pbr-metallic-roughness"},
+    "M_Offline_B": {"shader": "Standard", "target": "pbr-metallic-roughness"}
+  },
+  "lod": {"ratios": [0.25, 0.1], "maxError": 0.01, "boundsTolerance": 0.02, "ratioTolerance": 0.1}
+}
