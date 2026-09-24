@@ -1,4 +1,4 @@
-import { defineComponent } from '@uniflex/compiler';
+import { defineComponent, For } from '@uniflex/compiler';
 import type { ImageRef } from '../../../kits/uniflex/api/core/index';
 import type { TabSkin } from './TabSkin';
 import { NotificationBadge } from '../badge/NotificationBadge';
@@ -22,6 +22,11 @@ export interface TabProps {
     readonly visible?: boolean;
     readonly onClick?: () => void;
 }
+
+type TabBadge = { readonly id: 'badge'; readonly mode: 'count' | 'dot' };
+const noBadges: readonly TabBadge[] = [];
+const countBadge: readonly TabBadge[] = [{ id: 'badge', mode: 'count' }];
+const dotBadge: readonly TabBadge[] = [{ id: 'badge', mode: 'dot' }];
 
 /** Generic tab chip. `left`/`top`/`width` are the unselected box; inject `skin` to swap art, type, and badge. */
 export const Tab = defineComponent<TabProps>((p) => {
@@ -56,16 +61,18 @@ export const Tab = defineComponent<TabProps>((p) => {
     const unselected = skin?.unselected ?? theme.tab.unselected;
     const source = active ? selected : unselected;
     const showBg = active ? showSelected : showUnselected;
-    const insetLeft = active ? (skin?.selectedInsetLeft ?? 0) : 0;
-    const insetTop = active ? (skin?.selectedInsetTop ?? 0) : 0;
-    const insetRight = active ? (skin?.selectedInsetRight ?? 0) : 0;
-    const insetBottom = active ? (skin?.selectedInsetBottom ?? 0) : 0;
+    const insetLeft = (active ? skin?.selectedInsetLeft : undefined) ?? skin?.backgroundInsetLeft ?? 0;
+    const insetTop = (active ? skin?.selectedInsetTop : undefined) ?? skin?.backgroundInsetTop ?? 0;
+    const insetRight = (active ? skin?.selectedInsetRight : undefined) ?? skin?.backgroundInsetRight ?? 0;
+    const insetBottom = (active ? skin?.selectedInsetBottom : undefined) ?? skin?.backgroundInsetBottom ?? 0;
     const bgLeft = insetLeft;
     const bgTop = insetTop;
     const bgWidth = width - insetLeft - insetRight;
     const bgHeight = height - insetTop - insetBottom;
     const badge = p.badge ?? 0;
     const notice = p.notice === true;
+    // One badge per tab: a positive count takes precedence over a dot. Empty tabs allocate neither.
+    const badges = badge > 0 ? countBadge : (notice ? dotBadge : noBadges);
     const badgeSource = p.badgeSource ?? skin?.badgeSource ?? theme.tab.badge;
     const noticeSource = p.noticeSource ?? skin?.noticeSource ?? theme.tab.notice;
     const badgeInset = skin?.badgeInset ?? p.theme?.tab.badgeInset ?? activeTheme.tab.badgeInset;
@@ -82,10 +89,10 @@ export const Tab = defineComponent<TabProps>((p) => {
         <text value={p.label} style={{ position: 'absolute', width: '100%', height: '100%',
             font: font, fontSize: fontSize, color: color, bold: true,
             horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-        <NotificationBadge theme={theme} mode="count" count={badge} source={badgeSource}
-            left={badgeLeft} top={badgeTop} />
-        <NotificationBadge theme={theme} mode="dot" visible={notice} source={noticeSource}
-            left={badgeLeft} top={badgeTop} />
+        <For each={badges} key="id">{(entry) => (
+            <NotificationBadge theme={theme} mode={entry.mode} count={badge} visible
+                source={entry.mode === 'dot' ? noticeSource : badgeSource} left={badgeLeft} top={badgeTop} />
+        )}</For>
     </view>
     );
 });

@@ -368,11 +368,6 @@
       "source": "apps/client/src/ui-uniflex/modules/mail/MailSoldierDetails/MailSoldierDetailsPanel.tsx"
     },
     {
-      "key": "MailTabs",
-      "rootName": "MailTabs",
-      "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailTabs.tsx"
-    },
-    {
       "key": "MailTroopDetailsPanel",
       "rootName": "MailTroopDetailsPanel",
       "source": "apps/client/src/ui-uniflex/modules/mail/MailTroopDetails/MailTroopDetailsPanel.tsx"

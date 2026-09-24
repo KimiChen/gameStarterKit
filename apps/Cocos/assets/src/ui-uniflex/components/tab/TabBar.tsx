@@ -3,7 +3,7 @@ import { type ImageRef } from '../../../kits/uniflex/api/core/index';
 import { Tab, type TabSkin } from './Tab';
 import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 
-export { allianceTab, characterTab, flagTab, heroDetailTab, heroListTab, mailTab } from './tabSkins';
+export { allianceTab, characterTab, flagTab, heroDetailTab, heroListTab, mailTab, mailPopupTab } from './tabSkins';
 export type { TabSkin };
 
 export interface TabBarItem {
@@ -11,6 +11,8 @@ export interface TabBarItem {
     readonly label: string;
     readonly badge?: number;
     readonly notice?: boolean;
+    /** Optional exact position in the content row, before selected-state overhang padding. */
+    readonly left?: number;
 }
 
 export interface TabBarProps {
@@ -58,7 +60,7 @@ function stampTabs(
             badge: item.badge ?? 0,
             notice: item.notice === true,
             active: item.id === selected,
-            left: padLeft + i * stride,
+            left: padLeft + (item.left ?? i * stride),
             index: i,
         });
         i += 1;
@@ -66,7 +68,7 @@ function stampTabs(
     return rows;
 }
 
-/** Lays out `Tab` chips from `left` + `itemWidth` + `gap`. Pass `width` for the bar; overflow scrolls. */
+/** Lays out tabs by stride or item.left; width is the viewport and overflow scrolls. */
 export const TabBar = defineComponent<TabBarProps>((p) => {
     const theme = p.theme ?? activeTheme;
     const items = p.items;
@@ -99,10 +101,8 @@ export const TabBar = defineComponent<TabBarProps>((p) => {
     const barWidth = p.width;
     const barTop = top - padTop;
     const chipTop = padTop;
-    const count = items.length;
-    const contentWidth = count === 0 ? barWidth : overhangLeft + count * itemWidth + (count - 1) * gap + overhangRight;
-    const innerWidth = contentWidth < barWidth ? barWidth : contentWidth;
     const rows = useMemo(() => stampTabs(items, selected, itemWidth, gap, overhangLeft), [items, selected, itemWidth, gap, overhangLeft]);
+    const innerWidth = rows.reduce((edge, row) => Math.max(edge, row.left + itemWidth + overhangRight), barWidth);
     const track = skin.track;
     const showTrack = track !== undefined;
     const trackSource = track ?? theme.tab.selected;
@@ -115,14 +115,11 @@ export const TabBar = defineComponent<TabBarProps>((p) => {
                 <view name="TabBar/Track" style={{ width: innerWidth, height: barHeight }}>
                     <For each={rows} key="id">
                         {(item) => (
-                            <view name="TabBar/Item"
-                                style={{ position: 'absolute', left: item.left, top: 0, width: itemWidth, height: barHeight }}>
-                                <Tab theme={theme} label={item.label} active={item.active} left={0} top={chipTop}
-                                    width={itemWidth} skin={skin} badge={item.badge} notice={item.notice}
-                                    badgeSource={badgeSource} noticeSource={noticeSource}
-                                    badgeTop={badgeTopOverride}
-                                    onClick={() => onSelect?.(item.id, item.index)} />
-                            </view>
+                            <Tab theme={theme} label={item.label} active={item.active} left={item.left} top={chipTop}
+                                width={itemWidth} skin={skin} badge={item.badge} notice={item.notice}
+                                badgeSource={badgeSource} noticeSource={noticeSource}
+                                badgeTop={badgeTopOverride}
+                                onClick={() => onSelect?.(item.id, item.index)} />
                         )}
                     </For>
                 </view>

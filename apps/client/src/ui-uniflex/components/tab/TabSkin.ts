@@ -13,6 +13,12 @@ export interface TabSkin {
     readonly activeLeft?: number;
     readonly activeTop?: number;
     readonly activeWidth?: number;
+    /** Background-only insets in both states; negative values extend outside the hit/text box. */
+    readonly backgroundInsetLeft?: number;
+    readonly backgroundInsetTop?: number;
+    readonly backgroundInsetRight?: number;
+    readonly backgroundInsetBottom?: number;
+    /** Selected-state overrides of the shared background insets. */
     readonly selectedInsetLeft?: number;
     readonly selectedInsetTop?: number;
     readonly selectedInsetRight?: number;

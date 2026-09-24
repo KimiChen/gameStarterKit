@@ -344,10 +344,10 @@ export function mergeListRows(base, extra) {
 }
 
 /**
- * 演示用页签变体捕获：点遍 TabBar/Item 与 PanelTab，每次点击重拍一份快照。
+ * 演示用页签变体捕获：点遍 TabBar 内的 Tab（兼容旧 Item 包装）与 PanelTab，每次点击重拍一份快照。
  * 与基础快照或前面变体内容相同的点击（如点已激活页签）按签名去重。
  */
-const TAB_ITEMS = '[data-name="TabBar/Item"], [data-name="PanelTab"]';
+const TAB_ITEMS = '[data-name="TabBar/Track"] [data-name="Tab"], [data-name="TabBar/Item"], [data-name="PanelTab"]';
 
 function snapshotSignature(snapshot) {
     return snapshot.nodes.map((node) =>
@@ -371,7 +371,10 @@ async function captureTabVariants(ws, base) {
         const tabs = await evaluateValue(ws, `(() => {
             const seen = new Set();
             const out = [];
-            document.querySelectorAll('${TAB_ITEMS}').forEach((el) => {
+            document.querySelectorAll('${TAB_ITEMS}').forEach((candidate) => {
+                // Prefer the actual tab so legacy wrappers and their children share one click target.
+                const el = candidate.dataset.name === "TabBar/Item"
+                    ? candidate.querySelector('[data-name="Tab"]') ?? candidate : candidate;
                 if (seen.has(el)) return;
                 seen.add(el);
                 const r = el.getBoundingClientRect();

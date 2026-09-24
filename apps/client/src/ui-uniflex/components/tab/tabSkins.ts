@@ -1,5 +1,6 @@
 import type { TabSkin } from './TabSkin';
 import { theme } from '../../themes/active';
+import { imageRef } from '../../../kits/uniflex/api/core/index';
 
 const RAISED_COLOR = theme.tab.color;
 
@@ -18,6 +19,23 @@ export const mailTab: TabSkin = {
     badgeSource: theme.tab.badge,
     badgeInset: 26,
     badgeTop: -14,
+};
+
+export const mailPopupTab: TabSkin = {
+    selected: imageRef('ui/mail/popup-tab-on'),
+    unselected: imageRef('ui/mail/popup-tab-off'),
+    sizeMode: 'simple',
+    height: 63,
+    activeHeight: 63,
+    activeLeft: 0,
+    activeTop: 0,
+    activeWidth: 0,
+    backgroundInsetTop: -28,
+    fontSize: 32,
+    activeFontSize: 32,
+    color: '#3F3254',
+    activeColor: '#3F3254',
+    badgeTop: 0,
 };
 
 /** Alliance and flag bars use the mail nine-slice art. */
