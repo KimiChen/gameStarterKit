@@ -1,8 +1,9 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
+import { ProgressBar } from '../../../components/progress/ProgressBar';
+import { StrengthenWay } from '../../../gamecomponents/strengthen/StrengthenWay';
 
 export interface DefeatPanelProps {
-    readonly title?: string;
     readonly result?: string;
     readonly sectionTitle?: string;
     readonly hint?: string;
@@ -12,18 +13,12 @@ export interface DefeatPanelProps {
     readonly onWay?: (id: string) => void;
 }
 
-const TITLE_FONT = fontRef('fonts/regular', 700);
 const BODY_FONT = fontRef('fonts/regular', 700);
 const SCENE = imageRef('ui/victory/scene');
 const SUNSET = imageRef('ui/defeat/sunset');
 const EMBLEM = imageRef('ui/defeat/emblem');
 const RIBBON = imageRef('ui/defeat/ribbon');
 const VS = imageRef('ui/defeat/vs');
-const CIRCLE = imageRef('ui/defeat/way-circle');
-const ICON_SKILL = imageRef('ui/defeat/icon-skill');
-const ICON_TRAIN = imageRef('ui/defeat/icon-train');
-const ICON_FORGE = imageRef('ui/defeat/icon-forge');
-const ICON_RECRUIT = imageRef('ui/defeat/icon-recruit');
 const FRAME = imageRef('ui/victory/portrait-frame');
 const PLATE = imageRef('ui/victory/portrait-plate');
 const BLUE = imageRef('ui/victory/portrait-blue');
@@ -32,19 +27,15 @@ const TRACK = imageRef('ui/victory/bar-track');
 const FILL_GREEN = imageRef('ui/victory/bar-fill-green');
 const FILL_RED = imageRef('ui/victory/bar-fill-red');
 const BANNER = imageRef('ui/victory/reward-banner');
+const TITLE = imageRef('ui/defeat/title');
 
 /** 750×1624 battle defeat. Shared scene, portraits and bars come from Victory. */
 export const DefeatPanel = defineComponent<DefeatPanelProps>((p) => {
-    const title = p.title ?? '战斗失败';
     const result = p.result ?? '真是遗憾！';
     const sectionTitle = p.sectionTitle ?? '变强途径';
     const hint = p.hint ?? '点击空白区域关闭';
     const leftProgress = p.leftProgress ?? '120/500';
     const rightProgress = p.rightProgress ?? '120/500';
-    const skillLabel = '升级技能';
-    const trainLabel = '前往历练';
-    const forgeLabel = '装备锻造';
-    const recruitLabel = '招募英雄';
     const onClose = p.onClose;
     const onWay = p.onWay;
     const openSkill = () => onWay?.('skill');
@@ -64,50 +55,10 @@ export const DefeatPanel = defineComponent<DefeatPanelProps>((p) => {
                 style={{ position: 'absolute', left: 83, top: 995, width: 603, height: 30,
                     font: BODY_FONT, fontSize: 30, color: '#FFFFFF', bold: true,
                     horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-            <view name="Defeat/WaySkill" interaction="press" onClick={openSkill}
-                style={{ position: 'absolute', left: 96, top: 1069, width: 126, height: 162 }}>
-                <image name="Defeat/SkillCircle" source={CIRCLE}
-                    style={{ position: 'absolute', left: 0, top: 0, width: 126, height: 126 }} />
-                <image name="Defeat/SkillIcon" source={ICON_SKILL}
-                    style={{ position: 'absolute', left: 24, top: 20, width: 70, height: 86 }} />
-                <text name="Defeat/SkillLabel" value={skillLabel}
-                    style={{ position: 'absolute', left: -17, top: 132, width: 160, height: 30,
-                        font: BODY_FONT, fontSize: 30, color: '#FFFFFF', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center', wrap: false, overflow: 'shrink' }} />
-            </view>
-            <view name="Defeat/WayTrain" interaction="press" onClick={openTrain}
-                style={{ position: 'absolute', left: 240, top: 1069, width: 126, height: 162 }}>
-                <image name="Defeat/TrainCircle" source={CIRCLE}
-                    style={{ position: 'absolute', left: 0, top: 0, width: 126, height: 126 }} />
-                <image name="Defeat/TrainIcon" source={ICON_TRAIN}
-                    style={{ position: 'absolute', left: 21, top: 24, width: 84, height: 83 }} />
-                <text name="Defeat/TrainLabel" value={trainLabel}
-                    style={{ position: 'absolute', left: -17, top: 132, width: 160, height: 30,
-                        font: BODY_FONT, fontSize: 30, color: '#FFFFFF', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center', wrap: false, overflow: 'shrink' }} />
-            </view>
-            <view name="Defeat/WayForge" interaction="press" onClick={openForge}
-                style={{ position: 'absolute', left: 385, top: 1069, width: 126, height: 162 }}>
-                <image name="Defeat/ForgeCircle" source={CIRCLE}
-                    style={{ position: 'absolute', left: 0, top: 0, width: 126, height: 126 }} />
-                <image name="Defeat/ForgeIcon" source={ICON_FORGE}
-                    style={{ position: 'absolute', left: 21, top: 23, width: 81, height: 81 }} />
-                <text name="Defeat/ForgeLabel" value={forgeLabel}
-                    style={{ position: 'absolute', left: -17, top: 133, width: 160, height: 30,
-                        font: BODY_FONT, fontSize: 30, color: '#FFFFFF', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center', wrap: false, overflow: 'shrink' }} />
-            </view>
-            <view name="Defeat/WayRecruit" interaction="press" onClick={openRecruit}
-                style={{ position: 'absolute', left: 529, top: 1069, width: 126, height: 162 }}>
-                <image name="Defeat/RecruitCircle" source={CIRCLE}
-                    style={{ position: 'absolute', left: 0, top: 0, width: 126, height: 126 }} />
-                <image name="Defeat/RecruitIcon" source={ICON_RECRUIT}
-                    style={{ position: 'absolute', left: 7, top: 17, width: 107, height: 86 }} />
-                <text name="Defeat/RecruitLabel" value={recruitLabel}
-                    style={{ position: 'absolute', left: -18, top: 133, width: 160, height: 30,
-                        font: BODY_FONT, fontSize: 30, color: '#FFFFFF', bold: true,
-                        horizontalAlign: 'center', verticalAlign: 'center', wrap: false, overflow: 'shrink' }} />
-            </view>
+            <StrengthenWay left={96} top={1069} wayId="skill" onClick={openSkill} />
+            <StrengthenWay left={240} top={1069} wayId="train" onClick={openTrain} />
+            <StrengthenWay left={385} top={1069} wayId="forge" onClick={openForge} />
+            <StrengthenWay left={529} top={1069} wayId="recruit" onClick={openRecruit} />
             <text name="Defeat/Hint" value={hint}
                 style={{ position: 'absolute', left: 0, top: 1354, width: 750, height: 26,
                     font: BODY_FONT, fontSize: 26, color: '#837A91', bold: true,
@@ -124,24 +75,12 @@ export const DefeatPanel = defineComponent<DefeatPanelProps>((p) => {
                 style={{ position: 'absolute', left: 514, top: 735, width: 124, height: 124 }} />
             <image name="Defeat/RightAvatar" source={RED}
                 style={{ position: 'absolute', left: 514, top: 735, width: 124, height: 124 }} />
-            <image name="Defeat/LeftTrack" source={TRACK}
-                style={{ position: 'absolute', left: 87, top: 877, width: 171, height: 29, sizeMode: 'sliced' }} />
-            <image name="Defeat/LeftFill" source={FILL_GREEN}
-                style={{ position: 'absolute', left: 90, top: 879, width: 97, height: 25, sizeMode: 'sliced' }} />
-            <text name="Defeat/LeftProgress" value={leftProgress}
-                style={{ position: 'absolute', left: 87, top: 877, width: 171, height: 29,
-                    font: BODY_FONT, fontSize: 22, color: '#FFFFFF', bold: true,
-                    outlineColor: '#000000', outlineWidth: 2,
-                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-            <image name="Defeat/RightTrack" source={TRACK}
-                style={{ position: 'absolute', left: 489, top: 877, width: 171, height: 29, sizeMode: 'sliced' }} />
-            <image name="Defeat/RightFill" source={FILL_RED}
-                style={{ position: 'absolute', left: 492, top: 879, width: 97, height: 25, sizeMode: 'sliced' }} />
-            <text name="Defeat/RightProgress" value={rightProgress}
-                style={{ position: 'absolute', left: 489, top: 877, width: 171, height: 29,
-                    font: BODY_FONT, fontSize: 22, color: '#FFFFFF', bold: true,
-                    outlineColor: '#000000', outlineWidth: 2,
-                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+            <ProgressBar left={87} top={877} width={171} height={29}
+                track={TRACK} fill={FILL_GREEN} fillWidth={97}
+                label={leftProgress} labelSize={22} />
+            <ProgressBar left={489} top={877} width={171} height={29}
+                track={TRACK} fill={FILL_RED} fillWidth={97}
+                label={rightProgress} labelSize={22} />
             <text name="Defeat/Result" value={result}
                 style={{ position: 'absolute', left: 0, top: 936, width: 750, height: 26,
                     font: BODY_FONT, fontSize: 26, color: '#FFFFFF', bold: true,
@@ -154,15 +93,8 @@ export const DefeatPanel = defineComponent<DefeatPanelProps>((p) => {
                 style={{ position: 'absolute', left: 177, top: 270, width: 407, height: 303 }} />
             <image name="Defeat/Ribbon" source={RIBBON}
                 style={{ position: 'absolute', left: 111, top: 496, width: 536, height: 118 }} />
-            <text name="Defeat/TitleShadow" value={title}
-                style={{ position: 'absolute', left: 0, top: 489, width: 750, height: 111,
-                    font: TITLE_FONT, fontSize: 100, color: '#242D3C', bold: true,
-                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
-            <text name="Defeat/Title" value={title}
-                style={{ position: 'absolute', left: 0, top: 480, width: 750, height: 111,
-                    font: TITLE_FONT, fontSize: 100, color: '#DBE4FB', bold: true,
-                    outlineColor: '#000000', outlineWidth: 4,
-                    horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
+            <image name="Defeat/Title" source={TITLE}
+                style={{ position: 'absolute', left: 179, top: 480, width: 400, height: 111 }} />
         </view>
     );
 });
