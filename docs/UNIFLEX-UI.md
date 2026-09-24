@@ -158,6 +158,11 @@ npm run sync:client
 npm run typecheck:uniflex-ui
 ```
 
+普通页面、组件、资源或预览登记改动，本地专项验收到这里再加受影响页面的浏览器交互检查即可。
+改编译器、UniFlex kit、PSD 往返或预览基础设施时，才补对应的 `test:uniflex-ui-contract` 等专项测试；
+改到 Cocos 运行时或资源导入时补 Creator 真实引擎预览。普通切图页不运行
+`verify:core` / `verify:all`、清单/镜像/工具链矩阵或服务端测试；CI 的全量检查另行执行。
+
 新 TSX 同步到 Cocos 后，给**新文件**补 `.meta`（uuid 小写 `8-4-4-4-12`，不要撞现有）。不要提交 `sync:client` 扫出来的无 `.meta` 的 `*Restored/` 镜像。
 
 浏览器里点：页签、列表滚动、折叠、返回、从首页再进一次。截图不够。

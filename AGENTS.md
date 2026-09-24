@@ -149,14 +149,35 @@ npm --workspace @game/server run test:int
 `test:changed` 是**内循环收窄跑法**：只有当整次改动都落在某些包的所有权推导集（+ 生成物/镜像）内，
 才只跑那些包的测试 + 包机制测试 + 全部 `verify:*` 校验脚本 + typecheck / test:fgui / test:client；
 只要有一条宿主路径就退回 `verify:all`。⚠ 判据是反的（⛔ 不是「插件目录变了就只跑插件」）——包测试直接
-import 宿主，改宿主能把它们打红。⚠ 它是内循环便利，⛔ 不是审核闸：提交前与 CI 仍跑 `verify:all`。
+import 宿主，改宿主能把它们打红。⚠ 它是内循环便利，⛔ 不是审核闸；本地验收按下节选择，
+CI 仍跑 `verify:all`。
+
+## 按改动范围验收
+
+本地验收先看**实际改动路径与行为**，只跑能检出该改动风险的检查；不因用户说“验收”就默认运行
+`verify:core` / `verify:all`。记录已运行的检查、未覆盖的边界与失败原因。CI 的全量闸保持不变；
+涉及跨域发布、阶段退出或用户明确要求全量验收时，才在本地运行对应聚合命令。
+
+| 改动范围 | 本地必要验收 |
+| --- | --- |
+| 仅整理未推送提交、文件树不变 | 比对整理前后 tree、确认提交范围与工作区状态；不重跑构建和测试。 |
+| 仅文档 | 检查改动内容、链接与 `git diff --check`；仅在文档属于机检输入时运行对应检查。 |
+| 普通 UniFlex 页面、组件、切图资源或预览登记 | 按 [docs/UNIFLEX-UI.md](docs/UNIFLEX-UI.md) §7–8 构建、同步、UniFlex 类型检查，并从首页打开受影响页面检查显示和点击；不跑清单/镜像/工具链矩阵、服务端测试或 `verify:all`。 |
+| UniFlex 编译器、kit、PSD 往返或预览基础设施 | 运行受影响的 UniFlex 契约测试和专项检查；改到 Cocos 运行时或资源导入时补真实引擎预览。 |
+| shared、协议、服务端或普通客户端 Logic/View | 运行对应包的类型检查、同步检查与相关测试；跨边界时扩大到受影响的消费者。 |
+| 聚合脚本、工具链、生成/镜像机制、全局契约或跨多个子系统 | 运行对应矩阵或 `verify:core`；确需覆盖所有子系统时再运行 `verify:all`。 |
+
+`test:changed` 只用于其包所有权判据适用的改动；宿主路径触发的 `verify:all` 回退不等于
+每次普通 UI 改动都要运行它。测试环境缺依赖时，先判断该测试是否属于本轮必要验收；
+无关测试不为追求全绿而安装工具或重复运行。
 
 `npm run typecheck` 的客户端阶段使用 `apps/client/tsconfig.test.json`，在 Node 侧最小 cc/FairyGUI 桩下
 严格覆盖 `apps/client/src/**/*.ts`、`apps/client/test/**/*.ts`，包括 `Main.ts`、全部 View、装配件和测试。
 `apps/client/tsconfig.json` 仍是 Creator 兼容 legacy 配置，使用本地 cc/FairyGUI 桩递归覆盖
 `apps/client/src/**/*.ts`（含 Main、全部 View 与 gameplay）；`clientTypecheckConfig.test.ts` 守门文件集合，
 防止新增目录静默逃逸。这不代表 CI 探针或 Creator 真实引擎验证的盲区。
-仍必须结合 `npm run test:client`、`npm run test:fgui`、同步检查与 Creator 本地预览验证真实引擎和资源。
+改动普通客户端逻辑、View/FGUI 装配或引擎接缝时，结合相关的 `test:client`、`test:fgui`、
+同步检查与 Creator 本地预览；纯 UniFlex 页面/组件按上节和 UNIFLEX-UI 文档验收。
 
 `fetch:colyseus`、`fetch:fgui` 和 `fetch:uniflex` 仍保留为框架维护团队显式升级锁定依赖时使用的工具，不是首次打开或普通开发步骤。这里的“手动更新”是维护团队人工决定版本、调整版本与完整性哈希、运行并审核脚本；脚本负责可重复的下载、校验和镜像更新。bitECS 没有自动更新命令；其 12 个锁定源文件和 `scripts/bitecs.sha256` 由维护团队按上游版本手动维护，并在更新后运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的版本。
 

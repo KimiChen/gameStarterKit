@@ -92,7 +92,9 @@ apps/client/src
 | 定向故障矩阵 fail-closed | `npm run test:faults`（集成组 `test:faults:int`） |
 | 外部身份契约版本与生成物一致 | `npm run verify:webplatform-contract` |
 
-`npm run verify:core` / `verify:all` 是上述检查的聚合入口，改动合入前至少应通过 `verify:core`。
+`npm run verify:core` / `verify:all` 是上述检查的聚合入口，供跨子系统改动、阶段退出和 CI 使用。
+普通本地改动按 [AGENTS.md 的改动范围验收](../AGENTS.md#按改动范围验收) 选择检查，
+不因聚合命令存在就运行无关矩阵或服务端测试。
 
 这些命令是本地开发验证入口，不表示所有真实边界都已覆盖。客户端 `typecheck:client` 通过
 `apps/client/tsconfig.test.json` 和最小引擎桩严格编译全部 `src/**/*.ts` 与 `test/**/*.ts`；
