@@ -64,6 +64,7 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 | 数量加减 / 滑条 | `QuantityControl` |
 | 进度条 | `ProgressBar` |
 | 横向滚动公告 | `Marquee`（`text` + 视口尺寸；可设 `speed` / `gap` / `paused` / 精确 `textWidth`） |
+| 飘字 / 图标＋文本提示 | `FloatingHint` 播放单条；多条用 `FloatingHintQueue` 按触发时间起飘（同时触发时默认最少错开 120 ms，允许动画重叠），`onComplete` 从 `items` 移除已结束项。传 `idleText` 可在队列空闲时循环展示一条；目录示例按钮按实际点击时间入队 |
 | 星级 | `StarRow` |
 | 输入框 | `InputText` |
 | 下拉框 | `Dropdown`（`dropdownSkins.ts` 提供皮肤） |

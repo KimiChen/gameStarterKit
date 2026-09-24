@@ -198,6 +198,16 @@
       "source": "apps/client/src/ui-uniflex/gamecomponents/empty/EmptyState.tsx"
     },
     {
+      "key": "FloatingHint",
+      "rootName": "FloatingHint",
+      "source": "apps/client/src/ui-uniflex/components/hint/FloatingHint.tsx"
+    },
+    {
+      "key": "FloatingHintQueue",
+      "rootName": "FloatingHintQueue",
+      "source": "apps/client/src/ui-uniflex/components/hint/FloatingHint.tsx"
+    },
+    {
       "key": "HeroBondItem",
       "rootName": "HeroBondItem",
       "source": "apps/client/src/ui-uniflex/modules/hero/HeroScreen/HeroBondItem.tsx"

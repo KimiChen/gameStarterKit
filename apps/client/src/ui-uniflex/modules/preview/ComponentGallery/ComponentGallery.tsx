@@ -1,4 +1,4 @@
-import { defineView, useMemo, useState } from '@uniflex/compiler';
+import { defineView, useMemo, useRef, useState } from '@uniflex/compiler';
 import { ActionButton } from '../../../components/button/ActionButton';
 import { backButton, cancelButton, confirmButton, cyanButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
@@ -15,6 +15,7 @@ import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { Marquee } from '../../../components/marquee/Marquee';
+import { FloatingHintQueue, type FloatingHintQueueItem } from '../../../components/hint/FloatingHint';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
 import { RewardItem } from '../../../gamecomponents/item/RewardItem';
@@ -29,9 +30,11 @@ const PAGE_WIDTH = 750;
 const PAGE_HEIGHT = 1424;
 const HEADER_HEIGHT = 188;
 const SCROLL_HEIGHT = PAGE_HEIGHT - HEADER_HEIGHT;
-const CONTENT_HEIGHT = 4220;
+const CONTENT_HEIGHT = 4600;
 const SECTION_WIDTH = 710;
 const INNER_WIDTH = 674;
+const HINT_WIDTH = 300;
+const HINT_LEFT = (INNER_WIDTH - HINT_WIDTH) / 2;
 const SECTION_GAP = 24;
 const ITEM_GAP = 20;
 const CHROME_GAP = 36;
@@ -65,6 +68,17 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
     const [quantity, setQuantity] = useState(3);
     const [input, setInput] = useState('主题输入');
     const [navigation, setNavigation] = useState<MainNavSlot>('hero');
+    const [textHints, setTextHints] = useState<readonly FloatingHintQueueItem[]>([]);
+    const [iconHints, setIconHints] = useState<readonly FloatingHintQueueItem[]>([]);
+    const nextTextHintId = useRef(0);
+    const nextIconHintId = useRef(0);
+    const addTextHint = () => {
+        nextTextHintId.current += 1;
+        const id = nextTextHintId.current;
+        const text = id % 3 === 1 ? '+80 经验' : id % 3 === 2 ? '+300 经验' : '+1200 经验';
+        setTextHints((current) => [...current, { id, text, textWidth: 200, requestedAtMs: Date.now() }]);
+    };
+    const completeTextHint = (id: number) => setTextHints((current) => current.filter((item) => item.id !== id));
     const theme: ComponentTheme = mode === 'classic' ? themes.classic : themes.midnight;
     const preview = theme.preview;
     const pageBackground = preview.background;
@@ -86,6 +100,14 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
     const font = fontRef('fonts/regular', 700);
     const gearIcon = imageRef('ui/settings/gear');
     const gemIcon = itemIcon('gem');
+    const addIconHint = () => {
+        nextIconHintId.current += 1;
+        const id = nextIconHintId.current;
+        const text = id % 3 === 1 ? '+20 宝石' : id % 3 === 2 ? '+5 宝石' : '+50 宝石';
+        setIconHints((current) => [...current,
+            { id, text, icon: gemIcon, textWidth: 160, requestedAtMs: Date.now() }]);
+    };
+    const completeIconHint = (id: number) => setIconHints((current) => current.filter((item) => item.id !== id));
     const tabSkin = useMemo(() => ({
         ...mailTab,
         selected: theme.tab.skins.mail.selected,
@@ -360,6 +382,44 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                             <Marquee text="联盟活动即将开始，请各位成员做好准备！" left={0} top={0}
                                 width={INNER_WIDTH} height={56} font={font} fontSize={26}
                                 color={pageText} backgroundColor={pageSurfaceAlt} />
+                        </view>
+                    </view>
+                    <view name="FloatingHintSection" style={{
+                        width: SECTION_WIDTH, backgroundColor: pageSurface,
+                        padding: { left: 18, right: 18, top: 16, bottom: 20 },
+                        flexDirection: 'column', gap: ITEM_GAP,
+                    }}>
+                        <text value="飘字提示" style={{
+                            width: INNER_WIDTH, height: 40, font: font, fontSize: 28, color: pageAccent,
+                            verticalAlign: 'center',
+                        }} />
+                        <view style={{ position: 'relative', width: INNER_WIDTH, height: 132,
+                            backgroundColor: pageSurfaceAlt }}>
+                            <FloatingHintQueue items={textHints} onComplete={completeTextHint}
+                                idleText="+1200 经验" idleTextWidth={200}
+                                left={HINT_LEFT} top={74} width={HINT_WIDTH} height={50}
+                                font={font} fontSize={32} />
+                            <view name="FloatingText/Add" accessibilityLabel="飘字再飘一个" interaction="press"
+                                onClick={addTextHint} style={{ position: 'absolute', left: 534, top: 41,
+                                    width: 128, height: 50, backgroundColor: pageAccent }}>
+                                <text value="再飘一个" style={{ width: 128, height: 50, font: font,
+                                    fontSize: 22, color: pageOnAccent,
+                                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+                            </view>
+                        </view>
+                        <view style={{ position: 'relative', width: INNER_WIDTH, height: 132,
+                            backgroundColor: pageSurfaceAlt }}>
+                            <FloatingHintQueue items={iconHints} onComplete={completeIconHint}
+                                idleText="+50 宝石" idleIcon={gemIcon} idleTextWidth={160}
+                                left={HINT_LEFT} top={74} width={HINT_WIDTH} height={50}
+                                font={font} fontSize={32} />
+                            <view name="FloatingIconText/Add" accessibilityLabel="图标文本再飘一个" interaction="press"
+                                onClick={addIconHint} style={{ position: 'absolute', left: 534, top: 41,
+                                    width: 128, height: 50, backgroundColor: pageAccent }}>
+                                <text value="再飘一个" style={{ width: 128, height: 50, font: font,
+                                    fontSize: 22, color: pageOnAccent,
+                                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+                            </view>
                         </view>
                     </view>
                     <view name="ItemsSection" style={{

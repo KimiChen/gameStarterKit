@@ -1,4 +1,4 @@
-import { defineView, useMemo, useState } from '@uniflex/compiler';
+import { defineView, useMemo, useRef, useState } from '@uniflex/compiler';
 import { ActionButton } from '../../../components/button/ActionButton';
 import { backButton, cancelButton, closeButton, confirmButton, cyanButton, redButton, yellowButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
@@ -17,6 +17,7 @@ import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { characterTab, heroDetailTab, heroListTab, mailTab } from '../../../components/tab/tabSkins';
 import { NotificationBadge } from '../../../components/badge/NotificationBadge';
 import { Marquee } from '../../../components/marquee/Marquee';
+import { FloatingHintQueue, type FloatingHintQueueItem } from '../../../components/hint/FloatingHint';
 import { EmptyState } from '../../../gamecomponents/empty/EmptyState';
 import { ItemSlot, itemIcon } from '../../../gamecomponents/item/ItemSlot';
 import { RewardItem } from '../../../gamecomponents/item/RewardItem';
@@ -70,6 +71,8 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const theme = skin === 'midnight' ? themes.midnight : themes.classic;
     const pageSurfaceAlt = theme.preview.surfaceAlt;
     const pageText = theme.preview.text;
+    const pageAccent = theme.preview.accent;
+    const pageOnAccent = theme.preview.onAccent;
     const [checked, setChecked] = useState(true);
     const [radio, setRadio] = useState('a');
     const [selectedTab, setSelectedTab] = useState('one');
@@ -78,12 +81,26 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const [dropdownValue, setDropdownValue] = useState('all');
     const dropdownSkin = useMemo(() => ({ ...filterDropdown, font: theme.font, color: theme.tab.color }), [theme]);
     const [navigation, setNavigation] = useState<MainNavSlot>('hero');
+    const [hints, setHints] = useState<readonly FloatingHintQueueItem[]>([]);
+    const nextHintId = useRef(0);
+    const completeHint = (id: number) => setHints((current) => current.filter((item) => item.id !== id));
     const checkedLabel = checked ? '已勾选' : '未勾选';
     const radioA = radio === 'a';
     const radioB = radio === 'b';
     const font = fontRef('fonts/regular', 700);
     const gearIcon = imageRef('ui/settings/gear');
     const gemIcon = itemIcon('gem');
+    const addHint = () => {
+        nextHintId.current += 1;
+        const id = nextHintId.current;
+        const requestedAtMs = Date.now();
+        const item = part === 'cmp-floating-icon-text'
+            ? { id, text: id % 3 === 1 ? '+20 宝石' : id % 3 === 2 ? '+5 宝石' : '+50 宝石',
+                icon: gemIcon, textWidth: 160, requestedAtMs }
+            : { id, text: id % 3 === 1 ? '+80 经验' : id % 3 === 2 ? '+300 经验' : '+1200 经验',
+                textWidth: 200, requestedAtMs };
+        setHints((current) => [...current, item]);
+    };
     const showMailTab = part === 'cmp-tabs';
     const showCharacterTab = part === 'cmp-tab-character';
     const showHeroListTab = part === 'cmp-tab-hero-list';
@@ -168,6 +185,10 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showDropdown = part === 'cmp-dropdown';
     const showProgress = part === 'cmp-progress';
     const showMarquee = part === 'cmp-marquee';
+    const showFloatingText = part === 'cmp-floating-text';
+    const showFloatingIconText = part === 'cmp-floating-icon-text';
+    const hintWidth = Math.min(300, Math.max(1, width - 170));
+    const hintLeft = (width - hintWidth) / 2;
     const showEmpty = part === 'cmp-empty';
     const showTabs = showMailTab || showCharacterTab || showHeroListTab || showHeroDetailTab;
     const showQuantity = part === 'cmp-quantity';
@@ -248,6 +269,34 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
             <Marquee text="联盟活动即将开始，请各位成员做好准备！" left={0} top={0}
                 width={width} height={height} font={font} fontSize={26}
                 color={pageText} backgroundColor={pageSurfaceAlt} paused={!showMarquee} />
+        </view>
+        <view visible={showFloatingText} style={{ position: 'absolute', left: 0, top: 0,
+            width: width, height: height, backgroundColor: pageSurfaceAlt }}>
+            <FloatingHintQueue items={hints} onComplete={completeHint}
+                idleText="+1200 经验" idleTextWidth={200}
+                left={hintLeft} top={74} width={hintWidth} height={50}
+                font={font} fontSize={32} visible={showFloatingText} />
+            <view name="FloatingText/Add" accessibilityLabel="再飘一个" interaction="press"
+                onClick={addHint} style={{ position: 'absolute', left: width - 140, top: 41,
+                    width: 128, height: 50, backgroundColor: pageAccent }}>
+                <text value="再飘一个" style={{ width: 128, height: 50, font: font,
+                    fontSize: 22, color: pageOnAccent,
+                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+        </view>
+        <view visible={showFloatingIconText} style={{ position: 'absolute', left: 0, top: 0,
+            width: width, height: height, backgroundColor: pageSurfaceAlt }}>
+            <FloatingHintQueue items={hints} onComplete={completeHint}
+                idleText="+50 宝石" idleIcon={gemIcon} idleTextWidth={160}
+                left={hintLeft} top={74} width={hintWidth} height={50}
+                font={font} fontSize={32} visible={showFloatingIconText} />
+            <view name="FloatingIconText/Add" accessibilityLabel="再飘一个" interaction="press"
+                onClick={addHint} style={{ position: 'absolute', left: width - 140, top: 41,
+                    width: 128, height: 50, backgroundColor: pageAccent }}>
+                <text value="再飘一个" style={{ width: 128, height: 50, font: font,
+                    fontSize: 22, color: pageOnAccent,
+                    horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
         </view>
         <view visible={showEmpty} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <EmptyState theme={theme} left={283} top={4} label="空状态" labelLeft={232} labelTop={124} labelWidth={210} />
