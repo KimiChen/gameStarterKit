@@ -1,4 +1,5 @@
 import { buildCatalog, type CatalogLeaf, type CatalogSection } from "./catalog";
+import { componentUsage } from "./component-usage";
 import type { ScreenEntry } from "./screens";
 
 /** 目录卡片的预览挂载。卡片画在当前页，不再各开一个 iframe。 */
@@ -109,6 +110,16 @@ h1,h2,h3,h4,p{margin:0}
 .card__h{display:flex;align-items:center;gap:0 6px;min-height:32px;padding:1px 3px 1px 10px;border-bottom:1px solid var(--ds-border)}
 .card__h h4{flex:1;min-width:0;font-size:12.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card__m{font:10.5px var(--ds-mono);color:var(--ds-faint);white-space:nowrap}
+.card__h .ib{height:26px;min-width:26px;padding:0 5px}
+.codebox{width:min(760px,calc(100vw - 32px));max-height:min(80vh,720px);padding:0;border:1px solid var(--ds-border);border-radius:10px;background:var(--ds-panel);color:var(--ds-text);box-shadow:var(--ds-shadow)}
+.codebox[open]{display:flex;flex-direction:column}
+.codebox::backdrop{background:rgba(10,12,18,.4)}
+.codebox__h{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;border-bottom:1px solid var(--ds-border)}
+.codebox__h h2{flex:1;min-width:0;font-size:13px;font-weight:650}
+.codebox__note{padding:8px 14px;font-size:12px;color:var(--ds-dim);border-bottom:1px solid var(--ds-border)}
+.codebox__b{min-height:0;overflow:auto;background:var(--ds-sunken)}
+.code__h{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:2px 8px 2px 14px;background:var(--ds-sunken);border-bottom:1px solid var(--ds-border);font:11px var(--ds-mono);color:var(--ds-faint)}
+.codebox pre{margin:0;padding:10px 14px 14px;font:12px/1.55 var(--ds-mono);white-space:pre;tab-size:2}
 .stage{position:relative;flex:1;background:var(--canvas)}
 .frame{position:relative;width:100%;margin:0 auto;overflow:hidden;background:transparent}
 .frame .live{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:auto;font:16px/1.2 sans-serif;color:#000}
@@ -176,6 +187,7 @@ const ICONS: Record<string, string> = {
     moon: '<path d="M13 9.5A5.5 5.5 0 016.5 3 5.5 5.5 0 1013 9.5z"/>',
     search: '<circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/>',
     x: '<path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/>',
+    code: '<path d="M6 4L2.5 8 6 12M10 4l3.5 4-3.5 4"/>',
     bg: '<circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 010 11z" fill="currentColor"/>',
 };
 
@@ -460,6 +472,56 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         for (const observer of frameSizes.splice(0)) observer.disconnect();
     };
 
+    const openCode = (item: CatalogLeaf, trigger: HTMLButtonElement) => {
+        const code = componentUsage[item.id];
+        if (!code) return;
+        const dialog = document.createElement("dialog");
+        dialog.className = "codebox";
+        dialog.setAttribute("aria-label", `${item.label} 用法代码`);
+        const header = document.createElement("div");
+        header.className = "codebox__h";
+        const title = document.createElement("h2");
+        title.textContent = `${item.label} · 用法代码`;
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "ib";
+        close.title = "关闭";
+        close.setAttribute("aria-label", "关闭代码");
+        close.append(icon("x"));
+        close.addEventListener("click", () => dialog.close());
+        header.append(title, close);
+        const note = document.createElement("p");
+        note.className = "codebox__note";
+        note.textContent = "UniFlex TSX 用法示例。theme、skin、状态和回调由所在页面提供；完整配置见 ComponentSpecimen.tsx。";
+        const body = document.createElement("div");
+        body.className = "codebox__b";
+        const bar = document.createElement("div");
+        bar.className = "code__h";
+        bar.append(document.createTextNode("TSX"));
+        const copy = document.createElement("button");
+        copy.type = "button";
+        copy.className = "ib";
+        copy.textContent = "复制代码";
+        copy.addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(code);
+                copy.textContent = "已复制";
+            } catch {
+                copy.textContent = "复制失败";
+            }
+        });
+        bar.append(copy);
+        const pre = document.createElement("pre");
+        pre.textContent = code;
+        body.append(bar, pre);
+        dialog.append(header, note, body);
+        dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+        dialog.addEventListener("close", () => { dialog.remove(); trigger.focus(); }, { once: true });
+        shadow.append(dialog);
+        dialog.showModal();
+        close.focus();
+    };
+
     const cardOf = (item: CatalogLeaf): HTMLElement => {
         const article = document.createElement("article");
         article.className = "card" + (item.wide ? " card--wide" : "");
@@ -483,6 +545,15 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
             meta.className = "card__m";
             meta.textContent = `${item.width}×${item.height}`;
             header.append(meta);
+        } else if (componentUsage[item.id]) {
+            const code = document.createElement("button");
+            code.type = "button";
+            code.className = "ib";
+            code.title = "查看用法代码";
+            code.setAttribute("aria-label", `查看${item.label}用法代码`);
+            code.append(icon("code"));
+            code.addEventListener("click", () => openCode(item, code));
+            header.append(code);
         }
         header.append(open);
         const frame = document.createElement("div");
