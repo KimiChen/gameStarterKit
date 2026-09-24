@@ -142,11 +142,14 @@ export const MailBattleLogPanel = defineComponent<MailBattleLogPanelProps>((p) =
         <image source={imageRef('ui/mail-battle-log/header')} style={{ position: 'absolute', left: 40, top: 303, width: 673, height: 49 }} />
         <text name="BattleLog/Date" value={p.timestamp ?? '2026-9-8 11:24'} style={{ position: 'absolute', left: 51, top: 303, width: 350, height: 49,
             font: fontRef('fonts/regular', 700), bold: true, fontSize: 32, color: '#FFFFFF', verticalAlign: 'center' }} />
-        <view name="BattleLog/ToggleAllRounds" interaction="press" interactable={rounds.length > 0} onClick={toggleRounds}
+        <view name="BattleLog/ToggleAllRounds"
             style={{ position: 'absolute', left: 457, top: 303, width: 246, height: 49 }}>
             <text value={allClosed ? '展开所有回合' : '关闭所有回合'} style={{ position: 'absolute', width: 196, height: 49,
                 font: fontRef('fonts/regular', 700), bold: true, fontSize: 30, color: '#FFFFFF', verticalAlign: 'center' }} />
             <image name={chevronRotation} source={imageRef('ui/mail-battle-log/collapse-all')} style={{ position: 'absolute', left: 211, top: 10, width: 32, height: 31 }} />
+            <view name="BattleLog/ToggleAllRounds/HitMask" interaction="press" interactable={rounds.length > 0} onClick={toggleRounds}
+                accessibilityLabel={allClosed ? '展开所有回合' : '关闭所有回合'}
+                style={{ position: 'absolute', width: '100%', height: '100%' }} />
         </view>
         <VirtualList source={source} key="id" sizeKey="height" direction="vertical" controller={list} overscan={1} inertia elastic
             style={{ position: 'absolute', left: 47, top: 362, width: 660, height: 854 }}>
