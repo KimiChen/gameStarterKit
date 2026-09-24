@@ -25,10 +25,10 @@
 > - [docs/MAPORIGINAL-2D-OPTIMIZATION.md](docs/MAPORIGINAL-2D-OPTIMIZATION.md)：mapOriginal 2D 素材、配置与加载改进方案（2026-09-24；当前统计与候选收益分开，O0 基线 → O1 图集去重重排 → O2 保留锚点的裁边 → O3 分组加载/释放与 Bundle → O4 GPU 压缩 → O5 大配置外置，O6 动画更新为后续；实施状态只在其 §9 更新；⛔ 宿主优化，不改变原版机制真源、不进 plan-v5）
 > - [apps/kits/slg/README.md](apps/kits/slg/README.md)：SLG 大地图机制样例（阶段 1 / 2a 已验收：worldmap/march 面、SQL 地块/行军与原创 1500×1500 地图页（三战标准图格数，225 万格）；2b 等 MMO MF5，离线 worker 等 MF7）；冻结规则与审阅见 [slg.md](slg.md)
 > - [lvr.md](lvr.md)：用本框架 1:1 复刻 Last Voyage: Rising（4X SLG）的实施规划（2026-09-18；规划 v1 未开工，⛔ 未实施任何 LVR 能力；2026-09-19 前提表补首发平台 = 微信小游戏 / WebGL1（docs/3d.md SD10）。独立 `lvr` kit、SQL 权威 + 视图房、M0 两个 spike 是排期的门；实施状态只在其 §11 回写，⛔ 不进 plan-v5）
-> - [lvr-3d.md](lvr-3d.md)：`lvr` kit 的 3D 场景管线需求（2026-09-18；需求 v1 未开工。2026-09-19 框架侧内容已提升为 docs/3d.md，同日 v1.1 按 Cyberpunk 校正为 lvr 消费方口径、v1.2 随 SD12 改 bundles 落点并加 HUD overlay、v1.3 新增 R0 登记 SD10 首发小游戏 / WebGL1 消费方；2026-09-22 v1.5 同步原始输入分流、蒙皮合批、资产引用与帧时验收（R1–R8 消费框架件，只留内容 / shader / 特效 / 数值 / 授权台账；A0 并入 SC0，A1–A5 ← SC1–SC4）；2026-09-24 v1.6 对齐桌面 WebGL1 low 退化验收；lvr 接入状态只在其 §8 回写）
-> - [docs/3d.md](docs/3d.md)：框架级 3D 舞台与资产管线设计提案（2026-09-19；v1.1 对照 Cocos Cyberpunk 校正，v1.2 / v1.3 审阅修订，2026-09-22 v1.5 补齐原始输入分流、蒙皮合批、同步 retainer、UUID 依赖、帧时验收（3D-13–3D-45），2026-09-24 v1.6 调整 SC4-B3 验收范围；由 lvr-3d.md 审阅提升：Stage3D 相机 / 层位 / 场景全局租约、`AppPorts.stage3d`、AssetLease、`logic/scene3d` 纯数学（lodBands 落 shared）、EntityPool / SkinnedUnits / Vfx / quality 画质分档、cc 类型桩 3D 面、`verify:assets3d` 与 `tools/art3d`；阶段 SC0–SC5，消费方 lvr / mmo kit / slg 2b；SD9–SD12 已于 2026-09-19 拍板（mmo 世界视图 2D 首版 + 3D-ready、小游戏为首版目标且首发消费方 = lvr、引擎内置新管线、每包一个 bundle）；SC0 / SC1 / SC2 / SC3 已退出（2026-09-22 / 23 / 24，tag `sc0-exit` / `sc1-exit` / `sc2-exit` / `sc3-exit`），SC4 已于2026-09-24退出（tag `sc4-exit`；实际60Hz容量证据及默认限帧限制见阶段记录），SC5 已于2026-09-24退出（tag `stage3d-v1-frozen`；冻结 API / 证据索引见 §10.1），SC0–SC5 全部完成；实施状态只在其 §10 回写，⛔ 不进 plan-v5）
+> - [lvr-3d.md](lvr-3d.md)：`lvr` kit 的 3D 场景管线需求（2026-09-18；需求 v1 未开工。2026-09-19 框架侧内容已提升为 docs/3d.md，同日 v1.1 按 Cyberpunk 校正为 lvr 消费方口径、v1.2 随 SD12 改 bundles 落点并加 HUD overlay、v1.3 新增 R0 登记 SD10 首发小游戏 / WebGL1 消费方；2026-09-22 v1.5 同步原始输入分流、蒙皮合批、资产引用与帧时验收（R1–R8 消费框架件，只留内容 / shader / 特效 / 数值 / 授权台账；A0 由 LVR 项目组负责验证，A1–A5 ← SC1–SC4）；2026-09-24 v1.6 对齐桌面 WebGL1 low 退化验收；lvr 接入状态只在其 §8 回写）
+> - [docs/3d.md](docs/3d.md)：框架级 3D 舞台与资产管线设计提案（2026-09-19；v1.1 对照 Cocos Cyberpunk 校正，v1.2 / v1.3 审阅修订，2026-09-22 v1.5 补齐原始输入分流、蒙皮合批、同步 retainer、UUID 依赖、帧时验收（3D-13–3D-45），2026-09-24 v1.6 调整 SC4-B3 验收范围；由 lvr-3d.md 审阅提升：Stage3D 相机 / 层位 / 场景全局租约、`AppPorts.stage3d`、AssetLease、`logic/scene3d` 纯数学（lodBands 落 shared）、EntityPool / SkinnedUnits / Vfx / quality 画质分档、cc 类型桩 3D 面、`verify:assets3d` 与 `tools/art3d`；阶段 SC0–SC5，消费方 lvr / mmo kit / slg 2b；SD9–SD12 已于 2026-09-19 拍板（mmo 世界视图 2D 首版 + 3D-ready、小游戏为首版目标且首发消费方 = lvr、引擎内置新管线、每包一个 bundle）；SC0 / SC1 / SC2 / SC3 已退出（2026-09-22 / 23 / 24，tag `sc0-exit` / `sc1-exit` / `sc2-exit` / `sc3-exit`），SC4 已于2026-09-24退出（tag `sc4-exit`；实际60Hz容量证据及默认限帧限制见阶段记录），SC5 已于2026-09-24退出（tag `stage3d-v1-frozen`；冻结 API / 证据索引见 §10.1），SC0–SC5 全部完成并收口，交付无需等待 LVR A0；实施状态只在其 §10 回写，⛔ 不进 plan-v5）
 > - [docs/3D-ASSETS.md](docs/3D-ASSETS.md)：3D 素材使用方式、规范与原则（2026-09-19 初稿、2026-09-24 规范 v1.6；含蒙皮骨骼贴图约束、UUID 依赖闭合与桌面 WebGL1 low 退化验收；对照 Cocos Cyberpunk 官方演示实测：十条原则、对照表、目录与命名、模型 / 材质 / 贴图 / 光照 / 场景组织与 LOD / 动画 / 特效 / 物理 / 画质分档 / 加载释放 / 入库流程与 `verify:assets3d` 机检 / 授权（⛔ Cyberpunk 素材不得进仓）；数字候选 §15，SC0 后冻结）
-> - [docs/3D-PLAN.md](docs/3D-PLAN.md)：3D 实施施工单（2026-09-19 初稿、2026-09-24 v1.6；含 3D-13–3D-45 五轮审阅记录与 L01–L09，五项新增问题按批次实施；SC0 / SC1 / SC2 / SC3 已退出，SC4 已于2026-09-24退出（tag `sc4-exit`；实际60Hz容量证据及默认限帧限制见阶段记录），SC5-B1 / B2 已交付，框架 v1 冻结（tag `stage3d-v1-frozen`）；SC0–SC5 拆成 `SCx-Bn` 批次：文件落点、机检退出、命令；消费方 lvr A0–A5 / mmo（SD9）/ slg 接法；批次勾选只在其 §8，阶段级完成仍回写 3d.md §10；⛔ 不是设计真源、不进 plan-v5）
+> - [docs/3D-PLAN.md](docs/3D-PLAN.md)：3D 实施施工单（2026-09-19 初稿、2026-09-24 v1.6；含 3D-13–3D-45 五轮审阅记录与 L01–L09，五项新增问题按批次实施；SC0 / SC1 / SC2 / SC3 已退出，SC4 已于2026-09-24退出（tag `sc4-exit`；实际60Hz容量证据及默认限帧限制见阶段记录），SC5-B1 / B2 已交付，框架 v1 已收口并冻结（tag `stage3d-v1-frozen`）；SC0–SC5 拆成 `SCx-Bn` 批次：文件落点、机检退出、命令；消费方 lvr A0–A5 / mmo（SD9）/ slg 接法；批次勾选只在其 §8，阶段级完成仍回写 3d.md §10；⛔ 不是设计真源、不进 plan-v5）
 > - [todo-godogen.md](todo-godogen.md)：未实现的外部项目对照吸收计划，不构成核心能力承诺
 > - [docs/plan-v5.md](docs/plan-v5.md)：当前实施状态、验收基线与开放项去向的唯一真相（未实现开放项登记在 EXTRAS §5.2，有意保留边界在 §5.3）
 >
@@ -149,14 +149,35 @@ npm --workspace @game/server run test:int
 `test:changed` 是**内循环收窄跑法**：只有当整次改动都落在某些包的所有权推导集（+ 生成物/镜像）内，
 才只跑那些包的测试 + 包机制测试 + 全部 `verify:*` 校验脚本 + typecheck / test:fgui / test:client；
 只要有一条宿主路径就退回 `verify:all`。⚠ 判据是反的（⛔ 不是「插件目录变了就只跑插件」）——包测试直接
-import 宿主，改宿主能把它们打红。⚠ 它是内循环便利，⛔ 不是审核闸：提交前与 CI 仍跑 `verify:all`。
+import 宿主，改宿主能把它们打红。⚠ 它是内循环便利，⛔ 不是审核闸；本地验收按下节选择，
+CI 仍跑 `verify:all`。
+
+## 按改动范围验收
+
+本地验收先看**实际改动路径与行为**，只跑能检出该改动风险的检查；不因用户说“验收”就默认运行
+`verify:core` / `verify:all`。记录已运行的检查、未覆盖的边界与失败原因。CI 的全量闸保持不变；
+涉及跨域发布、阶段退出或用户明确要求全量验收时，才在本地运行对应聚合命令。
+
+| 改动范围 | 本地必要验收 |
+| --- | --- |
+| 仅整理未推送提交、文件树不变 | 比对整理前后 tree、确认提交范围与工作区状态；不重跑构建和测试。 |
+| 仅文档 | 检查改动内容、链接与 `git diff --check`；仅在文档属于机检输入时运行对应检查。 |
+| 普通 UniFlex 页面、组件、切图资源或预览登记 | 按 [docs/UNIFLEX-UI.md](docs/UNIFLEX-UI.md) §7–8 构建、同步、UniFlex 类型检查，并从首页打开受影响页面检查显示和点击；不跑清单/镜像/工具链矩阵、服务端测试或 `verify:all`。 |
+| UniFlex 编译器、kit、PSD 往返或预览基础设施 | 运行受影响的 UniFlex 契约测试和专项检查；改到 Cocos 运行时或资源导入时补真实引擎预览。 |
+| shared、协议、服务端或普通客户端 Logic/View | 运行对应包的类型检查、同步检查与相关测试；跨边界时扩大到受影响的消费者。 |
+| 聚合脚本、工具链、生成/镜像机制、全局契约或跨多个子系统 | 运行对应矩阵或 `verify:core`；确需覆盖所有子系统时再运行 `verify:all`。 |
+
+`test:changed` 只用于其包所有权判据适用的改动；宿主路径触发的 `verify:all` 回退不等于
+每次普通 UI 改动都要运行它。测试环境缺依赖时，先判断该测试是否属于本轮必要验收；
+无关测试不为追求全绿而安装工具或重复运行。
 
 `npm run typecheck` 的客户端阶段使用 `apps/client/tsconfig.test.json`，在 Node 侧最小 cc/FairyGUI 桩下
 严格覆盖 `apps/client/src/**/*.ts`、`apps/client/test/**/*.ts`，包括 `Main.ts`、全部 View、装配件和测试。
 `apps/client/tsconfig.json` 仍是 Creator 兼容 legacy 配置，使用本地 cc/FairyGUI 桩递归覆盖
 `apps/client/src/**/*.ts`（含 Main、全部 View 与 gameplay）；`clientTypecheckConfig.test.ts` 守门文件集合，
 防止新增目录静默逃逸。这不代表 CI 探针或 Creator 真实引擎验证的盲区。
-仍必须结合 `npm run test:client`、`npm run test:fgui`、同步检查与 Creator 本地预览验证真实引擎和资源。
+改动普通客户端逻辑、View/FGUI 装配或引擎接缝时，结合相关的 `test:client`、`test:fgui`、
+同步检查与 Creator 本地预览；纯 UniFlex 页面/组件按上节和 UNIFLEX-UI 文档验收。
 
 `fetch:colyseus`、`fetch:fgui` 和 `fetch:uniflex` 仍保留为框架维护团队显式升级锁定依赖时使用的工具，不是首次打开或普通开发步骤。这里的“手动更新”是维护团队人工决定版本、调整版本与完整性哈希、运行并审核脚本；脚本负责可重复的下载、校验和镜像更新。bitECS 没有自动更新命令；其 12 个锁定源文件和 `scripts/bitecs.sha256` 由维护团队按上游版本手动维护，并在更新后运行 `npm run verify:ecs`。普通开发者直接使用仓库已入库的版本。
 

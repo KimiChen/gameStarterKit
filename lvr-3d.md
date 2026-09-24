@@ -1,6 +1,6 @@
 # `lvr` kit 的 3D 场景管线 —— 需求文档
 
-> - 日期：2026-09-24。状态：**需求 v1.6（2026-09-24），lvr 接入未开工**；框架 SC0–SC4 已退出，A3 的框架前置齐备，消费通知见 §8；不代表 lvr 内容已交付。
+> - 日期：2026-09-24。状态：**需求 v1.6（2026-09-24），lvr 接入未开工**；框架 SC0–SC5 已收口并冻结于 `stage3d-v1-frozen`，A0–A5 由 LVR 项目组另行实施与验收，责任交接见 §8。
 > - 归属：本文是 [lvr.md](lvr.md) §9.1 拍板「走 B：自建 3D 管线，用 Cocos 的 3D 能力」之后拆出的独立需求，
 >   **由单独的人/单独的排期实现**，⛔ 不占 lvr.md §7 的 100–200 人月核心工程估算。
 > - 逆向源：`../sourceVersion/lvr-1.0.0/`（仓外，只读）。本文引用的类名与目录均为实测。
@@ -10,7 +10,7 @@
 > - **2026-09-22 v1.4**：随框架 3D-41–3D-45 修订消费方契约：框架原始输入路由 / cancel、蒙皮 jointTexture 分批与 RGBA8 回退、UUID / 子资产依赖闭合、raw wall frame interval、预热后稳定内存基线；⛔ 未实施能力、未勾完成、未冻结候选值。
 > - **2026-09-22 v1.5**：按当前任务范围收窄验收项，保留远程 bundle、WebGL1 目标与 low 退化证据；⛔ 仅文档调整，未实施能力、未冻结候选值、未勾完成。
 > - 治理：实施状态只在本文 §8 回写；⛔ 不进 plan-v5。
-> - **2026-09-19 提升**：本文的框架侧内容已提升为框架级设计 [docs/3d.md](docs/3d.md)（Stage3D 舞台 / AssetLease / `logic/scene3d` 纯数学 / 机械件 / 资产闸 / `tools/art3d`，阶段 SC0–SC5）；本文降为 **lvr 消费方需求**：§3 R1–R8 的框架侧落点见 docs/3d.md §1.2，§4 表中的框架约束以 docs/3d.md §2 为准，§5 A0 并入 SC0。实施状态：框架段在 docs/3d.md §10，lvr 接入仍在本文 §8。
+> - **2026-09-19 提升**：本文的框架侧内容已提升为框架级设计 [docs/3d.md](docs/3d.md)（Stage3D 舞台 / AssetLease / `logic/scene3d` 纯数学 / 机械件 / 资产闸 / `tools/art3d`，阶段 SC0–SC5）；本文降为 **lvr 消费方需求**：§3 R1–R8 的框架侧落点见 docs/3d.md §1.2，§4 表中的框架约束以 docs/3d.md §2 为准。原计划“A0 并入 SC0”；现明确框架接缝验证已完成，LVR 真实内容 spike 由项目组负责（§5、§8）。实施状态：框架段在 docs/3d.md §10，lvr 接入仍在本文 §8。
 
 ---
 
@@ -204,10 +204,10 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 | 阶段 | 内容 | 判据 |
 | --- | --- | --- |
-| **A0 可行性 spike**（并入框架 SC0） | 用 UnityPy 从原作 bundle 取 **1 个建筑模型 + 1 套单位动画 + 1 张海面贴图**，在框架 SC0 的 CDP 探针里作第二份证据渲出来 | ⚠ **这是门**：Unity 材质/shader 不能自动转，若此步走不通需重估整条管线；框架接缝五项判据归 SC0 |
+| **A0 可行性 spike**（项目组负责） | 项目组准备具备授权记录的 **1 个建筑模型 + 1 套单位动画 + 1 张海面贴图**，使用已交付的 `tools/art3d` 与 Creator 预览链完成转换、材质 / shader 重建并渲出来 | ⚠ **这是 LVR 内容管线的门**：Unity 材质/shader 不能自动转，若走不通，由项目组调整或重估内容方案；框架接缝验证已随 SC0 退出，A0 不阻塞框架收口 |
 | **A1 场景骨架**（← SC1–SC3） | 取 Stage3D 租约 + 海面 EffectAsset + 静态地表 + `cameraRig` / `lodBands` 常量 | 能在 `kind:"cocos"` 页里平移缩放，60fps（`creator-preview --perf`）；WebGL1 证据一份（R0） |
 | **A2 实体层**（← SC3） | `EntityPool` 两级档 + `chunkStreamer` + `assetPlan` + 19 种实体预制 / 离线 `lod_1` | 同屏 100 实体 60fps，进出视口引用归零；WebGL1 low 档按 3D-ASSETS §11 上限达标（R0） |
-| **A3 单位动画**（← SC4） | `SkinnedUnits`（预烘焙、jointTexture / 布局分批）+ 行军线简模 | 同屏 100 个动画单位 60fps（§7 原始帧间隔）；多 clip / 跨 atlas 正确，WebGL1 浮点 / RGBA8 与必要退化路径有证据，实时蒙皮禁 instancing；low 退化与失败清理 / 重试证据通过（R0；等 SC4 退出） |
+| **A3 单位动画**（← SC4） | `SkinnedUnits`（预烘焙、jointTexture / 布局分批）+ 行军线简模 | 同屏 100 个动画单位 60fps（§7 原始帧间隔）；多 clip / 跨 atlas 正确，WebGL1 浮点 / RGBA8 与必要退化路径有证据，实时蒙皮禁 instancing；low 退化与失败清理 / 重试证据通过（R0；SC4 已退出） |
 | **A4 主城**（← SC3、SC4） | 三档细节状态机（kit `logic/`）+ 建筑四态 + 建筑特效挂点表 + 细节层按画质档 | 主城三档切换无卡顿；low 档 details 层不加载（R3）且 WebGL1 证据一份（R0） |
 | **A5 特效与表演**（← SC4） | `Vfx` 池 + 20–30 个高频特效（每特效一目录）+ Spine 4.2 立绘 | 战斗表演可看；low 档特效并发上限内（R0） |
 
@@ -246,6 +246,8 @@ LOD 控制：`LodActive` / `LodData` / `LodLayerMgr` / `LodScale` /
 
 > 未立项。每阶段完成在此登记一行（阶段 / 日期 / commit / 实际交付与性能数据 / 偏差）。
 > ⛔ 不向 plan-v5 回写。
+
+**2026-09-24 框架收口与责任交接**：框架 SC0–SC5 已全部完成，交付基线为 `stage3d-v1-frozen`，收口记录见 [3d.md §10](docs/3d.md#10-实施状态回写)。**A0 由 LVR 项目组主责验证**，包括真实素材与授权、模型 / 动画转换、材质 / shader 重建及实际内容预览；A1–A5 同属项目组后续排期。框架侧提供工具、文档、示例与接入支持，并修复验证暴露的通用缺陷；无需等待 A0 即可完成框架交付。LVR 未立项、未实施的状态保持不变。
 
 - lvr A0–A5 暂无接入完成记录。
 - **2026-09-24 框架 SC3 消费通知**（tag `sc3-exit`，commit 由该 tag 解析）：SC1–SC3 的框架前置已齐，A1 / A2 可消费正式 `AssetLease`、`AssetPlan`、`EntityPool` 与 SC2 数学模块；lvr 自身立项、A0 样本及内容验收仍按本文件推进。`AssetPlan` 先过滤细节层再选 quality × LOD 变体，出档缺省延迟 5 秒；实体池按档逐帧激活，取消旧代次，闲置节点持有资源直至淘汰。`Stage3dFixtureView` / `Stage3dDevScene` 的临时 loader 已删除，接法见 [CLIENT §3](docs/CLIENT.md#3-view-与-logic-分层)，`--perf` 用法见 [§8.2](docs/CLIENT.md#82-3d-性能证据)。已复核 B1–B5 的桌面 WebGL2 / 实际 WebGL1 证据及各画质 20 次开关回收，见 [SC3 汇总](docs/perf/stage3d/2026-09-24-sc3-review.json)；low 灰盒立方体由 details 门隐藏，不代表 lvr low 内容容量。A1–A5 仍须各自提供 WebGL1 证据，A3 仍等 SC4 的蒙皮与阶段性能门；本条仅通知框架能力就绪，不勾选 lvr 接入完成。

@@ -1,6 +1,6 @@
 # 3D 实施施工单：SC0–SC5 逐批次 + 消费方接入（lvr / mmo / slg）
 
-> - 日期：2026-09-19；同日 **v1.2** 按三文档交叉审阅修订，**v1.3** 采纳第四轮审阅 3D-33–3D-40（§1.4）；**v1.4（2026-09-22）** 采纳第五轮审阅（§1.5）；**v1.5（2026-09-22）** 按当前范围精简平台验收条目；**v1.6（2026-09-24）** 调整 SC4-B3 验收范围，现行第五轮审阅保留 3D-41–3D-45。依据 [3d.md](3d.md) **v1.6** 与 [3D-ASSETS.md](3D-ASSETS.md) **v1.6**；[lvr-3d.md](../lvr-3d.md) 为消费方需求 v1.6。初稿基线 `f6fad19f`；MF9 已退出（MMO-PLAN §9，MF9-B2 = `745f5ca6`），保护面修改的前置已满足。v1.6 为当前设计基线；SC0 已于2026-09-22完成预算冻结与原型移交，SC1 / SC2 已于2026-09-23退出，SC3 / SC4 / SC5 已于2026-09-24退出，框架 v1 冻结于 `stage3d-v1-frozen`，批次进度只在 §8 登记；政策上限与实测覆盖分列在3D-ASSETS §15。
+> - 日期：2026-09-19；同日 **v1.2** 按三文档交叉审阅修订，**v1.3** 采纳第四轮审阅 3D-33–3D-40（§1.4）；**v1.4（2026-09-22）** 采纳第五轮审阅（§1.5）；**v1.5（2026-09-22）** 按当前范围精简平台验收条目；**v1.6（2026-09-24）** 调整 SC4-B3 验收范围，现行第五轮审阅保留 3D-41–3D-45。依据 [3d.md](3d.md) **v1.6** 与 [3D-ASSETS.md](3D-ASSETS.md) **v1.6**；[lvr-3d.md](../lvr-3d.md) 为消费方需求 v1.6。初稿基线 `f6fad19f`；MF9 已退出（MMO-PLAN §9，MF9-B2 = `745f5ca6`），保护面修改的前置已满足。v1.6 为当前设计基线；SC0 已于2026-09-22完成预算冻结与原型移交，SC1 / SC2 已于2026-09-23退出，SC3 / SC4 / SC5 已于2026-09-24退出，框架 v1 已收口并冻结于 `stage3d-v1-frozen`，批次进度只在 §8 登记；政策上限与实测覆盖分列在3D-ASSETS §15。
 > - 定位：**施工单 + 审阅记录**——§1 保留历次审阅（3D-13–3D-45、L01–L09），§3–§4 把 3d.md §6 的每个阶段拆成可独立提交、可独立验收的批次（`SCx-Bn`），写清文件落点、机检退出条件与命令。⛔ 本文不是设计真源：机制以 3d.md 为准、素材以 3D-ASSETS.md 为准；施工细化须同步回写对应真源，⛔ 不在本文另立口径。
 > - 状态回写：阶段级完成只回写 3d.md §10；**批次级勾选只在本文 §8**；lvr 接入回写 lvr-3d.md §8。⛔ 不进 plan-v5。
 > - 形态与纪律照 [MMO-PLAN.md](MMO-PLAN.md)：一批一提交、变异验证进提交信息、夹具只用灰盒、阶段退出打轻量 tag。
@@ -13,7 +13,7 @@
 波 2   SC2 纯数学（lodBands → shared/logic；cameraRig / chunkStreamer / pickMath → client logic/scene3d；slg 改消费）  ‖  SC3 AssetLease + assetPlan + EntityPool + 全局设置租约 + creator-preview --perf（slg 改消费）
 波 3   SC4 SkinnedUnits + Vfx + WebGL1 退化实证（← SC2 + SC3）
 波 4   SC5 tools/art3d 骨架 / 图片外提 / 离线 LOD + 文档回写 + 冻结 tag stage3d-v1-frozen（← SC1–SC4）
-消费方 lvr A1 ← SC1–SC3；lvr A3 ← SC4；lvr A0 并入 SC0（用 lvr 样本资产做第二份证据）；**lvr = SD10 首发小游戏 / WebGL1 消费方**（lvr-3d.md R0：A1–A5 每阶段附 WebGL1 证据，A3 验 low 退化与故障恢复、等 SC4 退出）
+消费方 lvr A0 由项目组验证真实内容管线（框架 SC0–SC5 已收口）；lvr A1 ← SC1–SC3；lvr A3 ← SC4；**lvr = SD10 首发小游戏 / WebGL1 消费方**（lvr-3d.md R0：A1–A5 每阶段附 WebGL1 证据，A3 验 low 退化与故障恢复；框架前置均已退出）
        mmo：SD9 = C；已有 mmo kit v1 的 2D 基线已冻结，后续按 SC2 / SC1-B9 消费纯数学与非模态 HUD；3D 是依据 SC3 / SC4 数字（含 WebGL1）另行评估的可选增量，不倒改已退出的 MK 阶段
        slg 2b：SC2 退出即可消费 lodBands / cameraRig / chunkStreamer；SC3 退出迁 AssetLease + 全局设置租约
 ```
@@ -198,10 +198,12 @@ lvr-3d.md 抬头已指向 3d.md，但正文当时仍是「全部落在 kit」的
 
 ### 4.1 `lvr`（lvr-3d.md 需求 → 框架件映射；内容留 kit）
 
+**责任交接（2026-09-24）**：框架 SC0–SC5 已收口；本节 A0–A5 由 LVR 项目组负责实施与验收，框架侧提供接入支持、修复通用缺陷。历次审阅曾写“A0 并入 SC0”；现明确 SC0 的框架接缝验证已完成，LVR 真实样本验收归项目组，不列为框架待办；现行分工与状态见 [lvr-3d.md §8](../lvr-3d.md#8-实施状态回写)。
+
 | lvr 阶段 | 前置 | 接什么 | kit 自带 |
 | --- | --- | --- | --- |
 | R0 平台目标（SD10） | — | lvr 为首发小游戏 / WebGL1 消费方：low 档必达，A1–A5 每阶段附 WebGL1 证据，A3 加 low 退化与故障恢复证据（同 SC4-B3） | R0 登记（lvr-3d.md v1.6）；渠道 SDK / 发版打包 / 审核仍按 lvr.md §9.3 不做 |
-| A0 可行性（并入 SC0） | SC0-B3 | 用 lvr 样本资产（1 建筑 + 1 单位动画 + 1 海面贴图，经 `tools/art3d` 骨架前身手工 glb）在 `probe-stage3d.mjs` 里跑第二份证据 | 样本资产授权台账起草 |
+| A0 可行性（项目组负责） | 框架 v1 已交付 | 使用已交付的 `tools/art3d` 与 Creator 预览链，验证 lvr 的 1 个建筑模型 + 1 套单位动画 + 1 张海面贴图 | 项目组负责真实样本、授权台账、模型 / 动画转换、材质 / shader 重建与内容验收 |
 | A1 场景骨架 | SC1、SC2、SC3 | `ports.stage3d.acquire` + `cameraRig`（俯视角、手感常量进 `apps/shared/src/kits/lvr/api/…`）+ `lodBands`（阈值表 shared 单源）+ `AssetLease` | 海面 EffectAsset、静态地表内容、`art3d.config.json` |
 | A2 实体层 | SC3 | `EntityPool` 两级档 + `chunkStreamer` + `assetPlan` | 19 种地图实体的 prefab / LOD 组 / `hideAtLod` 表 |
 | A3 单位动画 | SC4 | `SkinnedUnits`（预烘焙 + instancing）；行军线用 `EntityPool` 简模 | 单位模型 / 动画重导出为 glb |
@@ -269,13 +271,15 @@ node tools/creator-preview/run.mjs stage3d --perf            # SC3-B5 起
 
 ## 8. 批次状态（只在本文回写；阶段级完成回写 3d.md §10）
 
+**框架已收口（2026-09-24）**：SC0–SC5 全部完成，基线 `stage3d-v1-frozen`；LVR A0–A5 属项目组后续接入，框架交付无需等待其验收。阶段收口记录见 [3d.md §10](3d.md#10-实施状态回写)。
+
 - [x] SC0-B0（eef7c1a2，随 Cyberpunk 校正完成） [x] SC0-B1 [x] SC0-B2 [x] SC0-B3 [x] SC0-B5 [x] SC0-B4
 - [x] SC1-B1 [x] SC1-B2 [x] SC1-B3 [x] SC1-B8 [x] SC1-B9 [x] SC1-B4 [x] SC1-B7 [x] SC1-B5 [x] SC1-B6
 - [x] SC2-B1 [x] SC2-B2 [x] SC2-B3 [x] SC2-B4 [x] SC2-B5
 - [x] SC3-B1 [x] SC3-B2 [x] SC3-B3 [x] SC3-B4 [x] SC3-B5 [x] SC3-B6
 - [x] SC4-B1（04bb5e60） [x] SC4-B2（8330dbf8） [x] SC4-B3（5855bc3f；按本日调整后范围验收） [x] SC4-B4（本行所在提交）
 - [x] SC5-B1（2a42e3f8） [x] SC5-B2（本行所在提交；tag `stage3d-v1-frozen`）
-- 消费方：[ ] lvr A0（随 SC0-B3） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [x] slg 资源 / 全局设置（SC3）
+- 消费方：[ ] lvr A0（项目组负责） [ ] lvr A1 [ ] lvr A2 [ ] lvr A3 [ ] lvr A4 [ ] lvr A5 ｜ [ ] mmo（按 SD9） ｜ [x] slg 纯数学（SC2） [x] slg 资源 / 全局设置（SC3）
 
 - **2026-09-24 SC5 文档与 API 冻结（SC5-B2，本行所在提交；tag `stage3d-v1-frozen`）**：CLIENT §6 补齐作者输入 → 主模型 / 两档 LOD / 独立 PNG → Creator bundle 导入与 meta → 资产闸 / 真实预览动线；KIT 落点、Non-intrusive 消费接缝、inventory 与工具说明同步。SC0–SC4 退出摘要及 SC5-B1 的 918 项显式 SHA256 引用已复核，历史版本与原始归档均可追溯；重点核对独立烘焙预制、quality / 全局租约 / overlay、包依赖闭合，以及两份模型的 1200 → 297 → 118 面、外置图片、四骨四权重 / 两段动画与双 WebGL 各 20 次回收。冻结消费入口、源码 / 设置 / 工具锁和证据索引见 [§10.1](3d.md#101-v1-冻结面与证据索引) 与 [SC5 汇总](perf/stage3d/2026-09-24-sc5-review.json)。本批只修改文档，沿用已核对的引擎与变异证据；本批 `verify:inventory` 通过，最终 `verify:all` **3,042 项全过**（客户端 1,348 / UniFlex 82 / 服务端 1,396，含其余门禁及两套客户端类型检查）。默认 60 上限跳帧、自动蒙皮 LOD 的一致权重限制与桌面证据范围继续保留，未扩大素材预算或能力承诺。SC0–SC5 全部退出；lvr 内容接入仍未开始，mmo 仍为已冻结 2D 基线，SLG 仅承接既有数学 / 资源迁移。
 
