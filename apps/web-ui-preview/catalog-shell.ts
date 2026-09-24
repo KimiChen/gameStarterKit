@@ -126,6 +126,8 @@ h1,h2,h3,h4,p{margin:0}
 .codebox__h h2{flex:1;min-width:0;font-size:13px;font-weight:650}
 .codebox__note{padding:8px 14px;font-size:12px;color:var(--ds-dim);border-bottom:1px solid var(--ds-border)}
 .codebox__b{min-height:0;overflow:auto;overscroll-behavior:contain;background:var(--ds-sunken)}
+.restored-preview{width:min(560px,calc(100vw - 32px));height:min(88vh,900px);max-height:88vh}
+.restored-preview__body{flex:1;min-height:0;display:grid;place-items:center;overflow:hidden;background:var(--canvas);padding:12px}
 .code__h{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:2px 8px 2px 14px;background:var(--ds-sunken);border-bottom:1px solid var(--ds-border);font:11px var(--ds-mono);color:var(--ds-faint)}
 .codebox pre{margin:0;padding:10px 14px 14px;font:12px/1.55 var(--ds-mono);white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2}
 .code-token--tag{color:var(--ds-code-tag)}
@@ -316,6 +318,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
   <span class="top__status" id="status"></span>
   <div class="popwrap"><button class="ib" id="btnCanvas" type="button" title="画布" aria-label="画布" aria-haspopup="true"></button></div>
   <div class="popwrap"><button class="btn" id="btnSkin" type="button" title="主题" aria-label="主题" aria-haspopup="menu" aria-expanded="false"><span id="skinLabel">经典</span></button></div>
+  <button class="btn" id="btnRestored" type="button" aria-haspopup="dialog">还原预览</button>
   <button class="ib" id="btnTheme" type="button" title="明暗" aria-label="明暗"></button>
 </header>
 <aside class="side" id="side" aria-label="导航">
@@ -949,6 +952,65 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         $("#skinLabel", shadow).textContent = current.label;
     };
     paintSkin();
+    $("#btnRestored", shadow).addEventListener("click", () => {
+        popClose?.();
+        const trigger = $("#btnRestored", shadow);
+        const item = sections.flatMap((section) => section.groups.flatMap((group) => group.items))
+            .find((entry) => entry.kind === "screen" && entry.id === "settings");
+        if (!item) return;
+        const dialog = document.createElement("dialog");
+        dialog.className = "codebox restored-preview";
+        dialog.setAttribute("aria-label", "还原主题预览");
+        const header = document.createElement("div");
+        header.className = "codebox__h";
+        const title = document.createElement("h2");
+        title.textContent = `还原主题 · ${item.label}`;
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "ib";
+        close.setAttribute("aria-label", "关闭还原预览");
+        close.append(icon("x"));
+        close.addEventListener("click", () => dialog.close());
+        header.append(title, close);
+        const body = document.createElement("div");
+        body.className = "restored-preview__body";
+        const frame = document.createElement("div");
+        frame.className = "frame";
+        const live = document.createElement("div");
+        live.className = "live";
+        const slot = document.createElement("div");
+        slot.style.cssText = `position:relative;overflow:hidden;width:${item.width}px;height:${item.height}px`;
+        live.attachShadow({ mode: "open" }).append(slot);
+        live.style.width = `${item.width}px`;
+        live.style.height = `${item.height}px`;
+        frame.append(live);
+        body.append(frame);
+        dialog.append(header, body);
+        const fit = () => {
+            const scale = Math.max(0, Math.min((body.clientWidth - 24) / item.width,
+                (body.clientHeight - 24) / item.height, 1));
+            frame.style.width = `${item.width * scale}px`;
+            frame.style.height = `${item.height * scale}px`;
+            live.style.transform = `scale(${scale})`;
+        };
+        const observer = new ResizeObserver(fit);
+        dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+        dialog.addEventListener("close", () => {
+            observer.disconnect();
+            preview.hide(slot);
+            dialog.remove();
+            document.body.classList.remove("code-dialog-open");
+            trigger.focus();
+        }, { once: true });
+        shadow.append(dialog);
+        dialog.showModal();
+        document.body.classList.add("code-dialog-open");
+        fit();
+        observer.observe(body);
+        // Use the live Settings page with its actual theme override, not the separate PSD restored pages.
+        preview.show(slot, item, "restored", 0);
+        close.focus();
+    });
     $("#btnSkin", shadow).addEventListener("click", () => {
         const anchor = $("#btnSkin", shadow);
         popover(anchor, (pop, close) => {
@@ -987,6 +1049,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         route(id);
     });
     document.addEventListener("keydown", (event) => {
+        if (shadow.querySelector("dialog[open]")) return;
         if (event.key === "Escape") {
             if (popClose) { popClose(); return; }
             (shadow.host as HTMLElement).classList.remove("side-open");

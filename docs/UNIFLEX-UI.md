@@ -122,6 +122,9 @@ import { fontRef, imageRef, ArrayVirtualListDataSource } from '../../../../kits/
 | 原稿（`?ui=preview-home`） | `PreviewHome` | 手写页：`Alliance`、`AllianceTerritory`… |
 | 还原（`?ui=restored-home`） | `RestoredPreviewHome` | PSD 回写的 `*Restored`。`applyTarget` 钉 `restored`，不覆盖原稿 |
 
+目录顶部主题旁的「还原预览」直接展示使用还原主题的设置界面，可在弹窗内点击体验。
+当前只有设置界面具有独立的还原主题外观；弹窗固定使用该主题，不改变目录当前的主题选择。
+
 新页 id 例如 `alliance-foo`，必须同时改：
 
 1. `modules/<module>/<Page>/<Page>.tsx` 的 `defineView` 导出名 = 组件名
