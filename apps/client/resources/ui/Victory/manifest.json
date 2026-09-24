@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/victory/scene",
+      "kind": "image",
+      "file": "assets/victory_scene.png",
+      "width": 750,
+      "height": 1624,
+      "sha256": "6389d00fb65a41f217c96d9ace237c33fa151be598b098de2593193bb40db5fd"
+    },
+    {
+      "id": "ui/victory/sunset",
+      "kind": "image",
+      "file": "assets/victory_sunset.png",
+      "width": 750,
+      "height": 579,
+      "sha256": "704987b7a5bb22b31228b4f3378ee93c6c11089081cca8b1ee6256ff2fb82b9c"
+    },
+    {
+      "id": "ui/victory/rays",
+      "kind": "image",
+      "file": "assets/victory_rays.png",
+      "width": 553,
+      "height": 471,
+      "sha256": "edd420094271081cfcc7177a18cada6b2aa451365a8aa5dcef0aae656e78348f"
+    },
+    {
+      "id": "ui/victory/emblem",
+      "kind": "image",
+      "file": "assets/victory_emblem.png",
+      "width": 418,
+      "height": 303,
+      "sha256": "8f22d4869559963c927dae8add4646bc869e990870a3083793c8427021581b63"
+    },
+    {
+      "id": "ui/victory/ribbon",
+      "kind": "image",
+      "file": "assets/victory_ribbon.png",
+      "width": 536,
+      "height": 118,
+      "sha256": "be84a115163878bc9e982bfd1a15a24c3eabf63ab59be497453c350e4172777a"
+    },
+    {
+      "id": "ui/victory/vs",
+      "kind": "image",
+      "file": "assets/victory_vs.png",
+      "width": 113,
+      "height": 101,
+      "sha256": "79f8ee1f8a12c5e2c5175c8790b10367293ec52d4661bbda1c8c581eeadfb6d7"
+    },
+    {
+      "id": "ui/victory/portrait-frame",
+      "kind": "image",
+      "file": "assets/victory_portrait_frame.png",
+      "width": 134,
+      "height": 137,
+      "sha256": "f3ddbf76f50ef75ffbda67de83c47db6303808159c908f4e9122c052a4c2c35f"
+    },
+    {
+      "id": "ui/victory/portrait-plate",
+      "kind": "image",
+      "file": "assets/victory_portrait_plate.png",
+      "width": 124,
+      "height": 124,
+      "sha256": "66ceb61d7da36554146ec05ce501338f44187146a276bed379a24e8bd7b034dc"
+    },
+    {
+      "id": "ui/victory/portrait-blue",
+      "kind": "image",
+      "file": "assets/victory_portrait_blue.png",
+      "width": 124,
+      "height": 121,
+      "sha256": "091f93e67ab0617416c82a809045a43352c3769a06d835b6d4d1a42f4461b0a0"
+    },
+    {
+      "id": "ui/victory/portrait-red",
+      "kind": "image",
+      "file": "assets/victory_portrait_red.png",
+      "width": 124,
+      "height": 124,
+      "sha256": "cc49b06f44708c51cc346a072c6ea550d9e1da4e71b67bb21bb89144c8245385"
+    },
+    {
+      "id": "ui/victory/bar-track",
+      "kind": "image",
+      "file": "assets/victory_bar_track.png",
+      "width": 28,
+      "height": 29,
+      "sha256": "0c4dca9baba50ad765f02007d627bb1c4a425f9a78773fd7850164f2e34eda95",
+      "nineSlice": [12, 0, 12, 0]
+    },
+    {
+      "id": "ui/victory/bar-fill-green",
+      "kind": "image",
+      "file": "assets/victory_bar_fill_green.png",
+      "width": 26,
+      "height": 25,
+      "sha256": "b00587f45de57d3fbd10746fbf2074fabda243a8aa2e3bd4e72f32a7a09585de",
+      "nineSlice": [11, 0, 11, 0]
+    },
+    {
+      "id": "ui/victory/bar-fill-red",
+      "kind": "image",
+      "file": "assets/victory_bar_fill_red.png",
+      "width": 26,
+      "height": 25,
+      "sha256": "0766a4e3b826d35ef7d8cf8dc6e0e2fe858e4ae631e614f9250486393de90918",
+      "nineSlice": [11, 0, 11, 0]
+    },
+    {
+      "id": "ui/victory/reward-banner",
+      "kind": "image",
+      "file": "assets/victory_reward_banner.png",
+      "width": 603,
+      "height": 52,
+      "sha256": "e75bfc6be053f490b26adc8d785e9dfd0f53c4ed98ffb40308ff69a1e8429740"
+    },
+    {
+      "id": "ui/victory/icon-axe",
+      "kind": "image",
+      "file": "assets/victory_icon_axe.png",
+      "width": 116,
+      "height": 128,
+      "sha256": "1a3de505ea6c40bbb9890bc0006e01af45ddbdbe3d8fafd1bce199fcaf93b20b"
+    },
+    {
+      "id": "ui/victory/icon-cube",
+      "kind": "image",
+      "file": "assets/victory_icon_cube.png",
+      "width": 116,
+      "height": 125,
+      "sha256": "269714cedf44d75cb4a98a862be848ee0f31e4d23e6b37479f3e0f301bf30e86"
+    },
+    {
+      "id": "ui/victory/title",
+      "kind": "image",
+      "file": "assets/victory_title.png",
+      "width": 396,
+      "height": 111,
+      "sha256": "01399cd94c81d5bf0386e9b31e91cbeb6e14bf02f264114bdbdc177ca85bf323"
+    }
+  ]
+}

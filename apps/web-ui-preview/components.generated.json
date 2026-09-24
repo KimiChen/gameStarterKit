@@ -378,6 +378,11 @@
       "source": "apps/client/src/ui-uniflex/gamecomponents/tech/TechIcon.tsx"
     },
     {
+      "key": "VictoryPanel",
+      "rootName": "Victory",
+      "source": "apps/client/src/ui-uniflex/modules/reward/Victory/VictoryPanel.tsx"
+    },
+    {
       "key": "WideMenuButton",
       "rootName": "WideMenuButton",
       "source": "apps/client/src/ui-uniflex/components/button/WideMenuButton.tsx"

@@ -242,6 +242,14 @@
       "source": "apps/client/src/ui-uniflex/modules/reward/RewardObtain/RewardObtain.tsx"
     },
     {
+      "id": "victory",
+      "aliases": ["victory", "battle-victory", "win"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "Victory",
+      "rootName": "VictoryPage",
+      "source": "apps/client/src/ui-uniflex/modules/reward/Victory/Victory.tsx"
+    },
+    {
       "id": "confirm-restored",
       "aliases": ["confirm-restored", "confirmRestored"],
       "canvas": { "width": 750, "height": 1624 },

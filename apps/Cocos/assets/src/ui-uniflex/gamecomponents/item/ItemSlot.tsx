@@ -5,7 +5,7 @@ import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
 export type ItemQuality = 'green' | 'blue' | 'purple' | 'orange' | 'red';
 
 export type ItemConfigQuality = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-export type ItemConfigIcon = 'egg' | 'meat' | 'book' | 'scroll' | 'gem' | 'armor';
+export type ItemConfigIcon = 'egg' | 'meat' | 'book' | 'scroll' | 'gem' | 'armor' | 'victory-axe' | 'victory-cube';
 
 /** Client projection of the item.json5 contract. Keep item art IDs in this single table. */
 export interface ItemConfig {
@@ -50,6 +50,8 @@ const ITEM_CONFIG: Readonly<Record<string, ItemConfig>> = {
     scroll: { id: 'scroll', name: '卷轴', description: '联盟科技所需的研究卷轴。', icon: 'scroll', quality: 4 },
     gem: { id: 'gem', name: '高级钻石', description: '可以购买好多东西', icon: 'gem', quality: 3 },
     armor: { id: 'armor', name: '盔甲', description: '可用于强化英雄装备。', icon: 'armor', quality: 5 },
+    'victory-axe': { id: 'victory-axe', name: '战斧', description: '战斗胜利奖励。', icon: 'victory-axe', quality: 6 },
+    'victory-cube': { id: 'victory-cube', name: '秘能方块', description: '战斗胜利奖励。', icon: 'victory-cube', quality: 6 },
 };
 
 export function getItemConfig(itemId: string): ItemConfig {
@@ -76,6 +78,8 @@ const ITEM_ICONS: Readonly<Record<ItemConfigIcon, ImageRef>> = {
     scroll: imageRef('ui/shop/item-scroll'),
     gem: imageRef('ui/shop/getitem-icon'),
     armor: imageRef('ui/reward/icon-armor'),
+    'victory-axe': imageRef('ui/victory/icon-axe'),
+    'victory-cube': imageRef('ui/victory/icon-cube'),
 };
 
 const DETAIL_BG = imageRef('ui/backpack/detail-count-bg');
@@ -95,6 +99,8 @@ export interface ItemSlotProps {
     readonly countOutline?: string;
     /** Centered plate over the icon. Hidden when empty. */
     readonly detailCount?: string;
+    /** Multiplies the 154×159 frame. 1 keeps the shared size. */
+    readonly scale?: number;
     readonly frames?: Readonly<Record<ItemQuality, ImageRef>>;
 }
 
@@ -110,17 +116,18 @@ export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
     const showCount = count !== '';
     const showIcon = true;
     const icon = itemIcon(p.itemId);
-    const width = p.theme?.item.width ?? activeTheme.item.width;
-    const height = p.theme?.item.height ?? activeTheme.item.height;
-    const iconLeft = p.theme?.item.iconLeft ?? activeTheme.item.iconLeft;
-    const iconTop = p.theme?.item.iconTop ?? activeTheme.item.iconTop;
-    const iconWidth = p.theme?.item.iconWidth ?? activeTheme.item.iconWidth;
-    const iconHeight = p.theme?.item.iconHeight ?? activeTheme.item.iconHeight;
-    const countLeft = p.theme?.item.countLeft ?? activeTheme.item.countLeft;
-    const countTop = p.theme?.item.countTop ?? activeTheme.item.countTop;
-    const countWidth = p.theme?.item.countWidth ?? activeTheme.item.countWidth;
-    const countHeight = p.theme?.item.countHeight ?? activeTheme.item.countHeight;
-    const countSize = p.theme?.item.countSize ?? activeTheme.item.countSize;
+    const scale = p.scale ?? 1;
+    const width = (p.theme?.item.width ?? activeTheme.item.width) * scale;
+    const height = (p.theme?.item.height ?? activeTheme.item.height) * scale;
+    const iconLeft = (p.theme?.item.iconLeft ?? activeTheme.item.iconLeft) * scale;
+    const iconTop = (p.theme?.item.iconTop ?? activeTheme.item.iconTop) * scale;
+    const iconWidth = (p.theme?.item.iconWidth ?? activeTheme.item.iconWidth) * scale;
+    const iconHeight = (p.theme?.item.iconHeight ?? activeTheme.item.iconHeight) * scale;
+    const countLeft = (p.theme?.item.countLeft ?? activeTheme.item.countLeft) * scale;
+    const countTop = (p.theme?.item.countTop ?? activeTheme.item.countTop) * scale;
+    const countWidth = (p.theme?.item.countWidth ?? activeTheme.item.countWidth) * scale;
+    const countHeight = (p.theme?.item.countHeight ?? activeTheme.item.countHeight) * scale;
+    const countSize = (p.theme?.item.countSize ?? activeTheme.item.countSize) * scale;
     const countAlign = p.theme?.item.countAlign ?? activeTheme.item.countAlign;
     const countColor = p.countColor ?? theme.item.color;
     const countOutline = p.countOutline ?? theme.item.outline;
@@ -130,6 +137,11 @@ export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
     const showDetail = detail !== '';
     const detailColor = theme.item.color;
     const detailOutline = theme.item.outline;
+    const detailLeft = 8 * scale;
+    const detailTop = 8 * scale;
+    const detailWidth = 138 * scale;
+    const detailHeight = 40 * scale;
+    const detailSize = 32 * scale;
     return (
         <view name="ItemSlot" style={{ position: 'absolute', left: left, top: top, width: width, height: height }}>
             <image name="ItemSlot/Frame" source={frame}
@@ -142,10 +154,10 @@ export const ItemSlot = defineComponent<ItemSlotProps>((p) => {
                     outlineColor: countOutline, outlineWidth: outlineWidth,
                     horizontalAlign: countAlign, verticalAlign: 'center', overflow: 'shrink' }} />
             <image name="ItemSlot/DetailBg" visible={showDetail} source={DETAIL_BG}
-                style={{ position: 'absolute', left: 8, top: 8, width: 138, height: 40, sizeMode: 'sliced' }} />
+                style={{ position: 'absolute', left: detailLeft, top: detailTop, width: detailWidth, height: detailHeight, sizeMode: 'sliced' }} />
             <text name="ItemSlot/Detail" visible={showDetail} value={detail}
-                style={{ position: 'absolute', left: 8, top: 8, width: 138, height: 40,
-                    font: font, fontSize: 32, color: detailColor, bold: true,
+                style={{ position: 'absolute', left: detailLeft, top: detailTop, width: detailWidth, height: detailHeight,
+                    font: font, fontSize: detailSize, color: detailColor, bold: true,
                     outlineColor: detailOutline, outlineWidth: outlineWidth,
                     horizontalAlign: 'center', verticalAlign: 'center', overflow: 'shrink' }} />
         </view>

@@ -78,6 +78,7 @@ const SCREEN_LABEL: Record<string, string> = {
     shop: "商店",
     "shop-getitem": "获取道具",
     "reward-obtain": "恭喜获得",
+    victory: "战斗胜利",
 };
 
 export function previewLine(screen: ScreenEntry): PreviewLine {
