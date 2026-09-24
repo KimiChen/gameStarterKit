@@ -377,6 +377,13 @@ trimRect / layoutVersion / contentHash`。资源件、道路、河岸及雪 top 
 当前 content TS 为 18 文件、829,964 B（含类型及 manifest），通行层、带归属与小型规则仍保留 shared 入口。
 具体格式试验、构建差额和验收数字只登记在优化方案 §9。
 
+近景 decor / top 使用 `mapoSceneCompiled` 预排序节点和预计算局部矩阵；每个可见摆位各持一份播放器，
+父级动画、事件窗口、乘加色和换帧仍逐层传递。`MapoSpriteUpdates` 缓存静态几何，保持原画家序和批次数，
+只重算变化的 quad；可见集合或件数变化时重新打包。固定拓扑通过 `MapoMeshBatch` 的属性更新入口上传，
+索引和未变化的属性不提交。Creator 3.8.8 的公开缓冲接口只支持 offset=0，实际上传为脏属性的必要前缀，
+不冒称任意字节区间更新。出档、关页清空可见播放器和几何，top 程序随 geography 配置释放。
+`mapoSceneSprites` 和离线 top 完整求值保留为烘焙与回归对照，新增轨道必须同步验证两条路径。
+
 ### 件的大小也是原版参数，⛔ 不按格拉伸
 
 原版 2D 一格 **300×150 px**（`config_2d` 的 `TILE_WIDTH/HEIGHT=150/75` 是半值），所以

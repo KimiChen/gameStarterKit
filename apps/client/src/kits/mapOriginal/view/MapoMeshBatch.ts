@@ -4,7 +4,7 @@
  *
  * ⚠ 挂载次序有讲究：Node → layer 继承 → 入树 → MeshRenderer → 赋 mesh/material →
  * **最后**挂 UIMeshRenderer（它在 onLoad 里解析一次 ModelRenderer）。
- * ⚠ 更新必须 updateSubMesh + onGeometryChanged 成对，少一个不刷新。
+ * ⚠ 整批更新必须 updateSubMesh + onGeometryChanged 成对；O6 固定拓扑的属性更新见文末。
  * ⚠ 销毁前先 node.active = false：destroy 延迟到帧末，而共享材质可能已同步销毁。
  * ⚠ 几何字段是 indices16 / indices32，⛔ 没有 indices。
  *
@@ -14,6 +14,7 @@
  */
 import { director, EffectAsset, gfx, Material, Mesh, MeshRenderer, Node, UIMeshRenderer, utils, Vec3 } from "cc";
 import type { MapoGeometry } from "../logic/mapoMesh";
+import type { MapoSpriteUpdate } from "../logic/mapoSpriteUpdates";
 
 export interface MapoBatch {
     node: Node;
@@ -119,4 +120,39 @@ export function syncMapoBatches(root: Node, name: string, batches: MapoBatch[],
 export function clearMapoBatches(batches: MapoBatch[]): void {
     for (const batch of batches) destroyMapoBatch(batch);
     batches.length = 0;
+}
+
+/**
+ * O6 固定拓扑的 sprite 更新。只提交脏属性，索引和其它属性保持原缓冲。
+ * Creator 3.8.8 的公开 Buffer.update 只接受 offset=0，BufferView.update 被引擎拒绝；
+ * 因此上传该属性到最后脏 quad 的前缀。CPU 镜像、实际位置边界同步，既不改引擎也不增加 draw call。
+ * 四个 stream 的顺序来自 toCcGeometry / createDynamicMesh：position、uv、color、colorAdd。
+ */
+export function syncMapoSpriteUpdates(root: Node, name: string, batches: MapoBatch[],
+    updates: readonly MapoSpriteUpdate[], count: number, material: Material): void {
+    for (let i = 0; i < updates.length; i++) {
+        const { geometry: data, full, ends } = updates[i];
+        const batch = batches[i];
+        if (!batch) { batches.push(createMapoBatch(root, i === 0 ? name : `${name}-${i}`, data, material)); continue; }
+        if (full) { uploadMapoBatch(batch, data); continue; }
+        if (!ends.some(Boolean)) continue;
+        const mesh = batch.mesh, sub = mesh.renderingSubMeshes[0], layout = mesh.struct;
+        const attributes = [data.positions, data.uvs, data.colors, data.addColors!], strides = [12, 8, 16, 16];
+        if (sub.vertexBuffers.length !== 4 || layout.primitives[0].vertexBundelIndices.length !== 4) {
+            throw new Error("mapOriginal sprite mesh attribute layout changed");
+        }
+        for (let a = 0; a < 4; a++) if (ends[a]) {
+            const view = layout.vertexBundles[layout.primitives[0].vertexBundelIndices[a]].view;
+            if (view.stride !== strides[a] || view.count !== data.quads * 4) throw new Error("mapOriginal sprite topology changed without rebuild");
+            const values = attributes[a].subarray(0, ends[a] * strides[a]);
+            const bytes = new Uint8Array(values.buffer, values.byteOffset, values.byteLength);
+            mesh.data.set(bytes, view.offset); sub.vertexBuffers[a].update(bytes, bytes.byteLength);
+        }
+        if (ends[0]) {
+            layout.minPosition = new Vec3(data.minPos[0], data.minPos[1], data.minPos[2]);
+            layout.maxPosition = new Vec3(data.maxPos[0], data.maxPos[1], data.maxPos[2]);
+            sub.invalidateGeometricInfo(); batch.model.onGeometryChanged();
+        }
+    }
+    while (batches.length > count) destroyMapoBatch(batches.pop()!);
 }

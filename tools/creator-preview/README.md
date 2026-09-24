@@ -408,3 +408,22 @@ B2 复核 SC0–SC4 退出摘要及 SC5-B1 的文件哈希、源码沿革、烘�
 检查源纹理、RT、实例 reader、兼容旧入口 reader、BufferAsset、展开对象和节点，
 关闭后必须均无持有；不能只用节点数证明释放。证据包括关闭前后快照和完整编译来源指纹。
 本回归保留网页原有方向，完成后恢复普通近景；不主动改用户选定的竖版。
+
+### mapOriginal O6 动画与网格更新
+
+```bash
+node tools/creator-preview/probe-maporiginal-animation.mjs http://localhost:7456/ .cache/mapo-animation/webgl2 --verify
+node tools/creator-preview/probe-maporiginal-animation.mjs http://localhost:7456/ .cache/mapo-animation/webgl1 --webgl1 --verify
+python3 tools/maporiginal-assets/compare_animation.py .cache/mapo-animation/webgl2
+```
+
+比较器需要 Pillow / NumPy。探针在 Chrome 9222 创建并关闭自己的标签，支持 `--landscape`；
+URL 也可指向本机 Web 发布目录的 HTTP 服务。编辑器模式核对源文件与 Creator 编译的 source map，拒绝旧脚本。
+报告记录草、雪、沙与普通拖动输入时 decor / top **tick 内部**的 CPU 时间、实际 WebGL 上传字节和调用数，
+另附整帧 draw call、update-to-draw 与可见性。拖动指标不涵盖输入回调中的所有 CPU 工作。
+全程开启 focus emulation，不作为真实前台帧时/功耗结论；性能比较用不带 `--verify` 的独立重放。
+
+`--verify` 在每种地貌暂停引擎、设定 6 个固定动画时间，核对实际 Mesh CPU 数据、索引和包围盒，
+再逐张比较局部更新画面与原求值器完整上传画面。另在当前地图放置全部动态 top 场景作为显式测试夹具。
+截图关闭 FPS 浮层，比较完整截图，无裁掉问题区域；`compare_animation.py` 生成带截图哈希的 `pixels.json`。
+该实验直接设置动画时间/夹具，不能冒称普通用户交互；普通 LOD、失败与释放回归仍走上面的地图重放。

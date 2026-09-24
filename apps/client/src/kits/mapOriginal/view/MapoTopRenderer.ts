@@ -7,63 +7,38 @@
  * ⚠ 图集是按 0.4× 缩存的：件的世界尺寸走 `prefab.size × scale`，**⛔ 不是图集里的像素**。
  */
 import { Material, Node } from "cc";
-import { buildMapoSpriteMeshes } from "../logic/mapoMesh";
 import type { MapoPolygonInput } from "../logic/mapoMesh";
-import {
-    syncMapoBatches, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique,
-    type MapoBatch,
-} from "./MapoMeshBatch";
+import { MapoSpriteUpdates } from "../logic/mapoSpriteUpdates";
 import type { MapoArtResources } from "./MapoArtResources";
-
+import { syncMapoSpriteUpdates, createMapoMaterial, clearMapoBatches, mapoUnlitTechnique, type MapoBatch } from "./MapoMeshBatch";
 
 export class MapoTopRenderer {
     private readonly batches: MapoBatch[] = [];
+    private readonly geometry = new MapoSpriteUpdates();
     private material: Material | null = null;
     private disposed = false;
     private seconds = 0;
-    private animated = false;
-    private visible: readonly MapoPolygonInput[] = [];
-    tick(dt: number): void {
-        this.seconds += dt;
-        if (dt > 0 && this.animated && this.visible.length) {
-            this.render(this.visible, true);
-        }
+    private visible = false;
+    private config: unknown = null;
+    private key = "";
+    constructor(private readonly root: Node, private readonly art: MapoArtResources | null, private readonly kind: string) {}
+    tick(dt: number): void { this.seconds += dt; if (dt > 0 && this.visible) this.flush(); }
+    private flush(): void {
+        if (!this.material) return;
+        syncMapoSpriteUpdates(this.root, `mapo-top-${this.kind}`, this.batches, this.geometry.read(this.seconds), this.geometry.batchCount, this.material);
     }
-
-    constructor(private readonly root: Node, private readonly art: MapoArtResources | null,
-                private readonly kind: string) {}
-
-    /** @returns 真的建出来的件数。@param polys 对应多边形层**本帧已裁剪**的结果。 */
     render(polys: readonly MapoPolygonInput[], enabled: boolean): number {
         if (this.disposed) return 0;
         const texture = this.art?.topAtlas(this.kind) ?? null;
-        if (!texture || !enabled || !this.art!.data.tops.mapoHasTops(this.kind) || polys.length === 0) {
-            this.clear();
-            return 0;
+        if (!texture || !enabled || !this.art!.data.tops.mapoHasTops(this.kind) || polys.length === 0) { this.clear(); return 0; }
+        if (!this.material) this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
+        this.material.setProperty("mainTexture", texture);
+        const data = this.art!.data.tops, key = polys.map(p => `${p.s},${p.geo},${p.x},${p.y}`).join(";");
+        if (!this.visible || this.config !== data.config || this.key !== key) {
+            this.geometry.reset(data.mapoTopSources(this.kind, polys)); this.config = data.config; this.key = key;
         }
-        if (!this.material) {
-            this.material = createMapoMaterial(mapoUnlitTechnique(), true, this.art?.spriteEffect);
-            this.material.setProperty("mainTexture", texture);
-        }
-        this.visible = polys;
-        this.animated = this.art!.data.tops.mapoTopsAnimated(this.kind, polys);
-        const sprites = this.art!.data.tops.mapoTopsFor(this.kind, polys, Infinity, this.seconds);
-        if (sprites.length === 0) { this.clear(); return 0; }
-        const geometry = buildMapoSpriteMeshes(sprites);
-        syncMapoBatches(this.root, `mapo-top-${this.kind}`, this.batches, geometry, this.material);
-        return sprites.length;
+        this.visible = true; this.flush(); return this.geometry.size;
     }
-
-    clear(): void {
-        this.visible = [];
-        clearMapoBatches(this.batches);
-    }
-
-    dispose(): void {
-        if (this.disposed) return;
-        this.disposed = true;
-        this.clear();
-        this.material?.destroy();
-        this.material = null;
-    }
+    clear(): void { this.visible = false; this.key = ""; this.config = null; this.geometry.clear(); clearMapoBatches(this.batches); }
+    dispose(): void { if (this.disposed) return; this.disposed = true; this.clear(); this.material?.destroy(); this.material = null; }
 }

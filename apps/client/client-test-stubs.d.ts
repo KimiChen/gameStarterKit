@@ -113,6 +113,18 @@ declare module "cc" {
     maxPos?: Vec3;
   }
   export class Mesh extends Asset {
+    /** Creator 3.8.8 mesh.ts 公共接口；mapOriginal 固定拓扑时同步 CPU 镜像与独立属性缓冲。 */
+    readonly data: Uint8Array;
+    readonly struct: {
+      vertexBundles: { view: { offset: number; length: number; stride: number; count: number } }[];
+      primitives: { vertexBundelIndices: number[] }[];
+      minPosition?: Vec3; maxPosition?: Vec3;
+    };
+    readonly renderingSubMeshes: {
+      vertexBuffers: { update(data: Readonly<ArrayBufferView>, size?: number): void }[];
+      invalidateGeometricInfo(): void;
+    }[];
+
     /** ⚠ 只有 createDynamicMesh 造出的网格能更新；静态网格会被引擎 warnID(14200) 拒绝。 */
     updateSubMesh(primitiveIndex: number, geometry: DynamicGeometry): void;
     destroy(): boolean;

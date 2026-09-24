@@ -180,7 +180,7 @@ function inputIdentity() {
     };
     const compiledReaders = ["Terrain", "Bands", "Regions", "Roads", "Cities", "Tops", "Rivers", "Blocks"]
         .map(name => checkCompiled(`kits/mapOriginal/logic/mapo${name}.ts`));
-    const compiledRendering = ["logic/mapoMesh", "logic/mapoScene", "logic/mapoStaticScene", "logic/mapoFar", "view/MapoMinimap", "logic/MapoDataStore", "logic/mapoManifest", "view/MapoAssetGroups", "view/MapoArtResources", "view/MapOriginalWorldView", "view/MapoFarRenderer", "view/MapoChunkBaker"]
+    const compiledRendering = ["logic/mapoMesh", "logic/mapoScene", "logic/mapoSceneCompiled", "logic/mapoSpriteUpdates", "view/MapoDecorRenderer", "view/MapoTopRenderer", "view/MapoMeshBatch", "logic/mapoStaticScene", "logic/mapoFar", "view/MapoMinimap", "logic/MapoDataStore", "logic/mapoManifest", "view/MapoAssetGroups", "view/MapoArtResources", "view/MapOriginalWorldView", "view/MapoFarRenderer", "view/MapoChunkBaker"]
         .map(name => checkCompiled(`kits/mapOriginal/${name}.ts`));
     return { head: execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim(), compiledReaders, compiledRendering,
         inputHash: createHash("sha256").update(JSON.stringify(hashes)).digest("hex"), files: hashes };

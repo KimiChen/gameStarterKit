@@ -1,5 +1,6 @@
 import { mapoReadTopConfig } from "./mapoPresentation";
 import { mapoSceneAnimated, mapoSceneSprites } from "./mapoScene";
+import { compileMapoScene, createMapoScenePlayer, type MapoSceneProgram, type MapoSpriteSource } from "./mapoSceneCompiled";
 import { mapoReadPrefabVisual, mapoPrefabUv, type MapoPrefabVisual } from "./mapoPrefab";
 /**
  * `_top_group` 的**手摆细节**：河流 / snow / desert 三族共用一套机制。纯逻辑，⛔ 不碰 cc。
@@ -25,6 +26,7 @@ interface TopLib {
     readonly meta: IMapoTopAtlas;
     /** 下标 = 几何库下标 − 1。 */
     groups: TopSprite[][];
+    programs: Map<number, MapoSceneProgram>;
 }
 
 export { MAPO_TOP_KINDS };
@@ -36,7 +38,7 @@ export function createMapoTopsData() {
     function mapoSetTopConfig(bytes: ArrayBuffer | Uint8Array): void {
         const next = mapoReadTopConfig(bytes);
         LIBS.clear();
-        for (const meta of next.atlases) LIBS.set(meta.kind, { meta, groups: [] });
+        for (const meta of next.atlases) LIBS.set(meta.kind, { meta, groups: [], programs: new Map() });
         config = next; sourceBytes = bytes.byteLength;
     }
 
@@ -79,6 +81,23 @@ export function createMapoTopsData() {
 
     function mapoHasTops(kind: string): boolean {
         return (LIBS.get(kind)?.groups.length ?? 0) > 0;
+    }
+
+    /** 可见实例用编译程序；离线 mapoTopsFor 保留完整求值作为对照。 */
+    function mapoTopSources(kind: string, polys: readonly MapoPolygonInput[]): MapoSpriteSource[] {
+        const lib = LIBS.get(kind);
+        if (!lib || !lib.groups.length) return [];
+        const cells = lib.meta.cells.map(c => ({ id: c.id, rect: lib.meta.textures[c.textureId].rect, window: lib.meta.textures[c.textureId] }));
+        return polys.map(p => {
+            const scene = config?.scenes[kind]?.[p.geo - 1];
+            if (!scene) {
+                const sprites = mapoTopsFor(kind, [p], Infinity);
+                return { row: p.s, col: 0, read: () => sprites };
+            }
+            let program = lib.programs.get(p.geo);
+            if (!program) { program = compileMapoScene(scene); lib.programs.set(p.geo, program); }
+            return createMapoScenePlayer(program, cells, lib.meta.size, { x: p.x, y: p.y, row: p.s, col: 0 });
+        });
     }
 
     function mapoTopsAnimated(kind: string, polys: readonly MapoPolygonInput[]): boolean {
@@ -136,11 +155,12 @@ export function createMapoTopsData() {
 
     /** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
     function mapoTopsDataUsage(): Readonly<Record<string, number>> {
-        return { arrayBufferBytes: 0, configSourceBytes: sourceBytes, atlases: LIBS.size, groups: [...LIBS.values()].reduce((sum, l) => sum + l.groups.length, 0),
+        return { arrayBufferBytes: 0, configSourceBytes: sourceBytes, atlases: LIBS.size, programs: [...LIBS.values()].reduce((n, l) => n + l.programs.size, 0), groups: [...LIBS.values()].reduce((sum, l) => sum + l.groups.length, 0),
             sprites: [...LIBS.values()].reduce((sum, l) => sum + l.groups.reduce((n, g) => n + g.length, 0), 0) };
     }
 
-    return { mapoSetTopConfig, mapoSetTops, mapoHasTops, mapoTopsAnimated, mapoTopUv, mapoTopsFor, mapoTopsDataUsage,
+    return { mapoSetTopConfig, mapoSetTops, mapoHasTops, mapoTopsAnimated, mapoTopUv, mapoTopsFor, mapoTopsDataUsage, mapoTopSources,
+        get config(): IMapoTopConfig | null { return config; },
         dispose(): void { LIBS.clear(); config = null; sourceBytes = 0; },
     };
 }
