@@ -40,3 +40,33 @@ export const componentUsage: Readonly<Record<string, string>> = {
     "cmp-nav": '<MainNav theme={theme} selected={navigation} noticeExplore onSelect={setNavigation} />',
     "cmp-popup": '<PopupFrame theme={theme} title="主题弹窗" left={21} top={12} onClose={onClose} />',
 };
+
+/** Break a self-closing JSX example between props, preserving strings and nested expressions. */
+export function formatComponentUsage(source: string): string {
+    const match = /^<([A-Za-z][\w]*)([\s\S]*?)\s*\/>$/.exec(source.trim());
+    if (!match) return source.trim();
+    const attributes = match[2].trim();
+    if (!attributes) return `<${match[1]} />`;
+    const parts: string[] = [];
+    let start = 0;
+    let depth = 0;
+    let quote: '"' | "'" | null = null;
+    for (let i = 0; i < attributes.length; i += 1) {
+        const char = attributes[i];
+        if (quote) {
+            if (char === "\\") i += 1;
+            else if (char === quote) quote = null;
+            continue;
+        }
+        if (char === '"' || char === "'") quote = char;
+        else if (char === "{") depth += 1;
+        else if (char === "}") depth -= 1;
+        else if (/\s/.test(char) && depth === 0) {
+            if (start < i) parts.push(attributes.slice(start, i));
+            while (i + 1 < attributes.length && /\s/.test(attributes[i + 1])) i += 1;
+            start = i + 1;
+        }
+    }
+    if (start < attributes.length) parts.push(attributes.slice(start));
+    return `<${match[1]}\n${parts.map((part) => `  ${part}`).join("\n")}\n/>`;
+}

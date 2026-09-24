@@ -1,5 +1,5 @@
 import { buildCatalog, type CatalogLeaf, type CatalogSection } from "./catalog";
-import { componentUsage } from "./component-usage";
+import { componentUsage, formatComponentUsage } from "./component-usage";
 import type { ScreenEntry } from "./screens";
 
 /** 目录卡片的预览挂载。卡片画在当前页，不再各开一个 iframe。 */
@@ -19,6 +19,8 @@ const SHELL_CSS = `
   --ds-shadow:0 10px 32px rgba(15,17,25,.14);
   --ds-sans:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
   --ds-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --ds-code-tag:#355eab; --ds-code-attr:#7957ad; --ds-code-string:#26794f;
+  --ds-code-number:#a36a17; --ds-code-name:#384b71;
   --ds-top:44px; --ds-side:204px; --canvas:#14161b;
   display:block; min-height:100vh;
   color:var(--ds-text); font:13px/1.45 var(--ds-sans); -webkit-font-smoothing:antialiased;
@@ -29,6 +31,8 @@ const SHELL_CSS = `
   --ds-text:#e6e7ea; --ds-dim:#9397a1; --ds-faint:#5f636d;
   --ds-accent:#909cf2; --ds-accent-soft:#23263c;
   --ds-shadow:0 10px 32px rgba(0,0,0,.5);
+  --ds-code-tag:#8fb2ff; --ds-code-attr:#d4bfff; --ds-code-string:#a9d9aa;
+  --ds-code-number:#e5bb82; --ds-code-name:#cdd7ef;
 }
 :host([data-canvas=light]){--canvas:#eef0f3}
 :host([data-canvas=dark]){--canvas:#14161b}
@@ -123,7 +127,12 @@ h1,h2,h3,h4,p{margin:0}
 .codebox__note{padding:8px 14px;font-size:12px;color:var(--ds-dim);border-bottom:1px solid var(--ds-border)}
 .codebox__b{min-height:0;overflow:auto;background:var(--ds-sunken)}
 .code__h{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:2px 8px 2px 14px;background:var(--ds-sunken);border-bottom:1px solid var(--ds-border);font:11px var(--ds-mono);color:var(--ds-faint)}
-.codebox pre{margin:0;padding:10px 14px 14px;font:12px/1.55 var(--ds-mono);white-space:pre;tab-size:2}
+.codebox pre{margin:0;padding:10px 14px 14px;font:12px/1.55 var(--ds-mono);white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2}
+.code-token--tag{color:var(--ds-code-tag)}
+.code-token--attr{color:var(--ds-code-attr)}
+.code-token--string{color:var(--ds-code-string)}
+.code-token--number{color:var(--ds-code-number)}
+.code-token--name{color:var(--ds-code-name)}
 .stage{position:relative;flex:1;background:var(--canvas)}
 .frame{position:relative;width:100%;margin:0 auto;overflow:hidden;background:transparent}
 .frame .live{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:auto;font:16px/1.2 sans-serif;color:#000}
@@ -199,6 +208,49 @@ function icon(name: string): SVGElement {
     const holder = document.createElement("span");
     holder.innerHTML = `<svg class="ic" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] ?? ""}</svg>`;
     return holder.firstElementChild as SVGElement;
+}
+
+function codeToken(kind: string, value: string): HTMLElement {
+    const span = document.createElement("span");
+    span.className = `code-token--${kind}`;
+    span.textContent = value;
+    return span;
+}
+
+function appendCodeValue(parent: HTMLElement, value: string): void {
+    const tokens = /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b\d+(?:\.\d+)?\b|[A-Za-z_$][\w$]*/g;
+    let offset = 0;
+    for (const match of value.matchAll(tokens)) {
+        const index = match.index ?? 0;
+        parent.append(document.createTextNode(value.slice(offset, index)));
+        const word = match[0];
+        const kind = word[0] === '"' || word[0] === "'" ? "string" : /^\d/.test(word) ? "number" : "name";
+        parent.append(codeToken(kind, word));
+        offset = index + word.length;
+    }
+    parent.append(document.createTextNode(value.slice(offset)));
+}
+
+function highlightUsage(pre: HTMLElement, source: string): void {
+    const lines = source.split("\n");
+    lines.forEach((line, index) => {
+        if (index > 0) pre.append(document.createTextNode("\n"));
+        const tag = /^<([A-Za-z][\w]*)$/.exec(line);
+        if (tag) {
+            pre.append(document.createTextNode("<"), codeToken("tag", tag[1]));
+            return;
+        }
+        const attribute = /^(\s+)([A-Za-z][\w]*)(?:=(.*))?$/.exec(line);
+        if (attribute) {
+            pre.append(document.createTextNode(attribute[1]), codeToken("attr", attribute[2]));
+            if (attribute[3] !== undefined) {
+                pre.append(document.createTextNode("="));
+                appendCodeValue(pre, attribute[3]);
+            }
+            return;
+        }
+        pre.append(document.createTextNode(line));
+    });
 }
 
 function $(selector: string, root: ParentNode): HTMLElement {
@@ -477,8 +529,9 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
     };
 
     const openCode = (item: CatalogLeaf, trigger: HTMLButtonElement) => {
-        const code = componentUsage[item.id];
-        if (!code) return;
+        const usage = componentUsage[item.id];
+        if (!usage) return;
+        const code = formatComponentUsage(usage);
         const dialog = document.createElement("dialog");
         dialog.className = "codebox";
         dialog.setAttribute("aria-label", `${item.label} 用法代码`);
@@ -516,7 +569,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         });
         bar.append(copy);
         const pre = document.createElement("pre");
-        pre.textContent = code;
+        highlightUsage(pre, code);
         body.append(bar, pre);
         dialog.append(header, note, body);
         dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
