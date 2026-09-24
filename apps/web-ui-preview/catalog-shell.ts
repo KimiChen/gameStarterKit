@@ -125,7 +125,7 @@ h1,h2,h3,h4,p{margin:0}
 .codebox__h{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;border-bottom:1px solid var(--ds-border)}
 .codebox__h h2{flex:1;min-width:0;font-size:13px;font-weight:650}
 .codebox__note{padding:8px 14px;font-size:12px;color:var(--ds-dim);border-bottom:1px solid var(--ds-border)}
-.codebox__b{min-height:0;overflow:auto;background:var(--ds-sunken)}
+.codebox__b{min-height:0;overflow:auto;overscroll-behavior:contain;background:var(--ds-sunken)}
 .code__h{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:2px 8px 2px 14px;background:var(--ds-sunken);border-bottom:1px solid var(--ds-border);font:11px var(--ds-mono);color:var(--ds-faint)}
 .codebox pre{margin:0;padding:10px 14px 14px;font:12px/1.55 var(--ds-mono);white-space:pre-wrap;overflow-wrap:anywhere;tab-size:2}
 .code-token--tag{color:var(--ds-code-tag)}
@@ -299,7 +299,7 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
     document.body.classList.add("is-catalog");
     document.body.style.setProperty("--catalog-bg", "#f5f5f6");
     const pageStyle = document.createElement("style");
-    pageStyle.textContent = "html:has(body.is-catalog),body.is-catalog{height:auto!important;min-height:100%;overflow:auto!important}body.is-catalog{width:auto!important;background:var(--catalog-bg,#f5f5f6)!important}body.is-catalog #ui{display:none!important}";
+    pageStyle.textContent = "html:has(body.is-catalog),body.is-catalog{height:auto!important;min-height:100%;overflow:auto!important}html:has(body.is-catalog.code-dialog-open),body.is-catalog.code-dialog-open{overflow:hidden!important}body.is-catalog{width:auto!important;background:var(--catalog-bg,#f5f5f6)!important}body.is-catalog #ui{display:none!important}";
     document.head.append(pageStyle);
     const ui = document.getElementById("ui");
     if (ui) ui.style.display = "none";
@@ -573,9 +573,14 @@ export function mountPreviewCatalog(screens: readonly ScreenEntry[], preview: Ca
         body.append(bar, pre);
         dialog.append(header, note, body);
         dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
-        dialog.addEventListener("close", () => { dialog.remove(); trigger.focus(); }, { once: true });
+        dialog.addEventListener("close", () => {
+            dialog.remove();
+            document.body.classList.remove("code-dialog-open");
+            trigger.focus();
+        }, { once: true });
         shadow.append(dialog);
         dialog.showModal();
+        document.body.classList.add("code-dialog-open");
         close.focus();
     };
 
