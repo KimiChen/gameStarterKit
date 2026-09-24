@@ -111,6 +111,10 @@ h1,h2,h3,h4,p{margin:0}
 .card__h h4{flex:1;min-width:0;font-size:12.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card__m{font:10.5px var(--ds-mono);color:var(--ds-faint);white-space:nowrap}
 .card__h .ib{height:26px;min-width:26px;padding:0 5px}
+@media (hover:hover){
+  .card__h .ib{opacity:0;pointer-events:none;transition:opacity .15s}
+  .card__h:is(:hover,:focus-within) .ib{opacity:1;pointer-events:auto}
+}
 .codebox{width:min(760px,calc(100vw - 32px));max-height:min(80vh,720px);padding:0;border:1px solid var(--ds-border);border-radius:10px;background:var(--ds-panel);color:var(--ds-text);box-shadow:var(--ds-shadow)}
 .codebox[open]{display:flex;flex-direction:column}
 .codebox::backdrop{background:rgba(10,12,18,.4)}
