@@ -1,7 +1,8 @@
 import { defineComponent, useEffect, useMemo, useRef, useState, VirtualList } from '@uniflex/compiler';
-import { ArrayVirtualListDataSource, fontRef, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
+import { ArrayVirtualListDataSource, imageRef, type VirtualCollectionController } from '../../../../kits/uniflex/api/core/index';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ActionButton } from '../../../components/button/ActionButton';
+import { iconCaptionButton } from '../../../components/button/buttonSkins';
 import { ReportDetailSummary } from './ReportDetailSummary';
 import { ReportDetailShips } from './ReportDetailShips';
 import { ReportDetailHeroes } from './ReportDetailHeroes';
@@ -22,6 +23,8 @@ interface ReportDetailSection { readonly id: string; readonly height: number; }
 const detailWindow = imageRef('ui/mail-report-detail/window');
 const detailDelete = imageRef('ui/mail/popup-delete');
 const detailShare = imageRef('ui/mail-report-detail/share');
+const battleLogIcon = imageRef('ui/mail-report-detail/icon-log');
+const troopDetailsIcon = imageRef('ui/mail-report-detail/icon-troop');
 const sections: readonly ReportDetailSection[] = [
     { id: 'summary', height: 721 }, { id: 'ships', height: 268 }, { id: 'heroes', height: 408 },
     { id: 'equipment', height: 727 }, { id: 'soldiers', height: 218 }, { id: 'attributes', height: 313 },
@@ -90,17 +93,11 @@ export const ReportDetailSectionItem = defineComponent<{ readonly section: Repor
 /** Fixed lower-edge links appear only when the final comparison section enters. */
 export const ReportDetailLinks = defineComponent<{ readonly visible: boolean; readonly onAction?: (action: string) => void }>((p) => (
         <view name="ReportDetail/Links" visible={p.visible} style={{ position: 'absolute', left: 40, top: 1101, width: 673, height: 143, backgroundColor: '#F1EEE8' }}>
-            <view name="ReportDetail/BattleLog" interaction="press" onClick={() => p.onAction?.('battle-log')}
-                style={{ position: 'absolute', left: 185, top: 13, width: 120, height: 117 }}>
-                <image source={imageRef('ui/mail-report-detail/tab-circle')} style={{ position: 'absolute', left: 16, width: 86, height: 86 }} />
-                <image source={imageRef('ui/mail-report-detail/icon-log')} style={{ position: 'absolute', left: 23, top: 3, width: 74, height: 84 }} />
-                <text value="战斗日志" style={{ position: 'absolute', top: 88, width: 120, height: 34, font: fontRef('fonts/regular', 700), bold: true, fontSize: 30, color: '#3F3254', horizontalAlign: 'center' }} />
-            </view>
-            <view name="ReportDetail/TroopDetails" interaction="press" onClick={() => p.onAction?.('troop-details')}
-                style={{ position: 'absolute', left: 366, top: 13, width: 120, height: 117 }}>
-                <image source={imageRef('ui/mail-report-detail/tab-circle')} style={{ position: 'absolute', left: 16, width: 86, height: 86 }} />
-                <image source={imageRef('ui/mail-report-detail/icon-troop')} style={{ position: 'absolute', left: 25, top: 5, width: 66, height: 76 }} />
-                <text value="部队详情" style={{ position: 'absolute', top: 88, width: 120, height: 34, font: fontRef('fonts/regular', 700), bold: true, fontSize: 30, color: '#3F3254', horizontalAlign: 'center' }} />
-            </view>
+            <ActionButton accessibilityLabel="战斗日志" skin={iconCaptionButton} icon={battleLogIcon} label="战斗日志"
+                left={185} top={13} iconLeft={23} iconTop={3} iconWidth={74} iconHeight={84}
+                onClick={() => p.onAction?.('battle-log')} />
+            <ActionButton accessibilityLabel="部队详情" skin={iconCaptionButton} icon={troopDetailsIcon} label="部队详情"
+                left={366} top={13} iconLeft={25} iconTop={5} iconWidth={66} iconHeight={76}
+                onClick={() => p.onAction?.('troop-details')} />
         </view>
 ));
