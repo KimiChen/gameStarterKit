@@ -102,7 +102,7 @@ export function mapoTopsFor(kind: string, polys: readonly MapoPolygonInput[],
         if (scene) {
             const cells = lib.meta.cells.map((c) => {
                 const texture = lib.meta.textures[c.textureId];
-                return { id: c.id, rect: texture.rect, native: texture.nativeSize, source: "" };
+                return { id: c.id, rect: texture.rect, window: texture };
             });
             const sprites = mapoSceneSprites(scene, cells, lib.meta.size, seconds,
                 { x: p.x, y: p.y, row: p.s, col: 0 });
@@ -118,6 +118,7 @@ export function mapoTopsFor(kind: string, polys: readonly MapoPolygonInput[],
                 // ⚠ row/col 只给画家序用：底层表已是画家序，这里给同序的等距量即可
                 row: p.s, col: 0,
                 ...t.sprite, x: p.x + t.sprite.x, y: p.y + t.sprite.y,
+                textureWindow: lib.meta.textures[t.cell.textureId],
                 uv: mapoPrefabUv(mapoTopUv(kind, t.cell), t.mirrorX, t.mirrorY),
             });
         }

@@ -14,7 +14,7 @@ import {
 export const MAPO_OVERVIEW_ASSET = "kits/mapOriginal/maps/s1/overview";
 /** ⚠ 显示层地形走 BufferAsset：它塞不进 shared（熵太高），见 logic/mapoTerrain.ts。 */
 export const MAPO_TERRAIN_ASSET = "kits/mapOriginal/maps/s1/terrain";
-/** 摆件图集（原版切片打包，2048²）。 */
+/** 摆件图集；实际尺寸由 decor.data 布局表给出。 */
 export const MAPO_DECOR_ATLAS_ASSET = "kits/mapOriginal/maps/s1/decor-atlas";
 /** 多格地形的区域件图集与摆放表。 */
 export const MAPO_REGION_ATLAS_ASSET = "kits/mapOriginal/maps/s1/region-atlas";
@@ -67,8 +67,15 @@ export function mapoPlateBounds(): IMapoWorldBounds {
 
 // ── 缩略图坐标 ───────────────────────────────────────────────────────────────
 //
-// minimap.png 是正方（size×size），内容是把 2:1 的世界包围盒缩到 size×size/2 后**垂直居中**
-// （bake-minimap.py）。所以世界 → 缩略图像素要带上下留白。
+// 存储图只保留内容；导航画布仍为正方，世界映射保留上下留白。
+export const MAPO_MINIMAP_SOURCE_CANVAS = [512, 512] as const;
+export const MAPO_MINIMAP_CONTENT_RECT = [0, 128, 512, 256] as const;
+export const MAPO_MINIMAP_CONTENT = {
+    x: MAPO_MINIMAP_CONTENT_RECT[0] / MAPO_MINIMAP_SOURCE_CANVAS[0],
+    y: MAPO_MINIMAP_CONTENT_RECT[1] / MAPO_MINIMAP_SOURCE_CANVAS[1],
+    w: MAPO_MINIMAP_CONTENT_RECT[2] / MAPO_MINIMAP_SOURCE_CANVAS[0],
+    h: MAPO_MINIMAP_CONTENT_RECT[3] / MAPO_MINIMAP_SOURCE_CANVAS[1],
+};
 
 export interface IMapoMinimapPoint { readonly x: number; readonly y: number }
 
@@ -77,13 +84,15 @@ export function mapoWorldToMinimap(wx: number, wy: number): IMapoMinimapPoint {
     const b = mapoPlateBounds();
     const u = (wx - b.minX) / (b.maxX - b.minX);
     const v = (b.maxY - wy) / (b.maxY - b.minY);
-    return { x: u, y: 0.25 + v * 0.5 };   // 上下各留 1/4
+    const c = MAPO_MINIMAP_CONTENT;
+    return { x: c.x + u * c.w, y: c.y + v * c.h };
 }
 /** 缩略图归一化位置 → 世界坐标。⚠ 上下留白区要夹回内容带，⛔ 不能算出图外的世界点。 */
 export function mapoMinimapToWorld(u: number, v: number): { x: number; y: number } {
     const b = mapoPlateBounds();
-    const cu = Math.max(0, Math.min(1, u));
-    const cv = Math.max(0, Math.min(1, (v - 0.25) / 0.5));
+    const c = MAPO_MINIMAP_CONTENT;
+    const cu = Math.max(0, Math.min(1, (u - c.x) / c.w));
+    const cv = Math.max(0, Math.min(1, (v - c.y) / c.h));
     return { x: b.minX + cu * (b.maxX - b.minX), y: b.maxY - cv * (b.maxY - b.minY) };
 }
 /** 缩略图上点一下 → 跳到哪一格。 */
@@ -98,9 +107,12 @@ export function mapoMinimapViewport(centreX: number, centreY: number, width: num
     const halfW = width / scale / 2, halfH = height / scale / 2;
     const a = mapoWorldToMinimap(centreX - halfW, centreY + halfH);
     const c = mapoWorldToMinimap(centreX + halfW, centreY - halfH);
-    const x0 = Math.max(0, Math.min(1, a.x)), y0 = Math.max(0, Math.min(1, a.y));
-    const x1 = Math.max(0, Math.min(1, c.x)), y1 = Math.max(0, Math.min(1, c.y));
-    return { x: x0, y: y0, w: Math.max(0.01, x1 - x0), h: Math.max(0.01, y1 - y0) };
+    const content = MAPO_MINIMAP_CONTENT;
+    const x0 = Math.max(content.x, Math.min(content.x + content.w - 0.01, a.x));
+    const y0 = Math.max(content.y, Math.min(content.y + content.h - 0.01, a.y));
+    const x1 = Math.max(x0 + 0.01, Math.min(content.x + content.w, c.x));
+    const y1 = Math.max(y0 + 0.01, Math.min(content.y + content.h, c.y));
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
 /** 某格在缩略图里的归一化位置（标记用）。 */

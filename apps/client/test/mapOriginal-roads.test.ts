@@ -99,7 +99,9 @@ test("mapOriginal 道路：长度对不上就拒收；画家序照表；矩形�
     const tight = { left: c.x - 1, right: c.x + 1, bottom: c.y - 1, top: c.y + 1 };
     const inside = mapoRoadsInRect(tight, 9);
     assert.equal(inside.length, 1, "只该命中本格那片");
-    const mesh = buildMapoSpriteMesh(inside);
+    assert.equal(inside[0].x, c.x); assert.equal(inside[0].y, c.y);
+    // Anchor is the original full canvas center; an asymmetric trim need not have the same quad center.
+    const mesh = buildMapoSpriteMesh(inside.map(p => ({ ...p, textureWindow: undefined })));
     assert.ok(Math.abs((mesh.positions[1] + mesh.positions[7]) / 2 - c.y) < 0.002,
         "路片中心仍应落在道路网格中心，不能遗留半高偏移");
 });

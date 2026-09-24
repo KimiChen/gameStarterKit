@@ -1,4 +1,4 @@
-"""O1 image identity/layout contract. Never resample, trim, rotate or multiply alpha.
+"""Image identity/layout contract. Never resample, rotate or multiply alpha.
 
 Logical cells keep their original IDs/order/transforms. Equal full RGBA canvases
 with equal native sizes share one physical image *within* a family. The canonical
@@ -16,6 +16,31 @@ from atlas_layout import trial, validate_layout
 
 LAYOUT_VERSION = 1
 PADDING = 2
+SOURCE_GUARD = 2
+
+
+def trim_rect(image):
+    """Only alpha-zero pixels may be removed; retain original 2px source guard."""
+    bounds = image.getchannel("A").getbbox()
+    if bounds is None:
+        return [0, 0, 1, 1]
+    x, y = max(0, bounds[0]-SOURCE_GUARD), max(0, bounds[1]-SOURCE_GUARD)
+    right, bottom = min(image.width, bounds[2]+SOURCE_GUARD), min(image.height, bounds[3]+SOURCE_GUARD)
+    return [x, y, right-x, bottom-y]
+
+
+def validate_trim(original, rect, cropped):
+    """Independent source check: exact guard, no lost alpha, retained RGBA identical."""
+    if rect != trim_rect(original):
+        raise ValueError("incorrect alpha guard rectangle")
+    x, y, w, h = rect
+    expected = original.crop((x, y, x+w, y+h))
+    if expected.size != cropped.size or expected.tobytes() != cropped.tobytes():
+        raise ValueError("retained RGBA changed")
+    alpha = original.getchannel("A").copy()
+    alpha.paste(0, (x, y, x+w, y+h))
+    if alpha.getbbox() is not None:
+        raise ValueError("trim removed visible pixels")
 
 
 def pixel_hash(image):
@@ -26,7 +51,7 @@ def image_id(atlas_id, source):
     return atlas_id + ":" + hashlib.sha256(source.encode("utf-8")).hexdigest()[:20]
 
 
-def build_atlas(atlas_id, images, *, legacy_size=None):
+def build_atlas(atlas_id, images, *, legacy_size=None, trim=False):
     """images: (source, RGBA image at existing storage size, nativeSize).
 
     legacy_size preserves the river/desert top pages for O1. Other families use
@@ -34,6 +59,8 @@ def build_atlas(atlas_id, images, *, legacy_size=None):
     is deliberately not returned: callers retain their existing cell numbering.
     """
     images = list(images)
+    if trim and legacy_size:
+        raise ValueError("trim requires repacking")
     groups, by_source = defaultdict(list), {}
     for source, image, native in images:
         if image.mode != "RGBA" or len(native) != 2 or min(native) <= 0:
@@ -49,7 +76,13 @@ def build_atlas(atlas_id, images, *, legacy_size=None):
         texture_id = image_id(atlas_id, source)
         if texture_id in unique:
             raise ValueError("texture ID collision")
-        unique[texture_id] = (image, native, key[1], sorted({m[0] for m in members}))
+        storage = list(image.size)
+        rect = trim_rect(image) if trim else [0, 0, *storage]
+        x, y, w, h = rect
+        cropped = image.crop((x, y, x+w, y+h))
+        if trim:
+            validate_trim(image, rect, cropped)
+        unique[texture_id] = (cropped, native, pixel_hash(cropped), sorted({m[0] for m in members}), storage, rect)
         for alias, _, _ in members:
             aliases[alias] = texture_id
     if legacy_size:
@@ -80,13 +113,13 @@ def build_atlas(atlas_id, images, *, legacy_size=None):
     atlas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     textures = {}
     for key, x, y, w, h in sorted(placements):
-        image, native, digest, sources = unique[key]
+        image, native, digest, sources, storage, rect = unique[key]
         atlas.paste(image, (x, y))  # No mask: preserve transparent RGB / straight alpha.
         textures[key] = {"textureId": key, "atlasId": atlas_id, "rect": [x, y, w, h],
-                         "nativeSize": native, "storageSize": [w, h], "trimRect": [0, 0, w, h],
+                         "nativeSize": native, "storageSize": storage, "trimRect": rect,
                          "layoutVersion": LAYOUT_VERSION, "contentHash": digest, "sources": sources}
     return atlas, {"atlasId": atlas_id, "layoutVersion": LAYOUT_VERSION, "size": [width, height],
-                   "packing": {"order": order, "padding": padding, "rotation": False},
+                   "packing": {"order": order, "padding": padding, "rotation": False, "sourceGuard": SOURCE_GUARD if trim else None},
                    "textures": textures}, aliases
 
 
@@ -101,7 +134,8 @@ def resolved_cells(atlas):
     result = []
     for cell in atlas["cells"]:
         texture = textures[cell["textureId"]]
-        result.append({**cell, "rect": texture["rect"], "native": texture["nativeSize"]})
+        result.append({**cell, "rect": texture["rect"], "native": texture["nativeSize"],
+                       "storageSize": texture["storageSize"], "trimRect": texture["trimRect"]})
     return result
 
 
@@ -116,8 +150,12 @@ def validate_textures(layout, atlas):
             raise ValueError("texture identity mismatch")
         if texture["layoutVersion"] != LAYOUT_VERSION or layout["layoutVersion"] != LAYOUT_VERSION:
             raise ValueError("unsupported layout version")
-        if texture["storageSize"] != [w, h] or texture["trimRect"] != [0, 0, w, h]:
-            raise ValueError("O1 must retain the full storage canvas")
+        sw, sh = texture["storageSize"]
+        tx, ty, tw, th = texture["trimRect"]
+        if any(type(n) is not int for n in [sw, sh, tx, ty, tw, th]) or min(sw, sh, tw, th) <= 0:
+            raise ValueError("invalid storage/trim dimensions")
+        if min(tx, ty) < 0 or tx+tw > sw or ty+th > sh or [tw, th] != [w, h]:
+            raise ValueError("trim outside storage canvas or wrong packed size")
         if pixel_hash(atlas.crop((x, y, x+w, y+h))) != texture["contentHash"]:
             raise ValueError(f"texture content mismatch: {key}")
         rectangles.append((key, x, y, w, h))
@@ -138,7 +176,7 @@ export interface IMapoTextureLayout {
     readonly storageSize: readonly [number, number];
     readonly trimRect: readonly [number, number, number, number];
     readonly layoutVersion: number;
-    /** SHA-256 of big-endian uint32 width/height followed by the full stored RGBA canvas. */
+    /** SHA-256 of big-endian uint32 rect width/height followed by retained RGBA pixels. */
     readonly contentHash: string;
 }
 export type MapoTextureLayouts = Readonly<Record<string, IMapoTextureLayout>>;

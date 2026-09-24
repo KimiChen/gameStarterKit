@@ -628,3 +628,46 @@ python3 tools/maporiginal-assets/compare_images.py --before .cache/mapo-repack/r
 通过近景同源 Logic 展开、WebGL1 和 overview 相同混合公式渲染；每个 report 记录源图哈希、几何指纹和批次。
 它不代替 Creator 的真实四档 LOD、缓存接缝、点选和横竖版回归，水面仍按既有静态填充色口径。
 全图和所有关键局部 ROI 必须分别过 §7 阈值；只比较整图平均值不能验收。
+
+## O2：保留原画布的透明裁边
+
+`pack_decor / build_roads / build_tops` 沿用原缩采样，再对资源件、道路、河岸与雪 top 的 alpha>0
+包围盒保留源内 2 px 护边；图集外另留每侧 2 px。保留区 RGBA 原样复制，无 alpha mask、extrude、
+阈值去阴影或再次缩图。山体、城市、沙 top 维持完整画布，底纹/水色/法线/格线/选框不参与此裁剪。
+每片的 `storageSize / trimRect` 传给同一个 mesh 展开入口；先按原 size/pivot 定位裁剪窗口，再走
+父矩阵、skew、旋转、缩放，UV 镜像同时镜像窗口。帧表及纹理轨道引用的逻辑编号不变。
+
+资源图集采用 2048×4096 单页。两页候选由 `trial_decor_pages.py` 仅写 `.cache`，不装入 kit；
+`capture_layout.ts --decor-pages <候选目录>` 严格按画家序分连续纹理段，在 WebGL1 实际提交并记录
+draw call、纹理批次（含首次绑定）和首次烘焙耗时。该耗时包括解码/上传，不能冒充稳定帧时。
+切片分组只看帧表/纹理轨道引用，不据此改变节点更新或透明层序。
+
+先把当前 kit 数据和 shared content 各备份到 `.cache/mapo-trim/before/{data,content}`，再修改/重建。
+以下命令只读原包；Python 需 Pillow/numpy。`verify_repack` 的裁边基线须包含完整存储画布。
+
+```bash
+python3 tools/maporiginal-assets/pack_decor.py
+python3 tools/maporiginal-assets/build_roads.py
+python3 tools/maporiginal-assets/build_tops.py
+python3 tools/maporiginal-assets/install_to_kit.py
+npm run sync:shared
+node --import tsx tools/maporiginal-assets/bake_overview.ts
+python3 tools/maporiginal-assets/install_to_kit.py
+python3 tools/maporiginal-assets/emit_ledger.py --out apps/kits/mapOriginal/art/LICENSES.md
+python3 tools/maporiginal-assets/verify_repack.py --before .cache/mapo-trim/before/data --before-content .cache/mapo-trim/before/content --minimap-source tools/maporiginal-assets/out/pack/s1/minimap-source.png --report .cache/mapo-trim/repack.json
+python3 tools/maporiginal-assets/verify_fidelity.py --report .cache/mapo-trim/fidelity.json
+python3 tools/maporiginal-assets/test_texture_layout.py
+node --import tsx tools/maporiginal-assets/capture_layout.ts --gallery --seconds 0.37 --out .cache/mapo-trim/after
+python3 tools/maporiginal-assets/trial_decor_pages.py --before .cache/mapo-trim/before --out .cache/mapo-trim/two-pages
+node --import tsx tools/maporiginal-assets/capture_layout.ts --gallery --seconds 0.37 --decor-pages .cache/mapo-trim/two-pages --out .cache/mapo-trim/page-trial
+```
+
+`bake_overview` 保留同一次缩采样的正方形 `out/pack/s1/minimap-source.png` 作为裁边核验输入，
+安装器不发布该留白副本；`verify_repack --minimap-source` 逐字节检查内容带的 524,288 B RGBA。
+图、导航区域、点选和视口框的布局常量共用 `mapoFar.ts`。
+
+素材陈列图支持 `--gallery-only --opaque-gallery`，采用中性不透明底，检查可见边缘与每个物件的紧邻 ROI。
+O1 原画布基线可加 `--decor-baseline .cache/mapo-trim/before/data`；完整 prefab 图先由 `verify_repack`
+确认不变，再核对基线几何哈希、原图哈希与修改前截图记录一致。透明 PNG 的解除预乘会放大低 alpha
+的 RGB 舍入噪声，保留其原始对照结果，不把它写成通过；实际地图及不透明背景陈列图仍使用相同
+RGBA 阈值（MAE≤1、差值>8 的比例≤0.1%），不能靠扩大 ROI 消解误差。

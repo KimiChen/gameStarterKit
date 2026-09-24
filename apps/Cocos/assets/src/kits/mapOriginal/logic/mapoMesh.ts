@@ -8,6 +8,7 @@
 import {
     MAPO_TILE_HALF_H, MAPO_TILE_HALF_W, mapoGrid2Pos,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
+import type { IMapoTextureLayout } from "../../../shared/kits/mapOriginal/content/atlas-layout.types";
 
 export interface MapoGeometry {
     readonly positions: Float32Array;
@@ -195,6 +196,9 @@ export interface MapoSpriteInput {
     readonly w: number;
     readonly h: number;
     readonly uv: readonly [number, number, number, number];
+    /** 裁后像素在原画布的位置；UV 负宽/高同时镜像这段范围，原 size/pivot 不变。 */
+    readonly textureWindow?: Pick<IMapoTextureLayout, "storageSize" | "trimRect">;
+    readonly textureId?: string;
     /**
      * 绕 prefab 锚点的旋转（度，CCW 为正）。缺省 / 0 走轴对齐快路径。
      * ⚠ 这是原版 prefab 里 sprite 的 `angle.z`（山族 13 形里只有 2 形非零，≤1.75°）。
@@ -218,9 +222,12 @@ export function buildMapoSpriteMesh(sprites: MapoSpriteInput[]): MapoGeometry {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (let i = 0; i < n; i += 1) {
         const s = sprites[i];
-        const x0 = s.x - s.w * s.pivot[0], x1 = x0 + s.w;
-        const y0 = s.y - s.h * s.pivot[1], y1 = y0 + s.h;
         const [u0, v0, uw, vh] = s.uv;
+        const [sw, sh] = s.textureWindow?.storageSize ?? [1, 1];
+        const [tx, ty, tw, th] = s.textureWindow?.trimRect ?? [0, 0, 1, 1];
+        const left = uw < 0 ? sw - tx - tw : tx, top = vh < 0 ? sh - ty - th : ty;
+        const x0 = s.x + s.w * (left / sw - s.pivot[0]), x1 = x0 + s.w * tw / sw;
+        const y1 = s.y + s.h * (1 - top / sh - s.pivot[1]), y0 = y1 - s.h * th / sh;
         const deg = s.angleDeg ?? 0;
         const r = deg * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);
         const [ka, kb, kc, kd] = s.skewBasis ?? [1, 0, 0, 1];

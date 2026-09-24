@@ -88,6 +88,8 @@ export function mapoSceneSprites(root: IMapoPrefabNode, cells: readonly IMapoPre
                 x: placement.x + m[4] * px, y: placement.y + m[5] * px,
                 w: n.size[0], h: n.size[1], pivot: [n.pivot[0], n.pivot[1]],
                 skewBasis: [m[0] * px, m[1] * px, m[2] * px, m[3] * px], rgba, addColor: additive,
+                textureWindow: cell.window,
+                textureId: cell.textureId,
                 uv: mapoPrefabUv([x / atlas[0], y / atlas[1], w / atlas[0], h / atlas[1]], n.mirror[0], n.mirror[1]) });
         }
         for (const { child } of children) if (child.z >= 0) visit(child, m, rgba, additive, time);

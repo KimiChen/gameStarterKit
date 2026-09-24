@@ -1,13 +1,18 @@
 {
   "size": [
     512,
+    256
+  ],
+  "sourceCanvasSize": [
+    512,
     512
   ],
-  "content": [
+  "contentRect": [
+    0,
+    128,
     512,
     256
   ],
-  "contentTop": 128,
   "source": "mapoStaticScene / overview.png",
   "projection": "mapoWorldBounds orthographic; middle half"
 }

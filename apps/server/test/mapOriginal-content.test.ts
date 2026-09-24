@@ -20,7 +20,7 @@ import {
 } from "@game/shared/kits/mapOriginal/content/display.data";
 import {
     MAPO_DECOR_ATLAS_H, MAPO_DECOR_ATLAS_W, MAPO_DECOR_CELLS, MAPO_DECOR_TEXTURES,
-    MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS, type IMapoDecorCell,
+    MAPO_DECOR_DESERT_CELLS, MAPO_DECOR_SNOW_CELLS, MAPO_DECOR_IMAGE_CELLS, MAPO_DECOR_IMAGES, type IMapoDecorCell,
 } from "@game/shared/kits/mapOriginal/content/decor.data";
 import {
     MAPO_REGION_ATLAS_H, MAPO_REGION_ATLAS_W, MAPO_REGION_CELLS, MAPO_REGION_TEXTURES,
@@ -160,12 +160,13 @@ test("mapOriginal 内容：shared 值调色板 = terrain.info.json 的调色板"
 
 test("mapOriginal 内容：完整 prefab 覆盖 135 套，纹理索引和图集元数据一致", () => {
     const meta = JSON.parse(kit("decor-atlas.info.json").toString("utf8"));
-    assert.equal(meta.schemaVersion, 5);
+    assert.equal(meta.schemaVersion, 6);
     assert.equal(meta.prefabs, 135);
     assert.equal(meta.nodes, 659);
     assert.deepEqual(meta.substitutions, [], "资源解析失败不得换成相邻等级");
     assert.deepEqual(meta.size, [MAPO_DECOR_ATLAS_W, MAPO_DECOR_ATLAS_H]);
-    assert.deepEqual(meta.cells, MAPO_DECOR_TEXTURES);
+    assert.deepEqual(meta.cells.map(({ source: _source, ...cell }: {source: string}) => cell), MAPO_DECOR_IMAGE_CELLS);
+    for (const cell of meta.cells) assert.deepEqual(MAPO_DECOR_IMAGES[cell.textureId], stripTextureSources(meta.textures[cell.textureId]));
     for (const c of MAPO_DECOR_TEXTURES) {
         const [x, y, w, h] = c.rect;
         assert.ok(x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= MAPO_DECOR_ATLAS_W && y + h <= MAPO_DECOR_ATLAS_H);
@@ -492,16 +493,16 @@ test("mapOriginal 内容：缩略图由地形烘、投影与点选同源（⛔ �
     //   图与点选换算必须同一套投影。原版 noexpo_birdview 是 **3D 透视渲染**，
     //   与正交等距 ⛔ 无可靠对齐（实测相似变换 IoU 0.62、河网 NCC 0.30）。
     const meta = JSON.parse(kit("minimap.info.json").toString("utf8")) as {
-        size: [number, number]; content: [number, number]; contentTop: number;
+        size: [number, number]; sourceCanvasSize: [number, number]; contentRect: [number, number, number, number];
         source: string; projection: string;
     };
-    assert.deepEqual(meta.size, [512, 512]);
+    assert.deepEqual(meta.size, [512, 256]);
     // ★ 内容占**中间半幅**，上下各 1/4 留白 —— 与 mapoWorldToMinimap 的 `0.25 + v*0.5` 严格对应
-    assert.deepEqual(meta.content, [meta.size[0], meta.size[1] / 2]);
-    assert.equal(meta.contentTop, meta.size[1] / 4);
+    assert.deepEqual(meta.sourceCanvasSize, [512, 512]);
+    assert.deepEqual(meta.contentRect, [0, 128, 512, 256]);
     assert.ok(meta.source.startsWith("mapoStaticScene"), "缩略图必须与近景原始地貌几何同源");
     assert.ok(!meta.source.includes("birdview"), "⛔ 不许再贴原版鸟瞰插画");
-    // 上下留白必须全透明（否则点选留白区会被当成地图内）
+    // 存储图仅含原画布内容带，UI 另保留上下留白。
     const png = kit("minimap.png");
     assert.ok(png.length > 1000);
 });
@@ -542,7 +543,8 @@ test("mapOriginal 内容：道路层自洽（坐标系 / 结构签名绑定 / �
         assert.equal(shared.textureId, c.textureId);
         assert.deepEqual(MAPO_ROAD_TEXTURES[shared.textureId], stripTextureSources(texture));
         assert.equal(shared.cls, c.cls);
-        assert.equal(texture.rect[2], Math.round(texture.nativeSize[0] * meta.atlas.downscale));
+        assert.equal(texture.storageSize[0], Math.round(texture.nativeSize[0] * meta.atlas.downscale));
+        assert.equal(texture.storageSize[1], Math.round(texture.nativeSize[1] * meta.atlas.downscale));
         const [x, y, w, h] = texture.rect;
         assert.ok(x >= 0 && y >= 0 && x + w <= MAPO_ROAD_ATLAS_W && y + h <= MAPO_ROAD_ATLAS_H);
         assert.ok(c.source.startsWith(`scene/ground/${c.variant === "snow" ? "road_snow" : "road"}/`), `路片 ${c.id} 的 source`);
@@ -635,9 +637,9 @@ test("mapOriginal 内容：_top_group 手摆细节自洽（组数对齐几何库
             assert.equal(shared.textureId, c.textureId);
             assert.deepEqual(atlas.textures[shared.textureId], stripTextureSources(texture));
             // ★ 图集里是**缩过的**、native 是原版像素 —— 两者必须按 downscale 对上
-            assert.equal(texture.rect[2], Math.max(1, Math.round(texture.nativeSize[0] * MAPO_TOP_DOWNSCALE)),
+            assert.equal(texture.storageSize[0], Math.max(1, Math.round(texture.nativeSize[0] * MAPO_TOP_DOWNSCALE)),
                 `${atlas.kind} 格 ${c.id} 宽与 downscale 不符`);
-            assert.equal(texture.rect[3], Math.max(1, Math.round(texture.nativeSize[1] * MAPO_TOP_DOWNSCALE)),
+            assert.equal(texture.storageSize[1], Math.max(1, Math.round(texture.nativeSize[1] * MAPO_TOP_DOWNSCALE)),
                 `${atlas.kind} 格 ${c.id} 高与 downscale 不符`);
             const [x, y, w, h] = texture.rect;
             assert.ok(x >= 0 && y >= 0 && x + w <= a.size[0] && y + h <= a.size[1],
@@ -1208,13 +1210,15 @@ function stripTextureSources(texture: IMapoTextureLayout): IMapoTextureLayout {
     return runtime;
 }
 
-test("mapOriginal O1：物理图片唯一、留边不重叠，逻辑条目只引用图片 ID", () => {
+test("mapOriginal O1/O2：物理图片唯一、裁边与留边合法，逻辑条目只引用图片 ID", () => {
     const region = JSON.parse(kit("region-atlas.info.json").toString());
     const road = JSON.parse(kit("roads.info.json").toString()).atlas;
     const city = JSON.parse(kit("cities.info.json").toString()).atlas;
     const tops = JSON.parse(kit("top-atlas.info.json").toString()).atlases;
-    for (const [atlas, size, count] of [[region, [2048, 2048], 19], [road, [512, 1024], 18],
-        [city, [512, 1024], 158], [tops.snow, [512, 1024], 8]] as const) {
+    const decor = JSON.parse(kit("decor-atlas.info.json").toString());
+    for (const [atlas, size, count] of [[region, [2048, 2048], 19], [road, [512, 512], 18],
+        [city, [512, 1024], 158], [tops.snow, [1024, 256], 8], [tops.river, [1024, 1024], 79],
+        [decor, [2048, 4096], 320]] as const) {
         assert.deepEqual(atlas.size, size);
         const textures = Object.values(atlas.textures) as IMapoTextureLayout[];
         assert.equal(textures.length, count);
@@ -1228,8 +1232,10 @@ test("mapOriginal O1：物理图片唯一、留边不重叠，逻辑条目只引
             assert.equal(t.layoutVersion, 1);
             assert.equal(t.atlasId, atlas.atlasId);
             assert.match(t.contentHash, /^[a-f0-9]{64}$/);
-            assert.deepEqual(t.storageSize, [w, h]);
-            assert.deepEqual(t.trimRect, [0, 0, w, h]);
+            const [sw, sh] = t.storageSize, [tx, ty, tw, th] = t.trimRect;
+            assert.deepEqual([tw, th], [w, h]);
+            assert.ok(tx >= 0 && ty >= 0 && tw > 0 && th > 0 && tx + tw <= sw && ty + th <= sh);
+            if (atlas === region || atlas === city) assert.deepEqual(t.trimRect, [0, 0, sw, sh]);
             assert.ok(x >= 2 && y >= 2 && x + w + 2 <= size[0] && y + h + 2 <= size[1]);
             for (const other of textures.slice(i + 1)) {
                 const [ox, oy, ow, oh] = other.rect;

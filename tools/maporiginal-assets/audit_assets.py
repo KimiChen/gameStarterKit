@@ -79,7 +79,8 @@ def storage_summary(entries):
 
 def atlas_cells(data):
     read = lambda name: json.loads((data / name).read_text())
-    groups = {"decor": read("decor-atlas.info.json")["cells"], "region": [],
+    decor = read("decor-atlas.info.json")
+    groups = {"decor": resolved_cells(decor) if 'textures' in decor else decor["cells"], "region": [],
               "city": resolved_cells(read("cities.info.json")["atlas"]),
               "road": resolved_cells(read("roads.info.json")["atlas"]),
               "choose": read("choose.info.json")["pieces"]}
@@ -107,7 +108,8 @@ def audit_atlases(data):
             guard = (max(0, bbox[0]-2), max(0, bbox[1]-2), min(w, bbox[2]+2), min(h, bbox[3]+2)) if bbox else (0, 0, 1, 1)
             item = {"key": f"{group}:{index}", "group": group, "id": cell["id"],
                     "source": cell["source"], "variant": cell.get("variant"), "rect": [x, y, w, h],
-                    "nativeSize": cell.get("native"), "storageSize": [w, h],
+                    "nativeSize": cell.get("native"), "storageSize": cell.get("storageSize", [w, h]),
+                    "packedSize": [w, h], "trimRect": cell.get("trimRect", [0, 0, w, h]),
                     "alphaBounds": list(bbox) if bbox else None,
                     "guardTrimRect": [guard[0], guard[1], guard[2]-guard[0], guard[3]-guard[1]],
                     "nonzeroAlphaPixels": int(np.count_nonzero(np.asarray(image)[:, :, 3])),

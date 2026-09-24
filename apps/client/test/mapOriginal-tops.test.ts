@@ -44,12 +44,12 @@ test("mapOriginal 手摆件：三族齐备，组数与件数是实测值", () =>
     assert.deepEqual([...MAPO_TOP_KINDS], ["river", "desert", "snow"]);
     assert.deepEqual(MAPO_TOP_ATLASES.map((a) => a.sprites), [597, 481, 821]);
     assert.deepEqual(MAPO_TOP_ATLASES.map((a) => a.groups), [102, 51, 52]);
-    // ★ 图集是**缩过的**、native 是原版像素 —— 世界尺寸只能按 native 算
+    // 缩采样画布与裁后矩形分开；世界尺寸仍取 prefab.size × scale。
     for (const a of MAPO_TOP_ATLASES) {
         for (const c of a.cells) {
             const texture = a.textures[c.textureId];
-            assert.equal(texture.rect[2], Math.max(1, Math.round(texture.nativeSize[0] * MAPO_TOP_DOWNSCALE)));
-            assert.equal(texture.rect[3], Math.max(1, Math.round(texture.nativeSize[1] * MAPO_TOP_DOWNSCALE)));
+            assert.equal(texture.storageSize[0], Math.max(1, Math.round(texture.nativeSize[0] * MAPO_TOP_DOWNSCALE)));
+            assert.equal(texture.storageSize[1], Math.max(1, Math.round(texture.nativeSize[1] * MAPO_TOP_DOWNSCALE)));
         }
     }
 });

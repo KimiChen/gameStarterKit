@@ -15,6 +15,7 @@ import { mapoSetRegions } from "../../apps/client/src/kits/mapOriginal/logic/map
 import { mapoSetRiverGeo, mapoSetRivers } from "../../apps/client/src/kits/mapOriginal/logic/mapoRivers";
 import { mapoSetTops } from "../../apps/client/src/kits/mapOriginal/logic/mapoTops";
 import { mapoSetRoads } from "../../apps/client/src/kits/mapOriginal/logic/mapoRoads";
+import { MAPO_MINIMAP_SOURCE_CANVAS, MAPO_MINIMAP_CONTENT_RECT } from "../../apps/client/src/kits/mapOriginal/logic/mapoFar";
 
 async function main() {
     const data = path.resolve("apps/kits/mapOriginal/data/maps/s1");
@@ -77,8 +78,13 @@ async function main() {
       gl.finish();
       const output=document.createElement('canvas'); output.width=spec.width; output.height=spec.height;
       output.getContext('2d').drawImage(canvas,0,0,output.width,output.height);
-      const mini=document.createElement('canvas'); mini.width=mini.height=512; mini.getContext('2d').drawImage(output,0,128,512,256);
-      return {overview:output.toDataURL('image/png'),minimap:mini.toDataURL('image/png')};
+      // Same 512×256 resampling as before, then exact canvas crop (no second resample).
+      const canvasSize=${JSON.stringify(MAPO_MINIMAP_SOURCE_CANVAS)}, content=${JSON.stringify(MAPO_MINIMAP_CONTENT_RECT)};
+      const fullMini=document.createElement('canvas'); [fullMini.width,fullMini.height]=canvasSize;
+      fullMini.getContext('2d').drawImage(output,...content);
+      const mini=document.createElement('canvas'); mini.width=content[2]; mini.height=content[3];
+      mini.getContext('2d').putImageData(fullMini.getContext('2d').getImageData(...content),0,0);
+      return {overview:output.toDataURL('image/png'),minimap:mini.toDataURL('image/png'),minimapSource:fullMini.toDataURL('image/png')};
     })(); window.result.catch(e=>{window.bakeError=String(e.stack||e)});</script>`;
     files.set("/", { type: "text/html; charset=utf-8", data: Buffer.from(page) });
     const server = http.createServer((req, res) => { const file = files.get(req.url ?? "/"); if(!file){res.writeHead(404).end();return;} res.writeHead(200, { "content-type":file.type }).end(file.data); });
@@ -98,9 +104,11 @@ async function main() {
         if(!result?.overview) throw new Error("overview bake did not complete");
         fs.mkdirSync(out, { recursive:true });
         for(const name of ["overview", "minimap"]) fs.writeFileSync(path.join(out, `${name}.png`), Buffer.from(result[name].split(",")[1], "base64"));
+        // Audit-only full canvas; installer deliberately does not publish this file.
+        fs.writeFileSync(path.join(out,"minimap-source.png"),Buffer.from(result.minimapSource.split(",")[1],"base64"));
         const codeHashes: Record<string,string> = {};
         const geometrySources = ["mapoStaticScene", "mapoMesh", "mapoScene", "mapoPrefab", "mapoGround",
-            "mapoBlocks", "mapoPolyLib", "mapoRegions", "mapoRoads", "mapoRivers", "mapoTops", "mapoBands"];
+            "mapoBlocks", "mapoPolyLib", "mapoRegions", "mapoRoads", "mapoRivers", "mapoTops", "mapoBands", "mapoFar"];
         const contentSources = ["ground", "blocks", "region", "roads", "river", "tops", "top-scenes", "bands"];
         for (const relative of [
             ...geometrySources.map((name) => `apps/client/src/kits/mapOriginal/logic/${name}.ts`),
@@ -115,7 +123,8 @@ async function main() {
             geometrySha256:geometryHash.digest("hex"), batches:batches.length, sourceHashes,
             pngSha256:createHash("sha256").update(fs.readFileSync(path.join(out,"overview.png"))).digest("hex") };
         fs.writeFileSync(path.join(out,"overview.info.json"), JSON.stringify(info,null,2)+"\n");
-        fs.writeFileSync(path.join(out,"minimap.info.json"), JSON.stringify({size:[512,512],content:[512,256],contentTop:128,
+        fs.writeFileSync(path.join(out,"minimap.info.json"), JSON.stringify({size:MAPO_MINIMAP_CONTENT_RECT.slice(2),
+            sourceCanvasSize:MAPO_MINIMAP_SOURCE_CANVAS, contentRect:MAPO_MINIMAP_CONTENT_RECT,
             source:"mapoStaticScene / overview.png",projection:"mapoWorldBounds orthographic; middle half"},null,2)+"\n");
         console.log(JSON.stringify({output:path.join(out,"overview.png"),batches:batches.length,geometrySha256:info.geometrySha256}));
     } finally {

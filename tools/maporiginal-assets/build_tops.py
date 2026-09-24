@@ -149,7 +149,7 @@ def main() -> int:
             imgs.append((th, tw, tex, im.resize((tw, th), Image.LANCZOS), native))
         imgs.sort(key=lambda x: (-x[0], -x[1]))
         atlas, layout, aliases = build_atlas(kind + "-top", [(tex, im, native) for _, _, tex, im, native in imgs],
-                                             legacy_size={"river": (2048, 2048), "desert": (512, 512)}.get(kind))
+                                             legacy_size=(512, 512) if kind == "desert" else None, trim=kind != "desert")
         cells = [{"id": i, "textureId": aliases[tex], "source": tex}
                  for i, (_, _, tex, _, _) in enumerate(imgs)]
         atlas.save(os.path.join(d, "%s-top-atlas.png" % kind))

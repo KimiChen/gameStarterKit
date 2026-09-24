@@ -1,4 +1,5 @@
 /** 原包 prefab 的可移植表现数据；节点 transform 不从贴图尺寸反推。 */
+import type { IMapoTextureLayout } from "./atlas-layout.types";
 export interface IMapoPrefabKey {
     readonly time: number;
     readonly value: number | readonly number[];
@@ -29,6 +30,7 @@ export interface IMapoPrefabNode {
 export interface IMapoPrefabCell {
     readonly id: number;
     readonly rect: readonly [number, number, number, number];
-    readonly native: readonly [number, number];
-    readonly source: string;
+    readonly textureId?: string;
+    /** 未提供时为完整画布；原始 UI 件等未裁边素材沿用此形态。 */
+    readonly window?: Pick<IMapoTextureLayout, "storageSize" | "trimRect">;
 }

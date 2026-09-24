@@ -156,7 +156,7 @@ def main() -> int:
     for tid in ids:
         if originals["base", tid] != originals["snow", tid]:
             raise ValueError(f"道路原始切片不再等价: {tid}; 需审核变体素材")
-    atlas, layout, aliases = build_atlas("road", images)
+    atlas, layout, aliases = build_atlas("road", images, trim=True)
     for c in cells:
         c["textureId"] = aliases[c["source"]]
     for base in cells[:len(ids)]:

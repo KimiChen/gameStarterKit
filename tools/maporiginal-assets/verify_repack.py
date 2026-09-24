@@ -10,7 +10,8 @@ from pathlib import Path
 
 from PIL import Image
 
-from texture_layout import resolved_cells, validate_textures
+from texture_layout import resolved_cells, validate_textures, validate_trim
+from audit_assets import json_exports
 
 
 def groups(data):
@@ -34,15 +35,22 @@ def verify(before, after):
         old_cells = resolved_cells(old) if "textures" in old else old["cells"]
         new_cells = resolved_cells(new) if "textures" in new else new["cells"]
         assert len(old_cells) == len(new_cells), (kind, "logical count")
-        storage = {"cell", "art", "rect", "textureId"}
+        storage = {"cell", "art", "rect", "textureId", "storageSize", "trimRect"}
         for ca, cb in zip(old_cells, new_cells):
             assert {k: v for k, v in ca.items() if k not in storage} == {k: v for k, v in cb.items() if k not in storage}, (kind, ca["id"], "logical data")
+            if 'textureId' in ca:
+                assert ca['textureId'] == cb['textureId'], (kind, ca['id'], 'unstable texture identity')
             if "rect" not in ca:
                 cx, cy = ca["cell"][:2]; ox, oy, w, h = ca["art"]; rect = [cx+ox, cy+oy, w, h]
             else: rect = ca["rect"]
             x, y, w, h = rect; nx, ny, nw, nh = cb["rect"]
-            assert (w, h) == (nw, nh), (kind, ca["id"], "resampling")
-            assert a.crop((x, y, x+w, y+h)).tobytes() == b.crop((nx, ny, nx+nw, ny+nh)).tobytes(), (kind, ca["id"], "RGBA")
+            original, cropped = a.crop((x, y, x+w, y+h)), b.crop((nx, ny, nx+nw, ny+nh))
+            assert cb.get('storageSize', [nw, nh]) == ca.get('storageSize', [w, h]), (kind, ca['id'], 'resampling')
+            if cb.get('trimRect', [0, 0, nw, nh]) != ca.get('trimRect', [0, 0, w, h]):
+                assert ca.get('trimRect', [0, 0, w, h]) == [0, 0, w, h], 'baseline must contain original storage canvas'
+                validate_trim(original, cb['trimRect'], cropped)
+            else:
+                assert original.size == cropped.size and original.tobytes() == cropped.tobytes(), (kind, ca['id'], 'RGBA')
         report["groups"][kind] = {"logicalEntries": len(new_cells), "rgbaMismatch": 0,
                                   "beforeSize": list(a.size), "afterSize": list(b.size),
                                   "savedRgbaBytes": (a.width*a.height-b.width*b.height)*4}
@@ -62,8 +70,25 @@ if __name__ == "__main__":
     ap.add_argument("--before", type=Path, required=True)
     ap.add_argument("--after", type=Path, default=Path(__file__).resolve().parents[2] / "apps/kits/mapOriginal/data/maps/s1")
     ap.add_argument("--report", type=Path, required=True)
+    ap.add_argument("--before-content", type=Path, help="Also compare complete decor/top prefab graphs")
+    ap.add_argument("--after-content", type=Path, default=Path(__file__).resolve().parents[2] / "apps/shared/src/kits/mapOriginal/content")
+    ap.add_argument("--minimap-source", type=Path, help="Audit-only full canvas from the same overview bake")
     args = ap.parse_args()
     result = verify(args.before, args.after)
+    if args.before_content:
+        for filename, names in [('decor.data.ts', ['MAPO_DECOR_CELLS', 'MAPO_DECOR_SNOW_CELLS', 'MAPO_DECOR_DESERT_CELLS']),
+                                ('top-scenes.data.ts', ['MAPO_TOP_SCENES'])]:
+            assert json_exports(args.before_content/filename, names) == json_exports(args.after_content/filename, names), filename
+        result['unchangedPrefabGraphs'] = True
+    if args.minimap_source:
+        meta = json.loads((args.after/'minimap.info.json').read_text())
+        original = Image.open(args.minimap_source).convert('RGBA')
+        cropped = Image.open(args.after/'minimap.png').convert('RGBA')
+        assert list(original.size) == meta['sourceCanvasSize']
+        assert list(cropped.size) == meta['size']
+        x,y,w,h = meta['contentRect']
+        assert original.crop((x,y,x+w,y+h)).tobytes() == cropped.tobytes()
+        result['minimapExactCopy'] = {'sourceCanvasSize':list(original.size), 'size':list(cropped.size), 'rgbaBytes':w*h*4}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({"logicalEntries": sum(g["logicalEntries"] for g in result["groups"].values()),

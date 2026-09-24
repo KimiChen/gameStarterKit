@@ -4,7 +4,7 @@
  */
 import { Color, EventTouch, Node, Sprite, SpriteFrame, UITransform, Vec3 } from "cc";
 import { createSolidPlate } from "../../../view/uiPlate";
-import { mapoMinimapCell, mapoMinimapViewport } from "../logic/mapoFar";
+import { mapoMinimapCell, mapoMinimapViewport, MAPO_MINIMAP_CONTENT } from "../logic/mapoFar";
 import type { MapOriginalWorldLogic } from "../logic/MapOriginalWorldLogic";
 import type { MapoArtResources } from "./MapoArtResources";
 
@@ -39,10 +39,12 @@ export class MapoMinimap {
             this.frame = frame;
             const sprite = image.addComponent(Sprite);
             // ⚠ 次序有讲究：赋 spriteFrame 会按默认 TRIMMED 把 UITransform 重置成**贴图原尺寸**
-            // （512×512），所以必须先切 CUSTOM，最后再定尺寸；反过来写缩略图会撑成原图那么大。
+            // 所以必须先切 CUSTOM，最后再定尺寸；导航画布仍包含上下留白。
             sprite.sizeMode = Sprite.SizeMode.CUSTOM;
             sprite.spriteFrame = frame;
-            it.width = size; it.height = size;
+            const c = MAPO_MINIMAP_CONTENT;
+            it.width = size * c.w; it.height = size * c.h;
+            image.setPosition(size * (c.x + c.w / 2 - 0.5), size * (0.5 - c.y - c.h / 2));
             this.node.addChild(image);
         } else {
             // ⛔ 贴图没加载出来也要有个能点的底板，不然缩略图整个消失
@@ -80,8 +82,10 @@ export class MapoMinimap {
         const rect = mapoMinimapViewport(logic.camera.x, logic.camera.y,
             logic.camera.width, logic.camera.height, logic.camera.scale);
         const w = Math.max(3, rect.w * this.size), h = Math.max(3, rect.h * this.size);
-        const cx = (rect.x + rect.w / 2) * this.size - this.size / 2;
-        const cy = this.size / 2 - (rect.y + rect.h / 2) * this.size;
+        const c = MAPO_MINIMAP_CONTENT;
+        const centerX = Math.max(c.x * this.size + w / 2, Math.min((c.x+c.w)*this.size - w/2, (rect.x+rect.w/2)*this.size));
+        const centerY = Math.max(c.y * this.size + h / 2, Math.min((c.y+c.h)*this.size - h/2, (rect.y+rect.h/2)*this.size));
+        const cx = centerX - this.size / 2, cy = this.size / 2 - centerY;
         const layout: readonly (readonly [number, number, number, number])[] = [
             [w, 2, 0, h / 2], [w, 2, 0, -h / 2], [2, h, -w / 2, 0], [2, h, w / 2, 0],
         ];

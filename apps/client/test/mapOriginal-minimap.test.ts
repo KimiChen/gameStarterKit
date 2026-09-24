@@ -8,7 +8,7 @@ import { MAPO_MAP_COLS, MAPO_MAP_ROWS } from "../src/shared/kits/mapOriginal/api
 
 test("mapOriginal 缩略图：内容占中间半幅，上下各 1/4 留白（与烘焙画布同契约）", () => {
     // ⚠ 这条把**图**与**点选换算**钉在一起：缩略图现在由地形按同一投影烘
-    //   （minimap.info.json 的 contentTop = side/4），⛔ 改一边必须改另一边。
+    //   （minimap.info.json 的 contentRect 位于原画布中间），改一边必须改另一边。
     const b = mapoPlateBounds();
     assert.equal(mapoWorldToMinimap(b.minX, b.maxY).y, 0.25, "世界上沿落在 v=0.25");
     assert.equal(mapoWorldToMinimap(b.minX, b.minY).y, 0.75, "世界下沿落在 v=0.75");
@@ -38,10 +38,13 @@ test("mapOriginal 缩略图：点四角都落在图内的合法格", () => {
     }
 });
 
-test("mapOriginal 缩略图：视口框恒在 0..1 内且非零面积", () => {
-    for (const scale of [0.05, 0.5, 2.0]) {
-        const r = mapoMinimapViewport(0, -1000, 720, 1280, scale);
-        assert.ok(r.x >= 0 && r.y >= 0 && r.x + r.w <= 1.0001 && r.y + r.h <= 1.0001,
+test("mapOriginal 缩略图：中心与四边的视口框夹在内容带内，不进入导航留白", () => {
+    const b = mapoPlateBounds();
+    for (const scale of [0.0001, 0.05, 0.5, 2.0]) for (const [x,y] of [
+        [0,(b.minY+b.maxY)/2], [b.minX,b.minY], [b.minX,b.maxY], [b.maxX,b.minY], [b.maxX,b.maxY],
+    ]) {
+        const r = mapoMinimapViewport(x, y, 720, 1280, scale);
+        assert.ok(r.x >= 0 && r.y >= 0.25 && r.x + r.w <= 1.0001 && r.y + r.h <= 0.7501,
             `scale ${scale}: ${JSON.stringify(r)}`);
         assert.ok(r.w > 0 && r.h > 0);
     }

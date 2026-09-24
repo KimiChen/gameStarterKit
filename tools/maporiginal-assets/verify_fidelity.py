@@ -10,7 +10,7 @@ import land_variants as LV
 import prefab_bin
 import prefab_scene
 from build_tops import FAMILIES
-from texture_layout import resolved_cells, validate_textures
+from texture_layout import resolved_cells, validate_textures, validate_trim
 
 
 def main():
@@ -31,12 +31,12 @@ def main():
     assert len(paths) == 381, len(paths)
     assert decor['substitutions'] == []
     report = {'prefabEntries': len(paths), 'expandedNodes': nodes, 'substitutions': 0, 'atlases': {}}
-    layouts = {'region': region, 'city': city['atlas'], 'road': read('roads.info.json')['atlas']}
+    layouts = {'decor': decor, 'region': region, 'city': city['atlas'], 'road': read('roads.info.json')['atlas']}
     layouts.update({kind+'-top': atlas for kind, atlas in read('top-atlas.info.json')['atlases'].items()})
     for name, layout in layouts.items():
         with Image.open(data / (name+'-atlas.png')) as image:
             validate_textures(layout, image.convert('RGBA'))
-    groups = [('decor', decor['cells'], (256, 192)), ('city', resolved_cells(city['atlas']), None),
+    groups = [('decor', resolved_cells(decor), (256, 192)), ('city', resolved_cells(city['atlas']), None),
               ('region', resolved_cells(region), tuple(region['storageLimit'])),
               ('road', resolved_cells(read('roads.info.json')['atlas']), None)]
     groups += [(kind + '-top', resolved_cells(a), None) for kind, a in read('top-atlas.info.json')['atlases'].items()]
@@ -50,9 +50,14 @@ def main():
             x, y, w, h = c['rect']
             if 'native' in c: assert list(im.size) == c['native'], f'{name}: native canvas changed'
             if thumbnail: im.thumbnail(thumbnail, Image.Resampling.LANCZOS)
-            else: im = im.resize((w, h), Image.Resampling.LANCZOS)
+            else: im = im.resize(tuple(c.get('storageSize', [w, h])), Image.Resampling.LANCZOS)
+            actual_image = atlas.crop((x, y, x+w, y+h))
+            if name in ('decor', 'road', 'river-top', 'snow-top'):
+                validate_trim(im, c['trimRect'], actual_image)
+            tx, ty, tw, th = c.get('trimRect', [0, 0, w, h])
+            im = im.crop((tx, ty, tx+tw, ty+th))
             expected = np.asarray(im)
-            actual = np.asarray(atlas.crop((x, y, x + w, y + h)))
+            actual = np.asarray(actual_image)
             assert np.array_equal(expected, actual), f'{name}: RGBA 改变 {c["source"]}'
             semi += int(((expected[:, :, 3] > 0) & (expected[:, :, 3] < 255)).sum())
             pixels += w * h

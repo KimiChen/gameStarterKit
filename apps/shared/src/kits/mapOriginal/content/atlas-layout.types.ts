@@ -7,7 +7,7 @@ export interface IMapoTextureLayout {
     readonly storageSize: readonly [number, number];
     readonly trimRect: readonly [number, number, number, number];
     readonly layoutVersion: number;
-    /** SHA-256 of big-endian uint32 width/height followed by the full stored RGBA canvas. */
+    /** SHA-256 of big-endian uint32 rect width/height followed by retained RGBA pixels. */
     readonly contentHash: string;
 }
 export type MapoTextureLayouts = Readonly<Record<string, IMapoTextureLayout>>;

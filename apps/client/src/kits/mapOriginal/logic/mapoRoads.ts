@@ -115,6 +115,7 @@ export function mapoRoadsInRect(rect: IMapoRoadRect, limit: number): MapoSpriteI
         out.push({
             row: s, col: 0,
             x: p.x, y: p.y, w, h, pivot: [0.5, 0.5],
+            textureWindow: texture,
             uv: flip ? [u0 + uw, v0, -uw, vh] : [u0, v0, uw, vh],
         });
     }
