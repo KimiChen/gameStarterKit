@@ -14,7 +14,7 @@
  *   38,066 个草地格误换雪件。打包期已交叉校验：值 2 格 100% 落在雪块内、值 3 格 100%
  *   落在沙块内（`bands.info.json`）。
  *
- * ⚠ 数据走 shared 内容模块（varint-RLE + base64，213 KB）⇒ **同步可得**，
+ * ⚠ 数据走 shared 内容模块（varint-RLE + base64；文件与解码驻留分别由 O0 审计记录）⇒ **同步可得**，
  *   ⛔ 不需要 View 层注入（与通行层同款，不是 BufferAsset 那条路）。
  * ⚠ 顶层无副作用：首次调用才解码。
  */
@@ -46,4 +46,9 @@ export function mapoBandAt(row: number, col: number): number {
     if (v === MAPO_BAND_SNOW) return MAPO_BAND_SNOW;
     if (v === MAPO_BAND_DESERT) return MAPO_BAND_DESERT;
     return MAPO_BAND_GROUND;
+}
+
+/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+export function mapoBandsDataUsage(): Readonly<Record<string, number>> {
+    return { arrayBufferBytes: cells?.buffer.byteLength ?? 0, cells: cells?.length ?? 0 };
 }

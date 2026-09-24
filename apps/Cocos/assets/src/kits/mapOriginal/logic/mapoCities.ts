@@ -128,3 +128,9 @@ export function mapoCitiesIn(minX: number, maxX: number, minY: number, maxY: num
     }
     return out;
 }
+
+/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+export function mapoCitiesDataUsage(): Readonly<Record<string, number>> {
+    return { arrayBufferBytes: 0, pieces: PIECES.length,
+        sprites: PIECES.reduce((sum, p) => sum + p.length, 0), placements: PLACED.length };
+}

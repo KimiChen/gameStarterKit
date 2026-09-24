@@ -39,14 +39,14 @@
 
 | 层 | 值空间 | 落点 | 用途 |
 |---|---|---|---|
-| **通行层** | 3（0 陆 / 1 河 / 2 山） | `apps/shared/src/kits/mapOriginal/content/terrain.data.ts`（varint-RLE + base64，**157 KB**） | 首帧即可画轮廓；将来服务端通行判定 |
+| **通行层** | 3（0 陆 / 1 河 / 2 山） | `apps/shared/src/kits/mapOriginal/content/terrain.data.ts`（varint-RLE + base64，**374,652 B / 365.9 KiB**（完整 TS）） | 首帧即可画轮廓；将来服务端通行判定 |
 | **显示层** | **原版 res 值 1..61** | `data/maps/s1/terrain.bytes`（2.25 MB）+ Cocos 镜像，客户端 **BufferAsset** 加载 | 近档选地表粗类 + **逐格摆件** + 点选详情 |
 
 ★ **显示层存的就是原版的值本身**（⛔ 不再折算成 16 个自造类）。一个字节无损承载原版全部语义，
 于是「这一格长什么样」变成**纯查表**：
 `MAPO_VALUE_KIND_ID[v]` → 地表图集第几行；`v` 本身 → 摆件图集第几格；`MAPO_VALUE_BY_ID.get(v)` → 中文名/颜色/通行。
 ⚠ **为什么显示层不进 shared**：它一阶熵 **2.95 bit/格**（zlib 也只到 772 KB），
-varint-RLE 反而**胀到 125.6%**（3.9 MB TS）。通行层只有 3 类、游程极长，RLE 后 111 KB —— 只有它能进 shared。
+varint-RLE 反而**胀到 125.6%**（3.9 MB TS）。通行层继续采用 shared 的 RLE 入口；当前完整生成 TS 为 374,652 B，解码数组为 2,250,000 B，不能混用文件与驻留大小。
 ⚠ 显示层没到位时 `mapoValueAt` 按通行类**退回同一值空间**（陆→1 / 河→47 / 山→60），面板标「读取中…」；
 ⛔ 不拿退回值冒充真相，也 ⛔ 不让首帧空着，更 ⛔ 不让渲染器去分辨「这个数是 3 类还是原版值」。
 
@@ -154,6 +154,13 @@ city 在 L0–L1；plate 从 L1 承接缓存与概览；label 全档显示并管
 离屏网格按显式 priority 保持原图层顺序；不走 UI 收集器，避免 Creator 3.8.8 自定义管线的 UI/Profiler 共享投影影响截图。
 纹理通常为 256²/512²，按屏幕采样密度和预算选尺寸；每块保留 2 texel 邻域后裁内块，避免线性采样接缝。
 LRU 上限 **48 MiB（RGBA8 + depth/stencil 合计，包括待建块）**，不含现有源图集及 8 MiB 概览。
+
+O0 桌面探针分项实测：当前 17 张已加载 PNG 的 RGBA8 驻留合计 **151.1253 MiB**（已含概览），
+L3 和流畅画质仍持有同一套源纹理。关页后源纹理与 RT 回到 0；数据读取器仍持有
+**7,792,798 B** 的 ArrayBuffer，以及 1,642 个城池精灵和 1,899 个 top 精灵对象，属于后续 O3 的释放范围。
+这些 ArrayBuffer 与 BufferAsset 负载有重合，不能相加；也不能用此数量代表整个 JS 堆。
+复测命令与口径见 [素材工具 O0](../../../tools/maporiginal-assets/README.md#o0可复测素材与预览基线)，
+实施状态只见 [优化方案 §9](../../../docs/MAPORIGINAL-2D-OPTIMIZATION.md#9-实施状态唯一登记处)。
 缓存未到位时显示同源概览，随后补细节；进入 L3 释放分块缓存，关闭页面释放离屏相机、网格、材质和纹理。
 
 地名按优先级做水平、垂直裁剪和碰撞避让；平移不足一格、同格内捏合也更新标注。蓝色标记表示上次近景浏览位置，
@@ -376,7 +383,7 @@ size/pivot/mirror/skew/color/add_color、阴影、引用、时间线和帧动画
   枚举定义是干净集 `const.lua:252`，层归属是干净集 `map_layer_config.lua` 的 `logic_ground`）。
   ⛔ **别拿雪/沙「块」层当判据**：489 块双挂、粒度 10×10 格，块级会把雪块里 38,066 个草地格
   误换雪件；cell 级在双挂块里逐格各有唯一定论（打包期交叉校验：值2 格 100% ⊆ 雪块、
-  值3 格 100% ⊆ 沙块）。选件数据 = `bands.data.ts`（shared，varint-RLE 213 KB）。
+  值3 格 100% ⊆ 沙块）。选件数据 = `bands.data.ts`（shared，完整生成 TS 235,797 B / 230.3 KiB；解码数组 2,250,000 B）。
 - 类型/等级与贴图都**从 `land` 表读出**（套件列 → client_res → 完整 prefab），⛔ 不按文件名猜
   —— 早先的 `wood/iron/stone/food` 次序假设被 land 表证伪（真值 **wood/stone/food/iron**），
   旧映射把 12..41 的铁/石/粮**轮转错位**（详情面板的类型名曾同样错），N1 已一并改正。

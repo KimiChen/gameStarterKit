@@ -113,3 +113,8 @@ export function mapoRoadsInRect(rect: IMapoRoadRect, limit: number): MapoSpriteI
     }
     return out;
 }
+
+/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+export function mapoRoadsDataUsage(): Readonly<Record<string, number>> {
+    return { arrayBufferBytes: view?.buffer.byteLength ?? 0, placements: count };
+}

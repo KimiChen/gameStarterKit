@@ -108,3 +108,10 @@ export function mapoRiversInRect(rect: IMapoWorldRectLike, limit: number,
  * ⛔ 调小了屏幕上下沿的河会突然缺一截。
  */
 export const MAPO_RIVER_S_MARGIN = 16;
+
+/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+export function mapoRiversDataUsage(): Readonly<Record<string, number>> {
+    return { arrayBufferBytes: (view?.buffer.byteLength ?? 0)
+        + geos.reduce((sum, g) => sum + g.verts.byteLength + g.indices.byteLength, 0),
+        polygons: geos.length, placements: count };
+}

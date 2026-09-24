@@ -104,3 +104,12 @@ export function mapoBlocksInRect(kind: string, rect: IMapoBlockRect,
     }
     return out;
 }
+
+/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+export function mapoBlocksDataUsage(): Readonly<Record<string, number>> {
+    return { arrayBufferBytes: [...LAYERS.values()].reduce((sum, l) => sum + (l.view?.buffer.byteLength ?? 0)
+        + l.geos.reduce((n, g) => n + g.verts.byteLength + g.indices.byteLength, 0)
+        + l.uvs.reduce((n, uv) => n + uv.byteLength, 0), 0),
+        polygons: [...LAYERS.values()].reduce((sum, l) => sum + l.geos.length, 0),
+        placements: [...LAYERS.values()].reduce((sum, l) => sum + l.count, 0) };
+}

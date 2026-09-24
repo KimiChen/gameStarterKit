@@ -92,3 +92,9 @@ export function resetMapoTerrain(): void {
     displayCells = null;
     displayCols = 0;
 }
+
+/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+export function mapoTerrainDataUsage(): Readonly<Record<string, number>> {
+    return { arrayBufferBytes: (passCache?.cells.buffer.byteLength ?? 0) + (displayCells?.buffer.byteLength ?? 0),
+        passCells: passCache?.cells.length ?? 0, displayCells: displayCells?.length ?? 0 };
+}

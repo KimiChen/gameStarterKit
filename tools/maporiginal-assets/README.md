@@ -49,7 +49,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `bake_content.py` | 由 terrain 烘远档 plate；逐格地表图集已经删除，近档由 build_ground.py 生成块底纹 |
 | `pack_decor.py` | land → client_res → 135 个完整 prefab；659 节点/320 纹理，递归引用、父子变换、时间线、帧动画；缺件报错，替代项为 0 |
 | `land_variants.py` | `base.cw.land` 四套资源列与 client_res 寻址；已删除最大主片选择器和邻级替换 |
-| `build_bands.py` | ★ cell 级地貌带（N1 选件判据）：`logic_background.bytes` → `bands.bytes`（原样留档）+ shared TS（varint-RLE 213 KB）；语义 = 原版 `check_ground_type`（2=雪 3=沙 其余回基础季）；交叉校验复用 `build_blocks.py` 的块→格映射（值2 ⊆ 雪块 / 值3 ⊆ 沙块，100%） |
+| `build_bands.py` | ★ cell 级地貌带（N1 选件判据）：`logic_background.bytes` → `bands.bytes`（原样留档）+ shared TS（完整文件 235,797 B / 230.3 KiB）；语义 = 原版 `check_ground_type`（2=雪 3=沙 其余回基础季）；交叉校验复用 `build_blocks.py` 的块→格映射（值2 ⊆ 雪块 / 值3 ⊆ 沙块，100%） |
 | `mountain_forms.py` | ★ 「山」族 14 形的**单一真源**：值 ↔ prefab ↔ 贴图 ↔ 足迹；足迹按 odd-row offset 生成并**逐锚点回代校验** |
 | `pack_regions.py` | ★ 山族件图集（13 形各一格 ×**基础季+雪山两套**（N1），格 id = 原版 res 值，682×409 大格）；贴图与 `scale`/`pos`/`angle`/`pivot` 全从**该套件** prefab 读出（雪山的 transform 与基础季不同，⛔ 不抄），⛔ 不按面积/绿度挑、⛔ 不裁 bbox；沙漠山 2D 与基础季同件（实测 13/13）⇒ ⛔ 无沙件格 |
 | `build_ground.py` | ★ 地表底：`ground_down/underground1.png` → `ground-base.png`（256² POT）+ 块/REPEAT 常量；校验 POT、满幅不透明、整周期 |
@@ -63,6 +63,8 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `build_choose.py` | city_shape.GRID.click_res=2080；普通点选 8 片 UI XML、Scale/Color 轨道、24 fps 缺省值 |
 | `build_surface.py` / `shaders/` | 原格线、颜色蒙版、法线；移植 normal_river 无结冰分支与节点乘色/加色 |
 | `verify_fidelity.py` | 对照原包复核 381 个入口及引用、635 切片的全部 RGBA；只读校验，不重写产物 |
+| `audit_assets.py` / `atlas_layout.py` | O0 仓内只读统计、逐片哈希、完整动画引用/全图可达性、每侧 2 px 外间隔的确定性矩形试排；不修改素材 |
+| `compare_images.py` / `test_asset_audit.py` | 同后端 PNG 与局部 ROI 对照；空纹理、共享矩形、透明 RGB 和 packer 回归 |
 | `test_prefab_bin.py` | 无原包也可运行的严格边界/中文节点/未知组件回归 |
 | `build_blocks.py` | ★ snow / desert 块层：`ground_{desert,snow}.bytes`（152² **行主序**）+ 路径表 51/52 条 → 几何库 + 摆放表 + 两张底纹；校 POT / 贴图归属 / 单位阵 transform |
 | `build_rivers.py` | ★ 河流几何层：`river.bytes`（504² 列主序 / 3×3 逻辑格 / 偏移 −6）+ `river_path.json` 102 条 → 几何库 `river-geo.bin` + 摆放表 `rivers.bin` + 填充色图 `river-fill.png`；带对位校验（覆盖 100.0% 的 `res==47`） |
@@ -70,7 +72,7 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `build_labels.py` / `emit_labels.py` | 原版地名（9 大区 / 55 郡 / 249 城址）→ `labels.json` → shared TS |
 | `emit_display_palette.py` | ★ 61 值调色板 + `MAPO_VALUE_KIND_ID` 粗类下标表 → shared TS |
 | `build_labels.py` / `emit_labels.py` | 地名（9 大区 / 55 郡）+ 城址真坐标 + ★ **城占格表**（`city.bytes` → 249 座 / 2,689 格）→ shared TS |
-| `emit_shared_terrain.py` | 通行层 → shared TS（varint-RLE + base64，111 KB） |
+| `emit_shared_terrain.py` | 通行层 → shared TS（varint-RLE + base64，完整文件 374,652 B / 365.9 KiB） |
 | `install_to_kit.py` | 装 kit 数据目录 + Cocos 运行时镜像 + 确定性铸 `.meta`（uuid = `sha1("mapOriginal::<相对路径>")`） |
 
 ```bash
@@ -502,6 +504,43 @@ if all(32 <= c < 127 for c in b[i+4:i+4+ln]): ...  # 再按 .png/.ktx 结尾筛
 `scene/ground/grass/MiddleLevel_01..04_group.prefab` 里（89 条缺项之一）。
 `underground1.ktx` 与 `underground2/3` **字节数完全相同**（32836 B）、同族同编号，
 而 2=snow、3=desert 已实证 ⇒ 「1 = 常规季」是**强推断**，⛔ 不是实证。拿到那 4 个 prefab 即可定案。
+
+## O0：可复测素材与预览基线
+
+实施状态只登记在 [优化方案 §9](../../docs/MAPORIGINAL-2D-OPTIMIZATION.md#9-实施状态唯一登记处)。
+统计入口仅需仓内生成物、Python 3.9+、Pillow 与 numpy；不读取或改写外部原包。
+报告包含每片的尺寸与 RGBA 哈希、逻辑引用/物理矩形/独立图片数量、全帧依赖、三种地貌复用、
+当前 importer 采样设置、水色 RGB 与法线 RG 的约束，以及每张图片的镜像校验。
+数据表的可达性按各自格式解析；道路/山体保留所有运行时地貌变体，不能据静态图表删除皮肤。
+
+```bash
+python3 tools/maporiginal-assets/test_asset_audit.py
+python3 tools/maporiginal-assets/audit_assets.py --map s1 --out .cache/creator-preview/maporiginal-optimization/o0/assets.json
+python3 tools/maporiginal-assets/audit_assets.py --map s1 --out .cache/creator-preview/maporiginal-optimization/o0/assets-repeat.json
+cmp .cache/creator-preview/maporiginal-optimization/o0/assets.json .cache/creator-preview/maporiginal-optimization/o0/assets-repeat.json
+node tools/creator-preview/run.mjs mapOriginal --format png --out .cache/creator-preview/maporiginal-optimization/o0/portrait
+```
+
+重放默认沿用网页选好的设备尺寸；`MAPO_PREVIEW_ORIENTATION=landscape` 可临时测横版，结束恢复先前画布。
+实际 CSS/backing canvas、设计尺寸、DPR 分别写入 `maporiginal-metrics.json`，现有截图采集另有 1.5 倍输出比例。
+报告同时记录编译产物与源码匹配、请求时序、纹理格式/字节、含深度的 RT、数据读取器持有的 ArrayBuffer、
+城市/top 对象数量，以及每个固定阶段的帧时、WebGL 上传量和 draw call（含同画布 UI）。
+ArrayBuffer 与 BufferAsset 引用有重合，**不得相加**；对象数不伪装成精确 JS 堆字节。
+首近景时间取第一帧地表 Mesh，点选步骤另证实可交互；首概览只表示第一次实际显示，当前 L0 默认隐藏概览。
+这是已运行预览的桌面样本，不能当作清缓存首装、移动端或 GPU 总内存。
+生命周期与视口恢复明确使用宿主 `ViewMgr.close/open`，其余地图操作走普通鼠标；探针只读统计，不改地图 Logic。
+复用预览时先关闭旧地图再重新挂载，检查根节点尺寸等于引擎实际可见区，避免只转画布而沿用旧页面尺寸。
+
+矩形试排不产生图片。源内 alpha 护边 2 px 与图集外间隔每侧 2 px 分开记录，不旋转、不改缩采样，
+每次校验不重叠/不越界；四种排序试排失败不证明更小布局不可能，也不证明实现后的画面已通过。
+图片对照必须输入相同相机、动画时间、shader 和分辨率的 PNG，并指定关键物件/边缘 ROI，例如：
+
+```bash
+python3 tools/maporiginal-assets/compare_images.py --before .cache/before.png --after .cache/after.png --roi selection:100,200,80,60 --out .cache/image-comparison.json
+```
+
+限值为 RGBA 每通道平均误差 ≤ 1（8-bit），任一通道差值 > 8 的像素占比 ≤ 0.1%；整图和每个 ROI 均须通过。
+本工具不自动对齐相机/帧、不接受用大面积背景稀释局部错位，也不替代原包逐像素核验与真机压缩验收。
 
 ## 五、待办
 

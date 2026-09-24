@@ -1,6 +1,7 @@
 /**
  * mapOriginal 原版大地图 route 的真引擎重放。
- * 证据只来自**渲染出来的节点与文本** + 普通 CDP 输入，⛔ 不调 Logic、⛔ 不直接发 RPC。
+ * 地图操作走渲染节点/文本 + 普通 CDP 输入，不调地图 Logic、不直接发 RPC。
+ * O0 另有明确标注的 ViewMgr 生命周期/视口恢复探针，以及被动 CPU/GPU 计数。
  *
  * 覆盖 v1 的五件事：近档地表就位 → 点选（含坐标换算判据）→ 画面设置生效与置灰 →
  * 四档往返与全图缩放 → 缓存 GPU 邻块一致性/预算 → 缩略图跳转 → 推回近档。
@@ -9,9 +10,15 @@
  *   所以 ⛔ 没有「占领 / 行军」这类写操作可重放。
  */
 import { sleep } from "./lib.mjs";
+import { startMapOriginalMetrics } from "./maporiginal-metrics.mjs";
 
 const VIEW = "MapOriginalWorldView";
 const inView = (node) => node.path.includes(`${VIEW}/`);
+/** mapoMinimapMark 生成的固定地貌落点；单测对照同一坐标契约。 */
+export const MAPO_BASELINE_BIOMES = [
+    { name: "snow", band: 2, row: 220, col: 80, u: 0.5467577929654942, v: 0.3001583069488419 },
+    { name: "desert", band: 3, row: 280, col: 1440, u: 0.11335222537089515, v: 0.5367855357440426 },
+];
 
 /** 标题形如「原版大地图 · LOD 2/3 · 0.1600×」。 */
 const TITLE_RE = /^原版大地图 · LOD ([0-3])\/3(?: · ([0-9.]+)×)?$/u;
@@ -212,6 +219,66 @@ async function checkCache(runner, lod) {
 }
 
 export async function replayMapOriginalWorld(runner) {
+    const orientation = process.env.MAPO_PREVIEW_ORIENTATION;
+    if (orientation && !["portrait", "landscape"].includes(orientation)) throw new Error("MAPO_PREVIEW_ORIENTATION must be portrait or landscape");
+    // 默认尊重网页上选择的设备尺寸；只有显式回归参数才临时覆盖。
+    const previousSize = await runner.client.evaluate(`(() => {
+        const canvas = document.getElementById("GameCanvas"); return { width: canvas.width, height: canvas.height };
+    })()`);
+    let metrics;
+    try {
+        // --reuse 可能留下已打开的地图；先正常关闭，再按本轮尺寸挂载并重新观察加载请求。
+        await runner.client.evaluate(`(() => {
+            const found = [...System.entries()].filter(([, m]) => m?.ViewMgr);
+            if (found.length !== 1) throw new Error("ViewMgr export is ambiguous");
+            found[0][1].ViewMgr.close("MapOriginalWorld");
+        })()`);
+        await runner.waitFor("基线开始前地图已关闭", w => !w.nodes.some(n => n.name === "MapOriginalWorldView"));
+        if (orientation) await setMapOriginalViewport(runner, orientation);
+        metrics = await startMapOriginalMetrics(runner);
+        return await replayMapOriginalWithMetrics(runner, metrics);
+    }
+    finally {
+        try { await metrics?.stop(); }
+        finally { if (orientation) {
+            await runner.client.send("Emulation.clearDeviceMetricsOverride");
+            await runner.client.evaluate(`(async () => {
+                const engine = await System.import("cc");
+                engine.screen.windowSize = new engine.Size(${previousSize.width}, ${previousSize.height});
+            })()`);
+            // CocosView 在挂载时取尺寸，恢复窗口后重新挂载，避免留下横屏尺寸的地图页。
+            const wasOpen = await runner.client.evaluate(`(() => {
+                const found = [...System.entries()].filter(([, m]) => m?.ViewMgr);
+                if (found.length !== 1 || !found[0][1].ViewMgr.isOpen("MapOriginalWorld")) return false;
+                found[0][1].ViewMgr.close("MapOriginalWorld"); return true;
+            })()`);
+            if (wasOpen) {
+                await sleep(300);
+                // 恢复操作走宿主生命周期 API；设置页本身可能保留测试前的布局，卡片会被裁出屏幕。
+                await runner.client.evaluate(`(async () => {
+                    const found = [...System.entries()].filter(([, m]) => m?.ViewMgr);
+                    if (found.length !== 1) throw new Error("ViewMgr export is ambiguous");
+                    await found[0][1].ViewMgr.open("MapOriginalWorld");
+                })()`);
+                await runner.waitFor("恢复网页尺寸后的地图", w => readMapOriginalEvidence(w)?.nearLoaded, 60_000);
+            }
+        } }
+    }
+}
+
+async function setMapOriginalViewport(runner, orientation) {
+    const width = orientation === "portrait" ? 750 : 1624, height = orientation === "portrait" ? 1624 : 750;
+    await runner.client.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+    // Creator's preview wrapper can retain an explicit GameDiv size after CDP resize.
+    // Use the engine's public physical-window API too; never infer canvas size from design resolution.
+    await runner.client.evaluate(`(async () => {
+        const engine = await System.import("cc");
+        engine.screen.windowSize = new engine.Size(${width}, ${height});
+    })()`);
+    await sleep(500);
+}
+
+async function replayMapOriginalWithMetrics(runner, metrics) {
     await runner.step("点设置中的「原版大地图」卡片（mapOriginal 的 route 入口，entryId=originalWorld）",
         async () => runner.tapSettingsEntry("originalWorld"));
 
@@ -220,7 +287,11 @@ export async function replayMapOriginalWorld(runner) {
             const value = readMapOriginalEvidence(walk);
             return value?.nearLoaded ? value : null;
         }, 60_000);
-        return { ...evidence, shot: await runner.shot("maporiginal-opened") };
+        const walk = await runner.walk(), root = walk.nodes.find(n => n.name === VIEW)?.center;
+        if (!root || Math.abs(root.width - walk.visible.width) > 1 || Math.abs(root.height - walk.visible.height) > 1) {
+            throw new Error(`地图页未按当前视口重新挂载：${JSON.stringify({ root, visible: walk.visible })}`);
+        }
+        return { ...evidence, viewport: { root, visible: walk.visible }, metrics: await metrics.sample("L0-opened", evidence), shot: await runner.shot("maporiginal-opened") };
     });
 
     const selected = await runner.step("点选一格（普通鼠标点击，⛔ 不调 Logic）", async () => {
@@ -237,6 +308,7 @@ export async function replayMapOriginalWorld(runner) {
         if (misplaced) throw new Error(`点击→格 坐标换算不对：${misplaced}`);
         return {
             at: [Math.round(at.x), Math.round(at.y)], tile: value.tile,
+            metrics: await metrics.sample("L0-selected-input-confirmed", value),
             // ⚠ 显示层是 2.25 MB 的 BufferAsset：没到位时详情会带「读取中…」，如实记
             displayTerrainLoaded: value.tile.detailed,
             shot: await runner.shot("maporiginal-selected"),
@@ -292,14 +364,14 @@ export async function replayMapOriginalWorld(runner) {
         await zoomToLod(runner, 1, 240);
         const value = await checkCache(runner, 1);
         if (value.terrain || value.decor) throw new Error("L1 仍在绘制实时地表/资源件");
-        return { ...value, shot: await runner.shot("maporiginal-medium") };
+        return { ...value, metrics: await metrics.sample("L1-cache-ready", value), shot: await runner.shot("maporiginal-medium") };
     });
 
     const far = await runner.step("L2：区域地貌缓存、郡名与城市标记", async () => {
         await zoomToLod(runner, 2, 240);
         const value = await checkCache(runner, 2);
         if (!value.markers || value.city) throw new Error("L2 城市应切到固定屏幕标记");
-        return { ...value, names: [...new Set(value.labels)],
+        return { ...value, names: [...new Set(value.labels)], metrics: await metrics.sample("L2-cache-ready", value),
                  shot: await runner.shot("maporiginal-far") };
     });
 
@@ -323,7 +395,16 @@ export async function replayMapOriginalWorld(runner) {
         })()`);
         const gpu = await readMapOriginalCacheGpuEvidence(runner.client);
         if (!fit.inside || gpu.bytes !== 0 || !value.markers) throw new Error(`全图适配/释放失败：${JSON.stringify({fit,gpu})}`);
-        return { ...value, fit, gpu, shot: await runner.shot("maporiginal-global") };
+        const stats = await metrics.sample("L3-fit", value);
+        // 固定 L3 相机没有地图动画；暂藏逐帧变化的 profiler，获得可比较的同后端基准对。
+        const profilerShown = await runner.client.evaluate("cc.profiler.isShowingStats()");
+        await runner.client.evaluate("cc.profiler.hideStats()");
+        try {
+            return { ...value, fit, gpu, metrics: stats, shot: await runner.shot("maporiginal-global"),
+                repeatShot: await runner.shot("maporiginal-global-repeat"), comparison: "Fixed static L3 camera; profiler hidden only for this pair" };
+        } finally {
+            if (profilerShown) await runner.client.evaluate("cc.profiler.showStats()");
+        }
     });
 
     await runner.step("从全图回 L2：重建区域缓存", async () => {
@@ -370,6 +451,16 @@ export async function replayMapOriginalWorld(runner) {
         const at = { x: mini.x + (uv.u - 0.5) * 180 * designToPage,
                      y: mini.y - (0.5 - uv.v) * 180 * designToPage };
         await runner.client.click(at.x, at.y);
+        // 横屏地图区很矮，小地图量化的几格偏差足以让城名出屏。
+        // 在 L0/L1 范围内逐步拉远，按实际可见结果停下；不能把固定滚轮次数当作适配结果。
+        if (walk.canvas.width > walk.canvas.height) {
+            for (let i = 0; i < 8; i++) {
+                const current = await runner.walk(), got = readMapOriginalEvidence(current);
+                if (got?.city && got.labels.includes("洛阳")) break;
+                if (!got || got.lod > 1 || got.scale <= 0.23) break;
+                await mapOriginalWheel(runner, mapOriginalGestureArea(current), 240, 1);
+            }
+        }
         // ★ N2：近档地名档 = 城名 ⇒ 跳到洛阳后「洛阳」二字必须在屏（且它是全城最大的那枚）
         const value = await runner.waitFor("跳到洛阳：城址件画出来（· 城 N > 0）且城名「洛阳」在屏", (w) => {
             const got = readMapOriginalEvidence(w);
@@ -387,10 +478,64 @@ export async function replayMapOriginalWorld(runner) {
             return t && Math.abs(t.row - 661) <= 30 && Math.abs(t.col - 543) <= 30 ? got : null;
         }, 10_000);
         return { at: [Math.round(at.x), Math.round(at.y)], lod: value.lod,
+                 metrics: await metrics.sample(`L${value.lod}-luoyang`, value),
                  cityPieces: value.cityPieces, cityLabels: value.labels, landed: landed.tile.text,
                  status: value.status,
                  shot: await runner.shot("maporiginal-city") };
     });
 
-    return { opened, selected, decorAndLabels, noSandboxRow, medium, far, global, jumped, back, city };
+    const biomes = [];
+    for (const target of MAPO_BASELINE_BIOMES) {
+        biomes.push(await runner.step(`O0 ${target.name} 地貌：小地图跳转与点选落点`, async () => {
+            await zoomToLod(runner, 0, -240);
+            const walk = await runner.walk(), mini = walk.nodes.find(n => n.name === "mapo-minimap")?.center;
+            if (!mini) throw new Error("Missing minimap");
+            const ratio = walk.canvas.width / walk.visible.width;
+            await runner.client.click(mini.x + (target.u - .5) * 180 * ratio, mini.y + (target.v - .5) * 180 * ratio);
+            await sleep(300);
+            const area = mapOriginalGestureArea(await runner.walk());
+            await runner.client.click(area.x, area.y);
+            const got = await runner.waitFor(`${target.name} 地貌就位`, w => {
+                const v = readMapOriginalEvidence(w), t = v?.tile;
+                return v?.nearLoaded && v.blockCount > 0 && t && Math.abs(t.row - target.row) < 30
+                    && Math.abs(t.col - target.col) < 30 ? v : null;
+            });
+            const band = await runner.client.evaluate(`(() => {
+                const found = [...System.entries()].filter(([, m]) => typeof m?.mapoBandAt === "function");
+                if (found.length !== 1) throw new Error("mapoBandAt export is ambiguous");
+                return found[0][1].mapoBandAt(${got.tile.row}, ${got.tile.col});
+            })()`);
+            if (band !== target.band) throw new Error(`Biome landing differs: ${band}, expected ${target.band}`);
+            return { target, actual: got.tile, band, metrics: await metrics.sample(`L0-${target.name}`, got),
+                shot: await runner.shot(`maporiginal-${target.name}`) };
+        }));
+    }
+    const qualities = [];
+    for (const quality of ["流畅", "高清", "超高", "普通"]) {
+        qualities.push(await runner.step(`O0 画质 ${quality}：记录源纹理与上传量`, async () => {
+            await runner.tapText(quality, { pathIncludes: `${VIEW}/` });
+            const got = await runner.waitFor(`画质 ${quality}`, w => {
+                const v = readMapOriginalEvidence(w); return v?.graphics?.quality === quality ? v : null;
+            });
+            return { quality, metrics: await metrics.sample(`L0-quality-${quality}`, got) };
+        }));
+    }
+
+    const closed = await runner.step("O0 生命周期探针：通过宿主 ViewMgr.close 关页，记录仍被持有的数据", async () => {
+        await runner.client.evaluate(`(() => {
+            const matches = [...System.entries()].filter(([, m]) => m?.ViewMgr);
+            if (matches.length !== 1) throw new Error("ViewMgr export is ambiguous");
+            matches[0][1].ViewMgr.close("MapOriginalWorld");
+        })()`);
+        await runner.waitFor("地图节点已离树", w => w && !readMapOriginalEvidence(w));
+        return { trigger: "Host lifecycle API, not a simulated user close button", metrics: await metrics.sample("closed", null) };
+    });
+    const reopened = await runner.step("从设置重开地图，恢复近景供继续检查", async () => {
+        await runner.tapSettingsEntry("originalWorld");
+        const value = await runner.waitFor("重开近景", w => {
+            const got = readMapOriginalEvidence(w); return got?.nearLoaded ? got : null;
+        }, 60_000);
+        return { ...value, metrics: await metrics.sample("reopened", value), shot: await runner.shot("maporiginal-reopened") };
+    });
+    return { opened, selected, decorAndLabels, noSandboxRow, medium, far, global, jumped, back, city, biomes, qualities, closed, reopened };
 }

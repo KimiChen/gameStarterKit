@@ -121,3 +121,9 @@ export function mapoTopsFor(kind: string, polys: readonly MapoPolygonInput[],
     }
     return out;
 }
+
+/** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
+export function mapoTopsDataUsage(): Readonly<Record<string, number>> {
+    return { arrayBufferBytes: 0, groups: [...LIBS.values()].reduce((sum, l) => sum + l.groups.length, 0),
+        sprites: [...LIBS.values()].reduce((sum, l) => sum + l.groups.reduce((n, g) => n + g.length, 0), 0) };
+}
