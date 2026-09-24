@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/mail-share/popup",
+      "kind": "image",
+      "file": "assets/mail_share_popup.png",
+      "width": 708,
+      "height": 650,
+      "sha256": "caba42ca97af0ea5ae328daa7f93b36b5e7e0d033a1e51a099f014521f9e8ac6"
+    },
+    {
+      "id": "ui/mail-share/ship",
+      "kind": "image",
+      "file": "assets/mail_share_ship.png",
+      "width": 105,
+      "height": 117,
+      "sha256": "7fab910535a8938f08d314fd33f15aa67af638fd3db039eba18f021e992e4bb3"
+    },
+    {
+      "id": "ui/mail-share/horn",
+      "kind": "image",
+      "file": "assets/mail_share_horn.png",
+      "width": 102,
+      "height": 112,
+      "sha256": "d63ea62594debf8252d9705c43503d321730facb521b3d4d15bd5134ee6aa97f"
+    },
+    {
+      "id": "ui/mail-share/list",
+      "kind": "image",
+      "file": "assets/mail_share_list.png",
+      "width": 683,
+      "height": 518,
+      "sha256": "8eac43d7f811428f39070859994ce197951f7f5dfc2ddb1281a4d621c64f6758"
+    }
+  ]
+}

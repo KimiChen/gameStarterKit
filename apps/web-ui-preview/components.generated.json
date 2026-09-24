@@ -338,6 +338,16 @@
       "source": "apps/client/src/ui-uniflex/modules/mail/Mail/MailReports.tsx"
     },
     {
+      "key": "MailShareOption",
+      "rootName": "MailShare/Option",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailShare/MailShareOption.tsx"
+    },
+    {
+      "key": "MailSharePanel",
+      "rootName": "MailSharePanel",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailShare/MailSharePanel.tsx"
+    },
+    {
       "key": "MailSoldierDetailsPanel",
       "rootName": "MailSoldierDetailsPanel",
       "source": "apps/client/src/ui-uniflex/modules/mail/MailSoldierDetails/MailSoldierDetailsPanel.tsx"

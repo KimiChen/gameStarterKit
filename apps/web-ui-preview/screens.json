@@ -50,6 +50,14 @@
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"
     },
     {
+      "id": "mail-share",
+      "aliases": ["mail-share", "mailShare"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "MailShare",
+      "rootName": "MailShare",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailShare/MailShare.tsx"
+    },
+    {
       "id": "mail-soldier-details",
       "aliases": ["mail-soldier-details", "mailSoldierDetails"],
       "canvas": { "width": 750, "height": 1624 },

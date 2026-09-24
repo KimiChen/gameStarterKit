@@ -10,6 +10,7 @@ import { ReportDetailSoldiers } from './ReportDetailSoldiers';
 import { ReportDetailAttributes } from './ReportDetailAttributes';
 import { MailBattleLogPanel } from '../MailBattleLog/MailBattleLogPanel';
 import { MailSoldierDetailsPanel } from '../MailSoldierDetails/MailSoldierDetailsPanel';
+import { MailSharePanel } from '../MailShare/MailSharePanel';
 import { MailTroopDetailsPanel } from '../MailTroopDetails/MailTroopDetailsPanel';
 
 export interface MailReportDetailPanelProps {
@@ -32,10 +33,10 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
     const source = useMemo(() => new ArrayVirtualListDataSource(sections), []);
     const list = useRef<VirtualCollectionController | null>(null);
     const [showLinks, setShowLinks] = useState(false);
-    const [linkedPage, setLinkedPage] = useState<'battle-log' | 'troop-details' | 'soldier-details' | null>(null);
+    const [linkedPage, setLinkedPage] = useState<'battle-log' | 'troop-details' | 'soldier-details' | 'share' | null>(null);
     useEffect(() => { if (p.visible === false) setLinkedPage(null); }, [p.visible]);
     const openLinkedPage = (action: string) => {
-        if (action === 'battle-log' || action === 'troop-details') setLinkedPage(action);
+        if (action === 'battle-log' || action === 'troop-details' || action === 'share') setLinkedPage(action);
         if (action === 'soldier-info' || action === 'soldier:player' || action === 'soldier:enemy') setLinkedPage('soldier-details');
         p.onAction?.(action);
     };
@@ -64,9 +65,10 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
         <ActionButton source={detailDelete} label="删除" outlineColor="#6A2A28"
             left={77} top={1279} width={255} height={102} onClick={() => p.onAction?.('delete')} />
         <ActionButton source={detailShare} label="分享" outlineColor="#276275"
-            left={419} top={1278} width={255} height={102} onClick={() => p.onAction?.('share')} />
+            left={419} top={1278} width={255} height={102} onClick={() => openLinkedPage('share')} />
         <MailBattleLogPanel visible={linkedPage === 'battle-log' && p.visible !== false} onClose={() => setLinkedPage(null)} onAction={p.onAction} />
         <MailSoldierDetailsPanel visible={linkedPage === 'soldier-details' && p.visible !== false} onClose={() => setLinkedPage(null)} onAction={p.onAction} />
+        <MailSharePanel visible={linkedPage === 'share' && p.visible !== false} onClose={() => setLinkedPage(null)} onSelect={(id) => p.onAction?.(`share:${id}`)} />
         <MailTroopDetailsPanel visible={linkedPage === 'troop-details' && p.visible !== false} onClose={() => setLinkedPage(null)} onAction={p.onAction} />
     </view>;
 });

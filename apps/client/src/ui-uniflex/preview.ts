@@ -861,3 +861,9 @@ export function createMailSoldierDetailsPreview(parent: Node): { dispose(): void
     const preview = createPreviewScreen(parent, "mail-soldier-details", { query: null, navigate: () => preview.dispose() });
     return preview;
 }
+
+/** Mail report share destination selection. */
+export function createMailSharePreview(parent: Node): { dispose(): void } {
+    const preview = createPreviewScreen(parent, "mail-share", { query: null, navigate: () => preview.dispose() });
+    return preview;
+}
