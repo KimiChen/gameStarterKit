@@ -199,3 +199,13 @@ export { Listen, ListenArgs, ListenHandler } from './event/EventSystem'
 export { ActionEventSystem, ActionEventHandlerBase, ActionEventArgs } from './event/ActionEventSystem'
 
 import './utils/DeclareExtends'
+
+export {
+    RoomTree,
+    RoomNode,
+    type RoomNodeOptions,
+    type RoomTreeOptions,
+    type RoomTimerOptions,
+    type RoomSession,
+    type RoomSnapshot,
+} from './room/RoomTree'

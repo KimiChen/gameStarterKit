@@ -478,6 +478,9 @@ export abstract class RootBean extends Bean {
      */
     protected _notifyUserIds: Set<int> = new Set()
 
+    /** Optional live recipient source, evaluated when ModSync reads this Bean's diff. */
+    private _notifyUidsResolver?: () => readonly int[]
+
     get notifyUserIds() {
         return this._notifyUserIds
     }
@@ -628,12 +631,13 @@ export abstract class RootBean extends Bean {
         return null
     }
 
-    /**
-     * 获取hash要通知的uid列表
-     * @return 返回结果如果是undefined则只同时hash的id本人, 否则只会推送给列表
-     */
+    /** 获取本次变更的通知 uid；绑定实时接收者时在调用时解析。 */
     getNotifyUids() {
-        return Array.from(this._notifyUserIds)
+        return this._notifyUidsResolver ? Array.from(this._notifyUidsResolver()) : Array.from(this._notifyUserIds)
+    }
+
+    setNotifyUidsResolver(resolver: () => readonly int[]): void {
+        this._notifyUidsResolver = resolver
     }
 
     addNotifyUids(...uIds: int[]) {

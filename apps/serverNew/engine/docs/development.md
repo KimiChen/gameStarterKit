@@ -36,6 +36,8 @@ Redis，或自己拼一份增量数据。
 
 ## Change 和持久化
 
+- `RoomTree` 让主房间统一管理串行队列和定时事件；子节点只负责成员校验与同步范围，可继续嵌套。暂离只解除当前连接订阅，恢复须校验已有成员资格并发送全量。
+- 房间 Bean 继续使用现有 `ServerHash`；加载后绑定房间节点，`getNotifyUids()` 在组装同步差异时读取该节点当前订阅者。固定进程归属只是落点检查，不能替代跨进程写入的事务 fence。
 - Bean setter、`DiffArray` 和 `DiffMap` 变更由当前上下文收集；不要手工拼接能够由 `toModData` 表达的增量数据。
 - `getNotifyUids()` 决定 Change 接收者；`UserHash` 默认通知自身，跨玩家模块必须明确返回稳定接收者集合。
 - 业务数据默认落 Redis：玩家档由 `Hash` / `UserHash` / `HashJson` 承载，随 Action 提交写回。MySQL 只用于账号映射与运营/配置面，⛔ 不要为玩家业务字段新建表或 typeorm 实体。
