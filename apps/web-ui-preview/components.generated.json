@@ -168,6 +168,21 @@
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/components/BackpackQuantityControl.tsx"
     },
     {
+      "key": "BattleLogRoundBody",
+      "rootName": "BattleLog/RoundBody",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleLog/BattleLogSection.tsx"
+    },
+    {
+      "key": "BattleLogSection",
+      "rootName": "BattleLog/Section",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleLog/BattleLogSection.tsx"
+    },
+    {
+      "key": "BattleLogText",
+      "rootName": "BattleLog/Text",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleLog/BattleLogText.tsx"
+    },
+    {
       "key": "CharacterManageTab",
       "rootName": "CharacterManageTab",
       "source": "apps/client/src/ui-uniflex/modules/character/CharacterManage/CharacterManageTab.tsx"
@@ -281,6 +296,11 @@
       "key": "ItemSlot",
       "rootName": "ItemSlot",
       "source": "apps/client/src/ui-uniflex/gamecomponents/item/ItemSlot.tsx"
+    },
+    {
+      "key": "MailBattleLogPanel",
+      "rootName": "MailBattleLogPanel",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleLog/MailBattleLogPanel.tsx"
     },
     {
       "key": "MailBattleRow",

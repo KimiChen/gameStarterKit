@@ -8,6 +8,7 @@ import { ReportDetailHeroes } from './ReportDetailHeroes';
 import { ReportDetailEquipment } from './ReportDetailEquipment';
 import { ReportDetailSoldiers } from './ReportDetailSoldiers';
 import { ReportDetailAttributes } from './ReportDetailAttributes';
+import { MailBattleLogPanel } from '../MailBattleLog/MailBattleLogPanel';
 
 export interface MailReportDetailPanelProps {
     readonly visible?: boolean;
@@ -29,6 +30,12 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
     const source = useMemo(() => new ArrayVirtualListDataSource(sections), []);
     const list = useRef<VirtualCollectionController | null>(null);
     const [showLinks, setShowLinks] = useState(false);
+    const [logOpen, setLogOpen] = useState(false);
+    useEffect(() => { if (p.visible === false) setLogOpen(false); }, [p.visible]);
+    const openLinkedPage = (action: string) => {
+        if (action === 'battle-log') setLogOpen(true);
+        p.onAction?.(action);
+    };
     useEffect(() => () => source.dispose(), [source]);
     useEffect(() => { if (p.visible !== false) list.current?.scrollToIndex(0, 'start', 0); }, [p.visible]);
     useEffect(() => {
@@ -50,11 +57,12 @@ export const MailReportDetailPanel = defineComponent<MailReportDetailPanelProps>
             style={{ position: 'absolute', left: 40, top: 307, width: 673, height: 924 }}>
             {(section) => <ReportDetailSectionItem section={section} onAction={p.onAction} />}
         </VirtualList>
-        <ReportDetailLinks visible={showLinks} onAction={p.onAction} />
+        <ReportDetailLinks visible={showLinks} onAction={openLinkedPage} />
         <ActionButton source={detailDelete} label="删除" outlineColor="#6A2A28"
             left={77} top={1279} width={255} height={102} onClick={() => p.onAction?.('delete')} />
         <ActionButton source={detailShare} label="分享" outlineColor="#276275"
             left={419} top={1278} width={255} height={102} onClick={() => p.onAction?.('share')} />
+        <MailBattleLogPanel visible={logOpen && p.visible !== false} onClose={() => setLogOpen(false)} onAction={p.onAction} />
     </view>;
 });
 

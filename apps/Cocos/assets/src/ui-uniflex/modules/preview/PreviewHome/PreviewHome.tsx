@@ -9,6 +9,7 @@ export type PreviewHomeTarget =
     | 'backpack'
     | 'mail-popup'
     | 'mail-report-detail'
+    | 'mail-battle-log'
     | 'mail'
     | 'settings'
     | 'character'
@@ -58,6 +59,9 @@ export const PreviewHome = defineView<PreviewHomeParams, void>({ zIndex: 'screen
             </view>
             <view interaction="press" onClick={() => go('mail-report-detail')} style={{ width: 300, height: 102, backgroundColor: '#72558f', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="战报详情" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
+            </view>
+            <view interaction="press" onClick={() => go('mail-battle-log')} style={{ width: 300, height: 102, backgroundColor: '#72558f', justifyContent: 'center', alignItems: 'center' }}>
+                <text value="战斗日志" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />
             </view>
             <view interaction="press" onClick={() => go('mail')} style={{ width: 300, height: 102, backgroundColor: '#72558f', justifyContent: 'center', alignItems: 'center' }}>
                 <text value="邮件战报" style={{ width: '100%', height: '100%', font: theme.font, fontSize: 34, color: '#ffffff', horizontalAlign: 'center', verticalAlign: 'center' }} />

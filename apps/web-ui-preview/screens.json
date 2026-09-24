@@ -50,6 +50,14 @@
       "source": "apps/client/src/ui-uniflex/modules/backpack/Backpack/Backpack.tsx"
     },
     {
+      "id": "mail-battle-log",
+      "aliases": ["mail-battle-log", "mailBattleLog"],
+      "canvas": { "width": 750, "height": 1624 },
+      "componentName": "MailBattleLog",
+      "rootName": "MailBattleLog",
+      "source": "apps/client/src/ui-uniflex/modules/mail/MailBattleLog/MailBattleLog.tsx"
+    },
+    {
       "id": "mail-report-detail",
       "aliases": ["mail-report-detail", "mailReportDetail"],
       "canvas": { "width": 750, "height": 1624 },

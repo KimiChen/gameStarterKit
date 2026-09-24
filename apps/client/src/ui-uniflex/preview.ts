@@ -843,3 +843,9 @@ export function createMailReportDetailPreview(parent: Node): { dispose(): void }
     const preview = createPreviewScreen(parent, "mail-report-detail", { query: null, navigate: () => preview.dispose() });
     return preview;
 }
+
+/** Independent battle log with collapsible lineups and rounds. */
+export function createMailBattleLogPreview(parent: Node): { dispose(): void } {
+    const preview = createPreviewScreen(parent, "mail-battle-log", { query: null, navigate: () => preview.dispose() });
+    return preview;
+}

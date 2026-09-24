@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "ui/mail-battle-log/close",
+      "kind": "image",
+      "file": "assets/close.png",
+      "width": 50,
+      "height": 50,
+      "sha256": "583458db6f98faee140716e2e7d29d9441f478397f9c1e4e77bd59ec3881aed4"
+    },
+    {
+      "id": "ui/mail-battle-log/header",
+      "kind": "image",
+      "file": "assets/mail_compare_head.png",
+      "width": 673,
+      "height": 49,
+      "sha256": "62003c0401d9eafe959f48f359c4ca8134e54b4fca8d751363d9a3ab6ca847c4"
+    },
+    {
+      "id": "ui/mail-battle-log/section-header",
+      "kind": "image",
+      "file": "assets/mail_report2_section_head.png",
+      "width": 652,
+      "height": 52,
+      "sha256": "8e5f99252ea8f59c2c284b05e8fb79aecfcd1b22fc3c90fd033acc712dbc90fa"
+    },
+    {
+      "id": "ui/mail-battle-log/collapse-all",
+      "kind": "image",
+      "file": "assets/mail_report2_chevron.png",
+      "width": 32,
+      "height": 31,
+      "sha256": "49eac0da0e99ee99dbce0d1fe026249724090b385780d0e7013d502891d99664"
+    },
+    {
+      "id": "ui/mail-battle-log/section-arrow",
+      "kind": "image",
+      "file": "assets/mail_attr_arrow.png",
+      "width": 34,
+      "height": 22,
+      "sha256": "9adea412a6a5903dafa6856fa5f822173e28fd4481764c7e965fdd9fb1c17d44"
+    }
+  ]
+}
