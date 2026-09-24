@@ -1,9 +1,11 @@
 import { defineComponent } from '@uniflex/compiler';
 import type { ImageRef } from '../../../kits/uniflex/api/core/index';
 import { theme as activeTheme, type ComponentTheme } from '../../themes/active';
+import type { ProgressBarSkin } from './ProgressBarSkin';
 
 export interface ProgressBarProps {
     readonly theme?: ComponentTheme;
+    readonly skin?: ProgressBarSkin;
     readonly track?: ImageRef;
     readonly fill?: ImageRef;
     readonly left: number;
@@ -20,17 +22,18 @@ export interface ProgressBarProps {
     readonly labelOutline?: string;
 }
 
-/** Track + sliced fill. Callers inject skins; `left`/`top` are parent-absolute. */
+/** Track + sliced fill. `left`/`top` are parent-absolute. */
 export const ProgressBar = defineComponent<ProgressBarProps>((p) => {
     const theme = p.theme ?? activeTheme;
     const left = p.left;
     const top = p.top;
     const width = p.width;
     const height = p.height;
-    const track = p.track ?? theme.progress.track;
-    const fill = p.fill ?? theme.progress.fill;
+    const skin = p.skin;
+    const track = p.track ?? skin?.track ?? theme.progress.track;
+    const fill = p.fill ?? skin?.fill ?? theme.progress.fill;
     const visible = p.visible !== false;
-    const inset = p.theme?.progress.inset ?? activeTheme.progress.inset;
+    const inset = skin?.inset ?? theme.progress.inset;
     const inner = width - inset * 2;
     const fillHeight = height - inset * 2;
     const value = p.value;
@@ -43,10 +46,10 @@ export const ProgressBar = defineComponent<ProgressBarProps>((p) => {
     const showFill = fillWidth > 0;
     const label = p.label ?? '';
     const showLabel = label !== '';
-    const labelColor = p.labelColor ?? theme.progress.color;
-    const labelSize = p.labelSize ?? p.theme?.progress.labelSize ?? activeTheme.progress.labelSize;
-    const labelOutline = p.labelOutline ?? theme.progress.outline;
-    const outlineWidth = p.theme?.progress.outlineWidth ?? activeTheme.progress.outlineWidth;
+    const labelColor = p.labelColor ?? skin?.labelColor ?? theme.progress.color;
+    const labelSize = p.labelSize ?? skin?.labelSize ?? theme.progress.labelSize;
+    const labelOutline = p.labelOutline ?? skin?.labelOutline ?? theme.progress.outline;
+    const outlineWidth = skin?.outlineWidth ?? theme.progress.outlineWidth;
     const font = theme.progress.font;
     return (
         <view name="ProgressBar" visible={visible}

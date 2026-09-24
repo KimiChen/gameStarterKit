@@ -4,6 +4,7 @@ import { confirmButton } from '../../../components/button/buttonSkins';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
+import { starUpgradeProgress } from '../../../components/progress/progressBarSkins';
 import { STAR_ROW_HEIGHT, STAR_ROW_WIDTH, StarRow } from '../../../gamecomponents/star/StarRow';
 import { HeroStarAttributeRow, type HeroStarAttributeRowProps } from './HeroStarAttributeRow';
 
@@ -50,8 +51,6 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
     const owned = p.owned ?? 40;
     const required = p.required ?? 45;
     const progressText = `${owned}/${required}`;
-    const progressTrack = imageRef('ui/star-upgrade/progress-track');
-    const progressFill = imageRef('ui/star-upgrade/progress-fill');
     const rows = [334, 389, 444, 499] as const;
     return (
         <view name="HeroStarUpgrade" visible={p.visible !== false}
@@ -107,8 +106,7 @@ export const HeroStarUpgradePanel = defineComponent<HeroStarUpgradePanelProps>((
                         next={attribute3.next} />
                 </view>
                 <ProgressBar left={157} top={604} width={391} height={44}
-                    track={progressTrack} fill={progressFill} value={owned} max={required}
-                    label={progressText} labelColor="#65EE62" labelSize={32} />
+                    skin={starUpgradeProgress} value={owned} max={required} label={progressText} />
                 <image source={imageRef('ui/star-upgrade/fragment')}
                     style={{ position: 'absolute', left: 81, top: 575, width: 94, height: 103 }} />
                 <view interaction="press" accessibilityLabel="获取碎片" onClick={() => p.onObtainFragments?.()}

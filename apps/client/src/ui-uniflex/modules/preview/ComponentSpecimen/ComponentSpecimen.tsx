@@ -12,6 +12,7 @@ import { Dropdown, type DropdownItem } from '../../../components/dropdown/Dropdo
 import { filterDropdown } from '../../../components/dropdown/dropdownSkins';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
+import { allianceFlagProgress, allianceMarchProgress, battleGreenProgress, battleRedProgress, heroProgress, starUpgradeProgress } from '../../../components/progress/progressBarSkins';
 import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { characterTab, heroDetailTab, heroListTab, mailTab } from '../../../components/tab/tabSkins';
@@ -186,6 +187,11 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
     const showInput = part === 'cmp-input';
     const showDropdown = part === 'cmp-dropdown';
     const showProgress = part === 'cmp-progress';
+    const showProgressStar = part === 'cmp-progress-star';
+    const showProgressMarch = part === 'cmp-progress-march';
+    const showProgressFlag = part === 'cmp-progress-flag';
+    const showProgressBattleGreen = part === 'cmp-progress-battle-green';
+    const showProgressBattleRed = part === 'cmp-progress-battle-red';
     const showMarquee = part === 'cmp-marquee';
     const showCountdownDays = part === 'cmp-countdown-days';
     const showCountdownHours = part === 'cmp-countdown-hours';
@@ -269,7 +275,28 @@ export const ComponentSpecimen = defineView<ComponentSpecimenParams, void>({ zIn
                 left={20} top={16} onSelect={setDropdownValue} />
         </view>
         <view visible={showProgress} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
-            <ProgressBar theme={theme} left={0} top={0} width={674} height={34} value={72} max={100} label="72%" />
+            <ProgressBar theme={theme} skin={heroProgress} left={0} top={0} width={width} height={height}
+                value={72} max={100} label="72%" />
+        </view>
+        <view visible={showProgressStar} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ProgressBar theme={theme} skin={starUpgradeProgress} left={0} top={0} width={width} height={height}
+                value={40} max={45} label="40/45" />
+        </view>
+        <view visible={showProgressMarch} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ProgressBar theme={theme} skin={allianceMarchProgress} left={0} top={0} width={width} height={height}
+                value={65} max={100} label="65/100" />
+        </view>
+        <view visible={showProgressFlag} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ProgressBar theme={theme} skin={allianceFlagProgress} left={0} top={0} width={width} height={height}
+                value={60} max={100} />
+        </view>
+        <view visible={showProgressBattleGreen} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ProgressBar theme={theme} skin={battleGreenProgress} left={0} top={0} width={width} height={height}
+                fillWidth={97} label="120/500" />
+        </view>
+        <view visible={showProgressBattleRed} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
+            <ProgressBar theme={theme} skin={battleRedProgress} left={0} top={0} width={width} height={height}
+                fillWidth={97} label="120/500" />
         </view>
         <view visible={showMarquee} style={{ position: 'absolute', left: 0, top: 0, width: width, height: height }}>
             <Marquee text="联盟活动即将开始，请各位成员做好准备！" left={0} top={0}

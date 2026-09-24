@@ -4,6 +4,7 @@ import { cancelButton, confirmButton } from '../../../components/button/buttonSk
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
+import { allianceMarchProgress } from '../../../components/progress/progressBarSkins';
 import { RewardItem, type RewardItemData } from '../../../gamecomponents/item/RewardItem';
 import { DEFAULT_TECH_ID, resolveAllianceTechView } from '../../../gamecomponents/tech/allianceTech';
 import { TechIcon } from '../../../gamecomponents/tech/TechIcon';
@@ -54,8 +55,6 @@ export const AllianceMarchBoostPanel = defineComponent<AllianceMarchBoostPanelPr
     const rightHint = view.rightHint;
     const payGem = view.payGem;
     const payCoin = view.payCoin;
-    const progressTrack = imageRef('ui/alliance-march/track');
-    const progressFill = imageRef('ui/alliance-march/fill');
     const payGemIcon = imageRef('ui/alliance-march/pay-gem');
     const payCoinIcon = imageRef('ui/alliance-march/pay-coin');
     return (
@@ -98,7 +97,7 @@ export const AllianceMarchBoostPanel = defineComponent<AllianceMarchBoostPanelPr
                 <image source={imageRef('ui/alliance/announce-panel')}
                     style={{ position: 'absolute', left: 12, top: 399, width: 683, height: 74, sizeMode: 'sliced' }} />
                 <ProgressBar left={85} top={421} width={573} height={28}
-                    track={progressTrack} fill={progressFill} value={progressCurrent} max={progressMax}
+                    skin={allianceMarchProgress} value={progressCurrent} max={progressMax}
                     label={progressText} />
                 <image source={imageRef('ui/alliance-march/gem-slot')}
                     style={{ position: 'absolute', left: 18, top: 404, width: 65, height: 65 }} />

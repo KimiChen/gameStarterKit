@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef } from '../../../../kits/uniflex/api/core/index';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
+import { battleGreenProgress, battleRedProgress } from '../../../components/progress/progressBarSkins';
 import { ItemSlot } from '../../../gamecomponents/item/ItemSlot';
 
 export interface VictoryPanelProps {
@@ -23,9 +24,6 @@ const FRAME = imageRef('ui/victory/portrait-frame');
 const PLATE = imageRef('ui/victory/portrait-plate');
 const BLUE = imageRef('ui/victory/portrait-blue');
 const RED = imageRef('ui/victory/portrait-red');
-const TRACK = imageRef('ui/victory/bar-track');
-const FILL_GREEN = imageRef('ui/victory/bar-fill-green');
-const FILL_RED = imageRef('ui/victory/bar-fill-red');
 const BANNER = imageRef('ui/victory/reward-banner');
 const TITLE = imageRef('ui/victory/title');
 
@@ -70,11 +68,9 @@ export const VictoryPanel = defineComponent<VictoryPanelProps>((p) => {
             <image name="Victory/RightAvatar" source={RED}
                 style={{ position: 'absolute', left: 514, top: 735, width: 124, height: 124 }} />
             <ProgressBar left={87} top={877} width={171} height={29}
-                track={TRACK} fill={FILL_GREEN} fillWidth={97}
-                label={leftProgress} labelSize={22} />
+                skin={battleGreenProgress} fillWidth={97} label={leftProgress} />
             <ProgressBar left={489} top={877} width={171} height={29}
-                track={TRACK} fill={FILL_RED} fillWidth={97}
-                label={rightProgress} labelSize={22} />
+                skin={battleRedProgress} fillWidth={97} label={rightProgress} />
             <text name="Victory/Result" value={result}
                 style={{ position: 'absolute', left: 0, top: 936, width: 750, height: 27,
                     font: BODY_FONT, fontSize: 26, color: '#FFFFFF', bold: true,

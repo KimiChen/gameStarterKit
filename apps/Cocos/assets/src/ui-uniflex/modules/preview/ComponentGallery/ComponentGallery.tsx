@@ -10,6 +10,7 @@ import { ScreenHeader } from '../../../components/chrome/ScreenHeader';
 import { InputText } from '../../../components/input/InputText';
 import { PopupFrame } from '../../../components/popup/PopupFrame';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
+import { heroProgress } from '../../../components/progress/progressBarSkins';
 import { QuantityControl } from '../../../components/quantity/QuantityControl';
 import { TabBar, type TabBarItem } from '../../../components/tab/TabBar';
 import { mailTab } from '../../../components/tab/tabSkins';
@@ -297,7 +298,7 @@ export const ComponentGallery = defineView<ComponentGalleryParams, void>({ zInde
                             verticalAlign: 'center',
                         }} />
                         <view style={{ width: INNER_WIDTH, height: 34 }}>
-                            <ProgressBar theme={theme} left={0} top={0} width={INNER_WIDTH} height={34}
+                            <ProgressBar theme={theme} skin={heroProgress} left={0} top={0} width={INNER_WIDTH} height={34}
                                 value={72} max={100} label="72%" />
                         </view>
                     </view>

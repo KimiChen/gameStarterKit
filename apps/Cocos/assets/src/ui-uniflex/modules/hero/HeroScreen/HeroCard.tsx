@@ -1,6 +1,7 @@
 import { defineComponent } from '@uniflex/compiler';
 import { fontRef, imageRef, type ImageRef } from '../../../../kits/uniflex/api/core/index';
 import { ProgressBar } from '../../../components/progress/ProgressBar';
+import { heroProgress } from '../../../components/progress/progressBarSkins';
 import { STAR_ROW_HEIGHT, STAR_ROW_WIDTH, StarRow } from '../../../gamecomponents/star/StarRow';
 
 /** 卡牌星槽宽 155。整排 411 按中心缩到槽内，视觉落在 left 8、top 205。 */
@@ -46,8 +47,6 @@ export const HeroCard = defineComponent<HeroCardProps>((p) => {
     const fillWidth = p.fillWidth ?? 99;
     const fragments = p.fragments ?? '9/10';
     const unowned = !owned;
-    const progressTrack = imageRef('ui/hero/progress-track');
-    const progressFill = imageRef('ui/hero/progress-fill');
     const level = p.level ?? 'Lv.20';
     const team = p.team ?? '';
     const showTeam = owned && p.team != null && p.team !== '';
@@ -63,7 +62,7 @@ export const HeroCard = defineComponent<HeroCardProps>((p) => {
         <image visible={!owned} source={imageRef('ui/hero/unowned')}
             style={{ position: 'absolute', left: 2, top: 0, width: 166, height: 244 }} />
         <ProgressBar visible={unowned} left={23} top={207} width={124} height={26}
-            track={progressTrack} fill={progressFill} fillWidth={fillWidth}
+            skin={heroProgress} fillWidth={fillWidth}
             label={fragments} labelSize={22} />
         <text visible={owned} value={level}
             style={{ position: 'absolute', left: 10, top: 168, width: 110, height: 32,
