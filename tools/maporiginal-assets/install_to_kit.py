@@ -9,7 +9,7 @@
 ⚠ 与 sgzzmap 的**唯一形态差别**：`terrain.bytes`（16 类显示层）**要进 Cocos**，
    因为它塞不进 shared 模块（一阶熵 2.95 bit/格，varint-RLE 反而胀到 125.6%），
    客户端用 BufferAsset 加载。判据见 `apps/kits/mapOriginal/README.md` 的「地形数据：**两层**」一节。
-   4 类通行层走 shared TS，`terrain.pass.bytes` 只留 kit 数据目录供机检比对。
+   3 类通行层走 shared TS，`terrain.pass.bytes` 只留 kit 数据目录供机检比对。
 """
 from __future__ import annotations
 
@@ -162,6 +162,7 @@ GROUPS = {
 }
 GENERATED_LAYOUTS = ("atlas-layout.types.ts", "decor.data.ts", "region.data.ts", "tops.data.ts", "cities.data.ts",
                      "roads.data.ts", "river.data.ts", "choose.data.ts")
+GENERATED_CONTENT = GENERATED_LAYOUTS + ("ground.data.ts", "blocks.data.ts")
 
 
 def json_bytes(value):
@@ -213,7 +214,7 @@ def main() -> int:
     content = Path(REPO) / "apps/shared/src/kits/mapOriginal/content"
     # 先确认所有输入，不能因缺一个源文件先删掉半套已安装素材。
     payloads = {name: ((Path(HERE) / "shaders" if name.endswith(".effect") else src) / name).read_bytes() for name in FILES}
-    layouts = {name: (src / name).read_bytes() for name in GENERATED_LAYOUTS}
+    layouts = {name: (src / name).read_bytes() for name in GENERATED_CONTENT}
     bindings = {p.name: hashlib.sha256(layouts.get(p.name, p.read_bytes())).hexdigest()
                 for p in sorted(content.glob("*.ts")) if p.name not in ("manifest.data.ts", "top-scenes.data.ts")}
     bindings.update({name: hashlib.sha256(data).hexdigest() for name, data in layouts.items()})

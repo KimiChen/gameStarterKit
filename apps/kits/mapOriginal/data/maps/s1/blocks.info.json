@@ -1,5 +1,5 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "mapId": "s1",
  "grid": {
   "side": 152,
@@ -17,7 +17,20 @@
   "snow": 300
  },
  "bothBlocks": 489,
- "uvRule": "与地表底完全相同的块级世界投影（同周期、同相位、锚在块中心）。⚠ 原版 polygon_2d 的 uvs 全零、真式子在引擎侧不可见 —— 这是**有依据的推断**，取它是因为只有它能让块边界落在整周期上（§1.4 明写的设计意图）。",
+ "uvRule": "原版 polygon_2d 世界像素投影：u=x/textureWidth，v=1-y/textureHeight；相位锚在世界原点，保留 Float32 舍入。原生核证据见 MAPORIGINAL-2D §1.8。",
+ "uvParameters": {
+  "calcInWorld": true,
+  "scale": [
+   1,
+   1
+  ],
+  "angle": 0,
+  "offset": [
+   0,
+   0
+  ],
+  "flipV": true
+ },
  "kinds": {
   "desert": {
    "texture": {
@@ -27,10 +40,6 @@
      256
     ],
     "sha256": "4d61842eef65bdfd6f962d0617a2045e2f60e061d789e792b31459af1b4d285a"
-   },
-   "repeat": {
-    "timesU": 11,
-    "timesV": 5
    },
    "geoCount": 51,
    "geoBytes": 5693,
@@ -101,10 +110,6 @@
      256
     ],
     "sha256": "2180f6f6dc9aa9d9f97e8ca2f01cfcf662521fdcf55e8a2d33add8b495e7916b"
-   },
-   "repeat": {
-    "timesU": 11,
-    "timesV": 5
    },
    "geoCount": 52,
    "geoBytes": 5532,

@@ -12,20 +12,20 @@ export const MAPO_S1_MANIFEST: MapoManifest = {
       "sourceSha256": "f938c0fd08b9ab4e0d4ae95eb38bd25d07060d399564658444258e9560d12f17"
     },
     "overview.png": {
-      "path": "2d/overview/overview-0df4e975eec0becf",
+      "path": "2d/overview/overview-9c8c6508eaf469bd",
       "type": "texture",
-      "sourceBytes": 2808678,
-      "sourceSha256": "0df4e975eec0becf8893921abdda8330478feaca4daf348d9d31886a19ac95e6",
+      "sourceBytes": 2807546,
+      "sourceSha256": "9c8c6508eaf469bdafcdd5733f9384b79a8457fe2949107f912a1f399c4df84e",
       "size": [
         2048,
         1024
       ]
     },
     "minimap.png": {
-      "path": "2d/overview/minimap-7d017231c4c2de08",
+      "path": "2d/overview/minimap-4cb5349f613bc0b5",
       "type": "texture",
-      "sourceBytes": 184576,
-      "sourceSha256": "7d017231c4c2de081e4b9174e8c977821bc6af381c36a2be6a082f2842d66eb4",
+      "sourceBytes": 184475,
+      "sourceSha256": "4cb5349f613bc0b59edc4e6b55f357fb8bf77593101de4e306f0a89f9fc5a51b",
       "size": [
         512,
         256
@@ -301,7 +301,7 @@ export const MAPO_S1_MANIFEST: MapoManifest = {
         "overview.png",
         "minimap.png"
       ],
-      "sourceBytes": 2994857
+      "sourceBytes": 2993624
     },
     "geography": {
       "dependencies": [
@@ -396,7 +396,7 @@ export const MAPO_S1_MANIFEST: MapoManifest = {
   "bindings": {
     "atlas-layout.types.ts": "8ff52971f81b121b84b85adf1da7b2f87e6387f100595ba7c82b9795977c5d95",
     "bands.data.ts": "c454ceeef85f6d42147afdcd4af19e021036344bce3f772207b2fb588f2c8392",
-    "blocks.data.ts": "52ffb0b29c97d673a32711bf6f994c2cfa9f9541295af076b3b91c4b69873c53",
+    "blocks.data.ts": "ca8d5a4f5ce4d2159980fbffab2d517cba06d3284479a22463fa6e413785283b",
     "choose.data.ts": "b803566b5226dfd396c823369037b8c6442bc8e3b3494a92871a6ead1b07f431",
     "cities.data.ts": "52a1f5e06903e1bded6af01fedf79ac1f4ce8dcc2659445650d0e652ff905bb7",
     "decor.data.ts": "1f3d574f98f23c74e9567e61852b1ab1c185c2aac3e1255f7f7047116ebb7d1a",
@@ -407,11 +407,11 @@ export const MAPO_S1_MANIFEST: MapoManifest = {
     "map-manifest.types.ts": "f99f30b4d1052cd8cf0d1cf1c3eea44622d1c6570592724725bd8c05423b7bdd",
     "prefabs.types.ts": "7c1e2319a6f2c27f96e1de7bdde7da213d9ae79bf920ea2bb3e7dc4b15b68139",
     "region.data.ts": "b6a34ffcc68dbd44b73c37cd3ed37995efaa99491b65a28f81a4d17ff21a270c",
-    "river.data.ts": "40456dabaa6fb08dc19af8a64c5ac45fe2e17ee705b93c99451d9a39906ed4d7",
+    "river.data.ts": "4704740b74eb60379c9e483b26e43047a5a338c9f3ef16854965821d396f7b1b",
     "roads.data.ts": "3dc9ff4468a7ba46b3ba0a40cd324f1903126440f29a9be0408ca476751b1b22",
     "terrain.data.ts": "87e53de9b08cd44b9b06dcf0dc41fa3379f166cba376ab0062eb0f75e55a1389",
     "tops.data.ts": "08492d5bba4a42c60365095703b60eacdac9ba2637910b84e7e3b9c9cae3bd41"
   },
-  "atlasLayoutVersion": "trim-v1-8f3da9de68c4bcbaac6fb9217cbcd3cb36a37f4ecb79184a512289a98394fd2d",
-  "contentVersion": "sha256-10f5331ba1f2b54929bc36194f636dd0225e46e4a9caf2061dcc9d83d9de1e15"
+  "atlasLayoutVersion": "trim-v1-5f3f35802b2e71de209e7e5bc4b30615078f6bf72bcf31d02625b8c2dec82e1a",
+  "contentVersion": "sha256-20deb5901316ee4dfad56e7b50a3aecf6ee53d642483fef6658a06073cd56968"
 };

@@ -5,19 +5,19 @@
     "apps/client/src/kits/mapOriginal/logic/mapoScene.ts": "fff6713247c58a5eb25d6dccbee0dfddaa5e386c953daacac40f5f3c1bc0d118",
     "apps/client/src/kits/mapOriginal/logic/mapoPrefab.ts": "9d4903fa1bb1039392f6fa1541b9c1df8179f9f1c21ed7f22502fa2e98710862",
     "apps/client/src/kits/mapOriginal/logic/mapoGround.ts": "df3fbb80965386115b075e357d393502aace58a4b3cea9636818b24ab2e500b3",
-    "apps/client/src/kits/mapOriginal/logic/mapoBlocks.ts": "35757c724268a0cc8ed723351bbfc83d60da40052367d1f4dd23453cfa53b28c",
-    "apps/client/src/kits/mapOriginal/logic/mapoPolyLib.ts": "a8568cacc50c132a25c7c0693f111d75570b2f2e22e29104d56f827a6e4f2e5c",
+    "apps/client/src/kits/mapOriginal/logic/mapoBlocks.ts": "d9be1086e70edcfee6e2733988dead6662940b4d7cade1b752b1bedf36f80dcc",
+    "apps/client/src/kits/mapOriginal/logic/mapoPolyLib.ts": "70c24341b450c7efe20f98ed8a5d6d7cc56d04fb252cd23036f8736c8a32fcbf",
     "apps/client/src/kits/mapOriginal/logic/mapoRegions.ts": "aca8f4434ffedb93ba2c99f18e04a7ebf9ed18aa36551476b22d4f54820d9bb6",
     "apps/client/src/kits/mapOriginal/logic/mapoRoads.ts": "16cb97f1a4c7e2878023afc8012a029f4a7648e82a2404b93a5fb08fea96bac5",
-    "apps/client/src/kits/mapOriginal/logic/mapoRivers.ts": "c2fe504fdce4c95336d27222e3085125741c9b6788b7dc429e0db6dda80a7054",
+    "apps/client/src/kits/mapOriginal/logic/mapoRivers.ts": "3e2385b4fd3ad204b786c15ef66e3de5a7ddf981bc04bffa94132167a11b48ce",
     "apps/client/src/kits/mapOriginal/logic/mapoTops.ts": "7c2b769dbff8f4ab8b3660940af003ffa2d95e10a89e5d96c7231a0aa93e8de3",
     "apps/client/src/kits/mapOriginal/logic/mapoBands.ts": "20dce381a870b760b3d4984c51ac83ab835b37c01b28d4ba2013f379ea044c13",
     "apps/client/src/kits/mapOriginal/logic/mapoFar.ts": "47648bd7123c32b491914f86357f5891820499267ac9193f42551b359d0c0ce3",
     "apps/shared/src/kits/mapOriginal/content/ground.data.ts": "6e1ea409adfbc731493cd0f497be65ee81b4189acb7ee7ac9a4e82288fd805a3",
-    "apps/shared/src/kits/mapOriginal/content/blocks.data.ts": "52ffb0b29c97d673a32711bf6f994c2cfa9f9541295af076b3b91c4b69873c53",
+    "apps/shared/src/kits/mapOriginal/content/blocks.data.ts": "ca8d5a4f5ce4d2159980fbffab2d517cba06d3284479a22463fa6e413785283b",
     "apps/shared/src/kits/mapOriginal/content/region.data.ts": "b6a34ffcc68dbd44b73c37cd3ed37995efaa99491b65a28f81a4d17ff21a270c",
     "apps/shared/src/kits/mapOriginal/content/roads.data.ts": "3dc9ff4468a7ba46b3ba0a40cd324f1903126440f29a9be0408ca476751b1b22",
-    "apps/shared/src/kits/mapOriginal/content/river.data.ts": "40456dabaa6fb08dc19af8a64c5ac45fe2e17ee705b93c99451d9a39906ed4d7",
+    "apps/shared/src/kits/mapOriginal/content/river.data.ts": "4704740b74eb60379c9e483b26e43047a5a338c9f3ef16854965821d396f7b1b",
     "apps/shared/src/kits/mapOriginal/content/tops.data.ts": "08492d5bba4a42c60365095703b60eacdac9ba2637910b84e7e3b9c9cae3bd41",
     "apps/shared/src/kits/mapOriginal/content/bands.data.ts": "c454ceeef85f6d42147afdcd4af19e021036344bce3f772207b2fb588f2c8392",
     "apps/shared/src/kits/mapOriginal/api/hexmap/index.ts": "f68cc25e50ef9a801b6991abcf644842b209dc36d4841a8e4cb8a252e17f76c7",
@@ -37,7 +37,7 @@
     "maxY": 0
   },
   "source": "mapoStaticScene: original ground / desert / snow / regions / roads / rivers / tops; no resource icons or cities",
-  "geometrySha256": "62b400a794b65ba6286e1eabd637eeb572189cc4e087b4c6269554b1cb0a18fe",
+  "geometrySha256": "3c7b61caf52180b89c27fbc4f5c84ebb3fce0e87748b45428190469f66c16b61",
   "batches": 33,
   "sourceHashes": {
     "tops-config.json": "47aea4b12c48851a6eb11caaa869a265adc64e33cb9d90acbadbd4fd33f532df",
@@ -62,5 +62,5 @@
     "river-fill.png": "1b56b30492f222ceebcef19888977ad862afd03ccb8e571e192336f53177084f",
     "river-top-atlas.png": "0e4a840d14f6aca0b083e26f08928d5add262d632a5cb13870284526e6c88582"
   },
-  "pngSha256": "0df4e975eec0becf8893921abdda8330478feaca4daf348d9d31886a19ac95e6"
+  "pngSha256": "9c8c6508eaf469bdafcdd5733f9384b79a8457fe2949107f912a1f399c4df84e"
 }

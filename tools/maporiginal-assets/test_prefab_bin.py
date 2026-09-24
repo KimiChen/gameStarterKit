@@ -1,7 +1,8 @@
 """不依赖原包的严格边界回归；字段值刻意包含中文、非中心锚点和尾部残留。"""
 import struct
 import unittest
-from prefab_bin import parse, read_component, R
+from prefab_bin import parse, read_component, read_drawable_tail, R
+from build_blocks import validate_polygon_uv
 
 
 def string(value):
@@ -19,6 +20,26 @@ def node(name, children=(), child=False):
 
 
 class PrefabParserTest(unittest.TestCase):
+    def test_polygon_uv_fields_follow_native_serializer_order(self):
+        tail = struct.pack('<H2f2B4fB', 1, 256, 256, 0, 0, .5, .5, 0, 0, 1)
+        tail += struct.pack('<H4B', 1, 0, 0, 0, 0) + string('material') + struct.pack('<IIH', 4, 0, 0)
+        tail += struct.pack('<5I', 0, 0, 0, 0, 0)  # 五个空几何/属性数组
+        tail += struct.pack('<3B5f', 1, 0, 1, 2, 3, 30, 17, -9) + string('ground.png')
+        reader, poly = R(tail), {'class': 'polygon_2d'}
+        read_drawable_tail(reader, poly)
+        self.assertEqual(reader.left(), 0)
+        self.assertEqual([poly[k] for k in ('has_v_color', 'simple', 'calc_uv_in_world')], [True, False, True])
+        self.assertEqual(poly['uv_scale'], [2, 3])
+        self.assertEqual(poly['uv_angle'], 30)
+        self.assertEqual(poly['uv_offset'], [17, -9])
+
+    def test_block_export_rejects_unsupported_uv_instead_of_silently_simplifying(self):
+        valid = dict(simple=False, calc_uv_in_world=True, uv_scale=[1, 1], uv_angle=0, uv_offset=[0, 0])
+        validate_polygon_uv(valid, 'fixture')
+        for key, value in dict(simple=True, calc_uv_in_world=False, uv_scale=[2, 1], uv_angle=90, uv_offset=[1, 0]).items():
+            with self.assertRaisesRegex(ValueError, key):
+                validate_polygon_uv({**valid, key: value}, 'fixture')
+
     def test_nested_chinese_nodes_and_visual_fields(self):
         root = parse(node('根', [node('雪片', child=True)]))
         self.assertEqual(root['render_level'], 123456)  # i32，不能错读成 i16。

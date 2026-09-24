@@ -12,13 +12,15 @@ export interface IMapoPoly {
     readonly tag: number;
     /** 局部顶点（**已是世界单位**）：`[x0, y0, x1, y1, …]`。 */
     readonly verts: Float32Array;
+    /** 世界 UV 需要原版 Float32 像素，避免世界单位往返换算引入相位误差；按需保留。 */
+    readonly originalVerts?: Float32Array;
     readonly indices: Uint16Array;
     readonly minX: number; readonly maxX: number;
     readonly minY: number; readonly maxY: number;
 }
 
 export function parseMapoPolyLib(buf: ArrayBuffer | Uint8Array, expect: number,
-                                 what: string): IMapoPoly[] {
+                                 what: string, retainOriginalVerts = false): IMapoPoly[] {
     const u = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
     const v = new DataView(u.buffer, u.byteOffset, u.byteLength);
     const n = v.getUint16(0);
@@ -30,10 +32,12 @@ export function parseMapoPolyLib(buf: ArrayBuffer | Uint8Array, expect: number,
         const nv = v.getUint16(o + 1), ni = v.getUint16(o + 3);
         o += 5;
         const verts = new Float32Array(nv * 2);
+        const originalVerts = retainOriginalVerts ? new Float32Array(nv * 2) : undefined;
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         for (let k = 0; k < nv; k += 1) {
-            const x = mapoOriginalPxToWorld(v.getFloat32(o));
-            const y = mapoOriginalPxToWorld(v.getFloat32(o + 4));
+            const px = v.getFloat32(o), py = v.getFloat32(o + 4);
+            if (originalVerts) { originalVerts[k * 2] = px; originalVerts[k * 2 + 1] = py; }
+            const x = mapoOriginalPxToWorld(px), y = mapoOriginalPxToWorld(py);
             o += 8;
             verts[k * 2] = x; verts[k * 2 + 1] = y;
             if (x < minX) minX = x;
@@ -44,7 +48,7 @@ export function parseMapoPolyLib(buf: ArrayBuffer | Uint8Array, expect: number,
         const indices = new Uint16Array(ni);
         for (let k = 0; k < ni; k += 1) { indices[k] = v.getUint16(o); o += 2; }
         if (nv === 0) { minX = maxX = minY = maxY = 0; }
-        out.push({ tag, verts, indices, minX, maxX, minY, maxY });
+        out.push({ tag, verts, originalVerts, indices, minX, maxX, minY, maxY });
     }
     if (o !== u.length) throw new Error(`mapOriginal ${what} 几何库有 ${u.length - o} B 残留`);
     return out;

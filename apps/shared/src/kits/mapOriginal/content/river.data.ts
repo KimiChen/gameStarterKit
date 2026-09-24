@@ -3,15 +3,15 @@
  *
  * ★ 机制见 docs/MAPORIGINAL-2D.md §4.1：`river.bytes` 是「河格 → `river_path.json` 下标」的
  *   单字节图，**选片在制图期就烘死在字节值里**，运行时 ⛔ 不做任何邻接判断。
- * ★ 一个「河格」= **3×3 逻辑格**；起点偏移 **−6**（logic row = 3·i − 6）是实测定死的：
- *   河格覆盖了 235290 / 235292 个 `res==47` 格（100.0%）。
+ * ★ 一个「河格」= **3×3 逻辑格**；layer_info 起点偏移 **−6**（logic row = 3·i − 6）。
+ *   原版 ninegrid2pos(i−2,j−2,450,225) 没有奇偶行偏移；覆盖 235290 / 235292 个 res==47 格（100.0%）。
  * ★ 水面几何可用于原版静态填充与 normal_river；颜色蒙版/法线另由 build_surface.py 导出。
  */
 
 export interface IMapoRiverSystem {
     readonly system: number;
     readonly name: string;
-    /** 原版填充图的平色（本仓只取其相对明度）。 */
+    /** 原版填充图的平色（静态水面直接采样，不额外乘色）。 */
     readonly rgb: readonly [number, number, number];
 }
 

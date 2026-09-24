@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import {
     MAPO_BLOCK_D_BIAS, MAPO_BLOCK_HEADER_BYTES, MAPO_BLOCK_LAYERS,
     MAPO_BLOCK_RECORD_BYTES, MAPO_BLOCK_S_BIAS,
@@ -8,11 +9,11 @@ import {
     MAPO_GROUND_BLOCK_TILES, MAPO_GROUND_ORIGIN,
 } from "../src/shared/kits/mapOriginal/content/ground.data";
 import {
-    MAPO_GROUND_HALF_H, MAPO_GROUND_HALF_W, MAPO_GROUND_UV, mapoGroundBlockPos,
+    MAPO_GROUND_HALF_H, MAPO_GROUND_HALF_W, mapoGroundBlockPos,
 } from "../src/kits/mapOriginal/logic/mapoGround";
 import {
     MAPO_BLOCK_KINDS, mapoBlockCount, mapoBlocksInRect, mapoHasBlocks,
-    mapoSetBlockGeo, mapoSetBlocks,
+    mapoSetBlockGeo, mapoSetBlocks, createMapoBlocksData,
 } from "../src/kits/mapOriginal/logic/mapoBlocks";
 
 const KIND = MAPO_BLOCK_KINDS[0];
@@ -68,22 +69,38 @@ test("mapOriginal 块层：几何库条数对不上就拒收", () => {
     assert.throws(() => mapoSetBlocks(KIND, new Uint8Array(3)), /表太短/);
 });
 
-test("mapOriginal 块层：UV 与地表底**同一套块级世界投影**（⛔ 不是按多边形包围盒）", () => {
-    // ⚠ 这条是本批最关键的一致性：块层的花纹必须与地表底同周期同相位，否则块边界会错茬。
+test("mapOriginal 块层：世界 UV 连续，跨块改变相位，不随几何包围盒拉伸", () => {
     mapoSetBlockGeo(KIND, makeGeo(META.geoCount));
-    mapoSetBlocks(KIND, makeTable([{ i: 40, j: 40, geo: 1 }]));
+    mapoSetBlocks(KIND, makeTable([{ i: 40, j: 40, geo: 1 }, { i: 41, j: 40, geo: 1 }]));
     assert.ok(mapoHasBlocks(KIND));
-    assert.equal(mapoBlockCount(KIND), 1);
-    const [p] = mapoBlocksInRect(KIND, WHOLE, 4);
-    assert.ok(p.uvs, "块层必须走逐顶点 UV");
-    // 几何顶点序是 W/N/E/S（makeGeo 里就是这么摆的）⇒ UV 应与 MAPO_GROUND_UV 逐项相等
-    const want = MAPO_GROUND_UV;
-    for (let k = 0; k < 4; k += 1) {
-        assert.ok(Math.abs(p.uvs![k * 2] - want[k][0]) < 1e-4, `第 ${k} 点 u`);
-        assert.ok(Math.abs(p.uvs![k * 2 + 1] - want[k][1]) < 1e-4, `第 ${k} 点 v`);
+    assert.equal(mapoBlockCount(KIND), 2);
+    const [a, b] = mapoBlocksInRect(KIND, WHOLE, 4);
+    // 原生 UV 核的独立向量：整块 W/N/E/S；中心原版像素 (0,-59250)。
+    assert.deepEqual([...a.uvs!], [-5.859375, 232.4453125, 0, 229.515625,
+        5.859375, 232.4453125, 0, 235.375]);
+    assert.notDeepEqual(a.uvs, b.uvs, "同一片不能复用局部 UV");
+    // 相邻块 a.E 与 b.N 是同一个世界点；UV 必须完全一致。
+    assert.deepEqual([...a.uvs!.slice(4, 6)], [...b.uvs!.slice(2, 4)]);
+});
+
+test("mapOriginal 块层：103 种几何 × 4 个位置的 3412 个 UV 与原版 ARM64 核逐项一致", () => {
+    const fixture = JSON.parse(readFileSync(new URL("../../../tools/maporiginal-assets/fixtures/polygon-uv.json", import.meta.url), "utf8")) as {
+        blocks: [number, number][]; layers: Record<string, { uvs: number[][] }[]>;
+    };
+    const data = createMapoBlocksData();
+    for (const [kind, geos] of Object.entries(fixture.layers)) {
+        data.mapoSetBlockGeo(kind, readFileSync(new URL(`../../kits/mapOriginal/data/maps/s1/${kind}-geo.bin`, import.meta.url)));
+        for (const [sample, [i, j]] of fixture.blocks.entries()) {
+            data.mapoSetBlocks(kind, makeTable(geos.map((_, k) => ({ i, j, geo: k + 1 }))));
+            const polygons = data.mapoBlocksInRect(kind, WHOLE, Infinity);
+            assert.equal(polygons.length, geos.length);
+            for (const p of polygons) {
+                assert.deepEqual([...p.uvs!], geos[p.geo - 1].uvs[sample], `${kind}/${p.geo} at ${i},${j}`);
+            }
+        }
     }
-    // ★ UV 必须超过 1（靠 GL_REPEAT 平铺）
-    assert.ok(Math.max(...Array.from(p.uvs!)) > 1);
+    data.dispose();
+    assert.equal(data.mapoBlocksDataUsage().arrayBufferBytes, 0, "释放时不能保留原始顶点");
 });
 
 test("mapOriginal 块层：摆位与地表底的块中心重合，矩形外不进批", () => {

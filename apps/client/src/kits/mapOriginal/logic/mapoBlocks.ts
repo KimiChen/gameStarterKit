@@ -6,16 +6,16 @@
  * ★ 网格与地表底同构（152² 块 / 一块 10×10 格 / 原点 −10），
  *   ⚠ 但数据是**行主序** —— ⛔ 与 `river.bytes` 的列主序不同（打包期已折算，这里只读 s/d）。
  * ★ 字节值就是路径表下标，选片**制图期烘死**，运行时 ⛔ 零判断。
- * ⚠ UV 用**与地表底相同的块级世界投影**（同周期、同相位、锚在块中心）：
- *   原版 `polygon_2d` 的 uvs 全零、真式子在引擎侧 —— 这是有依据的推断，
- *   取它是因为只有它能让**块边界落在整周期上**（§1.4 的设计意图）。
- *   ⛔ 别改成按多边形自身包围盒投影：边缘片比整块小，相邻块的花纹相位会跳。
+ * ★ UV 来自原版 polygon_2d 的 calc_uv_in_world 分支（§1.8）：世界像素 / 纹理尺寸，
+ *   v 翻转。S1 的 scale=1 / angle=0 / offset=0 由打包器逐片校验。
+ *   相位锚在世界原点；同一几何放在不同块，UV 也不同。不能套用草地块的 11×5 周期。
  */
 import {
     MAPO_BLOCK_D_BIAS, MAPO_BLOCK_HEADER_BYTES, MAPO_BLOCK_LAYERS, MAPO_BLOCK_RECORD_BYTES,
     MAPO_BLOCK_S_BIAS, type IMapoBlockLayer,
 } from "../../../shared/kits/mapOriginal/content/blocks.data";
-import { MAPO_GROUND_HALF_H, MAPO_GROUND_HALF_W, mapoGroundBlockPos } from "./mapoGround";
+import { mapoGroundBlockPos } from "./mapoGround";
+import { MAPO_ORIGINAL_TILE_HALF_W, MAPO_TILE_HALF_W } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import { MAPO_GROUND_BLOCK_TILES, MAPO_GROUND_ORIGIN } from "../../../shared/kits/mapOriginal/content/ground.data";
 import type { MapoPolygonInput } from "./mapoMesh";
 import { parseMapoPolyLib, type IMapoPoly } from "./mapoPolyLib";
@@ -23,8 +23,6 @@ import { parseMapoPolyLib, type IMapoPoly } from "./mapoPolyLib";
 interface Layer {
     readonly meta: IMapoBlockLayer;
     geos: IMapoPoly[];
-    /** 逐条预算好的世界投影 UV（几何是固定的 51/52 条 ⇒ ⛔ 不用每帧算）。 */
-    uvs: Float32Array[];
     view: DataView | null;
     count: number;
 }
@@ -39,15 +37,21 @@ export interface IMapoBlockRect {
 /** 地图实例的数据读取器；dispose 清空运行时解码结果和 Buffer 视图。 */
 export function createMapoBlocksData() {
     const LAYERS: Map<string, Layer> = new Map(
-        MAPO_BLOCK_LAYERS.map((meta) => [meta.kind, { meta, geos: [], uvs: [], view: null, count: 0 }]));
+        MAPO_BLOCK_LAYERS.map((meta) => [meta.kind, { meta, geos: [], view: null, count: 0 }]));
 
-    /** 局部顶点 → 块级世界投影 UV（与地表底同式）。 */
-    function projectUv(verts: Float32Array, repeat: readonly [number, number]): Float32Array {
+    /** 原版 ARM64 0x69681c 的世界 UV；Float32 舍入也与原生核一致。仅视口变化时生成。 */
+    function projectUv(verts: Float32Array, x: number, y: number,
+                       size: readonly [number, number]): Float32Array {
         const out = new Float32Array(verts.length);
-        const bw = MAPO_GROUND_HALF_W * 2, bh = MAPO_GROUND_HALF_H * 2;
+        const pxPerWorld = MAPO_ORIGINAL_TILE_HALF_W / MAPO_TILE_HALF_W;
+        const ox = x * pxPerWorld, oy = y * pxPerWorld;
+        const invW = Math.fround(1 / size[0]), invH = Math.fround(1 / size[1]);
         for (let k = 0; k < verts.length; k += 2) {
-            out[k] = (verts[k] / bw + 0.5) * repeat[0];
-            out[k + 1] = (0.5 - verts[k + 1] / bh) * repeat[1];
+            // 原生先在像素空间绕 (0.5,0.5) 旋转；零角仍保留两次加法的舍入。
+            const u = Math.fround(Math.fround(Math.fround(ox + verts[k]) - 0.5) + 0.5);
+            const v = Math.fround(Math.fround(Math.fround(oy + verts[k + 1]) - 0.5) + 0.5);
+            out[k] = Math.fround(u * invW);
+            out[k + 1] = Math.fround(1 - Math.fround(v * invH));
         }
         return out;
     }
@@ -55,8 +59,7 @@ export function createMapoBlocksData() {
     function mapoSetBlockGeo(kind: string, buf: ArrayBuffer | Uint8Array): void {
         const layer = LAYERS.get(kind);
         if (!layer) throw new Error(`mapOriginal 没有 ${kind} 这一层`);
-        layer.geos = parseMapoPolyLib(buf, layer.meta.geoCount, kind);
-        layer.uvs = layer.geos.map((g) => projectUv(g.verts, layer.meta.repeat));
+        layer.geos = parseMapoPolyLib(buf, layer.meta.geoCount, kind, true);
     }
 
     function mapoSetBlocks(kind: string, buf: ArrayBuffer | Uint8Array): void {
@@ -101,7 +104,7 @@ export function createMapoBlocksData() {
             if (p.y + geo.minY > rect.top || p.y + geo.maxY < rect.bottom) continue;
             out.push({ s, x: p.x, y: p.y, geo: layer.view.getUint8(o + 4),
                        verts: geo.verts, indices: geo.indices,
-                       uv: [0, 0], uvs: layer.uvs[layer.view.getUint8(o + 4) - 1],
+                       uv: [0, 0], uvs: projectUv(geo.originalVerts!, p.x, p.y, layer.meta.textureSize),
                        rgba: [1, 1, 1, 1] });
         }
         return out;
@@ -110,14 +113,14 @@ export function createMapoBlocksData() {
     /** O0 只读持有量：不触发惰性解码；对象数量不冒充 JS 堆字节，BufferAsset 别再重复相加。 */
     function mapoBlocksDataUsage(): Readonly<Record<string, number>> {
         return { arrayBufferBytes: [...LAYERS.values()].reduce((sum, l) => sum + (l.view?.buffer.byteLength ?? 0)
-            + l.geos.reduce((n, g) => n + g.verts.byteLength + g.indices.byteLength, 0)
-            + l.uvs.reduce((n, uv) => n + uv.byteLength, 0), 0),
+            + l.geos.reduce((n, g) => n + g.verts.byteLength + g.indices.byteLength
+                + (g.originalVerts?.byteLength ?? 0), 0), 0),
             polygons: [...LAYERS.values()].reduce((sum, l) => sum + l.geos.length, 0),
             placements: [...LAYERS.values()].reduce((sum, l) => sum + l.count, 0) };
     }
 
     return { mapoSetBlockGeo, mapoSetBlocks, mapoHasBlocks, mapoBlockCount, mapoBlocksInRect, mapoBlocksDataUsage,
-        dispose(): void { for (const layer of LAYERS.values()) { layer.geos = []; layer.uvs = []; layer.view = null; layer.count = 0; } },
+        dispose(): void { for (const layer of LAYERS.values()) { layer.geos = []; layer.view = null; layer.count = 0; } },
     };
 }
 

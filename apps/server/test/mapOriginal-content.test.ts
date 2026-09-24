@@ -686,9 +686,9 @@ test("mapOriginal 内容：snow / desert 块层自洽（叠不是替 / 行主序
         grid: { side: number; blockTiles: number; origin: number; order: string };
         sBias: number; dBias: number; recordBytes: number; headerBytes: number;
         layerOrder: Record<string, number>; bothBlocks: number;
+        uvParameters: { calcInWorld: boolean; scale: number[]; angle: number; offset: number[]; flipV: boolean };
         kinds: Record<string, {
             texture: { source: string; size: [number, number]; sha256: string };
-            repeat: { timesU: number; timesV: number };
             geoCount: number; geoBytes: number; geoSha256: string; verts: number; tris: number;
             placements: number; placementSha256: string;
         }>;
@@ -706,11 +706,11 @@ test("mapOriginal 内容：snow / desert 块层自洽（叠不是替 / 行主序
     assert.equal(meta.bothBlocks, 489, "desert 与 snow 同时有的块数");
     assert.deepEqual(meta.layerOrder, { ground: 100, desert: 200, snow: 300 });
     assert.equal(MAPO_BLOCK_LAYERS.length, 2);
+    assert.deepEqual(meta.uvParameters, { calcInWorld: true, scale: [1, 1], angle: 0, offset: [0, 0], flipV: true });
     for (const layer of MAPO_BLOCK_LAYERS) {
         const k = meta.kinds[layer.kind];
         assert.ok(k, `${layer.kind} 没落盘`);
         assert.equal(layer.geoCount, k.geoCount);
-        assert.deepEqual([...layer.repeat], [k.repeat.timesU, k.repeat.timesV]);
         assert.deepEqual([...layer.textureSize], k.texture.size);
         assert.equal(layer.order, (meta.layerOrder as Record<string, number>)[layer.kind]);
         // ★ 底纹必须 POT（WebGL1 下 REPEAT 的前提）且是原版 2D 侧素材

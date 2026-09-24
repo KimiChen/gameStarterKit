@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import {
     MAPO_RIVER_D_BIAS, MAPO_RIVER_GEO_COUNT, MAPO_RIVER_HEADER_BYTES, MAPO_RIVER_ORIGIN,
     MAPO_RIVER_RECORD_BYTES, MAPO_RIVER_S_BIAS, MAPO_RIVER_TILES,
 } from "../src/shared/kits/mapOriginal/content/river.data";
 import {
-    MAPO_TILE_HALF_H, mapoGrid2Pos, mapoOriginalPxToWorld,
+    mapoOriginalPxToWorld,
 } from "../src/shared/kits/mapOriginal/api/hexmap/index";
 import {
     mapoHasRivers, mapoRiverCount, mapoRiverPos, mapoRiversInRect, mapoSetRiverGeo, mapoSetRivers,
@@ -61,14 +62,35 @@ test("mapOriginal 河流：几何库条数/长度对不上就拒收（⛔ 不容
     assert.throws(() => mapoSetRivers(new Uint8Array(3)), /太短/);
 });
 
-test("mapOriginal 河流：节点摆在河格几何中心（⛔ 不是原点格）", () => {
-    // ⚠ k 格见方的块，中心比原点格低 (k−1)·halfH —— 与原版地表 block 同式（§1.4）
-    for (const [row, col] of [[-6, -6], [0, 0], [3, 621], [1494, 1494]] as const) {
+test("mapOriginal 河流：ninegrid2pos 独立向量，奇偶行均不套 grid2pos 错位", () => {
+    // coord_util Proto ld459..465 + river_grid ld28..34，期望值为原版像素。
+    for (const [row, col, x, y] of [[-6, -6, 0, 675], [-3, -6, 450, 450],
+        [0, 0, 0, -225], [3, 621, -92700, -47025], [1494, 1494, 0, -224325]] as const) {
         const p = mapoRiverPos(row + col, row - col);
-        const g = mapoGrid2Pos(row, col);
-        assert.equal(p.x, g.x, `(${row}, ${col}) x`);
-        assert.equal(p.y, g.y - (MAPO_RIVER_TILES - 1) * MAPO_TILE_HALF_H, `(${row}, ${col}) y`);
+        assert.equal(p.x, mapoOriginalPxToWorld(x), `(${row}, ${col}) x`);
+        assert.equal(p.y, mapoOriginalPxToWorld(y), `(${row}, ${col}) y`);
     }
+});
+
+test("mapOriginal 河流：全部 31140 条摆位与原版 504² 河格坐标函数一致", () => {
+    const table = readFileSync(new URL("../../kits/mapOriginal/data/maps/s1/rivers.bin", import.meta.url));
+    assert.equal(table.readUInt32BE(0), 31140);
+    let oddRows = 0;
+    for (let n = 0; n < table.readUInt32BE(0); n++) {
+        const o = MAPO_RIVER_HEADER_BYTES + n * MAPO_RIVER_RECORD_BYTES;
+        const s = table.readUInt16BE(o) - MAPO_RIVER_S_BIAS, d = table.readUInt16BE(o + 2) - MAPO_RIVER_D_BIAS;
+        // 独立复原原版河格索引，然后执行原版九宫坐标式；不用复刻的逻辑格 grid2pos。
+        const i = ((s + d) / 2 - MAPO_RIVER_ORIGIN) / MAPO_RIVER_TILES;
+        const j = ((s - d) / 2 - MAPO_RIVER_ORIGIN) / MAPO_RIVER_TILES;
+        assert.ok(Number.isInteger(i) && Number.isInteger(j));
+        if (i % 2) oddRows++;
+        const x = Math.floor(((i - 2) - (j - 2)) * 450);
+        const y = Math.floor(-((j - 2) + (i - 2) + 1) * 225);
+        const p = mapoRiverPos(s, d);
+        // 转回整数原版像素比较，避免 32/150 的 double 换算尾差。
+        assert.deepEqual({ x: p.x * 150 / 32, y: p.y * 150 / 32 }, { x, y });
+    }
+    assert.equal(oddRows, 15595, "旧逻辑格投影误偏移的河格数量");
 });
 
 test("mapOriginal 河流：顶点按原版 px → 世界单位换算，画家序照表", () => {

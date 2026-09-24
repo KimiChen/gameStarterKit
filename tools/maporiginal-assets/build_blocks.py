@@ -19,13 +19,11 @@
   ⑤ 片是 `<路径>_polygon_group` 的 `polygon_2d`：desert 铺 `ground_down/underground3.png`、
      snow 铺 `underground2.png`（§1.6 实测 177/177 零例外）。
 
-⚠ **UV 规则是有依据的推断**：`polygon_2d` 的 `uvs` 全零 ⇒ 原版在运行时按世界坐标算
-  （与 §1.4 地表底同一套），但**具体式子不在证据集里**（在引擎 C++ 侧）。
-  本仓采用**与地表底完全相同的块级投影**（同周期、同相位、锚在块中心）——
-  这是唯一能让「块边界落在整周期上」（§1.4 明写的设计意图）且与底纹对齐的取法。
-  ⛔ 别改成按多边形自身包围盒投影：边缘片的 size 比整块小，相邻块的花纹相位会跳。
-
-⚠ `_top_group` 的手摆细节（desert 5–17、snow 12–23 个 sprite）**本批不做**，与河流同批留后。
+UV 来自原版 ARM64 polygon_2d 世界坐标分支（§1.8；verify_polygon_uv.py 可重放）：
+  u = 世界像素 x / 纹理宽，v = 1 − 世界像素 y / 纹理高。
+  本导出器逐片验证 calc_uv_in_world / uv_scale / uv_angle / uv_offset，遇到不支持的
+  参数直接拒绝，不能把草地块 11×5 次的 UV 用到 snow / desert。
+`_top_group` 由 build_tops.py 单独导出。
 """
 from __future__ import annotations
 
@@ -52,8 +50,16 @@ GRID_SIDE = 152
 BLOCK_TILES = 10
 ORIGIN = -10
 S_BIAS, D_BIAS = 32, 1536
-ORIG_TILE_HALF_W, ORIG_TILE_HALF_H = 150, 75
 KINDS = {"desert": "ground_down/underground3.png", "snow": "ground_down/underground2.png"}
+
+
+def validate_polygon_uv(poly: dict, source: str) -> None:
+    """当前运行时支持的原版世界 UV 参数；新地图出现其他参数必须显式扩展。"""
+    expected = {"simple": False, "calc_uv_in_world": True, "uv_scale": [1, 1],
+                "uv_angle": 0, "uv_offset": [0, 0]}
+    for key, value in expected.items():
+        if poly.get(key) != value:
+            raise ValueError("%s 的 %s=%r 未支持（期望 %r）" % (source, key, poly.get(key), value))
 
 
 def main() -> int:
@@ -64,8 +70,6 @@ def main() -> int:
     d = os.path.join(OUT, "pack", m)
     os.makedirs(d, exist_ok=True)
 
-    block_w = ORIG_TILE_HALF_W * 2 * BLOCK_TILES
-    block_h = ORIG_TILE_HALF_H * 2 * BLOCK_TILES
     summary = {}
     for kind, tex_rel in KINDS.items():
         paths = json.load(open(resolve_by_name("map/%s/cn/ground_%s_path.json" % (m, kind)),
@@ -90,8 +94,6 @@ def main() -> int:
         if (tw & (tw - 1)) or (th & (th - 1)):
             raise SystemExit("⛔ %s 是 %dx%d，非 POT 在 WebGL1 下不能 GL_REPEAT" % (tex_rel, tw, th))
         im.save(os.path.join(d, "%s-base.png" % kind))
-        u = tw * (block_w // tw)
-        v = th * (block_h // th)
 
         # ── 几何库 ──────────────────────────────────────────────
         geos = []
@@ -104,6 +106,7 @@ def main() -> int:
             if len(kids) != 1:
                 raise SystemExit("⛔ %s 不是「一个 node_2d 挂一个 polygon_2d」" % stem)
             poly = kids[0]
+            validate_polygon_uv(poly, stem)
             for node, who in ((p, "根节点"), (poly, "多边形节点")):
                 if (abs(node["position"][0]) > 1e-6 or abs(node["position"][1]) > 1e-6
                         or abs(node["scale"][0] - 1) > 1e-6 or abs(node["scale"][1] - 1) > 1e-6
@@ -141,7 +144,6 @@ def main() -> int:
             "texture": {"source": tex_rel, "size": [tw, th],
                         "sha256": hashlib.sha256(open(os.path.join(d, "%s-base.png" % kind),
                                                       "rb").read()).hexdigest()},
-            "repeat": {"timesU": u // tw, "timesV": v // th},
             "geoCount": len(geos), "geoBytes": len(geo_blob),
             "geoSha256": hashlib.sha256(geo_blob).hexdigest(),
             "verts": sum(len(g["verts"]) for g in geos),
@@ -149,9 +151,9 @@ def main() -> int:
             "placements": len(recs), "placementSha256": hashlib.sha256(blob).hexdigest(),
             "paths": [g["path"] for g in geos],
         }
-        print("  %-7s 路径 %d 条 / %d 顶点 / %d 三角；块 %d 个；底纹 %s %dx%d repeat %d×%d"
+        print("  %-7s 路径 %d 条 / %d 顶点 / %d 三角；块 %d 个；底纹 %s %dx%d 世界像素平铺"
               % (kind, len(geos), summary[kind]["verts"], summary[kind]["tris"], len(recs),
-                 tex_rel, tw, th, u // tw, v // th))
+                 tex_rel, tw, th))
 
     # 两者兼有的块（§1.3 的「叠不是替」硬证）
     gd = np.frombuffer(open(resolve_by_name("map/%s/cn/ground_desert.bytes" % m), "rb").read(),
@@ -161,15 +163,16 @@ def main() -> int:
     both = int(((gd != 0) & (gs != 0)).sum())
 
     info = {
-        "schemaVersion": 1, "mapId": m,
+        "schemaVersion": 2, "mapId": m,
         "grid": {"side": GRID_SIDE, "blockTiles": BLOCK_TILES, "origin": ORIGIN,
                  "order": "行主序 byte(col*r + c + 5)（⛔ 与 river 的列主序不同）"},
         "sBias": S_BIAS, "dBias": D_BIAS, "recordBytes": 6, "headerBytes": 4,
         "layerOrder": {"ground": 100, "desert": 200, "snow": 300},
         "bothBlocks": both,
-        "uvRule": "与地表底完全相同的块级世界投影（同周期、同相位、锚在块中心）。"
-                  "⚠ 原版 polygon_2d 的 uvs 全零、真式子在引擎侧不可见 —— 这是**有依据的推断**，"
-                  "取它是因为只有它能让块边界落在整周期上（§1.4 明写的设计意图）。",
+        "uvRule": "原版 polygon_2d 世界像素投影：u=x/textureWidth，v=1-y/textureHeight；"
+                  "相位锚在世界原点，保留 Float32 舍入。原生核证据见 MAPORIGINAL-2D §1.8。",
+        "uvParameters": {"calcInWorld": True, "scale": [1, 1], "angle": 0,
+                         "offset": [0, 0], "flipV": True},
         "kinds": summary,
     }
     json.dump(info, open(os.path.join(d, "blocks.info.json"), "w", encoding="utf-8"),
@@ -185,8 +188,8 @@ def main() -> int:
  *   ⚠ 但是**行主序** —— ⛔ 与 `river.bytes` 的列主序不同。实测判据：行主序下
  *   desert 块中心 88.58%% 落在 `logic_background == 3` 上，列主序只有 4.29%%。
  * ★ 字节值就是路径表下标（desert 1..%d、snow 1..%d），选片**制图期烘死**，运行时零判断。
- * ⚠ UV 用**与地表底相同的块级投影**：原版 `polygon_2d` 的 uvs 全零、真式子在引擎侧，
- *   这是有依据的推断（只有它能让块边界落在整周期上）。⛔ 别按多边形自身包围盒投影。
+ * ★ UV 按原版世界像素 / 纹理尺寸投影，v 翻转（MAPORIGINAL-2D §1.8）。
+ *   导出期验证全部片的 calc_uv_in_world=true / scale=1 / angle=0 / offset=0。
  */
 
 export interface IMapoBlockLayer {
@@ -195,8 +198,7 @@ export interface IMapoBlockLayer {
     readonly order: number;
     /** 路径表条数 = 字节值上界。 */
     readonly geoCount: number;
-    /** 底纹横向 / 纵向各铺几次。 */
-    readonly repeat: readonly [number, number];
+    /** 底纹的原版像素尺寸，同时决定世界 UV 周期。 */
     readonly textureSize: readonly [number, number];
 }
 
@@ -207,7 +209,6 @@ export const MAPO_BLOCK_HEADER_BYTES = 4;
 export const MAPO_BLOCK_LAYERS: readonly IMapoBlockLayer[] = %s;
 ''' % (m, both, summary["desert"]["geoCount"], summary["snow"]["geoCount"], S_BIAS, D_BIAS,
        json.dumps([{"kind": k, "order": info["layerOrder"][k], "geoCount": s["geoCount"],
-                    "repeat": [s["repeat"]["timesU"], s["repeat"]["timesV"]],
                     "textureSize": s["texture"]["size"]}
                    for k, s in summary.items()], ensure_ascii=False))
     open(os.path.join(d, "blocks.data.ts"), "w", encoding="utf-8").write(ts)

@@ -183,6 +183,37 @@ disasm/asset/config/S1/cn/res_pro/multi_grid_{forest,hill,wetland,wild}.lua.disa
 
 ---
 
+### 1.8 雪沙多边形的世界 UV（2026-09-24 原生核补核）
+
+雪／沙不使用 §1.4 的草地块 `GROUND_PIC_TBL`。`[disasm]` 原版 ARM64
+`libnative-lib.so` 的 polygon 序列化器 `0x694bd8..0x694c90` 依次读
+`has_v_color / simple / calc_uv_in_world / uv_scale / uv_angle / uv_offset`；
+它们不是可以跳过的 23 个杂项字节。
+`[实测]` S1 使用的 51 个 desert 与 52 个 snow 多边形均为
+`simple=false, calc_uv_in_world=true, uv_scale=(1,1), uv_angle=0, uv_offset=(0,0)`，
+根节点和 polygon 节点的 transform 均为单位阵。
+
+`[disasm]` 世界分支 `0x696808..0x6968dc` 读取 world XYZ 缓冲（mesh+0x98），
+以世界像素乘 uv_scale、加 uv_offset，绕 (0.5,0.5) 旋转 uv_angle；
+随后 `0x845254` 调纹理的尺寸倒数函数 `0x822708` 归一化，按纹理 flip 标志翻转 V。
+原纹理构造器 `0x843bac` 默认置 flip=true。因此上述 S1 参数下，公式为：
+
+```text
+u = originalWorldX / textureWidth
+v = 1 - originalWorldY / textureHeight
+```
+
+两张底纹都是 256²，周期为 **256 个原版像素**，相位锚在世界原点。几何换到另一块时
+必须重新按世界位置生成 UV；不能复用按局部顶点生成的 UV，也不能沿用草地的 11×5 次拉伸。
+原生路径使用 Float32，零角旋转仍有减/加 0.5 的舍入；复刻保留原始像素顶点避免单位往返误差。
+
+`[实测：原生计算核重放]` `tools/maporiginal-assets/verify_polygon_uv.py` 在 Unicorn 中执行
+上述原版指令，仅 hook 已核验零角的 sincosf，纹理归一化与 V 翻转仍执行原代码。
+103 种几何 × 4 个位置共 **3,412 个顶点**的结果保存为独立回归样本，复刻逐项一致。
+原生库 SHA-256 为 `2948fb4ea6c40e7ced2dad455e5dbae2879790636e103b7aca57cfaf67bca959`。
+这是计算核证据，不是完整原版客户端截图；旧“与草地同周期同相位”的推断已被否定。
+导出器遇到其他 UV 参数会报错，不能静默压成当前 S1 公式。
+
 ## 2. 逐格地块与状态：三条互不相同的层
 
 ★ `[干净集]` 跟「一格上画什么」有关的是**三条**，⛔ 不是一条：
@@ -376,6 +407,23 @@ id 48..61 的 `name` 逐条就是 **`山1`..`山14`**，且 id 47 名「河」�
 （disasm 取值式 `p2*self.row + p1 + self.offset`，与基类行主序式形成结构对照）。
 ★ `[disasm]` `river_layer_logic:_init` 里 `grid_width = TILE_WIDTH*6` ⇒ **一个「河格」= 3×3 逻辑格 = 900×450 px**
 （常量 6 以 denormal 位型 `3e-323` 出现，同档标错已改）。
+
+2026-09-24 坐标补核：`[disasm]` `coord_util.lua` 的 `ninegrid2pos`（Proto ld459..465；
+完整常量池 K56 确认函数绑定）为 `floor((r-c)*hw), floor(-(c+r+1)*hh)`，**没有奇偶行偏移**。
+`river_grid.lua` 的 `get_pos`（Proto ld28..34）调用
+`ninegrid2pos(r+offset_x/3,c+offset_y/3,river_hw,river_hh)`；随后减去的两个常量均为 0。
+`layer_info.RiverLayer.offset=(-6,-6)`，视图将 900×450 河格尺寸减半为 450/225。
+因此原版河格下标 (i,j) 的摆位是：
+
+```text
+ninegrid2pos(i-2, j-2, 450, 225)
+导出表 R=3i-6, C=3j-6：原版 x=(R-C)*150，y=-(R+C+3)*75
+本 kit s=R+C, d=R-C：世界 x=d*32，y=-(s+3)*16
+```
+
+旧复刻使用逻辑格 `grid2pos(R,C)` 再下移两格半高，错误引入奇数行偏移。
+`[实测：全图表]` 31,140 条河格中 **15,595 条**受影响，需向右 16、向上 8 世界单位
+（原版 75 / 37.5 px）；水面与 top 必须共用修正后的摆位。格级覆盖 99.999% 不能证明这个像素定位正确。
 
 ★ `[实测]` `river_path.json` **102 条**（river 51 / yellowriver 26 / longriver 25），每条形如
 `["scene/ground/river{,_yellowriver,_longriver}/<形状>_<n>[_x][_y][_xy].group"]`
@@ -685,19 +733,19 @@ LOD 门控**，档界只服务 3D/无极缩放路径。所以对 2D：**没有�
 
 | 层 | 原版做法 | 本 kit 做法 | 差异性质 |
 |---|---|---|---|
-| 地表底 | 一块 10×10 格一个 polygon，**一张 256² 底纹**整数次 REPEAT 铺满；snow/desert 叠 block 补丁 | ✅ **已对齐**（M2-B1 / M2-B2，2026-09-23）：同款 block + REPEAT，snow/desert 块层也已补齐 | ~~★ 架构不同构~~ 已消除；自造的逐格图集整套已删 |
+| 地表底 | 草地一块 10×10 格一个 polygon，**一张 256² 底纹**整数次 REPEAT 铺满；snow/desert 叠 block 补丁，UV 按世界像素除纹理尺寸 | ✅ 同款 block + REPEAT；2026-09-24 补正雪沙世界 UV，保留原生 Float32 舍入，见 §1.8 / §9.3 | 逐格图集已退役；~~雪沙沿用草地 UV~~ 已修 |
 | 多格地形 | `res.bytes` 非零值 = **锚点**，一族 14 形足迹，件 = 图 × prefab scale | ✅ **已对齐**（M0-B1 / M0-B2，2026-09-22）：55,127 锚点直接出件，件 = 图 × prefab scale | ~~★ 核心假设错误~~ 已修；连通域整套已删 |
 | 山体拼接 | `mountain_patch` 是大山内部的**第二遍补件** | ✅ **已对齐**：降为补件（3,942 条），主表是 `res.bytes` 的锚点 | ~~用错位置~~ 已修 |
 | 逐格资源件 | 每资源格一个 res_field，**四道筛选门** | ✅ 第 4 门已补（M0-B4）：`city.bytes` 的 2,689 个城格抑制资源件 | ~~缺第 4 门~~ 已补 |
 | 季/地貌变体件 | `land` 表四套件列（基础/雪/沙/秋），`check_ground_type` 按 **cell 级** `logic_background` 选件（§3.2） | ✅ **已对齐**（N1，2026-09-23）：`mapoBandAt` 同一条数据链；摆件三套件 + 雪山件进图集 | ~~所有格一律基础件~~ 已修。⚠ `autumn_*` 不接（M0-B3 拍板）；沙漠山 2D 与基础季同件（实测 13/13）⇒ 无沙件山 |
-| 河流 | 独立几何层，河格 = 3×3 逻辑格，102 条手工形状、制图期烘死 | ✅ **已建**（M3-B2）：102 条原版多边形 + 31,140 片，对位覆盖 100% 的 `res==47` | ~~整层缺失~~ 已补，含 `_top_group` 597 件 |
+| 河流 | 独立几何层，河格 = 3×3 逻辑格，102 条手工形状、制图期烘死；ninegrid2pos 无奇偶行错位 | ✅ 102 条原版多边形 + 31,140 片；2026-09-24 逐条按原坐标式核对并修正，河岸 top 共用摆位，见 §4.1 / §9.3 | ~~整层缺失~~ 已补，含 `_top_group` 597 件；~~套用逻辑格奇偶行偏移~~ 已修 |
 | 道路 | 选片**制图期烘死**（`type_info` 下标 + 水平翻转），三套皮肤 | ✅ **已建**（M3-B1）：路格 1125²、半宽 200/半高 100 = 4/3 逻辑格，42,018 片 | ~~整层缺失~~ 已补。~~id→精灵绑定是 `[推断]`~~ ✅ 已由 `base.cw.client_res` 升为 `[实测]`（§4.2） |
 | 建筑城营 | **AOI 驱动的 unit**，两级配置表选件 | 按两级原表选择 15 个城址 prefab | 机制不同（AOI 需服务端）。~~**选件**卡在 base.cw~~ ✅ **已建**（2026-09-23）：`city[1].client_res_id` → `city_res.editor_brush_res_path` → prefab，**15 个件覆盖 249 座**，1,642 sprite 已入 `cities.bin`；城名/类型/等级/形状入 `MAPO_CITY_SITES`。✅ **已过真机**（同日 N0）：洛阳 218 sprite 在屏，层序 / 第 4 道门 / 尺寸四项肉眼全过。⚠ 早先判 `.group` 是 3D 件是**错的**：路径在 `scene/`（2D 树）下，与 `_top_group` 完全同构。⛔ 余下未做的是 AOI 驱动的**动态** unit（军队/营） |
 | 归属状态 | `grid_state` 层，两个 z 档（2000 / 3800） | 无 | 需服务端 |
 | 格线 | **地表视图内嵌的贴图格线子系统**（2026-09-23 N4-B3 查明 `[disasm]`+`[实测]`）：`2d/background/ground_layer_view` 的 `line_layer` @ `MAP_ZORDER.FRAME`(1400)，`GROUND_GRID_LINE` 线股贴图（8×8、1px 淡黄 α≈24%）按 26.57°（=atan(0.5)，菱形格边）铺线段、`obj2d.static_nodes` 合批、随块刷新、远档隐 | ✅ 已实现（2026-09-24 A12）：原始 8² 线股贴图、FRAME=1400；四档改造后仅 L0 合批显示 | ⚠ 原版**没有独立线框网格层**（grid 名层全是格子类叠图，`forest_grid`=特殊城建筑件且 S1 为空）；⛔ 别照 sgzzmap 的线框抄 |
 | 分层深度 | render_layer + `MAP_ZORDER`（留缝） + 层内画家序**三级** | ✅ **已补第 ② 级**（2026-09-23）：`MAPO_LAYERS` 每层带 `zorder`（照抄 MAP_ZORDER、留缝），**每层一个容器节点**按它升序建 | ~~缺第 ② 级刻度~~ 已补。⚠ 补之前实测有真缺陷：次序取决于「谁先 render」，地表底挂在路/河/山之后把它们全盖住。⚠ 补之后又一条真机缺陷（N0 抓到）：容器节点没继承 layer（Cocos `addChild` 不传播）⇒ 全部 mesh 层被 UI 相机裁掉黑屏，已修 |
 | 看全局 | 2D 到顶仅硬夹；**3D** 拉到头才换视图（小地图面板，预制静态底图） | 同相机 4 档 LOD + 同源地貌概览 | 自创（见 §10） |
-| 资源寻址 | 逻辑名 → id → 路径**三段表**，十列源路径换皮 | 格 id 焊进图集坐标 | 架构差异，非缺陷 |
+| 资源寻址 | 逻辑名 → id → 路径**三段表**，十列源路径换皮 | 导出时保留逻辑条目和完整 prefab，运行时以 textureId 查独立图片表；manifest 绑定配置和布局 | 宿主图集/Bundle 适配；已不把资源值焊进装箱坐标 |
 
 ### 9.1 复刻简化审计 A01–A12 的修复记录（2026-09-24）
 
@@ -730,8 +778,8 @@ Creator 常规 15 步通过，console=[]；追加实际输入覆盖 `(750,749)` 
 最终元数据注释校正后重跑了上述 93 项回归、客户端严格/legacy 类型检查、镜像与逐像素复核。
 
 保留的既定边界：4 档 LOD、图集缩采样、mesh 合批、分块缓存与远档同源概览是宿主实现；
-AOI 军队/营地/领地旗标尚未实现。雪沙底纹精确 UV 原式与河格 ninegrid2pos 的像素级差异仍须
-独立补核，既有格级覆盖率不作为像素级一致的证明。本表不把这些事项写成已修复。
+AOI 军队/营地/领地旗标尚未实现。此轮留下的雪沙 UV 与河格 ninegrid2pos 两项后来独立补核，
+原式与修正分别见 §1.8、§4.1；实施验证见 §9.3。既有格级覆盖率不作为像素级一致的证明。
 
 ---
 
@@ -761,9 +809,40 @@ Creator 主重放 12 步、
 本地证据：`.cache/creator-preview/maporiginal-four-lod/{report.json,environments.json,landscape.json,landscape-fit.json,console.json}`；
 可复用的四档/GPU 验收入口为 `tools/creator-preview/maporiginal.mjs`。
 
+### 9.3 雪沙 UV 与河格坐标补核（2026-09-24）
+
+两项独立补核修正了先前依靠覆盖率和同仓函数自证的简化：
+
+- 雪沙 UV：解析 prefab 中全部 UV 参数，以原版 ARM64 计算核的 103 种几何 × 4 个位置、
+  3,412 个顶点作为独立样本。运行时按世界像素生成 UV，保留原始 Float32 顶点；
+  导出器拒绝未支持的 UV 参数。原式、地址和证据等级见 §1.8。
+- 河格摆位：按原版 Lua 的 ninegrid2pos 核对全部 31,140 条记录，修正其中 15,595 条
+  奇数行记录的偏移（本仓世界单位向右 16、向上 8）。水面和河岸 top 共用修正后的摆位；
+  不改变河格数据和原版多边形。原式见 §4.1。
+
+概览与小地图使用修正后的几何重新烘焙，资源清单及镜像同步更新；安装器现将
+ground.data.ts / blocks.data.ts 纳入生成配置的安装和检查，避免修改只留在工具输出目录。
+五份地图说明清理了旧逐格图集、连通域、鸟瞰底图、空置 createStep 和历史未实施状态；
+原版机制、历史验收与当前宿主策略分别注明依据。
+
+验收：130 项 mapOriginal 回归、5 项 prefab 解析回归、4 项 manifest 回归、
+客户端严格及 legacy 类型检查、资产安装检查与镜像检查通过。
+原生 UV 样本重放通过；381 个入口、4,504 个展开节点无替代，8 张图集 RGBA 差异为 0。
+Creator 3.8.8 竖版 CSS 393×719.53125 的 41 步重放全部通过、console=[]，覆盖雪沙、
+四档 LOD、缓存邻块像素、选择框、小地图、跨地貌切换及 10 次关闭重开；
+截图已检查草地河岸、雪地和沙地。补充读取实际引擎网格的 position / UV 缓冲，与传入多边形
+逐项一致；河岸与雪沙 top 消费同一组摆位，补核的编译模块与当前真源一致。
+此轮是桌面真实引擎功能验收，不据此宣称完整原版画面逐像素一致。
+
+本地证据：`.cache/maporiginal-alignment/{map-tests-final.log,fidelity.json}`、
+`.cache/creator-preview/maporiginal-alignment/portrait/{report.json,maporiginal-metrics.json,alignment-mesh.json}`。
+后者绑定源文件、编译产物及资源哈希；内容版本为
+`sha256-20deb5901316ee4dfad56e7b50a3aecf6ee53d642483fef6658a06073cd56968`。
+可入库的独立数值样本在 `tools/maporiginal-assets/fixtures/polygon-uv.json`，仓外原包保持只读。
+
 ## 10. 本 kit 自创的东西及定性
 
-素材布局、分组加载、GPU 压缩与配置存储的后续方案见
+素材布局、分组加载、GPU 压缩与配置存储的方案及阶段记录见
 [MAPORIGINAL-2D-OPTIMIZATION.md](MAPORIGINAL-2D-OPTIMIZATION.md)。该方案于 2026-09-24 建单，
 O0–O6 属于宿主优化；不改变本文件的原版机制结论，实施状态只在该文 §9 更新。
 
@@ -881,14 +960,14 @@ O0–O6 属于宿主优化；不改变本文件的原版机制结论，实施状
 
    ⚠ **影响面**（2026-09-23 收窄）：249 座城址里**有 12 座是渡口**（`PIER_1/2/4`：孟津、
    风陵渡、蒲坂津、白马、夏口…），正落在这 8 个非零形状里
-   ⇒ ⛔ 别再说「渡口本 kit 不渲染」。准确说法是：**本 kit 目前不画城址件**（只用城址做
-   资源件抑制），所以**今天**没有影响；**将来画城址件时这 12 座必须套偏移**，其余 237 座为 0。
+   ⇒ 这 12 座需按奇偶形状套偏移，其余 237 座为 0。当前 `build_cities.py` 已读取该偏移，
+   249 座静态城址均已显示；“目前不画城址、今天没有影响”是建层前的旧状态，已撤销。
    ⛔ 山体不在这 8 个形状里，别据此去调山体摆位。
 
    复现：`tools/maporiginal-assets/ctable_cw.py`（`tables()` / `rows()` / `table()`）。
 
    ⛔ **仍未解**：`client_res` 行里那几个 tag 4 子表（`ui_offset` / `vector` / `variant_*_list`）
-   的**语义**（结构可读，含义未考）；以及 `city` 这张表到底管什么。
+   的**语义**（结构可读，含义未考）；以及 `city` 命名空间中本 kit 尚未消费的桶的业务语义。
 
 2. ~~`road_info.bytes` 是半文本、未解~~ ✅ **已解**（2026-09-23，见 §4.2）：它是**二进制**
    （可打印仅 15.6%），且坐标系由干净集 `road_info.lua` 直给、片由 `type_info` 烘死。

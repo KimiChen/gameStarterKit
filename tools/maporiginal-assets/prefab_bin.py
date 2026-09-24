@@ -193,9 +193,9 @@ def read_drawable_tail(r: R, node: dict) -> None:
           ★ polygon_2d 在这里多一段**几何**：
             [u32 nv][2f × nv 顶点][u32 ni][u16 × ni 索引]
             [u32 n2][u16 × n2 第二组][u32 nuv][2f × nuv UV][u32 nc][u32 × nc 顶点色]
-            [23 B：3 B + 2f uvScale + 12 B 零]
+            [3B has_v_color/simple/calc_uv_in_world][2f uv_scale][f uv_angle][2f uv_offset]
         [str 贴图路径][u16][2f 贴图尺寸][u16][2f 贴图锚点][9 B]
-    ⚠ UV 实测**全 0**，靠末尾的 uvScale(1,1) 按世界坐标平铺 —— ⛔ 别当成缺数据。
+    UV 字段名由原版 ARM64 序列化器 0x694bd8..0x694c90 核验（MAPORIGINAL-2D §1.8）。
     """
     read_node2d_tail(r, node)
     node["graphic2dVersion"] = r.u16()
@@ -215,9 +215,12 @@ def read_drawable_tail(r: R, node: dict) -> None:
         node["indices2"] = [r.u16() for _ in range(r.u32())]
         node["uvs"] = [r.f(2) for _ in range(r.u32())]
         node["vcolors"] = [r.u32() for _ in range(r.u32())]
-        r.skip(3)
+        node["has_v_color"] = bool(r.u8())
+        node["simple"] = bool(r.u8())
+        node["calc_uv_in_world"] = bool(r.u8())
         node["uv_scale"] = r.f(2)
-        r.skip(12)
+        node["uv_angle"] = r.f32()
+        node["uv_offset"] = r.f(2)
     node["texture"] = r.s()
     if node["class"] == "frame_sprite_2d":
         node["frameVersion"] = r.u16()

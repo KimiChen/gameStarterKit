@@ -45,17 +45,18 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `prefab_bin.py` | ★★ ejoy2dx **二进制 prefab 解析器** → JSON（节点树 / 变换 / 贴图 / 多边形顶点索引）；`--scan <前缀>` 批量 |
 | `decode_ktx.py` / `decode_batch.py` | KTX(ETC2/ASTC/R8) → PNG；`--name` 走 name_map 按真名取 |
 | `slice_atlas.py` | `<TextureAtlas>` XML 切片（含 `r="y"` 旋转与 `oW/oH/oX/oY` 去裁边还原）→ `out/png/` + `out/sprites.jsonl` |
-| `build_terrain.py` | ★ 原版层 → `terrain.bytes`（**直接存原版 res 值**，`res==0` 用 `res_multi` 顶替）+ 3 类通行层 + 61 条调色板 |
-| `bake_content.py` | 由 terrain 烘远档 plate；逐格地表图集已经删除，近档由 build_ground.py 生成块底纹 |
+| `build_terrain.py` | `terrain.bytes` 无损保留 res 原值（含覆盖格 0）；res_multi 仅参与覆盖/通行判定，不合并成锚点；另产 3 类通行层 + 61 值语义表 |
+| `bake_overview.ts` / `bake_content.py` | 共用运行时 mapoStaticScene 烘概览和缩略图；后者仅为转调入口，旧调色板 plate / 逐格地砖均已删除 |
 | `pack_decor.py` | land → client_res → 135 个完整 prefab；659 节点/320 纹理，递归引用、父子变换、时间线、帧动画；缺件报错，替代项为 0 |
 | `land_variants.py` | `base.cw.land` 四套资源列与 client_res 寻址；已删除最大主片选择器和邻级替换 |
 | `build_bands.py` | ★ cell 级地貌带（N1 选件判据）：`logic_background.bytes` → `bands.bytes`（原样留档）+ shared TS（完整文件 235,797 B / 230.3 KiB）；语义 = 原版 `check_ground_type`（2=雪 3=沙 其余回基础季）；交叉校验复用 `build_blocks.py` 的块→格映射（值2 ⊆ 雪块 / 值3 ⊆ 沙块，100%） |
 | `mountain_forms.py` | ★ 「山」族 14 形的**单一真源**：值 ↔ prefab ↔ 贴图 ↔ 足迹；足迹按 odd-row offset 生成并**逐锚点回代校验** |
-| `pack_regions.py` | ★ 山族件图集（13 形各一格 ×**基础季+雪山两套**（N1），格 id = 原版 res 值，682×409 大格）；贴图与 `scale`/`pos`/`angle`/`pivot` 全从**该套件** prefab 读出（雪山的 transform 与基础季不同，⛔ 不抄），⛔ 不按面积/绿度挑、⛔ 不裁 bbox；沙漠山 2D 与基础季同件（实测 13/13）⇒ ⛔ 无沙件格 |
+| `pack_regions.py` | 山体 26 逻辑条目 / 19 张独立图片，基础季与雪山分别读取 prefab 变换；沙漠山 2D 与基础季相同；输出不按固定大格排版 |
+
 | `build_ground.py` | ★ 地表底：`ground_down/underground1.png` → `ground-base.png`（256² POT）+ 块/REPEAT 常量；校验 POT、满幅不透明、整周期 |
 | `ctable_cw.py` | ★ `base.cw`（66.8 MB ctable）**通用解码器**，格式逆自 `libnative-lib.so`（值解码 `0xb3fdb0` / 子项寻址 `0xb3f930` / 表布局 `0xb3fb50`）。`tables()` 读表目录（= 根的第 0 个子项，2,397 张）、`table(idx)` 解 `(array, hash)`、`rows(idx)` 按「含 `id` 键」向下展平多级分桶出行。⚠ **每行本身就是一个表对象**（长度天然可变）⇒ ⛔ 别再假设定长行；⚠ 根子项里也有**非表**的裸值对象，`table()` 对它们回 `None`（⛔ 别让它抛异常打断遍历）
 | `build_roads.py` | 42,018 路片摆放 + 18 基础/18 雪地皮肤；运行时按路片中心的 logic_background 选皮 |
-| `recon_road.py` | ⏸ 道路层数据链勘察（**只勘察不出产物**）：坐标系由干净集 `road_info.lua` 直给（1125²、半宽 200/半高 100 = 4/3 逻辑格）、lua 与 bytes **42,018/42,018 逐条互证**（⚠ bytes 是 (col,row) 转置）、`type_info` 烘死片、id→精灵靠邻接度签名绑定 |
+| `recon_road.py` | ⏸ 道路层数据链勘察（**只勘察不出产物**）：坐标系由干净集 `road_info.lua` 直给（1125²、半宽 200/半高 100 = 4/3 逻辑格）、lua 与 bytes **42,018/42,018 逐条互证**（⚠ bytes 是 (col,row) 转置）、`type_info` 烘死片、id→精灵由 client_res 直读，邻接签名只作交叉校验 |
 | `build_tops.py` | 三族 1,899 静态记录/92 纹理；完整视觉字段 60 B；布局与含引用/动画的组导出 tops-config.json；TS 只留类型/常量 |
 | `asset_source.py` | 只读原包寻址与切片查询，处理大小写 / @@ 别名 / hash fallback |
 | `prefab_scene.py` / `timeline_bin.py` / `scene_export.py` | 展开 prefab 引用与覆盖、时间线和事件子件；遇到未支持的视觉语义拒绝导出 |
@@ -69,11 +70,11 @@ namehash = SipHash-2-4(key = 16 字节全零, 去掉 "asset/" 前缀的资源路
 | `measure_compression.py` / `capture_water.mjs` | Creator astcenc 4×4 / 5×5 试验；可见像素、黑/灰/白合成、alpha 边缘、64 px 局部误差；原河流 shader 固定位置/时间重放，直接上传含透明 RGB 的原始字节 |
 | `audit_compression_quality.py` / `test_texture_compression.py` | 冻结压缩限值、固定几何/时间对照与分离水色/法线试验；不得用压缩限值放宽 O2 无损检查 |
 | `audit_bundle_build.py` | 实际发布包的 ASTC 头/尺寸/单级载荷、ImageAsset 格式登记、试验字节绑定、PNG 逐字节回退与分包体积检查 |
-| `test_prefab_bin.py` | 无原包也可运行的严格边界/中文节点/未知组件回归 |
-| `build_blocks.py` | ★ snow / desert 块层：`ground_{desert,snow}.bytes`（152² **行主序**）+ 路径表 51/52 条 → 几何库 + 摆放表 + 两张底纹；校 POT / 贴图归属 / 单位阵 transform |
+| `test_prefab_bin.py` | 无原包的边界/中文节点/未知组件/UV 字段及不支持参数拒绝回归 |
+| `verify_polygon_uv.py` | 仓外 ARM64 原生 UV 核重放；103 种雪沙几何 × 4 个位置，核验入库独立样本 |
+| `build_blocks.py` | ★ snow / desert 块层：`ground_{desert,snow}.bytes`（152² **行主序**）+ 路径表 51/52 条 → 几何库 + 摆放表 + 两张底纹；校 POT / 贴图归属 / 单位阵 transform / 世界 UV 参数 |
 | `build_rivers.py` | ★ 河流几何层：`river.bytes`（504² 列主序 / 3×3 逻辑格 / 偏移 −6）+ `river_path.json` 102 条 → 几何库 `river-geo.bin` + 摆放表 `rivers.bin` + 填充色图 `river-fill.png`；带对位校验（覆盖 100.0% 的 `res==47`） |
 | `build_regions.py` | ★ 件摆放表 `regions.bin`：`res.bytes` 的 55,127 个锚点 + `mountain_patch` 的 3,942 条补件，按画家序落盘 |
-| `build_labels.py` / `emit_labels.py` | 原版地名（9 大区 / 55 郡 / 249 城址）→ `labels.json` → shared TS |
 | `emit_display_palette.py` | ★ 61 值调色板 + `MAPO_VALUE_KIND_ID` 粗类下标表 → shared TS |
 | `build_labels.py` / `emit_labels.py` | 地名（9 大区 / 55 郡）+ 城址真坐标 + ★ **城占格表**（`city.bytes` → 249 座 / 2,689 格）→ shared TS |
 | `emit_shared_terrain.py` | 通行层 → shared TS（varint-RLE + base64，完整文件 374,652 B / 365.9 KiB） |
@@ -85,7 +86,7 @@ python3 tools/maporiginal-assets/namehash.py map/s1/cn/res.bytes      # 单条�
 python3 tools/maporiginal-assets/build_name_map.py                     # 全量（约 80 s）
 ```
 
-仓外素材根写在 `assets.config.json`，换机器只改那两行。产物落 `out/`（**已 gitignore**）。
+仓外素材根由 `assets.config.json` 的 `elpRoot / elpRootsExtra / sourceVersionRoot` 指定。产物落 `out/`（**已 gitignore**）。
 
 地图压缩试验只写 `.cache`；源 PNG 仍由现有导出器维护。`install_to_kit.py` 保留现有 UUID 和
 无关导入选项，但会按 `texture-policy.json` 统一压缩预设、`mipfilter:none` 与透明 RGB 保留。
@@ -116,28 +117,31 @@ L1 烘焙/L3 释放、点选和十次重开；PNG 路径通过启动前隐藏 AS
 
 ## 三、当前反查结果
 
-**11,489 / 126,047（9.1%）** 得到真名，其中 **KTX 9,018 / 13,471（67%）**。
-未命名的大头是 luac（17,091，另有整合版已反编译的 6,620 个 .lua）与无路径引用的 bin/txt 中间产物。
+2026-09-22 完成 APK + CDN、追加 `.bin` 与大小写规则后的反查样本为 **201,443 / 287,967（70.0%）**。
+更早 APK 单根的 9.1% 是研究过程中的中间值；换输入后以 `out/coverage.json` 实际统计为准。
 
 ### s1（中原正图）数据层 —— 23 个全部点名
 
 | 文件 | 大小 | 说明 |
 |---|---:|---|
-| `map/s1/cn/res.bytes` | 2,250,004 | **主地块/资源层**，4B 大端头(row,col) + 行主序 u8；1=LAND、47=RIVER，`等级×10+资源类型` |
-| `map/s1/cn/res_multi.bytes` | 2,250,004 | 多格地形（森林/湿地/丘陵簇） |
-| `map/s1/cn/logic_background.bytes` | 2,250,004 | 地表底色层 |
+| `map/s1/cn/res.bytes` | 2,250,004 | **主地块/资源层**，4B 大端头(row,col) + 行主序 u8；1=LAND、47=RIVER；2..41 为 `2+类型×10+(等级−1)` |
+| `map/s1/cn/res_multi.bytes` | 2,250,004 | 山族覆盖掩码，不能当主锚点表 |
+| `map/s1/cn/logic_background.bytes` | 2,250,004 | cell 级地貌带，决定基础/雪/沙变体 |
 | `map/s1/cn/map_region.bytes` | 2,250,974 | 郡/州分区 |
 | `map/s1/cn/river.bytes` / `river_area_id` / `waterway` | 各 254,020 | 河道 / 水域 id / 水路 |
-| `map/s1/cn/road_info.bytes` | 210,169 | 道路走向（取值 52–61，对应 `road_pivot.lua`） |
+| `map/s1/cn/road_info.bytes` | 210,169 | 路片摆放记录，类型下标查 type_info，不按 res 值或邻接选片 |
 | `map/s1/cn/ground2` / `ground_snow` / `ground_desert` | 各 23,108 | block 级地表（152×152） |
 | `map/s1/cn/city` / `birth_point` / `piers` / `mountain_patch` | 11,007 / 76,390 / 3,023 / 19,713 | 城 / 出生点 / 渡口 / 山体补丁 |
 | `map/s1/cn/river_color_mask.ktx` | 4,194,404 | 河流着色遮罩 |
 | `river_path` / `river_area_info` / `mountain_effect` / `ground_*_path` .json | — | 路径与效果元数据 |
 
 另有**各赛季鸟瞰世界底图** `fairy/ui/ui_common_map/map/map_<赛季>/image/noexpo_birdview_map_1.ktx`
-（每张 4,194,372 B），**仅**作装饰性缩略图来源；⛔ **不能**作远档 plate —— 它是 3D 相机的透视渲染，与正交等距不存在可靠 2D 对齐（实测相似变换 IoU 0.62、河网 NCC 0.30），判据见 kit README §四。
+（每张 4,194,372 B），仅为仓外研究素材，当前概览和可点击缩略图均不使用；⛔ **不能**作对齐底图 —— 它是 3D 相机的透视渲染，与正交等距不存在可靠 2D 对齐（实测相似变换 IoU 0.62、河网 NCC 0.30），判据见 kit README §四。
 
-## 四、原版数据层与素材来源实况（P2 逐层定性，2026-09-22 实测）
+## 四、原版数据与寻址证据
+
+下列寻址记录源于 2026-09-22 的研究；当前机制以 [MAPORIGINAL-2D.md](../../docs/MAPORIGINAL-2D.md) 为准，
+不从早期缺失率推断当前功能。严格解析支持范围见 §4.2·一·六。
 
 ### 4.1 s1 层格式（4B 大端头 `(u16 rows, u16 cols)` + 行主序 u8）
 
@@ -145,12 +149,12 @@ L1 烘焙/L3 释放、点选和十次重开；PNG 路径通过启动前隐藏 AS
 
 | 层 | 网格 | 取值 | 判定 |
 |---|---|---:|---|
-| `res.bytes` | **1500×1500** | 61 | 主地块/资源层。1=LAND(844,134)、47=RIVER(235,292)、0=142,958（多格地形锚点）、**2..41 = 资源：类型 `(v-2)//10`、等级 `(v-2)%10+1`**；42..46 金矿 1..5 级 |
-| `res_multi.bytes` | **1500×1500** | 14 | 多格地形簇（0 占 91%，55–60 稀疏） |
-| `logic_background.bytes` | **1500×1500** | 11 | 地表底色（1/2/3/18/11/13…） |
+| `res.bytes` | **1500×1500** | 61 | 主地块/资源层。1=LAND(844,134)、47=RIVER(235,292)、0=142,958（多格地形覆盖格）、**2..41 = 资源：类型 `(v-2)//10`、等级 `(v-2)%10+1`**；42..46 金矿 1..5 级 |
+| `res_multi.bytes` | **1500×1500** | 14 | 山族覆盖掩码，非零值 48..61，按 land.is_block 判通行 |
+| `logic_background.bytes` | **1500×1500** | 11 | 地貌变体归属（2=雪、3=沙，其余回基础季） |
 | `map_region.bytes` | 1500×1500 **+970 B** | 227 | 郡/州分区；255=图外(434,011)。尾部多出的 970 B 是附加表，⚠ 解析时按 `rows*cols` 截断 |
 | `ground2.bytes` | **152×152** | 4 | **block 级**地表（1500/`BLOCK_SIZE`=10 → 150，四周各留 1 格 → 152） |
-| `ground_snow` / `ground_desert.bytes` | 152×152 | 52 / 53 | 雪/沙 block 层，值是 `*_path.json` 里 group 列表的下标 |
+| `ground_snow` / `ground_desert.bytes` | 152×152 | 0..52 / 0..51 | 雪/沙 block 层，值是 `*_path.json` 里 group 列表的下标 |
 | `river` / `river_area_id` / `waterway.bytes` | **504×504** | 103 / 6 / 1 | 河道在 **1/3 分辨率**网格（1500/3=500，四周各留 2 → 504）。`waterway` 本图全 0 |
 
 **⚠ 不是网格层**（头 4 字节不是尺寸，是记录表，格式另解）：
@@ -160,31 +164,13 @@ L1 烘焙/L3 释放、点选和十次重开；PNG 路径通过启动前隐藏 AS
 配套 JSON：`river_path` / `ground_snow_path` / `ground_desert_path`（**group 资源名表**）、
 `river_area_info`、`mountain_effect`（大整数即 `(row<<16)|col` 客户端格键）。
 
-### 4.2 ★ 近档地表的真身 = `*_group.prefab` **根资源**，两版 APK 都没打进包（2026-09-22 定案）
+### 4.2 逻辑组、编译 prefab 与图片页
 
-> ✅ **已从 CDN 取到**（见 4.2·一 / 4.2·一·五）：1,784/1,873 = 95.2%。
-> ⚠ 包里的名字是 `<完整路径>.prefab**.bin**`（追加式），⛔ 别按替换扩展名查。
-
-从手机（真机 2066.1489）拉回第二个样本后查清，结论比早先精确得多：
-
-| 事实 | 证据 |
-|---|---|
-| `*_path.json` 里的 `scene/ground/**/<n>_<m>.group` **不是文件名**，是**组名** | 按 `.group` 及 8 种换扩展名变体在两包里 hash 反查，命中 **0** |
-| 真身是 `<名>_polygon_group.prefab` + `<名>_top_group.prefab`（另有 `_polygon_mask_group.prefab`） | `debug_res/ignore_file_cfg.json` 与 `config/res_config/season_all_root_res/all_root_res_list.cw` 里逐条列着；`_polygon_mask` 正好对上 2D 代码 `big_city_house_layer_grid.lua` 的 `res_name .. "_polygon_mask"` |
-| 它们是**根资源**，共 1,873 条（`scene/ground/**`，1,872 prefab + 1 png） | `all_root_res_list.cw` 是 NUL 分隔的路径清单，共 79,521 条根资源 |
-| **两包都一条不含** | 1,873/1,873 在 2084.1768 与 2066.1489 里按 hash 全未命中 ⇒ 运行时下载 |
-
-完整缺失清单落 `out/missing_ground_roots.json`。按目录：river_longriver 137 / road 136 /
-desert 120 / snow 120 / river 114 / river_bohai 81 / river_yellowriver 80 / road_liangdao 74 /
-gaodi* 129 / gaodi_shan* 90 / mountain_new 26 / menfacheng* 80 …
-
-（2026-09-22 实测，三星 SM-S9370 / Android 16）：
-- 应用外部目录 `/sdcard/Android/data/com.aligames.sgzzlb/files/` **只有 shader 缓存**（11 MB），
-  没有任何下载的资源包 ⇒ 下载物落在内部存储；
-- 无 root、`su` 不存在、应用 `not debuggable`（`run-as` 拒绝）、`/proc/<pid>/{maps,fd}` 权限拒绝
-  ⇒ `/data/data/<pkg>/` 读不到；`adb backup` 在 Android 12+ 已废。
-- 顺带拉回的真机包 **2066.1489 比 2084.1768 素材更少**：`scene/ground` 图集精灵 137 < 184，
-  连 2D 山体件 `mountain_new/grass_fall_new` 都没有 ⇒ ⛔ 别拿它当更全的样本。
+`.group` 是逻辑组名，不是可直接 hash 命中的文件。对应根资源名为
+`<名>_polygon_group.prefab`、`<名>_top_group.prefab` 等，包内编译名再追加 `.bin`。
+图片引用 `.png` / `.tga` 时要查 `.ktx` 或图集切片；路径同时尝试原样及小写。
+旧“两个 APK 都没有 prefab”的判断遗漏了这些规则，不能作为缺件依据。
+S1 当前所需入口及引用已通过严格解析与源素材核验，不需要邻级替代。
 
 ### 4.2·一 ★ 从发行商 CDN 全量取（2026-09-22 打通）
 
@@ -260,44 +246,12 @@ python3 tools/maporiginal-assets/verify_root_res.py --prefix scene/ground/
 python3 tools/maporiginal-assets/verify_root_res.py          # 全量
 ```
 
-### 4.2·二 ⛔ 真机这条路走不通
+### 4.2·二 图集页与完整切片
 
-### 4.2·旧 近档素材：`.group` 预制体不在包里，但**它引用的精灵在**
-
-⚠ **更正（2026-09-22，早先这里写错过）**：`*_path.json` 里那 205 条
-`scene/ground/{river,snow,desert}/<n>_<m>.group` 确实一条都不在 ELP 中（**预制体**按需热更），
-但它们引用的**精灵本身在包里** —— 就在 `scene/_output_atlas_scene/atlas_tex/` 下的 62 个图集里：
-
-| 图集 | 内容 | 切片数 |
-|---|---|---:|
-| `ground.xml` | 云、飞鸟、**不规则地表斑块**（沙/草有机色块）—— 原版打散「铺地砖」的手法 | 49 |
-| `resource.xml` / `resource_food` / `resource_gold` | **逐格地皮精灵**：草丘/岩山/城楼/营寨，原版靠它们互相叠压出连续地貌 | 612 |
-| `small_build*.xml` | 小建筑 | 471 |
-| `npc_city` / `player_city*` / `junying` | NPC 城 / 玩家城 / 军营 | 1,001 |
-| `road.xml` | 道路片（配 `road_info.bytes` 的 52–61 走向编码） | 58 |
-| `map_birdview_icons.xml` | 鸟瞰图标 | 141 |
-| `grid.xml` | 格线与状态格 | 97 |
-
-⚠ 找不到它们的原因是**图集页的扩展名**：XML 里的 `imagePath` 写的是 `.png`，包里却是构建期
-转出的 `.ktx`（与 §1 坑③同源）。`slice_atlas.py` 现在会按扩展名回退再找一遍。
-现已切出 **3,510 张**原版切片。
-
-⚠ **这一段早先写成「近档贴片用原版可平铺的 3D 地表 albedo」，已作废**（2026-09-22 换源）：
-本 kit 只收原版 **2D 沙盘**素材（见 §4.8），近档八个粗类的源全部改成 2D 侧。
-
-| 用途 | 素材 | 规格 |
-|---|---|---|
-| 远档 plate / 缩略图 | `fairy/ui/ui_common_map/map/map_s1/image/noexpo_birdview_map_1.ktx` | **4096×2048 ETC2**。⚠ 它在**共用 UI 包**树下（`fairy/ui_3d/` 无 `ui_common_map`），但像素是 3D 相机的透视渲染 ⇒ 归属是灰色地带，目前只当装饰性缩略图 |
-| 近档地表（八个粗类） | `ground_down/underground1` + `scene/ground/{caodi_gan,huangmo,zhaoze,caodi_shi,senlin,caodi_huijin,dongtu_tuxue}/png/tt_02` | 256² / 512² ETC2；判据见 §4.8、源表见 `bake_content.py` 的 `TEXTURE_OF` |
-| 逐格摆件（资源 res_field / 城址） | `scene/resource/{wood,iron,stone,food,gold}-new/png/<级>` + `scene/build{,_snow}/main_city/**` | 见 §4.4 |
-| 山族件（13 形） | `scene/ground/mountain_new/png/m1..m10`（**基础季**，由 `scene/_output_atlas_scene/atlas_tex/mountain.xml` 切出） | 见 §4.5 |
-| 行军线 / 旗帜 / 建筑 | `scene/_output_atlas_scene/atlas_tex/{armyline,ext_building_flag,build_attachment,…}-1.ktx` + 同名 `.xml` | 图集，XML 里有逐 sprite 原始路径 |
-
-⚠ 原版 2D 地表的真实分层是「`*_polygon_group` 平铺底纹 + `_top_group`/MiddleLevel 散布贴片」，
-本 kit 的分工与它一致（底纹 = 地表图集、散布 = 摆件层与区域件层），但**不同构**：
-原版底纹是 256px 铺满一整块（`ground_layer_logic.lua:8` 的 `TILE_WIDTH*20` = 10 格一块）、
-每格只摊到约 25 texel，我们是**每格一张 240×120 贴片**，格内纹理密度高于原版。
-⛔ 不要为了「对齐原版」去取 25×13 的窗口放大 —— 那是不可用的糊。
+`scene/_output_atlas_scene/atlas_tex/` 的 XML 记录精灵及页路径；页的 `imagePath` 虽为 PNG，
+原包使用 KTX。`slice_atlas.py` 遍历所有 TextureAtlas 页，处理旋转和裁边还原，不能只取第一页。
+近景消费草地底纹、雪沙多边形、完整资源 prefab、山体、道路、城池和三族 top。
+旧八粗类地砖、连通域拉伸与鸟瞰插画缩略图已退役，不能据历史烘焙方案重建。
 
 ### 4.2·一·六 ★★★ 二进制 prefab 格式已破（`prefab_bin.py`）
 
@@ -362,7 +316,7 @@ river_hean 1 / road/mask/lu_mask.png 1。⚠ 与常规季 s1 无关。
 ```lua
 -- script/logic/mapmodel/layermodel/ground_layer_logic.lua（全文 27 行）
 function GroundLayerData:get_grid_size()
-  return Config.TILE_WIDTH * 20, Config.TILE_HEIGHT * 20      -- 20×20 格一块
+  return Config.TILE_WIDTH * 20, Config.TILE_HEIGHT * 20      -- 半尺寸 ×20 = 10×10 格一块
 end
 function GroundLayerData:get_grid_res()                        -- ⚠ **不带 row/col**
   local res_id = self:get_jijie_grass_res()                    --   ⇒ 全图每块同一个资源
@@ -398,32 +352,13 @@ map_layer_config.lua: ground2.bytes → name "ground" → logic_clz "ground_laye
 
 ⚠ 与之对照：`underground2/3.png` **不在**这张配置表里 —— 它们是 snow/desert 的 `polygon_2d`
 直接写死路径引用的（各 60 个）。**两套机制，⛔ 别混为一谈**：
-常规季草地走 share_res id + 20×20 块整层平铺；沙漠/雪走 `_path.json` 的逐块 group 预制体。
+常规季草地走 share_res id + 10×10 格 block 平铺；沙漠/雪走 `_path.json` 的逐块 group 预制体。
 
-### 4.2·一·八 ★★ 「常规季平地底 = underground1」的证据链（2026-09-22 查证）
+### 4.2·一·八 MiddleLevel 与基础底纹
 
-先更正一条**我自己的误判**：`grass/MiddleLevel_01..04` 曾被当成「最要紧的缺口」。
-拿到并解开后发现——**它们不是平地底**：
-
-```
-MiddleLevel_01  node_2d，35 个 sprite_2d，全部引用 grass/png/a1..a8.png
-                ⛔ 零 polygon_2d、零 underground* 引用   ⇒ 是**草丛散布层**
-```
-⇒ 拿到 MiddleLevel **并不能**回答 underground1 的归属；它从来就不是那个缺失的消费者。
-
-`underground1` 仍然**零消费者**，但现在有两条独立证据把推断顶到很高的可信度：
-
-| # | 证据 | 来源 |
-|---|---|---|
-| ① **排除法** | `underground3` → 沙漠（desert 的 60/60 个 polygon）；`underground2` → 雪（snow 的 60/60）；河流各用 `river*/png/26.png`。盘上 `underground*` 只有 1/2/3 三张，⇒ 剩下的 1 归常规季草地 | `prefab_bin.py` 全量解 1,872 个 ground prefab |
-| ② **命名与季节表** | 季节/昼夜换资源表（27 MB 串池 `c1168e183082/107_671fe911405430ee.bin`，字段 `day_night_res_type/res_season/src_name`）里有 **「秋季草1」→ `ground_down/underground1_qiutian.png`**；`_qiutian` 是基础件的秋季变体 ⇒ `underground1` 属「草」族 | 同上串池 |
-| ③ **结构** | `grass/` 的根资源只有 8 个 MiddleLevel + 5 个边界云，**没有任何 polygon/底层组**；且 `ground2.bytes`（基础地表块层）**没有配套 `_path.json`**，而 `ground_snow`/`ground_desert` 各有 | 根资源清单 + s1 层清单 |
-
-⇒ 合起来的结论：**常规季草地是「底」，沙漠/雪是盖在它上面的覆盖层**——所以草地根本没有逐块
-group 预制体。
-✅ **已于同日坐实**，见上一节 4.2·一·八·五（`ground_layer_logic` → `RES_GRASS_1` → 「草1」）。
-⚠ 上表第②条当时写「全盘没有 `ground_down/underground1.png`」是**错的**：它在 66 MB 配置表里，
-只是我当时只搜了 27 MB 那个串池。⛔ 别只搜一个表就下「不存在」的结论。
+MiddleLevel_01..04 只包含草丛等 sprite，不是底纹消费者。`underground1` 由上一节 Lua 的
+share_res 调用取得，已不是排除法推断。沙／雪通过自己的 polygon prefab 直接引用 underground3/2；
+二者 UV 也不与草地块共用，原生核补核见机制 §1.8。
 
 ### 4.3 ★ `res` 的「类型 / 等级」读反过一次（2026-09-22 更正）
 
@@ -436,42 +371,27 @@ group 预制体。
 | `%10` 的均值 | 递减（越靠边越低级） | 3.26 → 1.33 | ✔ 是地块等级 |
 
 ⇒ 从此 `terrain.bytes` **直接存原版值**（不再折算成自造类），近档「这一格长什么样」变成纯查表。
-~~⚠ 类型编号→中文（0木/1铁/2石/3粮）仍是**假设**~~ ✅ **已由 `base.cw` 的 land 表定死**
+类型编号→中文**已由 `base.cw` 的 land 表定死**
 （2026-09-23 N1）：真值是 **0木/1石/2粮/3铁** —— land 12..21 名「N级石料」→ `stone-new/`、
 22..31「N级粮食」→ `food-new/`、32..41「N级铁矿」→ `iron-new/`，`name` 与 `src_name` 两列互证；
 早先的假设把铁/石/粮**轮转错位**，已改正（`build_terrain.py` 抬头）。
 
-### 4.4 摆件 = 逐格 `res_field`，⛔ 不是撒装饰
+### 4.4 资源件与山体锚点
 
-原作近档 = 底图 + **逐格一个 `res_field` 单位**，由该格的 `res` 值唯一决定 ⇒
-`pack_decor.py` 把图集**按原版值建格**（格 id = 值），客户端零猜测。
-素材按 `land` 表三套件列读完整 prefab：`scene/resource{,_snow,_desert}/<类>-new/`（45 格 × 3 套）
-+ 城址 8 件（N1 起；早先按 `png/<等级>` 文件名取，⚠ 且 `wood/iron/stone/food` 次序假设是
-**轮转错位**的 —— land 表真值 `wood/stone/food/iron`，已改正）。
+`land` 表的基础/雪/沙三套列指向 135 个完整 prefab，含 659 节点、320 张纹理。
+运行时按 res 原值及 cell 级地貌带选择逻辑条目，再用稳定 `textureId` 查询图片表；
+图集装箱位置与资源值解耦，不再按原值建固定大格。城池另走 city / city_res 原表。
 
-⚠ **个别级没有可用件**：基础季铁矿 5/8/9/10 级的 prefab 没进包、雪地粮草 1/2 级全是阴影占位 ⇒
-用**同套同类最近一级**顶上，逐条记在 `decor-atlas.info.json` 的 `substitutions`（按套件分键）。
+当前没有“最大主片”“同类最近一级”或“无锚连通区每区一件”兜底。此前缺件判断来自
+旧解析器吞错，现已支持引用、时间线、帧动画并严格校验边界，`substitutions=[]`。
 
-⛔ ~~**多格地形（值 48..61，占 8.8%）目前没有摆件**~~ **已由 M0-B1 按锚点模型解决**，下文留作沿革：原作是**一个模型跨整片连通区**
-（山脉平均 26 格、最大 228），其 `.group` 预制体不在 ELP 里（见 4.2）。
-⚠ 要补的话正确做法是**连通域 → 每区一件、锚在区内最低格、按区尺寸缩放**，
-⛔ 不是逐格放一棵树 —— 那是我们编的，不是原版参数。
+### 4.5 山体主锚点与第二遍补件
 
-### 4.5 `mountain_patch.bytes` = 原版的**大件摆放表**（2026-09-22 逆出）
-
-```
-[u24 BE 条数][条数 × { u16 row, u16 col, u8 件id }]      3 + 5×3942 = 19713 B  逐字节吻合
-```
-判据：row 全程非降序、row/col 都在 0..1499、**99.67% 的锚点落在 `res==0` 的多格地形锚点格上**。
-`件id` ∈ {52,53,55,58,59} 是**原版的美术 id**（⚠ 与 res 值不同空间，`share_res.id2name("res", id)`
-才是名字，那张表不在反编译源码里）。
-
-⚠ **它不是「每区一条」**：3,930 条只覆盖 1,689 个连通区，744 个区有多条，4,717 个区一条没有。
-实测密度 ≈ **1 件 / 20 格**（3,578 格的大区 14 件；中位 7 格的小区 0 件）。
-⇒ ~~本 kit 的用法：有原版锚点的区**只用原版的**，没有的按连通域每区补一件。~~
-**2026-09-22 M0-B1 更正**：`mountain_patch` 是**第二遍补件**，⛔ 不是主锚点表。
-主锚点表是 `res.bytes` 自己的 55,127 个非零值（48..61），连通域整套已删除。
-见 `docs/MAPORIGINAL-2D.md` §3.1/§3.4 与 `mountain_forms.py`。
+`res.bytes` 中 48..61 的 **55,127 个非零锚点**是主表；res=0 的 142,958 格只保留覆盖信息。
+`mountain_patch.bytes` 为 `[u24 BE 数量][u16 row,u16 col,u8 件id]`，共 3,942 条，
+3+5×3942=19,713 B。它是第二遍补件，其中 3,929 条落覆盖格、13 条落其它件锚点。
+两者合成 59,069 条 `regions.bin`；不再按连通区数量、面积或旧补件密度推断山体是否缺失。
+值、prefab、贴图与足迹见 `mountain_forms.py` 及机制 §3。
 
 ### 4.6 ⚠ `slice_atlas.py` 只切了多页图集的第一页（已修）
 
@@ -531,10 +451,8 @@ if all(32 <= c < 127 for c in b[i+4:i+4+ln]): ...  # 再按 .png/.ktx 结尾筛
 | mountain_new | `mountain_new/png/m*.png`（★ 山族件正在用的那批，基础季）；`grass_fall_new/png/m*.png` 是换季版 | 2 |
 | road / road_official / ss_road | `xcross/5-1.png`、`downtcross/9-1.png`… | 26 / 12 |
 
-⚠ **常规季平地底仍是推断**：在手的 `grass` 组 prefab **只引用云和阴影**，真正的底在缺失的
-`scene/ground/grass/MiddleLevel_01..04_group.prefab` 里（89 条缺项之一）。
-`underground1.ktx` 与 `underground2/3` **字节数完全相同**（32836 B）、同族同编号，
-而 2=snow、3=desert 已实证 ⇒ 「1 = 常规季」是**强推断**，⛔ 不是实证。拿到那 4 个 prefab 即可定案。
+常规季平地底的消费链已由 Lua 和 share_res 查明，见 §4.2·一·八·五。
+上述字符串扫描用于发现引用，不等于完整解析，也不能证明每类素材在 S1 都会显示。
 
 ## O0：可复测素材与预览基线
 
@@ -573,15 +491,12 @@ python3 tools/maporiginal-assets/compare_images.py --before .cache/before.png --
 限值为 RGBA 每通道平均误差 ≤ 1（8-bit），任一通道差值 > 8 的像素占比 ≤ 0.1%；整图和每个 ROI 均须通过。
 本工具不自动对齐相机/帧、不接受用大面积背景稀释局部错位，也不替代原包逐像素核验与发布格式验证。
 
-## 五、待办
+## 五、范围与未实现边界
 
-- ~~多格地形的连通域摆件~~ **已被 M0-B1 取代**：改按 `res.bytes` 的 55,127 个锚点出件
-  （`mountain_forms.py` + `build_regions.py` + `pack_regions.py`），连通域整套删除。
-  ⚠ 山脉区仍偏空 —— 原版锚点密度就是 1 件/20 格，不是我们漏了。
-- `road_info` / `logic_road` 的记录表格式（半文本，尚未解）⇒ 道路层。
-- 长字符串 L≥77 的残字：`terrain_attr.lua` 里仍有 `["CXTE[D_LANY"] = 17` 这类键，
-  ⚠ 照抄数值表前**逐条目检**。
-- 1620² 的 pk 系赛季图（等 s1 这张跑顺）。
+S1 静态地图已包含道路、山体、城池、格线、普通点选和三族 top。原版机制与本仓策略的
+差异集中登记在 [机制 §9–11](../../docs/MAPORIGINAL-2D.md#9-本-kit-与原版对照表)。
+其他赛季、1620² 图与 S2 作者工作流尚未实施；动态 AOI/军队/营地/领地状态也不在此管线范围。
+遇到未支持字段应扩展解析并独立核验，不能靠长字符串猜读或跳过组件继续导出。
 
 ## 六、2026-09-24 修复产物的重建与复核
 
@@ -594,15 +509,23 @@ python3 tools/maporiginal-assets/build_cities.py --map s1
 python3 tools/maporiginal-assets/build_tops.py --map s1
 python3 tools/maporiginal-assets/build_roads.py --map s1
 python3 tools/maporiginal-assets/build_rivers.py --map s1
+python3 tools/maporiginal-assets/build_ground.py --map s1
+python3 tools/maporiginal-assets/build_blocks.py --map s1
 python3 tools/maporiginal-assets/build_choose.py --map s1
 python3 tools/maporiginal-assets/build_surface.py --map s1
 python3 tools/maporiginal-assets/install_to_kit.py --map s1
 npm run sync:shared
+node --import tsx tools/maporiginal-assets/bake_overview.ts
+python3 tools/maporiginal-assets/install_to_kit.py --map s1
+npm run sync:shared
+python3 tools/maporiginal-assets/install_to_kit.py --map s1 --check
 python3 tools/maporiginal-assets/test_prefab_bin.py
 python3 tools/maporiginal-assets/verify_fidelity.py --map s1
 ```
 
-导出需要本目录原有 Pillow/纹理解码依赖，保真检查另需 numpy。
+按改动选择导出器，非每次都全量重建。导出使用隔离 Python（Pillow / numpy / texture2ddecoder）；
+最后一次安装后必须 sync:shared，概览输入及生成脚本变更后必须重烘。
+安装器自动同步图集、河流、选择框、草地和雪沙的小型生成配置；通行、地貌带和地名由对应 emit/build 脚本生成。
 install_to_kit.py 同步 shared 数据、kit 资产和 Cocos 资产镜像；TS 镜像由 sync 脚本刷新。
 不手改生成物。A01–A12 的证据和边界见 [机制 §9.1](../../docs/MAPORIGINAL-2D.md#91-复刻简化审计-a01a12-的修复记录2026-09-24)。
 
@@ -617,7 +540,7 @@ python3 tools/maporiginal-assets/install_to_kit.py
 
 需要本机 Chrome 9222。工具只创建并关闭自己的烘焙标签页，用 WebGL1 对近景共用的
 `mapoStaticScene` 做正交绘制，2× 超采样后生成 `overview.png`（2048×1024）与居中的
-`minimap.png`（512²）；`overview.info.json` 记录输入资产、代码和几何指纹。
+`minimap.png`（512×256 内容带；512² 原画布仅留 out 作核验）；`overview.info.json` 记录输入资产、代码和几何指纹。
 旧 `bake_content.py` 仅转调新入口，旧 `plate-lod4/5` 安装时清理，禁止再用 res 调色板生成地图。
 运行时 L1 / L2 分块缓存复用同一展开逻辑；L3 仅采样 overview，范围和预算见 kit README §六。
 
@@ -627,7 +550,8 @@ python3 tools/maporiginal-assets/install_to_kit.py
 图片条目与逻辑件分离，四个导出器保留原逻辑 ID 顺序。图片 ID 使用图集族＋规范来源路径的 SHA-256 前 20 位；
 同图来源排序最前的路径作规范来源，加入其他不同图片或改变布局不会改变该 ID；调整别名集合需重建引用。
 去重同时比较完整 RGBA、像素尺寸和 nativeSize；透明像素 RGB 也参与，贴入时不用 alpha mask。
-河岸和沙地 top 本批保留原架式位置，山体/道路/城市/雪 top 使用每侧 2 px 外间隔的 MaxRects。
+O1 阶段河岸和沙地 top 保留原架式位置；当前河岸已按 O2 裁边重排，沙 top 保留完整画布。
+山体/道路/城市/雪 top 使用每侧 2 px 外间隔的确定性装箱。
 `atlas-layout.types.ts` 为公共生成契约；长来源路径、别名放 info JSON，运行时只存 ID 与布局。
 
 修改前先备份 kit 数据和 shared 内容到 `.cache`，并在旧布局下采集固定时间画面；改后再采集一次。
@@ -658,7 +582,7 @@ python3 tools/maporiginal-assets/compare_images.py --before .cache/mapo-repack/r
 固定时间采集覆盖草地、雪地、沙地、洛阳与跨块范围，1024² 输出、2× 超采样、动画时间 0，
 通过近景同源 Logic 展开、WebGL1 和 overview 相同混合公式渲染；每个 report 记录源图哈希、几何指纹和批次。
 它不代替 Creator 的真实四档 LOD、缓存接缝、点选和横竖版回归，水面仍按既有静态填充色口径。
-全图和所有关键局部 ROI 必须分别过 §7 阈值；只比较整图平均值不能验收。
+全图和所有关键局部 ROI 必须分别过上文 O0 的图像比较阈值；只比较整图平均值不能验收。
 
 ## O2：保留原画布的透明裁边
 
@@ -775,3 +699,20 @@ UTF-8 解码、JSON 解析、CRC 与完整 schema 校验。保留堆使用 20 �
 它仍逐张核验实际发布 ASTC 字节与原试验 hash，报告同时记录两个内容版本。
 Creator 完整重放可设置 `MAPO_PREVIEW_FOCUS=1`，报告会登记 focus emulation；
 这适用于格式、图层和生命周期验证，不能作为真实前台帧时证据。
+
+
+## 原生 UV 与河格坐标补核
+
+`verify_polygon_uv.py` 在 Unicorn 中执行仓外原版 ARM64 的世界 UV 循环、纹理尺寸取倒数和 V 翻转。
+它锁定二进制 SHA-256，唯一替代调用是已验证零角的 sincosf；不把原版库或反汇编全文入库。
+样本覆盖 103 种雪沙几何、4 个位置、3,412 个顶点，默认与 fixtures/polygon-uv.json 比较；
+不是从本仓 mapoBlocks.ts 计算期望值，也不冒充完整原版游戏截图。
+
+```bash
+python3 tools/maporiginal-assets/verify_polygon_uv.py --native /path/to/arm64-v8a/libnative-lib.so
+node --import tsx --test apps/client/test/mapOriginal-blocks.test.ts apps/client/test/mapOriginal-rivers.test.ts
+```
+
+原版河格定位来自 `coord_util.ninegrid2pos` 与 `river_grid.get_pos` 的 disasm。
+31,140 条全图摆位均独立反算原版 504² 河格索引核对，不以逻辑格覆盖率代替像素坐标校验。
+原式与证据地址见 [机制 §1.8 / §4.1](../../docs/MAPORIGINAL-2D.md#18-雪沙多边形的世界-uv2026-09-24-原生核补核)。

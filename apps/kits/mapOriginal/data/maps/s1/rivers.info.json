@@ -12,6 +12,7 @@
  "dBias": 1500,
  "recordBytes": 6,
  "placementLayout": "大端：u16 s(=R+C+sBias), u16 d(=R−C+dBias), u8 geo(1..102), u8 保留；按 s 升序",
+ "positionRule": "ninegrid2pos(i-2,j-2,450,225)：x=(R-C)*150, y=-(R+C+3)*75 原版像素；无奇偶行偏移",
  "placementSha256": "8e9301179adadb242da0046164c908722c1cc29e0cb6c4b40c44ab84205c485a",
  "geoCount": 102,
  "geoBytes": 60564,

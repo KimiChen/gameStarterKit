@@ -4,15 +4,16 @@
 逆向可读源码在仓外 `sourceVersion/sgzz-2084.1768/`，原始素材在 `apkdecode/sgzz-1768.2084/elp-unpacked/`
 （**仓外只读**，⛔ 永不入库）。
 
-素材、配置与加载的后续改进见 [MAPORIGINAL-2D-OPTIMIZATION.md](../../../docs/MAPORIGINAL-2D-OPTIMIZATION.md)
+素材、配置与加载的方案、阶段记录见 [MAPORIGINAL-2D-OPTIMIZATION.md](../../../docs/MAPORIGINAL-2D-OPTIMIZATION.md)
 （2026-09-24 建单）：图集去重与保留锚点的裁边、分组加载/释放、GPU 压缩、大配置外置。
-现有实现与装箱候选分别标注，实施状态只在该文 §9 更新。
+现行路径为独立地图 Bundle、分组加载、保留锚点的裁边图集、外置表现配置和增量动画更新。
+实施状态只在该文 §9 更新；本文记录当前用法，不把早期候选当成现状。
 
 ## 一、身份与边界
 
 - **宿主自有 kit**（`kit.json` 无 `version`）：与 `apps/kits/{slg,sgzzmap}` 同形，只活在主树里，
   不打包、不进锁。⛔ 因此 `plugin -- pack/install/test` 与 `verify:kit-clean-install` 都不适用，
-  验收靠 `verify:all`。
+  按实际改动运行地图专项回归、类型/镜像检查和真实 Creator 预览；仅跨域或阶段退出才运行聚合验收。
 - **与 `sgzzmap` 的关系**：机制同源、内容不同。sgzzmap 是「三战**式**」——机制复刻 + AI 概念图派生的
   自造地形；本 kit 是「三战**原版**」——**原版 1500×1500 地块数据 + 原版美术**。
   ⛔ 机检禁 kit 依赖 kit（`docs/KIT.md:162`），所以 `hexmap` 面是**抄改**的一份；
@@ -40,11 +41,12 @@
 | 层 | 值空间 | 落点 | 用途 |
 |---|---|---|---|
 | **通行层** | 3（0 陆 / 1 河 / 2 山） | `apps/shared/src/kits/mapOriginal/content/terrain.data.ts`（varint-RLE + base64，**374,652 B / 365.9 KiB**（完整 TS）） | 首帧即可画轮廓；将来服务端通行判定 |
-| **显示层** | **原版 res 值 1..61** | `data/maps/s1/terrain.bytes`（2.25 MB）+ Cocos 镜像，客户端 **BufferAsset** 加载 | 近档选地表粗类 + **逐格摆件** + 点选详情 |
+| **显示层** | **原版 res 值 1..61** | `data/maps/s1/terrain.bytes`（2.25 MB）+ Cocos 镜像，客户端 **BufferAsset** 加载 | **逐格资源件 / 山体锚点** + 点选详情 |
 
 ★ **显示层存的就是原版的值本身**（⛔ 不再折算成 16 个自造类）。一个字节无损承载原版全部语义，
 于是「这一格长什么样」变成**纯查表**：
-`MAPO_VALUE_KIND_ID[v]` → 地表图集第几行；`v` 本身 → 摆件图集第几格；`MAPO_VALUE_BY_ID.get(v)` → 中文名/颜色/通行。
+`v` 与 cell 级地貌带 → 完整 prefab 逻辑条目 → `textureId` 图片表；
+`MAPO_VALUE_BY_ID.get(v)` → 中文名/颜色/通行。`MAPO_VALUE_KIND_ID` 仅是语义分类，不选择地表地砖。
 ⚠ **为什么显示层不进 shared**：它一阶熵 **2.95 bit/格**（zlib 也只到 772 KB），
 varint-RLE 反而**胀到 125.6%**（3.9 MB TS）。通行层继续采用 shared 的 RLE 入口；当前完整生成 TS 为 374,652 B，解码数组为 2,250,000 B，不能混用文件与驻留大小。
 ⚠ 显示层没到位时 `mapoValueAt` 按通行类**退回同一值空间**（陆→1 / 河→47 / 山→60），面板标「读取中…」；
@@ -57,59 +59,36 @@ res==1            LAND 平地                                    844,134 格 37.
 2 <= res <= 41    资源地块：类型 = (res-2)//10、等级 = (res-2)%10+1   42.7%
 42 <= res <= 46   金矿 1..5 级                                            0.5%
 res==47           RIVER 河流                                             10.5%
-res==0 或 >=48    **多格地形本体/锚点**，类型取 res_multi：
-                  60/61 平均 26 格、最大 228 ⇒ 山脉（⛔ 不可通行）        1.9%
-                  52..55 + 57..59 ⇒ 林丛 6.1%；48..51 单格散落地物 0.8%
+res==0           多格地形的覆盖格，保留 0，不复制 res_multi 成锚点
+48 <= res <= 61   山族的锚点，14 种足迹；56 在 S1 无命中，共 55,127 个锚点
 ```
+
 ⚠ **这里更正过一次**：早先把 `(res-2)%10+2` 读成 LAND_TYPE、`(res-2)//10` 读成「4 款变体」，
 **是反的**。统计实证：块序号（`//10`）在全图分布均匀、随距中心半径**平坦不变**（1.50 恒定）⇒ 是**资源类型**；
 块内序号（`%10`）的均值随半径从 3.26 递减到 1.33 ⇒ 是**地块等级**（越靠边越低级，这正是三战的分布）。
-⚠ 类型编号→中文（0木/1铁/2石/3粮）是**假设**：静态数据定不了是否被置换，见 `MAPO_RES_TYPE_CN`。
+类型编号为 **0木 / 1石 / 2粮 / 3铁**，由 `base.cw.land.name` 与 `client_res.src_name` 互证，见 `MAPO_RES_TYPE_CN`。
 ⚠ 字节值**就是资源 id**：`res_bytes_id_map.lua` 的 id 集合跳过 56，而数据里 56 恰好零命中。
 
-## 四、美术：⛔ 两条否定结论（省得重走）
+## 四、美术来源与寻址
 
-1. **`.group` 预制体不在包里，但它引用的精灵在**（⚠ 早先这条写反过，已更正）。
-   205 条 `scene/ground/**.group` 确实不在 ELP（预制体按需热更），但
-   `scene/_output_atlas_scene/atlas_tex/` 下的 62 个图集里有**逐格地皮精灵、小建筑、城、营、道路、
-   鸟瞰图标**共 3,510 张。找不到它们的原因是图集页扩展名：XML 的 `imagePath` 写 `.png`、
-   包里是构建期转出的 `.ktx`。⇒ **摆件层直接用原版切片**；底下那层菱形由原版 **2D** 地表底纹合成
-   （2026-09-22 换源，见本文「★ 地表图集的源已换成原版 **2D 沙盘**侧」一节；
-   早先用的是 `scene_3d/**` 的 3D albedo，已随「只用 2D 素材」拍板换掉）。
-2. **原版鸟瞰底图不能当远档 plate**。`noexpo_birdview_map_1.ktx`（4096×2048 ETC2）是
-   **3D 相机的透视渲染**，与本仓正交等距 ⛔ 不存在可靠 2D 对齐 ——
-   实测相似变换 IoU 0.62、河网 NCC 0.30、全仿射拟合退化成竖条纹假峰（NCC 0.51）。
-   逐格对齐的层由原始几何与贴图烘（`bake_overview.ts`，与 `mapoWorldBounds()` 同式 ⇒ **对齐是构造出来的**）。
-   原版那张改作**装饰性缩略图**，落位由客户端现算（`mapoFar.ts` 的 `mapoWorldBounds()` +
-   `0.25 + v*0.5`，与 `bake_minimap` 的 resize→paste 构造同式）。
-   ⛔ 早先那份 `plate.calib.json` 已删（全仓零消费、生成脚本在 palette schemaVersion 2 后必崩）。
+`.group` 是逻辑组名，实际输入为 `_polygon_group.prefab.bin` / `_top_group.prefab.bin` 等编译资源。
+查找时去 `asset/` 前缀、尝试原样及小写路径，给完整 `.prefab` 名追加 `.bin`；图片页按 `.ktx` 查找。
+S1 所需 prefab 与引用已由严格解析器验证，不能再把找错扩展名或解析失败写成“包内没有”。
+资源件保留完整节点树、阴影和动画，山体按原锚点摆放，均从原 2D 配置与素材导出。
+
+原鸟瞰插画是 3D 透视图，与本 kit 正交投影无法可靠对齐。当前概览与可点击缩略图都由
+`bake_overview.ts` 消费运行时 `mapoStaticScene` 生成；不再使用原鸟瞰插画或 `plate.calib.json`。
 
 素材授权按九字段登记在 [`art/LICENSES.md`](art/LICENSES.md)（⚠ 法务 load-bearing，⛔ 不得删改）。
 
-## 五、画面设置（只复刻原作「设置 → 画面设置」里**属于 2D 沙盘**的两项）
+## 五、画面设置
 
-| 项 | 档位 | 状态 |
-|---|---|---|
-| 色彩模式 | 标准 / 鲜艳 / 低饱和 | ✅ 在 `mapoPalette` 的顶点色 + tonemapping 预补偿那层做。⚠ 原作选项名是图片按钮、没留字符串，这是**等价实现** |
-| 画质 | 流畅 / 普通 / 高清 / 超高 | ✅ 映射到**建不建摆件层**（⚠ M1-B2 起⛔ 不再声称「分帧建格步长」——那个旋钮一个消费方都没有，已删）。⚠ 摆件是**全有或全无**（见下），⛔ 不是密度系数。⚠ 原作 `quality_mgr_2d.lua` 是**空壳**（旋钮全在 `quality_mgr_3d.lua`）⇒ 这是自创的等价实现，⛔ 无原版对照 |
+只有 **画质**：流畅 / 普通 / 高清 / 超高。当前流畅档关闭逐格资源件与动态水面，其他三档启用；
+三个非流畅档尚无进一步效果差异。画质映射是宿主策略，原版 `quality_mgr_2d` 没有这套分档。
+不再保留已删除的分帧建格步长、密度系数、色彩模式或设置存储占位。
 
-### ⛔ 这里**没有**沙盘模式 / 镜头视角 / 鸟瞰（2026-09-22 拍板）
-
-本 kit 只承载原版 **2D 沙盘**，3D 沙盘另开 kit `mapOriginal3d`。所以：
-
-- **沙盘模式**是跨 kit 的事，⛔ 不该由 2D kit 提供一个永远选不动的 3D 档位当「契约占位」；
-- **镜头视角**（fov / angle / distance）只存在于原作 `script/util/viewport_3d_cfg.lua`，
-  2D 的 `util/viewport.lua` 只有 `vp_scale_min/max/default`；
-- **鸟瞰**的 7 条显示层（`birdview_*`）在 `map_layer_config.lua` 里**全部且仅**落在 `ShowLayers3d`
-  （2d 段与 common 段各 0 条）。
-
-⚠ 早先这里写「按原作同因置灰」并引了「2D沙盘不支持鸟瞰视角」「2d不支持调整镜头参数」——
-**出处是错的**：那两句只在 GM 调试台（`gm_client_cmd.lua`）的串里，零售面板是把镜头区
-**整块隐藏**（`setting_screen_dimension` 的 `show_camera_view(is_select_3d_scene)`），⛔ 不是置灰。
-⚠ 真机重放第 10 步现在是**否定判据**：面板里出现「沙盘模式/2D 沙盘/3D 沙盘/镜头视角/鸟瞰/
-色彩模式」任一字样即红，同时要求「画质」那一行在。
-⚠ 早先这里还写着「要求『色彩模式』『画质』两行都在」—— **已随色彩模式移除而失效**，
-与本文 §十 的否定判据自相矛盾，M1 止血时一并改正。
+本 kit 只承载 2D 沙盘，界面不显示沙盘维度、镜头视角、鸟瞰和 LUT 选项。原作在 2D 下隐藏
+相关区块；早期“置灰”的结论误引了 GM 调试文本。Creator 重放检查上述选项缺席且画质行存在。
 
 ## 六、分层门控
 
@@ -241,7 +220,7 @@ prefab 里 sprite 的 `size` 逐项相等 —— 这同时是「贴图对应没�
 
 ⇒ 观感是「**一整张连续的大地毯被菱形裁出来**」。取 floor 的意义是让**块边界落在整周期上**，
 块与块之间不出现半个花纹的错茬 —— ⛔ 别为了"消除拉伸"改成非整数次。
-⇒ **画面上的颜色变化全部来自上层的 res_field 摆件与山体件**，⛔ 不来自地表底。
+草地底本身全图同款；雪沙覆盖层、资源件与山体件形成不同地貌。
 
 ⚠ 本 kit 早先的「8 粗类 × 4 变体的逐格菱形贴片」与这条**直接矛盾**，M2-B1 已整套删除
 （`atlas-lod{0,1,2}` 产物、`MAPO_ATLAS_*`、`mapoAtlasCellId/Uv/TileVariant`、
@@ -264,11 +243,11 @@ prefab 里 sprite 的 `size` 逐项相等 —— 这同时是「贴图对应没�
 | 片 | desert 51 条 / 432 顶点、snow 52 条 / 421 顶点，铺 `underground3` / `underground2`（§1.6 实测 177/177） |
 | 叠 | desert 4,762 块、snow 4,186 块、**489 块两者兼有** —— 这就是「叠不是替」的硬证 |
 
-⚠ **UV 规则是有依据的推断**：原版 `polygon_2d` 的 `uvs` 全零 ⇒ 运行时按世界坐标算，
-但**真式子在引擎 C++ 侧、不在证据集里**。本仓采用**与地表底完全相同的块级投影**
-（同周期、同相位、锚在块中心）—— 只有它能让「块边界落在整周期上」（§1.4 明写的设计意图）
-且与底纹对齐。⛔ 别改成按多边形自身包围盒投影：边缘片比整块小，相邻块的花纹相位会跳。
-⚠ 每层**各自一个批**：一个材质只能挂一张 `mainTexture`，⛔ 别把两层塞进同一张 mesh。
+UV 已由原版 native 核核验（[机制 §1.8](../../../docs/MAPORIGINAL-2D.md#18-雪沙多边形的世界-uv2026-09-24-原生核补核)）：
+原版世界像素 `u=x/256`、`v=1-y/256`，相位锚在世界原点。不能套用草地块的 11×5 次重复，
+也不能按局部包围盒拉伸；同一几何换块摆放时 UV 随世界位置变化。导出器校验全部 103 片的
+`calc_uv_in_world=true / scale=1 / angle=0 / offset=0`，遇到其他参数拒绝导出。
+每层使用独立底纹和材质、POT + REPEAT，超出 16 位索引容量时拆批。
 
 ### 道路：坐标系是干净集直给的，片也是烘死的
 
@@ -282,9 +261,8 @@ prefab 里 sprite 的 `size` 逐项相等 —— 这同时是「贴图对应没�
 | 片 | 18 个 `client_res` id（1170..1187）× 水平翻转；三套皮肤 `road / road_ash / road_snow` 结构相同，S1 取 `road` |
 
 ★ **id → 精灵的绑定是 `[实测]`**（2026-09-23 解开 `base.cw` 的 `client_res` 表）：
-表里 19 条路片本体（id 1170..1188，按 prefab 名字母序，`up_end_2`「路19」占最前的 1170、
-S1 不用）。⚠ **`type_info` 的 id 比 `client_res` id 小 1**，+1 后 18 条逐条对上 prefab，
-再读 prefab 拿到贴图 —— 全链路都是数据。
+表里 19 条路片本体（id **1169..1187**，`up_end_2`「路19」为 1169，S1 不用）。
+**`type_info` 与 `client_res` id 1:1，无偏移**；1170..1187 直取 18 个 prefab，再读贴图。
 ⚠ 早先的「邻接度签名 + 字母序」推断 **17/18 命中**，唯一错的正是当时就标为「未定」的
 那张（应 `upend/6-1`，推断取了 `6-2`）—— 已改正。邻接度签名**保留为交叉校验**，
 `build_roads.py` 每次构建都重算，与 `client_res` 给出的类不符即退出。
@@ -308,11 +286,14 @@ S1 不用）。⚠ **`type_info` 的 id 比 `client_res` id 小 1**，+1 后 18 
 | 事实 | 实测 |
 |---|---|
 | 网格 | **504×504**、**列主序** `byte(c*row + r + 5)`；一个河格 = **3×3 逻辑格** |
-| 起点偏移 | **−6**（logic row = 3·i − 6）。命中率随偏移**单峰**，−6 处 0.8638 |
+| 起点偏移与摆位 | `RiverLayer.offset=(-6,-6)`；原版 `ninegrid2pos(i−2,j−2,450,225)`，不带逻辑格的奇偶行偏移 |
 | 对位硬证 | 河格覆盖了 **235,290 / 235,292** 个 `res==47` 格（**100.0%**） |
 | 几何 | 102 条，**原版自带三角化**（`polygon_2d.vertices/indices`），4,379 顶点 / 4,170 三角，零失败解析 |
 | transform | 102/102 的根节点与多边形节点**全是单位阵** ⇒ 顶点可直接用（已钉成入库断言） |
 | 水系 | river 51 / yellowriver 26 / longriver 25 |
+
+水面与岸边 top 共用本帧河格摆位。2026-09-24 修正旧 `grid2pos` 换算造成的
+15,595 条奇数行河格偏移：修正量为向右 16、向上 8 世界单位（原版 75×37.5 px）。坐标原式见机制 §4.1。
 
 水面使用原全图颜色蒙版与 `normal_river` 的无结冰分支，三层运动法线、环境光与高光参数均来自原包。
 原 2D 的开启条件见 [机制 §4.1](../../../docs/MAPORIGINAL-2D.md#41-河)；本 kit 将标准及以上画质映射为开启水流，
@@ -374,7 +355,7 @@ trimRect / layoutVersion / contentHash`。资源件、道路、河岸及雪 top 
 资源件配置归 resources，top 配置归 geography；宽限结束、加载取消或关页时沿组生命周期清理。
 `MapoDataStore` 持有各实例配置；运行时不导入离线工具，也不从空的离线兼容 reader 借配置。
 `decor.data.ts` / `tops.data.ts` 只留类型与小常量，`top-scenes.data.ts` 已退役。
-当前 content TS 为 18 文件、829,964 B（含类型及 manifest），通行层、带归属与小型规则仍保留 shared 入口。
+通行层、带归属与小型规则仍保留 shared 入口；文件和驻留大小以重跑统计报告为准。
 具体格式试验、构建差额和验收数字只登记在优化方案 §9。
 
 近景 decor / top 使用 `mapoSceneCompiled` 预排序节点和预计算局部矩阵；每个可见摆位各持一份播放器，
@@ -432,11 +413,11 @@ size/pivot/mirror/skew/color/add_color、阴影、引用、时间线和帧动画
 原作近档不是「底图 + 撒一些装饰」，而是**底图 + 逐格一个 `res_field` 单位**，那个单位由该格的
 `res` 值（类型 + 等级）唯一决定。所以：
 
-- 摆件图集 `decor-atlas.png` 的**格 id 就是原版值**（2..46 资源与金矿；城址从 `MAPO_DECOR_CITY_BASE = 64` 起）；
+- 2..46 是资源与金矿的逻辑值；每个值按地貌带选择 prefab，节点以 `textureId` 引用图片表；
 - `mapoDecorAt(row, col, value, enabled)` 是**纯查表**，⛔ 没有概率、没有哈希撒件
-  （哈希只剩一处：在 8 件城址图里按位置稳定挑一件）；
+  城池另由 `city → city_res` 原表选择，旧“8 件城址按位置散列”已删除；
 - ⛔ **别再加「密度系数」**：按密度砍一半会出现「同样的 3 级粮田有的有有的没有」的穿帮。
-  要省开销只有整层关掉（流畅档）这一条路 —— 近档一屏本来也只有几十格（一格 300×150 世界像素）。
+  流畅档整层关闭；其他档通过合批、增量动画与 LOD 缓存降开销。原版一格 300×150 px，本 kit 为 64×32 世界单位。
 - ★ **先判带再选件**（N1）：`land` 表每地块类型有 `client_res_id / snow_client_res_id /
   desert_client_res_id` 三套件列（⛔ `autumn_*` 不接），带归属 = **cell 级** `logic_background.bytes`
   （原版 `check_ground_type(row,col)` = `GROUND_TYPE_NAMES[格值] or "ground"`，2=雪 3=沙——
@@ -454,48 +435,11 @@ size/pivot/mirror/skew/color/add_color、阴影、引用、时间线和帧动画
 - 沙底/沙 top/雪底/雪 top 使用固定容器次序，拖入/拖出视口和 batch 重建不改变叠压。
 
 
-### 六·六 ★ 地表图集的源已换成原版 **2D 沙盘**侧（2026-09-22）
+### 已退役路径
 
-以下六·六、六·七保留为旧逐格贴片管线的历史记录；该管线已经退役，当前实现以本章开头的四档表及 `mapoStaticScene` 为准。
-
-本 kit 只承载原版 2D 沙盘 ⇒ 八个粗类的底纹全部从 `scene_3d/**` 换成 2D 侧
-（机检实体在 `apps/server/test/mapOriginal-content.test.ts`，两条：产物 `source` 白/黑名单、`select.json` 入口）：
-
-| 粗类 | 2D 源 | 依据 |
-|---|---|---|
-| `plain` 平地 | `ground_down/underground1` | ⚠ **唯一带推断的一条**。2D 归属是实证（赛季配置表登记名「草1」、`all_root_res_list.cw` 常驻根资源、无 scene_3d 对位）；但「被 polygon 平铺成草地底」**没有**直接证据——grass 的四个 `middlelevel_0N_group.prefab` 在手且只引 `a1..a8`。更可能是编辑器的**地表笔刷**（代码直贴） |
-| `resource` 资源格 | `scene/ground/caodi_gan/png/tt_02`（干草地） | 低频能量全库最低 ⇒ 铺满 96 万格不露节律 |
-| `gold` 金矿 | `scene/ground/huangmo/png/tt_02`（荒漠） | 偏亮细砂 |
-| `river` 河流 | `scene/ground/zhaoze/png/tt_02`（沼泽） | 水系里唯一满幅不透明的地表底 |
-| `mountain` 山脉 | `scene/ground/caodi_shi/png/tt_02`（石草地） | 暗于平地 |
-| `grove` 林丛 | `scene/ground/senlin/png/tt_02`（森林） | 语义对上 `LAND_TYPE.FOREST` |
-| `scatter` 散落 | `scene/ground/caodi_huijin/png/tt_02`（草地灰烬） | 对上 `sparse_flammable_layer_logic` 的 10 个 `RES_LAND_GRASS_ASHES_*` |
-| `unknown` 兜底 | `scene/ground/dongtu_tuxue/png/tt_02`（冻土） | 纹理最强，兜底哨兵一眼可辨 |
-
-★ 除 `plain` 外七条的**2D 归属**是实证：`scene/ground/<生物群系>/` 各有 **10 个在手的
-`*_polygon_mask_group.prefab`**，其中 `polygon_2d` 节点直引本目录的 `tt_02`（各 10 次）。
-
-⚠⚠ **口径修正（M1-B3，MAPORIGINAL-2D §1.7）**：上面这条只证明「这七张是**2D 侧素材**」，
-⛔ **不证明「S1 画面上真在用」**。驱动 `_polygon_mask` 那层的四张 `multi_grid_*` 表在 S1
-**是空表**（`NEWTABLE` + `RETURN`、nk=0）⇒ 那一层在 S1 **一格都不画**。
-⇒ **本 kit 这 8 张粗类底纹是自创的**：原版 2D 的地表底是 block 级（10×10 格）的
-「一张 256² 底纹整数次 `GL_REPEAT`」（§1.4），⛔ 不是逐格贴片。对齐它是 **M2-B1**，本单未排期。
-
-### 六·七 顺带修掉的三个烘焙缺陷（换任何源都得先修）
-
-1. **透明区被读成黑**：`bake_content.py` 原来是 `.convert("RGB")`。**换源前**的 3D 源里 6 张带 alpha
-   （`albedo_river_v2` 不透明率仅 **0.177**、`xiaobujian_d` 仅 **0.003**）⇒ 透明区 `lum≈0`、被压成
-   `0.62×底色` 的暗块。⇒ 改成**合成到中性灰 128** 再转 RGB（`lum=0.5` ⇒ 增益 1.0 = 调色板原色，
-   是唯一不改色相的中性值）。
-2. **四个变体里有两个是同一张**：旧式 `side = min(w,h)//2**lod` + 角窗，对**正方源在 LOD0 必然退化**
-   （`ox=oy=0` ⇒ v0 与 v3 逐像素相同）；实测旧产物 8 类里 **7 类 v0≡v3**。
-   ⇒ 改成 **2:1 定形窗 + 四个错开相位**（任意两个既不共行也不共列），并**去掉旋转**
-   （旋转会让四片分裂成「横向拖影」与「正常颗粒」两种观感）。512² 源取 240×120 是 1:1 像素、零重采样。
-3. **LOD 极性反了**：注释写「远档取更大的纹理块 ⇒ 更平」，代码 `//2**lod` 取的却是**更小**的块，
-   实测 lod0→lod2 的 std 是**上升**的。⇒ 改成**先低通再取同一窗**（`GaussianBlur(0.8*2**lod)`）。
-
-⚠ 另外 `bake_content.py` 现在在源没落位时**直接报错**，⛔ 不再静默降级成纯色 —— 旧行为是
-`os.path.exists` 落空即 `src=None`，画面变平涂却不报，极难查。
+逐格八粗类地砖、连通域补山、按面积选主片、邻级替代、城址散列、调色板远图与原鸟瞰缩略图均已移除。
+历史原因及原版证据见 [机制 §9–10](../../../docs/MAPORIGINAL-2D.md#9-本-kit-与原版对照表)；
+旧导出步骤和中间统计不再作为当前操作指南。
 
 ## 七、客户端五条硬规矩（与 sgzzmap 同，⛔ 别再踩）
 
@@ -507,29 +451,25 @@ size/pivot/mirror/skew/color/add_color、阴影、引用、时间线和帧动画
 
 ## 八、复现
 
+详见 [素材工具：重建与复核](../../../tools/maporiginal-assets/README.md#六2026-09-24-修复产物的重建与复核)。
+先重建受影响内容、安装 kit 输入，再烘概览/缩略图、再次安装并 `sync:shared`。
+`kit.json` 和登记点未变时不需要运行 codegen。不要手改生成物或使用旧逐格地砖烘焙流程。
+
+本轮这种地图逻辑及内容变更的必要检查：
+
 ```bash
-P=/tmp/maporiginal-venv/bin/python     # python3 -m venv + pip install texture2ddecoder pillow numpy scipy
-$P tools/maporiginal-assets/build_name_map.py          # 素材反查（namehash）
-$P tools/maporiginal-assets/decode_batch.py            # 选材解码 KTX → PNG + 存证
-$P tools/maporiginal-assets/slice_atlas.py --all       # 图集切片
-$P tools/maporiginal-assets/build_terrain.py           # 原版层 → terrain.bytes（原版值）+ 通行层 + 调色板
-node --import tsx tools/maporiginal-assets/bake_overview.ts # 同源概览 / 缩略图（本机 Chrome 9222）
-$P tools/maporiginal-assets/pack_decor.py              # ★ 摆件图集：格 id = 原版 res 值
-$P tools/maporiginal-assets/build_labels.py && $P tools/maporiginal-assets/emit_labels.py
-$P tools/maporiginal-assets/emit_display_palette.py \
-     --out apps/shared/src/kits/mapOriginal/content/display.data.ts   # ★ 61 值调色板 + 粗类下标表
-$P tools/maporiginal-assets/emit_shared_terrain.py --layer pass \
-     --out apps/shared/src/kits/mapOriginal/content/terrain.data.ts
-$P tools/maporiginal-assets/install_to_kit.py          # 装 kit + Cocos 镜像 + 铸 .meta
-$P tools/maporiginal-assets/emit_ledger.py --out apps/kits/mapOriginal/art/LICENSES.md
-npm --workspace @game/server run codegen:plugins && npm run sync:shared
+node --import tsx --test apps/client/test/mapOriginal-*.test.ts apps/server/test/mapOriginal-content.test.ts
+npm run typecheck:client
+npm run typecheck:client:legacy
+npm run verify:sync
+python3 tools/maporiginal-assets/install_to_kit.py --check
+node tools/creator-preview/run.mjs mapOriginal --format png --out .cache/creator-preview/maporiginal-current
 ```
 
-⚠ **别在 `/tmp` 下跑脚本**：本机 `/tmp/token.py` 会遮蔽标准库 `token`，numpy 导入即炸。
-⚠ **首次用 Creator 打开本仓**：`bundles/kit-mapOriginal-s1/**` 的 `.meta` 是脚本确定性铸的、
-不是 Creator 导入出来的。Creator 会正式导入并可能改写 uuid —— 把它改完的 `.meta` 一并提交。
+原包校验需要 `assets.config.json` 指定的只读输入及隔离 Python 环境；具体依赖见工具文档。
+素材安装器保留已有 UUID，只为新资产生成 `.meta`，压缩策略由 `texture-policy.json` 统一设置。
 
-## 八·五、真机重放抓出来的两条（2026-09-22）
+## 八·五、历史回归：Creator 桌面预览（2026-09-22）
 
 单测钉的是我当时**写错的那个假设**，所以两条都只有真引擎能发现。
 
@@ -563,7 +503,7 @@ npm --workspace @game/server run codegen:plugins && npm run sync:shared
 根因：**Creator 只在应用被激活时才重编译脚本**（`tools/creator-preview/README.md` 已写），
 预览拿的是上一次的 chunk。⇒ 跑重放前先 `osascript -e 'tell application "CocosCreator" to activate'`
 并等 `apps/Cocos/temp/programming/packer-driver/targets/preview/chunks` 出现新文件。
-⚠ 这不是「重放不稳定」，⛔ 别去加重试 —— 判据是 chunk 的 mtime。
+当前探针核对编译 chunk 的 source map 与源码内容；mtime 只用于观察，不能单独证明编译正确。
 
 ### 追加一条：`res` 字节语义读反了（2026-09-22，非真机、统计自查）
 
@@ -576,38 +516,19 @@ npm --workspace @game/server run codegen:plugins && npm run sync:shared
 | `//10` 随距中心半径的均值 | 平坦（类型与远近无关） | 1.50 → 1.50 恒平 | ✔ 是类型 |
 | `%10` 随距中心半径的均值 | 递减（越靠边越低级） | 3.26 → 1.33 | ✔ 是等级 |
 
-⇒ 从此**显示层直接存原版值**，不再折算成自造类；地表按粗类垫底、等级差交给摆件层。
+当前显示层保留原始值；草地为 block 底纹，等级差由完整资源 prefab 表现。
 
 ⚠ 还有一条**不是本 kit 的**但会挡住所有重放：登录页 Spine 骨骼版本不匹配
 （`GLoader3D.onChangeSpine` → `Cannot read properties of null (reading 'skins')`）会弹出 DOM 浮层
 `#error`，它盖在画布之上、吃掉 CDP 的全部点击。已在 `runner.tap()` 里统一关掉并记进
 `report.json` 的 `overlayDismissals`。
 
-## 九、进度
+## 九、实施记录入口
 
-- ✅ **P0** namehash 反查（`SipHash-2-4(零 key, 去 asset/ 前缀路径)`），11,489 个文件改回真名。
-- ✅ **P1** 素材管线：29 张 KTX 解码 + 805 张图集切片 + 九字段台账。
-- ✅ **P2** 内容包：s1 全 23 层定性、**原版值显示层**（61 值）+ 3 类通行层、远档底图/缩略图/三档图集
-  （地表按 8 粗类 × 4 变体）、**摆件图集按原版值建格**（45 资源 + 8 城址）、原版地名三级。
-- ✅ **P3** kit 骨架 + `hexmap` 面（抄改 700 行）+ shared 内容模块。
-- ✅ **P4** 客户端地图页 `mapOriginalWorld`（首屏菜单「原版大地图」）+ 画面设置面板。
-- ✅ **P5 真引擎验收**：`node tools/creator-preview/run.mjs mapOriginal --out <dir>` 全绿。
-  覆盖：进入 → 近档地表 → 点选（含坐标换算判据）→ **逐格摆件 + 多格地形区域件 + 郡名** →
-  **画面设置只剩画质一行（否定判据：出现沙盘模式/镜头视角/鸟瞰/色彩模式任一即红）** →
-  拉远换远档底图 → 缩略图跳转 → 推回近档。
-  ⚠ **步数按真跑一次的 `report.json` 计**，⛔ 别在文档里写死：`maporiginal.mjs` 自有的
-  `runner.step` 数与 `run.mjs` 的前置步（scenarioSettings/scenarioHome）会随 `--reuse` 浮动。
-  ⚠ 帧率/draw call 以最近一次证据目录为准，⛔ 别把历次数字并列在文里（曾出现 48/130 与
-  50/136 两组互斥的数）。
-- ⛔ **3D 沙盘不再是本 kit 的 P6**（2026-09-22 拍板）：原版 3D 沙盘（`asset/scene_3d/**`、
-  `config_3d.lua`、`mapview/3d/**`、鸟瞰与镜头视角）整体归新 kit **`mapOriginal3d`**。
-  ⚠ 框架 `docs/3d.md` 的 Stage3D（SC0–SC5）仍是它的前置，本 kit ⛔ 不再登记 3D 阶段。
-  ⚠ kit 间禁依赖（`docs/KIT.md:162`）⇒ mapOriginal3d 要用 `MAPO_*` 几何/调色板只能**抄改一份**
-  （与当初 mapOriginal 抄 sgzzmap 同例），⛔ 不许 import。
-- ✅ **多格地形区域件**（2026-09-22）：`regions.bin` 2.78 万条 = 原版 `mountain_patch` 3,942 条锚点
-  + 无锚连通区每区一件；件用原版 2D 山体 `m1..m10` / 树簇 / 草丛，尺寸按原图像素还原。
-  真机近档实测「山林 41」件、50 FPS / 136 draw call。
-- ⚠ 山脉区仍偏空：原版锚点密度就是 **1 件 / 20 格**（3,578 格的大山区才 14 件），
-  原作靠 3D 地形起伏撑体量、2D 只补几块山石。要更满只能自己加件 —— ⛔ 那就不是原版参数了。
+- 原版机制及保真修复：[MAPORIGINAL-2D.md §9](../../../docs/MAPORIGINAL-2D.md#9-本-kit-与原版对照表)。
+- M/N 批次沿革：[施工单 §5](../../../docs/MAPORIGINAL-2D-PLAN.md#5-实施状态)。
+- 素材、Bundle、配置与动画优化：[优化方案 §9](../../../docs/MAPORIGINAL-2D-OPTIMIZATION.md#9-实施状态唯一登记处)。
+
+不在此重复维护旧 P0–P6 清单或过期帧率。3D 沙盘、动态军队/营地/归属态和其他赛季仍属独立范围。
 
 2026-09-24：A01–A12 的逐项修复、原版证据与验证入口见 [机制 §9.1](../../../docs/MAPORIGINAL-2D.md#91-复刻简化审计-a01a12-的修复记录2026-09-24)。

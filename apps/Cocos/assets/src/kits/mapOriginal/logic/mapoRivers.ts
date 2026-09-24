@@ -4,16 +4,15 @@
  * ★ 摆放与选片**完全由原版数据定**（docs/MAPORIGINAL-2D.md §4.1）：
  *   `river.bytes` 是「河格 → `river_path.json` 下标」的单字节图，**选片在制图期就烘死在
  *   字节值里** ⇒ 运行时 ⛔ 不做任何邻接判断、⛔ 不拼接、⛔ 不随机。
- * ★ 一个「河格」= **3×3 逻辑格**，节点摆在河格的**几何中心**
- *   （与原版地表 block 同式：`grid2pos(R, C)` 再 `y -= (k−1)·halfH`，k = 3）。
+ * ★ 一个「河格」= **3×3 逻辑格**，原版用 ninegrid2pos(r−2,c−2,450,225)。
+ *   它没有 grid2pos 的奇偶行偏移；详见 MAPORIGINAL-2D §4.1。
  * ★ 几何是**原版 prefab 自带的三角化**（`polygon_2d.vertices/indices`），⛔ 我们不做耳切。
- * ⚠ 水面是**平色填充**：三张原版填充图都是 2×2 的单一平色 ⇒ 整片一个 UV 点，
- *   色相走顶点色（`MAPO_RIVER_TINT`），亮度走贴图。⛔ 这一层不需要 REPEAT。
+ * ★ 本读取器提供平色底与水系采样点；流动 mask / normal 由 MapoRiverRenderer 叠加。
  * ⚠ 表**已按 s 升序落盘 = 画家序**，这里只做区间二分 + 矩形裁剪，
  * ⛔ 不要每帧对 3.1 万条排序。
  */
 import {
-    MAPO_TILE_HALF_H, mapoGrid2Pos,
+    MAPO_TILE_HALF_H, MAPO_TILE_HALF_W,
 } from "../../../shared/kits/mapOriginal/api/hexmap/index";
 import {
     MAPO_RIVER_D_BIAS, MAPO_RIVER_GEO_COUNT, MAPO_RIVER_HEADER_BYTES,
@@ -63,12 +62,9 @@ export function createMapoRiversData() {
 
     function mapoRiverCount(): number { return count; }
 
-    /** 河格原点格 (R, C) 的世界坐标；节点摆在**河格几何中心**（与原版地表 block 同式）。 */
+    /** 表中 R=3r−6、C=3c−6；展开原版 ninegrid2pos 后再换算为世界单位。 */
     function mapoRiverPos(s: number, d: number): { x: number; y: number } {
-        const row = (s + d) / 2, col = (s - d) / 2;
-        const p = mapoGrid2Pos(row, col);
-        // ⚠ k 格见方的块，中心比原点格低 (k−1)·halfH；k = MAPO_RIVER_TILES = 3
-        return { x: p.x, y: p.y - (MAPO_RIVER_TILES - 1) * MAPO_TILE_HALF_H };
+        return { x: d * MAPO_TILE_HALF_W, y: -(s + MAPO_RIVER_TILES) * MAPO_TILE_HALF_H };
     }
 
     /** 第一条 `s >= want` 的下标（表已升序）。 */

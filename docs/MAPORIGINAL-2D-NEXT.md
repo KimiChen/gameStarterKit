@@ -1,17 +1,22 @@
-# mapOriginal 下一步计划（交接单）
+# mapOriginal 历史交接单（2026-09-23）
 
 > 2026-09-23 · 分支 `new` · ⚠ 本单是**交接用**的施工计划，⛔ 不是设计真源。
 > 设计真源 = [`MAPORIGINAL-2D.md`](MAPORIGINAL-2D.md)；批次真源 = [`MAPORIGINAL-2D-PLAN.md`](MAPORIGINAL-2D-PLAN.md)。
 > 本单的批次编号 `Nx-Bn` 与 PLAN 的 `Mx-Bn` **不冲突**，落地后把阶段级结论回写 PLAN §5。
+>
+> 2026-09-24 整理：下文保留当时的问题、统计与操作记录，不是当前待办或当前工作区状态。
+> N0–N3 的完成记录见 [PLAN §5](MAPORIGINAL-2D-PLAN.md#5-实施状态)；格线已由 A12 补齐，
+> 资源完整 prefab、普通选框与 UV/河格补核见 [机制 §9](MAPORIGINAL-2D.md#9-本-kit-与原版对照表)。
+> 当前重建命令见 [素材工具](../tools/maporiginal-assets/README.md)，优化状态只在 OPTIMIZATION §9。
 
 ---
 
-## 0. 接手前必读（三分钟）
+## 0. 交接时的状态快照
 
 | 事项 | 状态 |
 |---|---|
 | 分支 | `new` |
-| **未推提交** | 本轮新增 4 个（N0 重放退出 / N2 城名 / N1 季·地貌变体 / N3+N4 调研回写），⚠ 推送需当事人确认 |
+| 当时新增提交 | 4 个（N0 重放退出 / N2 城名 / N1 季·地貌变体 / N3+N4 调研回写）；不代表当前未推范围 |
 | 机检 | client 1008 / server 1375 全绿；`verify:sync`、`verify:protected-paths` 绿；`verify:all` exit 0 |
 | ⚠ 一条踩过的 | `verify:sync` 的「缺 `.meta`」**只对已入库文件生效** ⇒ `git add` **之前**跑是绿的、之后才红。⛔ 新增镜像文件后要在 `git add` 之后**再跑一遍** |
 | ⚠ 又一条踩过的 | **Creator 的脚本编译器会静默停摆**（文件变了不重编、重放跑旧 bundle，症状 = 新逻辑不生效且 console 0 条）——改完先看 `temp/programming/packer-driver/targets/preview/chunks/` 里出现新代码再跑；不响就重启 Creator（N2 踩过） |
@@ -310,7 +315,7 @@ angle = deg(atan(0.5)) = **26.57°**（2:1 菱形格边方向），`obj2d.static
 （逐格密铺 vs 块界）未坐实，标 `[推断]`（3D 逐格语义 + 贴图形态支持逐格）。
 ⇒ 本 kit `grid` 行从「无证据」改判为：**可做，原版依据 = 地表内嵌贴图格线**
 （FRAME=1400、淡黄 α24%、26.57°、静态合批、远档隐），⛔ 不是独立层、不是引擎线框 API。
-做不做另开批次，见 §1 层表。
+后续已由 2026-09-24 A12 实现，见机制 §9.1；本节保留研究时的证据边界。
 
 ### N4-B4　短 Proto 的 Lua 明文
 `../sourceVersion/sgzz-2084.1768/` 的干净集是 6,620 个大 Proto；10,486 个短 Proto 因弱 key
@@ -331,7 +336,7 @@ angle = deg(atan(0.5)) = **26.57°**（2:1 菱形格边方向），`obj2d.static
 
 ---
 
-## 8. 命令速查
+## 8. 当时的命令记录（现行流程见素材工具 README）
 
 ```bash
 # 内容管线（venv 固定在 /tmp/maporiginal-venv）

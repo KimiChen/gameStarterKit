@@ -7,11 +7,13 @@
   ① `river.bytes` 头 `01f8 01f8` = **504×504**、**列主序** `byte(c*row + r + 5)`；
      字节值 v ≠ 0 时是 `river_path.json` 的**下标**（1..102，值域上界恰等于表长）。
   ② 一个「河格」= **3×3 逻辑格** = 900×450 px（`grid_width = TILE_WIDTH*6`）。
-     ★ 起点偏移**实测定死 = −6**（logic row = 3·i − 6）：命中率随偏移单峰，−6 处 0.8638；
+     ★ `layer_info.RiverLayer.offset=(-6,-6)`（disasm），logic row = 3·i − 6；
+     `river_grid.get_pos` 用 ninegrid2pos(i−2,j−2,450,225)，没有奇偶行偏移。
+     独立覆盖率统计：命中率随偏移单峰，−6 处 0.8638；
      反向校验决定性 —— 河格覆盖了 **235,290 / 235,292 个 `res==47` 格（100.0%）**。
   ③ 选片**在制图期就烘死在字节值里**，运行时⛔ 不做任何邻接判断。
   ④ 每条路径 `scene/ground/river{,_yellowriver,_longriver}/<形状>_<n>[_x][_y][_xy].group`
-     对应两个预制体：`_polygon_group`（水面多边形）与 `_top_group`（手摆细节，本批⛔ 不做）。
+     对应两个预制体：`_polygon_group`（水面多边形）与 `_top_group`（build_tops.py 导出）。
 
 ★ 多边形是**现成三角化**的：`polygon_2d` 带 `vertices` / `indices`，102 条零失败解析。
 ★ 高画质水面按原版 normal_river 的世界坐标 UV、全图颜色蒙版和法线采样，
@@ -170,6 +172,7 @@ def main() -> int:
                  "order": "列主序 byte(c*row + r + 5)"},
         "placements": len(recs), "sBias": S_BIAS, "dBias": D_BIAS, "recordBytes": 6,
         "placementLayout": "大端：u16 s(=R+C+sBias), u16 d(=R−C+dBias), u8 geo(1..102), u8 保留；按 s 升序",
+        "positionRule": "ninegrid2pos(i-2,j-2,450,225)：x=(R-C)*150, y=-(R+C+3)*75 原版像素；无奇偶行偏移",
         "placementSha256": hashlib.sha256(blob).hexdigest(),
         "geoCount": len(geos), "geoBytes": len(geo_blob),
         "geoSha256": hashlib.sha256(geo_blob).hexdigest(),
@@ -197,15 +200,15 @@ def main() -> int:
  *
  * ★ 机制见 docs/MAPORIGINAL-2D.md §4.1：`river.bytes` 是「河格 → `river_path.json` 下标」的
  *   单字节图，**选片在制图期就烘死在字节值里**，运行时 ⛔ 不做任何邻接判断。
- * ★ 一个「河格」= **3×3 逻辑格**；起点偏移 **−6**（logic row = 3·i − 6）是实测定死的：
- *   河格覆盖了 %d / %d 个 `res==47` 格（%.1f%%）。
+ * ★ 一个「河格」= **3×3 逻辑格**；layer_info 起点偏移 **−6**（logic row = 3·i − 6）。
+ *   原版 ninegrid2pos(i−2,j−2,450,225) 没有奇偶行偏移；覆盖 %d / %d 个 res==47 格（%.1f%%）。
  * ★ 水面几何可用于原版静态填充与 normal_river；颜色蒙版/法线另由 build_surface.py 导出。
  */
 
 export interface IMapoRiverSystem {
     readonly system: number;
     readonly name: string;
-    /** 原版填充图的平色（本仓只取其相对明度）。 */
+    /** 原版填充图的平色（静态水面直接采样，不额外乘色）。 */
     readonly rgb: readonly [number, number, number];
 }
 
